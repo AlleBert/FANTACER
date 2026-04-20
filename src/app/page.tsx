@@ -44,51 +44,66 @@ export default function Home() {
   const [analyticsConsent, setAnalyticsConsent] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Check vote status on mount
+  const loadRanking = useCallback(async () => {
+    if (!supabase) return
+    const { data: votes } = await supabase.from('votes').select('company_id')
+    
+    const { data: companies } = await supabase.from('companies').select('id, name')
+    const companyMap = new Map<string, string>((companies || []).map((c: { id: string; name: string }) => [c.id, c.name]))
+    
+    if (votes && votes.length > 0) {
+      const voteCounts = new Map<string, number>()
+      votes.forEach((v: { company_id: string }) => {
+        voteCounts.set(v.company_id, (voteCounts.get(v.company_id) || 0) + 1)
+      })
+      
+      const sorted = Array.from(voteCounts.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([companyId, count]) => ({
+          id: companyId,
+          name: companyMap.get(companyId) || 'Unknown',
+          votes: count
+        }))
+      
+      setRanking(sorted)
+    } else {
+      const topCompanies = (companies || []).slice(0, 10).map((c: { id: string; name: string }) => ({
+        id: c.id,
+        name: c.name,
+        votes: 0
+      }))
+      setRanking(topCompanies)
+    }
+  }, [supabase])
+
   useEffect(() => {
     if (!supabase || initialized) return
     setInitialized(true)
-    
     setHasVoted(hasAlreadyVoted())
-    
-// Load ranking from votes table
-    const loadRanking = async () => {
-      const { data: votes } = await supabase.from('votes').select('company_id')
-      
-      // Get company names
-      const { data: companies } = await supabase.from('companies').select('id, name')
-      const companyMap = new Map<string, string>((companies || []).map((c: { id: string; name: string }) => [c.id, c.name]))
-      
-      if (votes && votes.length > 0) {
-        // Count votes per company
-        const voteCounts = new Map<string, number>()
-        votes.forEach((v: { company_id: string }) => {
-          voteCounts.set(v.company_id, (voteCounts.get(v.company_id) || 0) + 1)
-        })
-        
-        // Sort by votes
-        const sorted = Array.from(voteCounts.entries())
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 10)
-          .map(([companyId, count]) => ({
-            id: companyId,
-            name: companyMap.get(companyId) || 'Unknown',
-            votes: count
-          }))
-        
-        setRanking(sorted)
-      } else {
-        // Show top companies alphabetically when no votes yet
-        const topCompanies = (companies || []).slice(0, 10).map((c: { id: string; name: string }) => ({
-          id: c.id,
-          name: c.name,
-          votes: 0
-        }))
-        setRanking(topCompanies)
-      }
-    }
     loadRanking()
-  }, [supabase])
+  }, [supabase, initialized, loadRanking])
+
+  useEffect(() => {
+    if (!supabase) return
+
+    const channel = supabase
+      .channel('ranking-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'votes'
+        },
+        () => loadRanking()
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [supabase, loadRanking])
 
   // Load companies with search
   const loadCompanies = useCallback(async (query: string) => {

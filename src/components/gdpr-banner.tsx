@@ -4,37 +4,44 @@ import { useState, useEffect } from 'react'
 import { Cookie, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { hasConsented, getAnalyticsConsent, setConsent } from '@/lib/cookie'
 
 interface GDPRBannerProps {
   onAccept: (analytics: boolean) => void
 }
 
 export function GDPRBanner({ onAccept }: GDPRBannerProps) {
-  const [showBanner, setShowBanner] = useState(true)
+  const [showBanner, setShowBanner] = useState<boolean | null>(null)
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const consented = localStorage.getItem('fantacer_consent')
-      if (consented) {
-        const parsed = JSON.parse(consented)
-        onAccept(parsed.analytics)
-        setShowBanner(false)
-      }
+    if (typeof window === 'undefined') return
+    
+    if (hasConsented()) {
+      const analytics = getAnalyticsConsent()
+      onAccept(analytics)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setShowBanner(false)
+    } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setShowBanner(true)
     }
   }, [onAccept])
 
   const handleAccept = (analytics: boolean) => {
+    const consentData = {
+      necessary: true,
+      analytics,
+      timestamp: new Date().toISOString()
+    }
     if (typeof window !== 'undefined') {
-      localStorage.setItem('fantacer_consent', JSON.stringify({
-        necessary: true,
-        analytics,
-        timestamp: new Date().toISOString()
-      }))
+      localStorage.setItem('fantacer_consent', JSON.stringify(consentData))
+      setConsent(consentData)
     }
     setShowBanner(false)
     onAccept(analytics)
   }
 
+  if (showBanner === null) return null
   if (!showBanner) return null
 
   return (
