@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { ArrowUp } from 'lucide-react'
 import { useDebouncedCallback } from 'use-debounce'
 import { createBrowserClient } from '@supabase/ssr'
 import { getCombinedFingerprint, hasAlreadyVoted, markVotedToday } from '@/lib/fingerprint'
@@ -43,6 +44,10 @@ export default function Home() {
   const [votingFor, setVotingFor] = useState<string | null>(null)
   const [analyticsConsent, setAnalyticsConsent] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showAll, setShowAll] = useState(false)
+  const [showScrollButton, setShowScrollButton] = useState(false)
+  const [activeBatch, setActiveBatch] = useState<string>('TEST')
+  const [debugLoaded, setDebugLoaded] = useState(0)
 
   const loadRanking = useCallback(async () => {
     if (!supabase) return
@@ -105,24 +110,36 @@ export default function Home() {
     }
   }, [supabase, loadRanking])
 
-  // Load companies with search
   const loadCompanies = useCallback(async (query: string) => {
     if (!supabase) return
     setLoading(true)
+    
+    const { data: settings } = await supabase
+      .from('batch_settings')
+      .select('active_batch')
+      .eq('id', 'default')
+      .single()
+    
+    const batch = settings?.active_batch || 'TEST'
+    setActiveBatch(batch)
+
     let dbQuery = supabase
       .from('companies')
       .select('id, name, category, image_url')
+      .eq('batch', batch)
       .order('name')
-      .limit(20)
 
     if (query) {
       dbQuery = dbQuery.ilike('name', `%${query}%`)
     }
 
-    const { data } = await dbQuery
+    const { data, error } = await dbQuery
     const companiesList = (data || []) as Company[]
     setCompanies(companiesList)
     setLoading(false)
+    console.log('Loaded companies:', companiesList.length, 'batch:', batch)
+    console.log('Button should show:', companiesList.length > 20)
+    setDebugLoaded(companiesList.length)
   }, [supabase])
 
   const debouncedSearch = useDebouncedCallback((query: string) => {
@@ -134,6 +151,15 @@ export default function Home() {
       loadCompanies('')
     }
   }, [supabase, loadCompanies])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const handleScroll = () => {
+      setShowScrollButton(window.scrollY > 300)
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   const handleSearch = (query: string) => {
     setSearchQuery(query)
@@ -182,14 +208,25 @@ export default function Home() {
         <RankingBar ranking={ranking} limit={3} />
         
         {error && (
-          <div className="bg-red-500/10 border border-red-500 text-red-500 px-4 py-2 rounded-lg mb-4">
+          <div className="bg-red-500/10 border border-red-500 text-red-500 px-4 py-2 rounded-lg my-4">
             {error}
           </div>
         )}
         
         {hasVoted && !error && (
-          <div className="bg-green-500/10 border border-green-500 text-green-500 px-4 py-2 rounded-lg mb-4">
+          <div className="bg-green-500/10 border border-green-500 text-green-500 px-4 py-2 rounded-lg my-4">
             ✓ Voto registrato! Grazie per aver votato.
+          </div>
+        )}
+
+        {!loading && companies.length > 20 && (
+          <div className="text-center my-4">
+            <button 
+              onClick={() => { setShowAll(!showAll); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              className="text-sm text-accent hover:text-accent/80 underline"
+            >
+              {showAll ? 'Nascondi (' + companies.length + ')' : 'Visualizza tutte (' + companies.length + ')'}
+            </button>
           </div>
         )}
         
@@ -203,7 +240,7 @@ export default function Home() {
               </div>
             ))
           ) : (
-            companies.map((company, index) => {
+            (showAll ? companies : companies.slice(0, 20)).map((company) => {
               const rankItem = ranking.find(r => r.id === company.id)
               return (
                 <CompanyCard
@@ -227,6 +264,16 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {showScrollButton && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="fixed bottom-4 right-4 w-10 h-10 bg-accent text-white rounded-full flex items-center justify-center shadow-lg hover:bg-accent/80 transition-colors z-[60]"
+          aria-label="Torna su"
+        >
+          <ArrowUp className="h-5 w-5" />
+        </button>
+      )}
     </main>
   )
 }

@@ -45,33 +45,35 @@ export function GDPRBanner({ onAccept }: GDPRBannerProps) {
   if (!showBanner) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="flex flex-row items-center gap-2 pb-2">
-          <Cookie className="h-5 w-5" />
-          <CardTitle>Cookie & Privacy</CardTitle>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <Card className="w-full max-w-md border-border shadow-xl bg-card">
+        <CardHeader className="flex flex-row items-center gap-3 pb-4">
+          <div className="p-2 bg-accent/10 rounded-lg">
+            <Cookie className="h-5 w-5 text-accent" />
+          </div>
+          <CardTitle className="text-xl">Cookie & Privacy</CardTitle>
           <Button 
             variant="ghost" 
             size="icon" 
-            className="ml-auto h-8 w-8"
+            className="ml-auto h-8 w-8 hover:bg-secondary"
             onClick={() => setShowBanner(false)}
           >
             <X className="h-4 w-4" />
           </Button>
         </CardHeader>
         
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">
-            Utilizziamo cookie necessari per il funzionamento. Per supportarci, puoi 
-            accettare anche cookie analitici che ci aiutano a migliorare il servizio.
-            I dati raccolti sono vendibili solo se accetti.
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Questo sito utilizza cookie necessari per il funzionamento. 
+            Previo tuo consenso, utilizziamo anche cookie analitici per migliorare l&apos;esperienza.
+            I dati raccolti sono trattati secondo la normativa italiana (D.Lgs. 196/2003 e GDPR).
           </p>
           
-          <div className="flex gap-2">
+          <div className="flex gap-3 pt-2">
             <Button 
               variant="outline" 
               onClick={() => handleAccept(false)}
-              className="flex-1"
+              className="flex-1 border-border hover:bg-secondary hover:text-foreground"
             >
               Solo necessari
             </Button>

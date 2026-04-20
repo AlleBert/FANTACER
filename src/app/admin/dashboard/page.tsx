@@ -155,7 +155,7 @@ export default function AdminDashboard() {
             <Download className="h-4 w-4 mr-2" />
             Export Excel
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => router.push('/admin/import')}>
             <Upload className="h-4 w-4 mr-2" />
             Import Aziende
           </Button>

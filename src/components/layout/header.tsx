@@ -1,9 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, Trophy } from 'lucide-react'
+import { Search, Trophy, Clock } from 'lucide-react'
 import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
 
 interface HeaderProps {
   onSearch: (query: string) => void
@@ -32,16 +31,17 @@ export function Header({ onSearch, hasVoted }: HeaderProps) {
   }, [])
 
   return (
-    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-      <div className="flex items-center justify-between px-4 py-3 gap-2">
+    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b border-border">
+      <div className="flex items-center justify-between px-4 py-3 gap-3">
         <div className="flex items-center gap-2">
-          <Trophy className="h-6 w-6 text-yellow-500" />
-          <span className="font-bold text-lg">FANTACER</span>
+          <Trophy className="h-6 w-6 text-accent" />
+          <span className="font-bold text-xl tracking-tight">FANTACER</span>
         </div>
         
         {hasVoted && (
-          <div className="text-xs text-muted-foreground">
-            Resetta {timeLeft}
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-secondary px-3 py-1.5 rounded-full">
+            <Clock className="h-3 w-3" />
+            <span>Resetta {timeLeft}</span>
           </div>
         )}
       </div>
@@ -56,7 +56,7 @@ export function Header({ onSearch, hasVoted }: HeaderProps) {
               setSearchValue(e.target.value)
               onSearch(e.target.value)
             }}
-            className="pl-9"
+            className="pl-9 bg-secondary border-transparent focus:border-accent"
           />
         </div>
       </div>

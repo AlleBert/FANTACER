@@ -22,36 +22,44 @@ export function CompanyCard({ company, onVote, disabled, loading }: CompanyCardP
   const isTop = company.position && company.position <= 3
   
   return (
-    <Card className={`overflow-hidden ${isTop ? 'border-yellow-400 border-2' : ''}`}>
-      <div className="aspect-video bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center relative">
+    <Card className={`
+      overflow-hidden transition-all duration-200
+      border border-gray-300 dark:border-gray-700
+      ${isTop ? 'border-orange-500 shadow-lg' : 'hover:border-orange-500 hover:shadow-lg'}
+    `}>
+      <div className="aspect-video bg-gray-100 dark:bg-gray-800 flex items-center justify-center relative overflow-hidden">
         {company.image_url ? (
           <img 
             src={company.image_url} 
             alt={company.name}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
           />
         ) : (
-          <div className="text-4xl font-bold text-muted-foreground/30">
+          <div className="text-4xl font-bold text-gray-400">
             {company.name.substring(0, 2).toUpperCase()}
           </div>
         )}
         
-        {company.position && (
-          <div className={`absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center font-bold text-white
-            ${company.position === 1 ? 'bg-yellow-500' : 
-              company.position === 2 ? 'bg-gray-400' : 
-              'bg-amber-700'}`}
-          >
+        {company.position && company.position <= 3 && (
+          <div className={`
+            absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center font-bold text-white
+            shadow-lg
+            ${company.position === 1 ? 'bg-yellow-500 shadow-yellow-500/30' : 
+              company.position === 2 ? 'bg-gray-400 shadow-gray-400/30' : 
+              'bg-amber-700 shadow-amber-700/30'}
+          `}>
             {company.position}
           </div>
         )}
       </div>
       
-      <CardContent className="p-4">
-        <h3 className="font-semibold truncate mb-1">{company.name}</h3>
-        {company.category && (
-          <p className="text-xs text-muted-foreground mb-3">{company.category}</p>
-        )}
+      <CardContent className="p-4 space-y-3">
+        <div>
+          <h3 className="font-semibold truncate text-gray-900 dark:text-white">{company.name}</h3>
+          {company.category && (
+            <p className="text-xs text-gray-500 dark:text-gray-400">{company.category}</p>
+          )}
+        </div>
         <Button 
           onClick={() => onVote(company.id)}
           disabled={disabled || loading}

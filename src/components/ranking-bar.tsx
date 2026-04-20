@@ -22,24 +22,28 @@ export function RankingBar({ ranking, limit = 3 }: RankingBarProps) {
   }
 
   return (
-    <div className="bg-muted/50 p-4 rounded-lg mb-4">
-      <div className="flex items-center gap-2 mb-3">
-        <Trophy className="h-5 w-5 text-yellow-500" />
-        <h2 className="font-semibold">Top {limit}</h2>
+    <div className="bg-card border border-border rounded-xl p-4">
+      <div className="flex items-center gap-2 mb-4">
+        <Trophy className="h-5 w-5 text-accent" />
+        <h2 className="font-semibold text-lg">Top {limit}</h2>
       </div>
       
       <div className="space-y-2">
         {displayItems.map((item, index) => (
           <div 
             key={item.id} 
-            className="flex items-center justify-between bg-background p-3 rounded-lg"
+            className={`
+              flex items-center justify-between p-3 rounded-lg transition-colors duration-200
+              ${index === 0 ? 'bg-secondary' : 'bg-transparent'}
+            `}
           >
             <div className="flex items-center gap-3">
-              <span className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold text-white
+              <span className={`
+                w-7 h-7 rounded-full flex items-center justify-center font-bold text-white text-sm
                 ${index === 0 ? 'bg-yellow-500' : 
                   index === 1 ? 'bg-gray-400' : 
-                  'bg-amber-700'}`}
-              >
+                  'bg-amber-700'}
+              `}>
                 {index + 1}
               </span>
               <span className="font-medium truncate max-w-[150px] sm:max-w-[200px]">
@@ -48,13 +52,14 @@ export function RankingBar({ ranking, limit = 3 }: RankingBarProps) {
             </div>
             
             <div className="flex items-center gap-2">
-              <span className="font-bold">{item.votes}</span>
+              <span className="font-bold text-accent">{item.votes}</span>
               {item.trend !== undefined && (
-                <span className={`flex items-center text-xs
+                <span className={`
+                  flex items-center text-xs
                   ${item.trend > 0 ? 'text-green-500' : 
                     item.trend < 0 ? 'text-red-500' : 
-                    'text-muted-foreground'}`}
-                >
+                    'text-muted-foreground'}
+                `}>
                   {item.trend > 0 ? (
                     <TrendingUp className="h-3 w-3" />
                   ) : item.trend < 0 ? (
