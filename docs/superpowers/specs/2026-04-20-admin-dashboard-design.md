@@ -1,5 +1,14 @@
 # Admin Dashboard Visual Enhancement - Design Spec
 
+## Design Reference
+
+Follow Fuser Studio design tokens from `DESIGN.md`:
+- **Dark theme:** bg `#0D0C0B`, surface `#181614`, border `#2E2A26`, text `#F0EDE8`, muted `#8C8882`, accent `#FF6A1A`
+- **Cards:** bg surface, 1px border, radius 10-12px
+- **Typography:** Inter for body/UI, 15px base
+- **Buttons:** Primary (accent bg), Secondary (outline)
+- **Transitions:** 200ms ease
+
 ## Overview
 
 Add real charts and detailed data tables to the admin dashboard for better analytics visibility.
@@ -8,13 +17,17 @@ Add real charts and detailed data tables to the admin dashboard for better analy
 
 ## 1. Chart Section
 
+**Styling (Fuser):** Card with surface bg, border, radius 10px, padding 24px
+
 **Component:** Recharts LineChart
 - **Data:** Daily vote counts from `daily_stats` table
 - **X-axis:** Date (formatted DD/MM)
 - **Y-axis:** Vote count
 - **Lines:** 
-  - Total votes (primary color)
-  - Unique voters (secondary color)
+  - Total votes (primary color: `#FF6A1A`)
+  - Unique voters (secondary color: `#8C8882`)
+- **Grid lines:** border color `#2E2A26`
+- **Tooltip:** surface bg, border, accent highlight
 - **Tooltip:** Shows exact values on hover
 - **Height:** 280px
 - **View:** Last 7 days default, configurable
@@ -22,6 +35,8 @@ Add real charts and detailed data tables to the admin dashboard for better analy
 ---
 
 ## 2. Company Rankings Table
+
+**Styling (Fuser):** Card container, table with border-bottom per row, hover highlight
 
 **Component:** TanStack Table (React Table) with shadcn/ui
 
@@ -45,6 +60,8 @@ Add real charts and detailed data tables to the admin dashboard for better analy
 ---
 
 ## 3. Vote Log Table
+
+**Styling (Fuser):** Card container, table with border-bottom per row
 
 **Component:** TanStack Table (React Table) with shadcn/ui
 
