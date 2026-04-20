@@ -15,6 +15,11 @@ import {
   TrendingUp,
   Calendar
 } from 'lucide-react'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { format } from 'date-fns'
+import { it } from 'date-fns/locale'
+import { CompanyTable } from '@/components/admin/company-table'
+import { VoteLogTable } from '@/components/admin/vote-log-table'
 
 interface Stats {
   totalVotes: number
@@ -29,6 +34,32 @@ interface DailyStats {
   unique_voters: number
 }
 
+interface Vote {
+  id: string
+  timestamp: string
+  company: string
+  fingerprint: string
+  country: string
+  device: string
+}
+
+interface Company {
+  rank: number
+  id: string
+  name: string
+  category: string
+  image_url: string | null
+  votes: number
+  trend: number
+}
+
+interface VotePagination {
+  page: number
+  limit: number
+  total: number
+  pages: number
+}
+
 export default function AdminDashboard() {
   const router = useRouter()
   const [stats, setStats] = useState<Stats>({
@@ -38,6 +69,15 @@ export default function AdminDashboard() {
     activeNow: 0
   })
   const [dailyStats, setDailyStats] = useState<DailyStats[]>([])
+  const [companies, setCompanies] = useState<Company[]>([])
+  const [votes, setVotes] = useState<Vote[]>([])
+  const [votePagination, setVotePagination] = useState<VotePagination>({
+    page: 1,
+    limit: 25,
+    total: 0,
+    pages: 0
+  })
+  const [voteSearch, setVoteSearch] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -67,20 +107,35 @@ export default function AdminDashboard() {
   const loadData = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/analytics?type=summary')
-      const data = await res.json()
+      const statsRes = await fetch('/api/analytics?type=summary')
+      const statsData = await statsRes.json()
       setStats({
-        totalVotes: data.totalVotes || 0,
-        uniqueVoters: data.uniqueVoters || 0,
-        todayVotes: data.dailyStats?.[0]?.vote_count || 0,
+        totalVotes: statsData.totalVotes || 0,
+        uniqueVoters: statsData.uniqueVoters || 0,
+        todayVotes: statsData.dailyStats?.[0]?.vote_count || 0,
         activeNow: 0
       })
-      setDailyStats(data.dailyStats || [])
+      setDailyStats(statsData.dailyStats || [])
+
+      const companiesRes = await fetch('/api/admin/companies')
+      const companiesData = await companiesRes.json()
+      setCompanies(companiesData.data || [])
+
+      loadVotes(1, '')
     } catch (e) {
       console.error(e)
     } finally {
       setLoading(false)
     }
+  }
+
+  const loadVotes = async (page: number, search: string) => {
+    const params = new URLSearchParams({ page: page.toString(), limit: '25' })
+    if (search) params.append('search', search)
+    const res = await fetch(`/api/admin/votes?${params}`)
+    const data = await res.json()
+    setVotes(data.data || [])
+    setVotePagination(data.pagination || { page: 1, limit: 25, total: 0, pages: 0 })
   }
 
   const handleLogout = () => {
@@ -174,26 +229,97 @@ export default function AdminDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64 flex items-center justify-center border-2 border-dashed rounded-lg">
+            <div className="h-[280px]">
               {loading ? (
-                <span>Caricamento...</span>
-              ) : dailyStats.length > 0 ? (
-                <div className="w-full space-y-2">
-                  {dailyStats.slice(0, 5).map((day, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <span className="w-20 text-xs">{day.date}</span>
-                      <div 
-                        className="h-6 bg-primary rounded" 
-                        style={{ width: `${Math.min(100, (day.vote_count / stats.totalVotes) * 100)}%` }}
-                      />
-                      <span className="text-xs">{day.vote_count}</span>
-                    </div>
-                  ))}
+                <div className="h-full flex items-center justify-center">
+                  <span>Caricamento...</span>
                 </div>
+              ) : dailyStats.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={[...dailyStats].reverse()} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#2E2A26" />
+                    <XAxis 
+                      dataKey="date" 
+                      stroke="#8C8882" 
+                      fontSize={12}
+                      tickFormatter={(v) => {
+                        try { return format(new Date(v), 'dd/MM', { locale: it }) } 
+                        catch { return v }
+                      }}
+                    />
+                    <YAxis stroke="#8C8882" fontSize={12} />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: '#181614', 
+                        border: '1px solid #2E2A26',
+                        borderRadius: '8px'
+                      }}
+                      labelStyle={{ color: '#F0EDE8' }}
+                      itemStyle={{ color: '#FF6A1A' }}
+                      formatter={(value) => [typeof value === 'number' ? value : 0, '']}
+                      labelFormatter={(label) => {
+                        try { return format(new Date(label), 'dd MMMM yyyy', { locale: it }) }
+                        catch { return label }
+                      }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="vote_count" 
+                      stroke="#FF6A1A" 
+                      strokeWidth={2}
+                      dot={{ fill: '#FF6A1A', strokeWidth: 0 }}
+                      name="Voti"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="unique_voters" 
+                      stroke="#8C8882" 
+                      strokeWidth={2}
+                      dot={{ fill: '#8C8882', strokeWidth: 0 }}
+                      name="Elettori"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
               ) : (
-                <span className="text-muted-foreground">Nessun dato disponibile</span>
+                <div className="h-full flex items-center justify-center text-[#8C8882]">
+                  Nessun dato disponibile
+                </div>
               )}
             </div>
+          </CardContent>
+        </Card>
+
+{/* Company Rankings Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Classifica Aziende
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CompanyTable data={companies} />
+          </CardContent>
+        </Card>
+
+{/* Vote Log Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Vote className="h-5 w-5" />
+              Registro Voti
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <VoteLogTable 
+              data={votes} 
+              pagination={votePagination}
+              onPageChange={(page) => loadVotes(page, voteSearch)}
+              onSearch={(search) => {
+                setVoteSearch(search)
+                loadVotes(1, search)
+              }}
+            />
           </CardContent>
         </Card>
       </div>
