@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Upload, Download, Check, ArrowLeft } from 'lucide-react'
+import { Upload, Download, Check } from 'lucide-react'
+import { AdminSidebar } from '@/components/admin/sidebar'
 
 interface BatchInfo {
   activeBatch: string
@@ -139,121 +140,137 @@ export default function ImportPage() {
   }
 
   return (
-    <main className="min-h-screen bg-background">
-      <header className="border-b px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.push('/admin/dashboard')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="font-bold text-xl">Import Aziende</h1>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#0D0C0B]">
+      <AdminSidebar />
+      
+      <main className="md:ml-[240px] min-h-screen">
+        <div className="max-w-[800px] mx-auto p-6 md:p-8 space-y-6">
+          {/* Page Title */}
+          <div className="pt-12 md:pt-0">
+            <h1 className="text-2xl md:text-3xl font-bold text-[#F0EDE8]">
+              Import Aziende
+            </h1>
+            <p className="text-[#8C8882] mt-1">Carica aziende da CSV</p>
+          </div>
 
-      <div className="container px-4 py-6 space-y-6 max-w-2xl">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Download className="h-5 w-5" />
-              Scarica Template
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Button variant="outline" onClick={() => window.open('/api/admin/companies/template', '_blank')}>
-              Scarica CSV Template
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Upload className="h-5 w-5" />
-              Carica CSV
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Nome Batch</label>
-              <Input 
-                value={batchName} 
-                onChange={(e) => setBatchName(e.target.value)}
-                placeholder="es. PRODUZIONE_2024"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Seleziona File CSV</label>
-              <Input 
-                type="file" 
-                accept=".csv"
-                onChange={handleFileChange}
-              />
-            </div>
-
-            {preview.length > 0 && (
-              <div>
-                <p className="text-sm font-medium mb-2">Preview (prime 5 righe):</p>
-                <div className="border rounded-lg overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead className="bg-muted">
-                      <tr>
-                        <th className="px-3 py-2 text-left">Nome</th>
-                        <th className="px-3 py-2 text-left">Categoria</th>
-                        <th className="px-3 py-2 text-left">Logo</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {preview.map((row, i) => (
-                        <tr key={i} className="border-t">
-                          <td className="px-3 py-2">{row.name}</td>
-                          <td className="px-3 py-2 text-muted-foreground">{row.category || '-'}</td>
-                          <td className="px-3 py-2 text-muted-foreground truncate max-w-[100px]">{row.image_url || '-'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {file && batchName && (
-              <Button onClick={handleImport} disabled={uploading}>
-                {uploading ? 'Import in corso...' : 'Conferma Import'}
+          <Card className="bg-[#181614] border-[#2E2A26] rounded-xl">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-[#F0EDE8]">
+                <Download className="h-5 w-5 text-[#FF6A1A]" />
+                Scarica Template
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                variant="outline" 
+                onClick={() => window.open('/api/admin/companies/template', '_blank')}
+                className="border-[#2E2A26] text-[#F0EDE8] hover:bg-[#221F1C] hover:border-[#8C8882]"
+              >
+                Scarica CSV Template
               </Button>
-            )}
+            </CardContent>
+          </Card>
 
-            {message && (
-              <p className={message.includes('errore') ? 'text-red-500' : 'text-green-500'}>
-                {message}
-              </p>
-            )}
-          </CardContent>
-        </Card>
+          <Card className="bg-[#181614] border-[#2E2A26] rounded-xl">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-[#F0EDE8]">
+                <Upload className="h-5 w-5 text-[#FF6A1A]" />
+                Carica CSV
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[#F0EDE8] mb-2">Nome Batch</label>
+                <Input 
+                  value={batchName} 
+                  onChange={(e) => setBatchName(e.target.value)}
+                  placeholder="es. PRODUZIONE_2024"
+                  className="bg-[#0D0C0B] border-[#2E2A26] text-[#F0EDE8] placeholder:text-[#8C8882]"
+                />
+              </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Gestione Batch</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-              {batchInfo.batches.map(batch => (
-                <div key={batch} className="flex items-center gap-2">
+              <div>
+                <label className="block text-sm font-medium text-[#F0EDE8] mb-2">Seleziona File CSV</label>
+                <Input 
+                  type="file" 
+                  accept=".csv"
+                  onChange={handleFileChange}
+                  className="bg-[#0D0C0B] border-[#2E2A26] text-[#F0EDE8] file:text-[#F0EDE8] file:bg-[#FF6A1A] file:border-0 file:rounded-md file:px-3 file:py-1 file:mr-4"
+                />
+              </div>
+
+              {preview.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-[#F0EDE8] mb-2">Preview (prime 5 righe):</p>
+                  <div className="border border-[#2E2A26] rounded-lg overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead className="bg-[#221F1C]">
+                        <tr>
+                          <th className="px-3 py-2 text-left text-[#8C8882]">Nome</th>
+                          <th className="px-3 py-2 text-left text-[#8C8882]">Categoria</th>
+                          <th className="px-3 py-2 text-left text-[#8C8882]">Logo</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {preview.map((row, i) => (
+                          <tr key={i} className="border-t border-[#2E2A26]">
+                            <td className="px-3 py-2 text-[#F0EDE8]">{row.name}</td>
+                            <td className="px-3 py-2 text-[#8C8882]">{row.category || '-'}</td>
+                            <td className="px-3 py-2 text-[#8C8882] truncate max-w-[100px]">{row.image_url || '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {file && batchName && (
+                <Button 
+                  onClick={handleImport} 
+                  disabled={uploading}
+                  className="bg-[#FF6A1A] hover:bg-[#FF8040] text-white border-none"
+                >
+                  {uploading ? 'Import in corso...' : 'Conferma Import'}
+                </Button>
+              )}
+
+              {message && (
+                <p className={message.includes('errore') ? 'text-red-500' : 'text-green-500'}>
+                  {message}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[#181614] border-[#2E2A26] rounded-xl">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-[#F0EDE8]">Gestione Batch</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {batchInfo.batches.map(batch => (
                   <Button 
+                    key={batch}
                     variant={batchInfo.activeBatch === batch ? 'default' : 'outline'}
                     onClick={() => handleSetActive(batch)}
+                    className={batchInfo.activeBatch === batch 
+                      ? 'bg-[#FF6A1A] hover:bg-[#FF8040] text-white border-none'
+                      : 'border-[#2E2A26] text-[#F0EDE8] hover:bg-[#221F1C]'
+                    }
                   >
-                    {batch === batchInfo.activeBatch && <Check className="h-4 w-4 mr-1" />}
+                    {batchInfo.activeBatch === batch && <Check className="h-4 w-4 mr-1" />}
                     {batch}
                   </Button>
-                </div>
-              ))}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Batch attivo: <strong>{batchInfo.activeBatch}</strong>
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    </main>
+                ))}
+              </div>
+              <p className="text-sm text-[#8C8882]">
+                Batch attivo: <strong className="text-[#F0EDE8]">{batchInfo.activeBatch}</strong>
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+    </div>
   )
 }
