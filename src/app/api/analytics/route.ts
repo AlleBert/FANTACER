@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type') || 'summary'
     const dateFrom = searchParams.get('from')
     const dateTo = searchParams.get('to')
 
     if (type === 'summary') {
-      // Get summary stats
       const { data: stats } = await supabase
         .from('daily_stats')
         .select('*')
@@ -54,13 +53,11 @@ export async function GET(request: NextRequest) {
     }
 
     if (type === 'export') {
-      // Export for monetization - CSV format
       const { data } = await supabase
         .from('votes')
         .select('company_id, fingerprint, created_at, country, user_agent')
         .order('created_at', { ascending: false })
 
-      // Get company names
       const { data: companies } = await supabase.from('companies').select('id, name')
       const companyMap = new Map((companies || []).map(c => [c.id, c.name]))
 
@@ -86,6 +83,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ error: 'Invalid type parameter' }, { status: 400 })
   } catch (error) {
+    console.error('Analytics API error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

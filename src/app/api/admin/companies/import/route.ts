@@ -1,12 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-function createServiceClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-}
+import { createAdminClient } from '@/lib/supabase/admin'
 
 function parseCSVLine(line: string, delimiter: string = ','): string[] {
   const result: string[] = []
@@ -63,7 +56,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const supabase = await createServiceClient()
+    const supabase = createAdminClient()
     const companies: Array<{name: string; category: string | null; image_url: string | null; batch: string}> = []
     
     for (let i = 1; i < lines.length; i++) {

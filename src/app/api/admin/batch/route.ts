@@ -1,15 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-function createServiceClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-}
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function GET() {
-  const supabase = await createServiceClient()
+  const supabase = createAdminClient()
   
   const { data: settings } = await supabase
     .from('batch_settings')
@@ -38,7 +31,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'activeBatch required' }, { status: 400 })
     }
 
-    const supabase = await createServiceClient()
+    const supabase = createAdminClient()
     
     const { error } = await supabase
       .from('batch_settings')
