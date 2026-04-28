@@ -17,7 +17,9 @@ import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { CompanyTable } from '@/components/admin/company-table'
 import { VoteLogTable } from '@/components/admin/vote-log-table'
+import { AuditLogTable } from '@/components/admin/audit-log-table'
 import { AdminSidebar } from '@/components/admin/sidebar'
+import { ShieldAlert, Search } from 'lucide-react'
 
 interface Stats {
   totalVotes: number
@@ -76,6 +78,14 @@ export default function AdminDashboard() {
     pages: 0
   })
   const [voteSearch, setVoteSearch] = useState('')
+  const [auditLogs, setAuditLogs] = useState<any[]>([])
+  const [auditPagination, setAuditPagination] = useState<any>({
+    page: 1,
+    limit: 25,
+    total: 0,
+    pages: 0
+  })
+  const [auditSearch, setAuditSearch] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -120,6 +130,7 @@ export default function AdminDashboard() {
       setCompanies(companiesData.data || [])
 
       loadVotes(1, '')
+      loadAuditLogs(1, '')
     } catch (e) {
       console.error(e)
     } finally {
@@ -134,6 +145,15 @@ export default function AdminDashboard() {
     const data = await res.json()
     setVotes(data.data || [])
     setVotePagination(data.pagination || { page: 1, limit: 25, total: 0, pages: 0 })
+  }
+
+  const loadAuditLogs = async (page: number, search: string) => {
+    const params = new URLSearchParams({ page: page.toString(), limit: '25' })
+    if (search) params.append('search', search)
+    const res = await fetch(`/api/admin/audit-logs?${params}`)
+    const data = await res.json()
+    setAuditLogs(data.data || [])
+    setAuditPagination(data.pagination || { page: 1, limit: 25, total: 0, pages: 0 })
   }
 
   const handleExport = async (format: 'csv' | 'excel') => {
@@ -322,6 +342,27 @@ export default function AdminDashboard() {
                 onSearch={(search) => {
                   setVoteSearch(search)
                   loadVotes(1, search)
+                }}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Audit Log Table */}
+          <Card className="bg-[#181614] border-[#2E2A26] rounded-xl">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-[#F0EDE8]">
+                <ShieldAlert className="h-5 w-5 text-red-500" />
+                Security Audit Logs
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <AuditLogTable 
+                data={auditLogs} 
+                pagination={auditPagination}
+                onPageChange={(page) => loadAuditLogs(page, auditSearch)}
+                onSearch={(search) => {
+                  setAuditSearch(search)
+                  loadAuditLogs(1, search)
                 }}
               />
             </CardContent>

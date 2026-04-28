@@ -10,6 +10,7 @@ import { CompanyCard } from '@/components/company-card'
 import { RankingBar } from '@/components/ranking-bar'
 import { GDPRBanner } from '@/components/gdpr-banner'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Turnstile } from '@marsidev/react-turnstile'
 
 interface Company {
   id: string
@@ -48,6 +49,7 @@ export default function Home() {
   const [showScrollButton, setShowScrollButton] = useState(false)
   const [activeBatch, setActiveBatch] = useState<string>('TEST')
   const [debugLoaded, setDebugLoaded] = useState(0)
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
 
   const loadRanking = useCallback(async () => {
     if (!supabase) return
@@ -167,7 +169,7 @@ export default function Home() {
   }
 
   const handleVote = async (companyId: string) => {
-    if (!supabase || hasVoted || votingFor) return
+    if (hasVoted || votingFor) return
 
     setVotingFor(companyId)
     setError(null)
@@ -175,24 +177,29 @@ export default function Home() {
     try {
       const fingerprint = await getCombinedFingerprint()
       
-      // Insert vote
-      const { error: voteError } = await supabase
-        .from('votes')
-        .insert({ company_id: companyId, fingerprint })
+      // Submit vote via protected API
+      const response = await fetch('/api/vota', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          company_id: companyId, 
+          fingerprint,
+          turnstile_token: turnstileToken
+        })
+      })
 
-      if (voteError) {
-        if (voteError.message.includes('duplicate') || voteError.message.includes('unique')) {
-          setError('Hai già votato oggi!')
-        } else {
-          setError(voteError.message)
-        }
+      const result = await response.json()
+
+      if (!response.ok) {
+        setError(result.error || 'Errore durante il voto')
       } else {
         // Vote registered - update UI
         markVotedToday()
         setHasVoted(true)
+        loadRanking() // Refresh ranking immediately
       }
     } catch (err) {
-      setError('Errore durante il voto')
+      setError('Errore di connessione')
     } finally {
       setVotingFor(null)
     }
@@ -206,6 +213,19 @@ export default function Home() {
       
       <div className="container px-4 py-4">
         <RankingBar ranking={ranking} limit={3} />
+        
+        {!hasVoted && (
+          <div className="flex flex-col items-center my-4 space-y-2">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Verifica Identità</p>
+            <Turnstile 
+              siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''} 
+              onSuccess={(token) => setTurnstileToken(token)}
+              onExpire={() => setTurnstileToken(null)}
+              onError={() => setError('Errore Turnstile. Ricarica la pagina.')}
+              options={{ theme: 'dark' }}
+            />
+          </div>
+        )}
         
         {error && (
           <div className="bg-red-500/10 border border-red-500 text-red-500 px-4 py-2 rounded-lg my-4">

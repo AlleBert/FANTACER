@@ -82,6 +82,17 @@ CREATE TABLE IF NOT EXISTS device_sessions (
   last_used TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 7. Audit logs for fraud detection
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id BIGSERIAL PRIMARY KEY,
+  event_type TEXT NOT NULL,
+  fingerprint TEXT,
+  ip_address TEXT,
+  user_agent TEXT,
+  metadata JSONB,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Enable RLS
 ALTER TABLE companies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
@@ -89,16 +100,16 @@ ALTER TABLE analytics_raw ENABLE ROW LEVEL SECURITY;
 ALTER TABLE daily_stats ENABLE ROW LEVEL SECURITY;
 ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE device_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
 -- Companies: readable by all
 CREATE POLICY "Public read companies" ON companies FOR SELECT USING (true);
 
--- Votes: readable by admin only
+-- Votes: readable by admin only, no direct insert allowed anymore (must use RPC)
 CREATE POLICY "Admin read votes" ON votes FOR SELECT USING (
   auth.jwt() ->> 'role' = 'admin'
 );
-CREATE POLICY "Insert votes" ON votes FOR INSERT WITH CHECK (true);
 
 -- Analytics: readable by admin only
 CREATE POLICY "Admin read analytics" ON analytics_raw FOR SELECT USING (
@@ -110,27 +121,56 @@ CREATE POLICY "Insert analytics" ON analytics_raw FOR INSERT WITH CHECK (true);
 CREATE POLICY "Admin read daily_stats" ON daily_stats FOR SELECT USING (
   auth.jwt() ->> 'role' = 'admin'
 );
-CREATE POLICY "Admin update daily_stats" ON daily_stats FOR UPDATE USING (
+
+-- Audit logs: admin only
+CREATE POLICY "Admin read audit_logs" ON audit_logs FOR SELECT USING (
   auth.jwt() ->> 'role' = 'admin'
 );
 
--- Admin users: no public access
-CREATE POLICY "Admin manage admins" ON admin_users FOR ALL USING (
-  auth.jwt() ->> 'role' = 'admin'
-);
-
--- Device sessions
-CREATE POLICY "Manage own sessions" ON device_sessions FOR ALL USING (true);
-
--- Function to increment vote
-CREATE OR REPLACE FUNCTION increment_vote(company_id_param UUID, date_param DATE)
-RETURNS void
+-- Function to submit vote securely
+CREATE OR REPLACE FUNCTION submit_vote(
+  company_id_param UUID, 
+  fingerprint_param TEXT,
+  ip_param TEXT,
+  user_agent_param TEXT,
+  country_param TEXT DEFAULT 'IT'
+)
+RETURNS JSONB
 LANGUAGE plpgsql
+SECURITY DEFINER -- Runs with creator privileges to bypass RLS on votes table
 AS $$
+DECLARE
+  v_today DATE := CURRENT_DATE;
+  v_has_voted BOOLEAN;
+  v_result JSONB;
 BEGIN
+  -- 1. Check if voted today
+  SELECT EXISTS (
+    SELECT 1 FROM votes 
+    WHERE fingerprint = fingerprint_param 
+    AND created_at::DATE = v_today
+  ) INTO v_has_voted;
+
+  IF v_has_voted THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Hai già votato oggi');
+  END IF;
+
+  -- 2. Insert vote
+  INSERT INTO votes (company_id, fingerprint, ip_hash, user_agent, country)
+  VALUES (company_id_param, fingerprint_param, ip_param, user_agent_param, country_param);
+
+  -- 3. Update stats
   INSERT INTO daily_stats (company_id, date, vote_count)
-  VALUES (company_id_param, date_param, 1)
+  VALUES (company_id_param, v_today, 1)
   ON CONFLICT (company_id, date)
   DO UPDATE SET vote_count = daily_stats.vote_count + 1;
+
+  -- 4. Log to audit
+  INSERT INTO audit_logs (event_type, fingerprint, ip_address, user_agent, metadata)
+  VALUES ('vote_submitted', fingerprint_param, ip_param, user_agent_param, jsonb_build_object('company_id', company_id_param));
+
+  RETURN jsonb_build_object('success', true);
+EXCEPTION WHEN OTHERS THEN
+  RETURN jsonb_build_object('success', false, 'error', SQLERRM);
 END;
 $$;
