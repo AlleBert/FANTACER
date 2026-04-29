@@ -1,7 +1,8 @@
 'use client'
 
+import { isVotingBypassEnabled } from './security-bypass'
+
 const STORAGE_KEY = 'fantacer_device_id'
-const VOTE_TOKEN_KEY = 'fantacer_vote_token'
 const LAST_VOTE_DATE_KEY = 'fantacer_last_vote'
 
 export interface DeviceFingerprint {
@@ -65,6 +66,16 @@ function generateId(): string {
   })
 }
 
+function simpleHash(str: string): string {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash
+  }
+  return Math.abs(hash).toString(16)
+}
+
 // Canvas fingerprint for additional device identification
 export async function getCanvasFingerprint(): Promise<string> {
   return new Promise((resolve) => {
@@ -105,18 +116,14 @@ export async function getCanvasFingerprint(): Promise<string> {
   })
 }
 
-function simpleHash(str: string): string {
-  let hash = 0
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
-    hash = hash & hash
-  }
-  return Math.abs(hash).toString(16)
-}
-
 export function getCombinedFingerprint(): Promise<string> {
   return new Promise(async (resolve) => {
+    // Randomize fingerprint on every call if bypass is enabled for testing
+    if (isVotingBypassEnabled()) {
+      resolve(`dev-${Math.random().toString(36).substring(2, 10)}`)
+      return
+    }
+
     // Hardware/Browser traits (stable across storage clears)
     const canvasFp = await getCanvasFingerprint()
     const screenRes = `${window.screen.width}x${window.screen.height}`

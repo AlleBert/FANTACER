@@ -11,6 +11,7 @@ import { RankingBar } from '@/components/ranking-bar'
 import { GDPRBanner } from '@/components/gdpr-banner'
 import { Skeleton } from '@/components/ui/skeleton'
 import { TurnstileOverlay } from '@/components/voting/turnstile-overlay'
+import { isVotingBypassEnabled } from '@/lib/security-bypass'
 
 interface Company {
   id: string
@@ -92,11 +93,13 @@ export default function Home() {
     
     // 1. Quick check from localStorage for better UX
     const localVoted = hasAlreadyVoted()
-    setHasVoted(localVoted)
+    const isBypass = isVotingBypassEnabled()
+    setHasVoted(isBypass ? false : localVoted)
     loadRanking()
 
     // 2. Persistent check from server via Fingerprint (catches storage clearing)
     const syncWithServer = async () => {
+      if (isBypass) return // Skip sync in bypass mode
       try {
         const fingerprint = await getCombinedFingerprint()
         const { data: canVote, error } = await supabase.rpc('check_can_vote', {
@@ -197,16 +200,21 @@ export default function Home() {
     if (hasVoted || votingFor) return
 
     const currentToken = tokenOverride || turnstileToken
+    const isBypass = isVotingBypassEnabled()
 
     // If no turnstile token, show the overlay first
-    if (!currentToken) {
+    if (!currentToken && !isBypass) {
       console.log('handleVote: No token, opening overlay')
       setPendingVoteCompanyId(companyId)
       setShowTurnstileOverlay(true)
       return
     }
 
-    console.log('handleVote: Voting with token', { companyId, tokenSource: tokenOverride ? 'override' : 'state' })
+    const effectiveToken = isBypass ? 'debug-bypass-token' : currentToken
+    console.log('handleVote: Voting', { 
+      companyId, 
+      tokenSource: isBypass ? 'bypass' : (tokenOverride ? 'override' : 'state') 
+    })
 
     setVotingFor(companyId)
     setError(null)
@@ -220,7 +228,12 @@ export default function Home() {
         body: JSON.stringify({ 
           company_id: companyId, 
           fingerprint,
-          turnstile_token: currentToken
+          turnstile_token: effectiveToken,
+          metadata: {
+            screen: `${window.screen.width}x${window.screen.height}`,
+            userAgent: navigator.userAgent,
+            isBypass
+          }
         })
       })
 

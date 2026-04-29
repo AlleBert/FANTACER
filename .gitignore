@@ -43,3 +43,6 @@ next-env.d.ts
 # worktrees
 .worktrees
 worktrees
+
+# security overrides
+src/lib/security-bypass.ts

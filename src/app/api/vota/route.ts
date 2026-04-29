@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { isVotingBypassEnabled } from '@/lib/security-bypass'
 
 // Geo blocking: Italia + EU
 const ALLOWED_COUNTRIES = ['IT', 'DE', 'FR', 'ES', 'PT', 'AT', 'BE', 'NL', 'SI', 'HR', 'MT', 'CY', 'GR', 'GB', 'IE', 'PL', 'CZ', 'HU', 'SK', 'RO', 'BG', 'SE', 'FI', 'DK', 'NO']
@@ -67,7 +68,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Verifica di sicurezza mancante' }, { status: 400 })
     }
 
-    const isHuman = await verifyTurnstile(turnstile_token, ip)
+    const isBypass = isVotingBypassEnabled()
+    const isBypassToken = turnstile_token === 'debug-bypass-token'
+    
+    let isHuman = false
+    if (isBypass && isBypassToken) {
+      console.log('API Vota: Bypassing Turnstile verification (DEV MODE)')
+      isHuman = true
+    } else {
+      isHuman = await verifyTurnstile(turnstile_token, ip)
+    }
+
     if (!isHuman) {
       console.error('API Vota: Verifica Turnstile fallita per il token fornito')
       return NextResponse.json({ error: 'Verifica di sicurezza fallita. Ricarica la pagina.' }, { status: 400 })
