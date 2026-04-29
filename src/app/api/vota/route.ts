@@ -22,11 +22,8 @@ function checkRateLimit(ip: string, windowMs = 3600000): boolean {
 }
 
 async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
-  const secret = process.env.TURNSTILE_SECRET_KEY
-  if (!secret) {
-    console.warn('TURNSTILE_SECRET_KEY not set, skipping verification (TEST MODE)')
-    return true
-  }
+  const secret = process.env.TURNSTILE_SECRET_KEY?.trim()
+  if (!secret) return true
 
   const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
     method: 'POST',
@@ -60,13 +57,20 @@ export async function POST(request: NextRequest) {
     const { company_id, fingerprint, turnstile_token, metadata } = body
 
     if (!company_id || !fingerprint) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+      console.error('API Vota: Missing fields', { company_id, fingerprint })
+      return NextResponse.json({ error: 'Campi obbligatori mancanti' }, { status: 400 })
     }
 
     // 4. Verify Turnstile
+    if (!turnstile_token) {
+      console.error('API Vota: Token Turnstile mancante')
+      return NextResponse.json({ error: 'Verifica di sicurezza mancante' }, { status: 400 })
+    }
+
     const isHuman = await verifyTurnstile(turnstile_token, ip)
     if (!isHuman) {
-      return NextResponse.json({ error: 'Verification failed' }, { status: 400 })
+      console.error('API Vota: Verifica Turnstile fallita per il token fornito')
+      return NextResponse.json({ error: 'Verifica di sicurezza fallita. Ricarica la pagina.' }, { status: 400 })
     }
 
     const supabase = await createClient()
@@ -85,6 +89,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (rpcResult && !rpcResult.success) {
+      console.warn('API Vota: RPC rejected vote', rpcResult.error)
       return NextResponse.json({ error: rpcResult.error }, { status: 400 })
     }
 
