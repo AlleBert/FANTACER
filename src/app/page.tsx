@@ -10,7 +10,7 @@ import { CompanyCard } from '@/components/company-card'
 import { RankingBar } from '@/components/ranking-bar'
 import { GDPRBanner } from '@/components/gdpr-banner'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Turnstile } from '@marsidev/react-turnstile'
+import { TurnstileOverlay } from '@/components/voting/turnstile-overlay'
 
 interface Company {
   id: string
@@ -50,6 +50,8 @@ export default function Home() {
   const [activeBatch, setActiveBatch] = useState<string>('TEST')
   const [debugLoaded, setDebugLoaded] = useState(0)
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
+  const [showTurnstileOverlay, setShowTurnstileOverlay] = useState(false)
+  const [pendingVoteCompanyId, setPendingVoteCompanyId] = useState<string | null>(null)
 
   const loadRanking = useCallback(async () => {
     if (!supabase) return
@@ -87,8 +89,31 @@ export default function Home() {
   useEffect(() => {
     if (!supabase || initialized) return
     setInitialized(true)
-    setHasVoted(hasAlreadyVoted())
+    
+    // 1. Quick check from localStorage for better UX
+    const localVoted = hasAlreadyVoted()
+    setHasVoted(localVoted)
     loadRanking()
+
+    // 2. Persistent check from server via Fingerprint (catches storage clearing)
+    const syncWithServer = async () => {
+      try {
+        const fingerprint = await getCombinedFingerprint()
+        const { data: canVote, error } = await supabase.rpc('check_can_vote', {
+          fingerprint_param: fingerprint
+        })
+        
+        if (!error && canVote === false) {
+          console.log('Server-side check: User has already voted today.')
+          setHasVoted(true)
+          markVotedToday() // Restore local storage
+        }
+      } catch (err) {
+        console.error('Failed to sync vote status with server:', err)
+      }
+    }
+
+    syncWithServer()
   }, [supabase, initialized, loadRanking])
 
   useEffect(() => {
@@ -168,8 +193,20 @@ export default function Home() {
     debouncedSearch(query)
   }
 
-  const handleVote = async (companyId: string) => {
+  const handleVote = async (companyId: string, tokenOverride?: string) => {
     if (hasVoted || votingFor) return
+
+    const currentToken = tokenOverride || turnstileToken
+
+    // If no turnstile token, show the overlay first
+    if (!currentToken) {
+      console.log('handleVote: No token, opening overlay')
+      setPendingVoteCompanyId(companyId)
+      setShowTurnstileOverlay(true)
+      return
+    }
+
+    console.log('handleVote: Voting with token', { companyId, tokenSource: tokenOverride ? 'override' : 'state' })
 
     setVotingFor(companyId)
     setError(null)
@@ -177,31 +214,53 @@ export default function Home() {
     try {
       const fingerprint = await getCombinedFingerprint()
       
-      // Submit vote via protected API
       const response = await fetch('/api/vota', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           company_id: companyId, 
           fingerprint,
-          turnstile_token: turnstileToken
+          turnstile_token: currentToken
         })
       })
 
       const result = await response.json()
 
       if (!response.ok) {
+        console.warn('handleVote: POST failed', result)
         setError(result.error || 'Errore durante il voto')
+        // If the server says we already voted, sync the local state
+        if (result.error === 'Hai già votato oggi') {
+          markVotedToday()
+          setHasVoted(true)
+        }
+        // If token was invalid/expired, clear it so user can try again
+        if (response.status === 403 || result.error?.includes('Turnstile')) {
+          setTurnstileToken(null)
+        }
       } else {
-        // Vote registered - update UI
+        console.log('handleVote: POST success')
         markVotedToday()
         setHasVoted(true)
-        loadRanking() // Refresh ranking immediately
+        loadRanking()
       }
     } catch (err) {
       setError('Errore di connessione')
     } finally {
       setVotingFor(null)
+    }
+  }
+
+  const handleTurnstileSuccess = (token: string) => {
+    setTurnstileToken(token)
+    // If we were waiting for a vote, trigger it now with the fresh token
+    if (pendingVoteCompanyId) {
+      const companyId = pendingVoteCompanyId
+      setPendingVoteCompanyId(null)
+      // Small timeout to let the overlay close animation finish
+      setTimeout(() => {
+        handleVote(companyId, token)
+      }, 100)
     }
   }
 
@@ -214,18 +273,12 @@ export default function Home() {
       <div className="container px-4 py-4">
         <RankingBar ranking={ranking} limit={3} />
         
-        {!hasVoted && (
-          <div className="flex flex-col items-center my-4 space-y-2">
-            <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Verifica Identità</p>
-            <Turnstile 
-              siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''} 
-              onSuccess={(token) => setTurnstileToken(token)}
-              onExpire={() => setTurnstileToken(null)}
-              onError={() => setError('Errore Turnstile. Ricarica la pagina.')}
-              options={{ theme: 'dark' }}
-            />
-          </div>
-        )}
+        <TurnstileOverlay 
+          isVisible={showTurnstileOverlay}
+          onClose={() => { setShowTurnstileOverlay(false); setPendingVoteCompanyId(null); }}
+          onSuccess={handleTurnstileSuccess}
+          onError={(msg) => { setError(msg); setShowTurnstileOverlay(false); }}
+        />
         
         {error && (
           <div className="bg-red-500/10 border border-red-500 text-red-500 px-4 py-2 rounded-lg my-4">
