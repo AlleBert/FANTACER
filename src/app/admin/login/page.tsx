@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Lock, KeyRound } from 'lucide-react'
+import { isAdminBypassEnabled, getBypassSession } from '@/lib/security-bypass'
 
 export default function AdminLogin() {
   const router = useRouter()
@@ -15,6 +16,15 @@ export default function AdminLogin() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [requiresMfa, setRequiresMfa] = useState(false)
+
+  // Auto-login for development
+  useEffect(() => {
+    if (isAdminBypassEnabled()) {
+      const session = getBypassSession()
+      localStorage.setItem('admin_session', JSON.stringify(session))
+      router.push('/admin/dashboard')
+    }
+  }, [router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
