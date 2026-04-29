@@ -26,9 +26,26 @@ export async function GET(request: NextRequest) {
       
       const uniqueVoters = new Set((voterData || []).map(v => v.fingerprint)).size
 
+      // Calculate trend for Today
+      const today = new Date().toISOString().split('T')[0]
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+      
+      const todayVotes = stats?.find(s => s.date === today)?.vote_count || 0
+      const yesterdayVotes = stats?.find(s => s.date === yesterday)?.vote_count || 0
+
+      // Calculate Active Now (last 15 minutes activity)
+      const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString()
+      const { count: activeNow } = await supabase
+        .from('votes')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', fifteenMinsAgo)
+
       return NextResponse.json({
         totalVotes: totalVotes || 0,
         uniqueVoters: uniqueVoters || 0,
+        todayVotes,
+        yesterdayVotes,
+        activeNow: activeNow || 0,
         dailyStats: stats || []
       })
     }

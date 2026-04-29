@@ -25,6 +25,7 @@ interface Stats {
   totalVotes: number
   uniqueVoters: number
   todayVotes: number
+  yesterdayVotes: number
   activeNow: number
 }
 
@@ -78,6 +79,7 @@ function AdminDashboardContent() {
     totalVotes: 0,
     uniqueVoters: 0,
     todayVotes: 0,
+    yesterdayVotes: 0,
     activeNow: 0
   })
   const [dailyStats, setDailyStats] = useState<DailyStats[]>([])
@@ -139,8 +141,9 @@ function AdminDashboardContent() {
       setStats({
         totalVotes: statsData.totalVotes || 0,
         uniqueVoters: statsData.uniqueVoters || 0,
-        todayVotes: statsData.dailyStats?.[0]?.vote_count || 0,
-        activeNow: 0
+        todayVotes: statsData.todayVotes || 0,
+        yesterdayVotes: statsData.yesterdayVotes || 0,
+        activeNow: statsData.activeNow || 0
       })
       setDailyStats(statsData.dailyStats || [])
 
@@ -208,58 +211,86 @@ function AdminDashboardContent() {
         </header>
 
         <div className="max-w-[1200px] mx-auto p-6 md:p-8 space-y-8">
-          {/* Stats Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="bg-card border-border shadow-sm hover:shadow-md transition-shadow">
+            <Card className="bg-card border-border shadow-sm hover:shadow-md transition-all group cursor-default">
               <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-2 bg-primary/10 rounded-lg">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Voti Totali</p>
+                    <h3 className="text-3xl font-bold text-foreground tabular-nums">{stats.totalVotes}</h3>
+                  </div>
+                  <div className="p-3 bg-primary/10 rounded-xl group-hover:scale-110 transition-transform">
                     <Vote className="h-5 w-5 text-primary" />
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Voti Totali</span>
                 </div>
-                <div className="text-3xl font-bold text-foreground">{stats.totalVotes}</div>
+                <div className="mt-4 flex items-center gap-2">
+                  <span className="text-[10px] px-1.5 py-0.5 bg-blue-500/10 text-blue-500 rounded font-bold">TOTAL</span>
+                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">Dato complessivo</span>
+                </div>
               </CardContent>
             </Card>
             
-            <Card className="bg-card border-border shadow-sm hover:shadow-md transition-shadow">
+            <Card className="bg-card border-border shadow-sm hover:shadow-md transition-all group cursor-default">
               <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-2 bg-blue-500/10 rounded-lg">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Elettori Unici</p>
+                    <h3 className="text-3xl font-bold text-foreground tabular-nums">{stats.uniqueVoters}</h3>
+                  </div>
+                  <div className="p-3 bg-blue-500/10 rounded-xl group-hover:scale-110 transition-transform">
                     <Users className="h-5 w-5 text-blue-500" />
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Elettori Unici</span>
                 </div>
-                <div className="text-3xl font-bold text-foreground">{stats.uniqueVoters}</div>
+                <div className="mt-4 flex items-center gap-2">
+                  <span className="text-[10px] px-1.5 py-0.5 bg-blue-500/10 text-blue-500 rounded font-bold">BY FP</span>
+                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">Hardware ID</span>
+                </div>
               </CardContent>
             </Card>
             
-            <Card className="bg-card border-border shadow-sm hover:shadow-md transition-shadow">
+            <Card className="bg-card border-border shadow-sm hover:shadow-md transition-all group cursor-default">
               <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-2 bg-green-500/10 rounded-lg">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Voti Oggi</p>
+                    <h3 className="text-3xl font-bold text-foreground tabular-nums">{stats.todayVotes}</h3>
+                  </div>
+                  <div className="p-3 bg-green-500/10 rounded-xl group-hover:scale-110 transition-transform">
                     <TrendingUp className="h-5 w-5 text-green-500" />
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Oggi</span>
                 </div>
-                <div className="text-3xl font-bold text-foreground">{stats.todayVotes}</div>
+                <div className="mt-4 flex items-center gap-2">
+                  {stats.todayVotes >= stats.yesterdayVotes ? (
+                    <span className="text-[10px] px-1.5 py-0.5 bg-green-500/10 text-green-500 rounded font-bold">↑ {stats.todayVotes - stats.yesterdayVotes}</span>
+                  ) : (
+                    <span className="text-[10px] px-1.5 py-0.5 bg-red-500/10 text-red-500 rounded font-bold">↓ {stats.yesterdayVotes - stats.todayVotes}</span>
+                  )}
+                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">rispetto a ieri ({stats.yesterdayVotes})</span>
+                </div>
               </CardContent>
             </Card>
             
-            <Card className="bg-card border-border shadow-sm hover:shadow-md transition-shadow">
+            <Card className="bg-card border-border shadow-sm hover:shadow-md transition-all group cursor-default">
               <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-2 bg-orange-500/10 rounded-lg">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Attivi Ora</p>
+                    <h3 className="text-3xl font-bold text-foreground tabular-nums">{stats.activeNow}</h3>
+                  </div>
+                  <div className="p-3 bg-orange-500/10 rounded-xl group-hover:scale-110 transition-transform">
                     <Users className="h-5 w-5 text-orange-500" />
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Attivi Ora</span>
                 </div>
-                <div className="text-3xl font-bold text-foreground">{stats.activeNow}</div>
+                <div className="mt-4 flex items-center gap-2">
+                  <div className={`h-1.5 w-1.5 rounded-full ${stats.activeNow > 0 ? 'bg-orange-500 animate-pulse' : 'bg-muted'}`} />
+                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                    {stats.activeNow > 0 ? 'Attività negli ultimi 15 min' : 'Nessuna attività recente'}
+                  </span>
+                </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Quick Actions & Chart Section */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="lg:col-span-2 bg-card border-border shadow-sm">
               <CardHeader className="pb-4">
