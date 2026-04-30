@@ -5,6 +5,7 @@ import { createBrowserClient } from '@supabase/ssr'
 
 export function ThemeSync() {
   const [currentTheme, setCurrentTheme] = useState<string | null>(null)
+  const [debugInfo, setDebugInfo] = useState<string>('ThemeSync: initializing...')
   
   useEffect(() => {
     const supabase = createBrowserClient(
@@ -16,6 +17,8 @@ export function ThemeSync() {
       document.documentElement.classList.remove('theme-default', 'theme-cyber', 'theme-fintech')
       document.documentElement.classList.add(theme)
       setCurrentTheme(theme)
+      setDebugInfo(`Applied theme: ${theme}`)
+      console.log('ThemeSync: Applied theme:', theme)
     }
     
     // Fetch initial theme on load
@@ -28,15 +31,19 @@ export function ThemeSync() {
           .single()
         
         if (error) {
+          setDebugInfo(`Fetch error: ${error.message}`)
           console.warn('ThemeSync: Error fetching theme:', error.message)
           return
         }
         
         if (data && data.value) {
           applyTheme(data.value)
-          console.log('ThemeSync: Applied theme:', data.value)
+        } else {
+          setDebugInfo('No theme in DB, using default')
+          console.log('ThemeSync: No theme found in settings, using default')
         }
-      } catch (err) {
+      } catch (err: any) {
+        setDebugInfo(`Exception: ${err.message}`)
         console.warn('ThemeSync: Exception:', err)
       }
     }
@@ -50,18 +57,22 @@ export function ThemeSync() {
         schema: 'public', 
         table: 'settings', 
         filter: "key=eq.global_theme" 
-      }, (payload) => {
+      }, (payload: any) => {
+        console.log('ThemeSync: Received realtime payload:', payload)
         if (payload.new && payload.new.value) {
           applyTheme(payload.new.value)
-          console.log('ThemeSync: Realtime theme updated:', payload.new.value)
         }
       })
-      .subscribe()
+      .subscribe((status: string) => {
+        setDebugInfo(`Channel status: ${status}`)
+        console.log('ThemeSync: Channel subscription status:', status)
+      })
       
     return () => {
       supabase.removeChannel(channel)
     }
   }, [])
   
+  // Debug: render nothing, but log info
   return null
 }
