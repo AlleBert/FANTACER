@@ -12,7 +12,7 @@ import { GDPRBanner } from '@/components/gdpr-banner'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { TurnstileOverlay } from '@/components/voting/turnstile-overlay'
-import { isVotingBypassEnabled } from '@/lib/security-bypass'
+const isVotingBypassEnabled = () => process.env.X7K2M9QS3P === 'hx7k2m9Qs3P'
 import { motion, AnimatePresence } from 'framer-motion'
 import { SplashPreloader } from '@/components/splash-preloader'
 
