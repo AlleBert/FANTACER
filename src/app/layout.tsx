@@ -44,10 +44,10 @@ export default function RootLayout({
   return (
     <html
       lang="it"
-      className={`${dmSerifDisplay.variable} ${dmSans.variable} ${jetbrainsMono.variable} h-full antialiased theme-default`}
+      className={`${dmSerifDisplay.variable} ${dmSans.variable} ${jetbrainsMono.variable} h-full w-full antialiased theme-default`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+      <body className="min-h-full w-full flex flex-col" suppressHydrationWarning>
         <ThemeSync />
         <TooltipProvider>
           {children}

@@ -309,7 +309,7 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen w-full flex-1 bg-background">
       <AnimatePresence>
         {showSplash && <SplashPreloader key="splash" isExiting={isSplashExiting} />}
       </AnimatePresence>
