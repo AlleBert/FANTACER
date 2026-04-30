@@ -102,12 +102,24 @@ function AdminDashboardContent() {
   const [activeTheme, setActiveTheme] = useState('theme-default')
 
   const changeTheme = async (theme: string) => {
-    setActiveTheme(theme)
+    const themeNames: Record<string, string> = {
+      'theme-default': 'Default',
+      'theme-cyber': 'Cyber',
+      'theme-fintech': 'Fintech'
+    }
+    const confirmed = window.confirm(`Confermi cambio tema a "${themeNames[theme] || theme}"?\n\nLa pagina principale verrà ricaricata.`)
+    if (!confirmed) {
+      setActiveTheme(activeTheme)
+      return
+    }
+    
     const supabase = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     )
     await supabase.from('settings').update({ value: theme }).eq('key', 'global_theme')
+    
+    window.location.reload()
   }
 
   useEffect(() => {

@@ -12,36 +12,31 @@ export function ThemeSync() {
     
     // Fetch initial theme on load
     const fetchTheme = async () => {
-      const { data } = await supabase
-        .from('settings')
-        .select('value')
-        .eq('key', 'global_theme')
-        .single()
+      try {
+        const { data, error } = await supabase
+          .from('settings')
+          .select('value')
+          .eq('key', 'global_theme')
+          .single()
         
-      if (data && data.value) {
-        document.documentElement.classList.remove('theme-default', 'theme-cyber', 'theme-fintech')
-        document.documentElement.classList.add(data.value)
+        if (error) {
+          console.warn('ThemeSync: Error fetching theme:', error.message)
+          return
+        }
+        
+        if (data && data.value) {
+          document.documentElement.classList.remove('theme-default', 'theme-cyber', 'theme-fintech')
+          document.documentElement.classList.add(data.value)
+          console.log('ThemeSync: Applied theme:', data.value)
+        } else {
+          console.log('ThemeSync: No theme found in settings, using default')
+        }
+      } catch (err) {
+        console.warn('ThemeSync: Exception:', err)
       }
     }
     
     fetchTheme()
-    
-    // Listen for realtime theme changes from Admin
-    const channel = supabase.channel('global_theme_sync')
-      .on('postgres_changes', { 
-        event: 'UPDATE', 
-        schema: 'public', 
-        table: 'settings', 
-        filter: "key=eq.global_theme" 
-      }, (payload) => {
-        document.documentElement.classList.remove('theme-default', 'theme-cyber', 'theme-fintech')
-        document.documentElement.classList.add(payload.new.value)
-      })
-      .subscribe()
-      
-    return () => {
-      supabase.removeChannel(channel)
-    }
   }, [])
   
   return null
