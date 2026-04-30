@@ -18,8 +18,10 @@ export function TurnstileOverlay({ isVisible, onClose, onSuccess, onError }: Tur
   useEffect(() => {
     if (isVisible) {
       document.body.style.overflow = 'hidden'
-      setStatus('idle')
-      setIsClosing(false)
+      setTimeout(() => {
+        setStatus('idle')
+        setIsClosing(false)
+      }, 0)
     } else {
       document.body.style.overflow = 'unset'
     }

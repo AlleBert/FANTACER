@@ -20,10 +20,8 @@ export function GDPRBanner({ onAccept }: GDPRBannerProps) {
     if (hasConsented()) {
       const analytics = getAnalyticsConsent()
       onAccept(analytics)
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowBanner(false)
     } else {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowBanner(true)
     }
   }, [onAccept])

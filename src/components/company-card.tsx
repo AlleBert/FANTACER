@@ -2,7 +2,6 @@
 
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { motion } from 'framer-motion'
 
 interface Company {
   id: string
@@ -31,6 +30,7 @@ export function CompanyCard({ company, onVote, disabled, loading }: CompanyCardP
     `}>
       <div className="aspect-video bg-gray-100 dark:bg-gray-800 flex items-center justify-center relative overflow-hidden">
         {company.image_url ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
           <img 
             src={company.image_url} 
             alt={company.name}
