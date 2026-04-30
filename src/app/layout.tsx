@@ -47,7 +47,7 @@ export default function RootLayout({
       className={`${dmSerifDisplay.variable} ${dmSans.variable} ${jetbrainsMono.variable} h-full w-full antialiased theme-default`}
       suppressHydrationWarning
     >
-      <body className="min-h-full w-full flex flex-col" suppressHydrationWarning>
+      <body className="min-h-full w-full flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]" suppressHydrationWarning>
         <ThemeSync />
         <TooltipProvider>
           {children}
