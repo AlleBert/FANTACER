@@ -104,6 +104,9 @@ function AdminDashboardContent() {
   const [showThemeDialog, setShowThemeDialog] = useState(false)
 
   const changeTheme = async (theme: string) => {
+    // SE il tema è già attivo, NON aprire il modal
+    if (theme === activeTheme) return
+    
     setPendingTheme(theme)
     setShowThemeDialog(true)
   }

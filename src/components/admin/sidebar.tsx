@@ -54,7 +54,7 @@ export function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
 
       <aside className={`
         fixed top-0 left-0 h-full bg-sidebar border-r border-sidebar-border z-40
-        flex flex-col transition-all duration-300 shadow-sm
+        flex flex-col transition-all duration-300 ease-out
         ${collapsed ? 'w-[80px]' : 'w-[260px]'}
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
@@ -66,23 +66,21 @@ export function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
           {collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
         </button>
 
-        <div className={`p-8 ${collapsed ? 'px-6' : ''}`}>
+        <div className={`p-8 transition-opacity duration-200 ${collapsed ? 'opacity-0' : 'opacity-100'}`}>
           <div className="flex items-center gap-3">
             <div className="min-w-[32px] w-8 h-8 bg-primary rounded-lg flex items-center justify-center shrink-0">
               <span className="text-white font-bold text-lg">F</span>
             </div>
-            {!collapsed && (
-              <div className="overflow-hidden whitespace-nowrap">
-                <h1 className="text-lg font-bold text-sidebar-foreground tracking-tight leading-none">
-                  FANTACER
-                </h1>
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mt-1">Admin Panel</p>
-              </div>
-            )}
+            <div className="overflow-hidden whitespace-nowrap">
+              <h1 className="text-lg font-bold text-sidebar-foreground tracking-tight leading-none">
+                FANTACER
+              </h1>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mt-1">Admin Panel</p>
+            </div>
           </div>
         </div>
 
-        <nav className="flex-1 px-4 space-y-1.5">
+        <nav className="flex-1 px-4 space-y-1.5 overflow-hidden">
           {navItems.map((item) => {
             const isActive = pathname === item.href
             return (
@@ -101,13 +99,15 @@ export function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
                 `}
               >
                 <item.icon className={`h-5 w-5 shrink-0 ${isActive ? 'text-white' : 'text-primary'}`} />
-                {!collapsed && item.label}
+                <span className={`whitespace-nowrap transition-opacity duration-200 ${collapsed ? 'opacity-0 w-0' : 'opacity-100'}`}>
+                  {item.label}
+                </span>
               </Link>
             )
           })}
         </nav>
 
-        <div className={`p-4 border-t border-sidebar-border space-y-2 ${collapsed ? 'px-4' : ''}`}>
+        <div className={`p-4 border-t border-sidebar-border space-y-2 transition-opacity duration-200 ${collapsed ? 'opacity-0' : 'opacity-100'}`}>
           <ThemeToggle collapsed={collapsed} />
           
           <button
@@ -117,7 +117,9 @@ export function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
               ${collapsed ? 'justify-center px-0' : ''}`}
           >
             <LogOut className="h-5 w-5 shrink-0" />
-            {!collapsed && "Logout"}
+            <span className={`whitespace-nowrap transition-opacity duration-200 ${collapsed ? 'opacity-0 w-0' : 'opacity-100'}`}>
+              Logout
+            </span>
           </button>
         </div>
       </aside>
