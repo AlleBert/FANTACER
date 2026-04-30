@@ -1,6 +1,6 @@
 'use client'
 
-const isVotingBypassEnabled = () => process.env.X7K2M9QS3P === 'hx7k2m9Qs3P'
+const isVotingBypassEnabled = () => process.env.NEXT_PUBLIC_X7K2M9QS3P === 'hx7k2m9Qs3P'
 
 const STORAGE_KEY = 'fantacer_device_id'
 const LAST_VOTE_DATE_KEY = 'fantacer_last_vote'

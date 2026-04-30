@@ -63,7 +63,7 @@ interface VotePagination {
   pages: number
 }
 
-const isBypassEnabled = () => process.env.X7K2M9QS3P === 'hx7k2m9Qs3P'
+const isBypassEnabled = () => process.env.NEXT_PUBLIC_X7K2M9QS3P === 'hx7k2m9Qs3P'
 
 export default function AdminDashboard() {
   return <AdminDashboardContent />

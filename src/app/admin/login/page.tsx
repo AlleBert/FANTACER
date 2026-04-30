@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Lock, KeyRound } from 'lucide-react'
-const isBypassEnabled = () => process.env.X7K2M9QS3P === 'hx7k2m9Qs3P'
+const isBypassEnabled = () => process.env.NEXT_PUBLIC_X7K2M9QS3P === 'hx7k2m9Qs3P'
 const getBypassSession = () => ({
   user: { email: 'dev@fantacer.it', role: 'admin' },
   expires: new Date(Date.now() + 3600000).toISOString(),
