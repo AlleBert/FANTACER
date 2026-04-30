@@ -87,12 +87,23 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient()
     
+    // Enhanced user-agent capture (try multiple headers for better device detection)
+    const userAgent = request.headers.get('user-agent') || ''
+    const secChUa = request.headers.get('sec-ch-ua') || ''
+    const secChUaMobile = request.headers.get('sec-ch-ua-mobile') || ''
+    const secChUaPlatform = request.headers.get('sec-ch-ua-platform') || ''
+    
+    // Build enhanced device info
+    const enhancedUserAgent = userAgent || 
+      (secChUaPlatform && secChUaMobile ? `${secChUaPlatform}; ${secChUaMobile}` : '') ||
+      'Unknown'
+    
     // 5. Submit vote via RPC (Atomic & Secured)
     const { data: rpcResult, error: rpcError } = await supabase.rpc('submit_vote', {
       company_id_param: company_id,
       fingerprint_param: fingerprint,
       ip_param: ip,
-      user_agent_param: request.headers.get('user-agent') || '',
+      user_agent_param: enhancedUserAgent,
       country_param: country
     })
 
