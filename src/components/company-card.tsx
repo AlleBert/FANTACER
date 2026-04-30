@@ -2,6 +2,7 @@
 
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { motion } from 'framer-motion'
 
 interface Company {
   id: string
@@ -68,7 +69,7 @@ export function CompanyCard({ company, onVote, disabled, loading }: CompanyCardP
         >
           {loading ? 'Votando...' : 'Vota'}
         </Button>
-      </CardContent>
-    </Card>
+</CardContent>
+      </Card>
   )
 }

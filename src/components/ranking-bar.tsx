@@ -1,6 +1,7 @@
 'use client'
 
 import { Trophy, TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { motion } from 'framer-motion'
 
 interface RankingItem {
   id: string
@@ -22,7 +23,11 @@ export function RankingBar({ ranking, limit = 3 }: RankingBarProps) {
   }
 
   return (
-    <div className="bg-card border border-border rounded-xl p-4">
+    <motion.div 
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-card border border-border rounded-xl p-4"
+    >
       <div className="flex items-center gap-2 mb-4">
         <Trophy className="h-5 w-5 text-accent" />
         <h2 className="font-semibold text-lg">Top {limit}</h2>
@@ -30,8 +35,11 @@ export function RankingBar({ ranking, limit = 3 }: RankingBarProps) {
       
       <div className="space-y-2">
         {displayItems.map((item, index) => (
-          <div 
+          <motion.div 
             key={item.id} 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.1 }}
             className={`
               flex items-center justify-between p-3 rounded-lg transition-colors duration-200
               ${index === 0 ? 'bg-secondary' : 'bg-transparent'}
@@ -71,9 +79,9 @@ export function RankingBar({ ranking, limit = 3 }: RankingBarProps) {
                 </span>
               )}
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
-    </div>
+    </motion.div>
   )
 }

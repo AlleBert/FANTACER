@@ -1,7 +1,8 @@
 'use client'
 
+import { isVotingBypassEnabled } from './security-bypass'
+
 const STORAGE_KEY = 'fantacer_device_id'
-const VOTE_TOKEN_KEY = 'fantacer_vote_token'
 const LAST_VOTE_DATE_KEY = 'fantacer_last_vote'
 
 export interface DeviceFingerprint {
@@ -65,6 +66,16 @@ function generateId(): string {
   })
 }
 
+function simpleHash(str: string): string {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash
+  }
+  return Math.abs(hash).toString(16)
+}
+
 // Canvas fingerprint for additional device identification
 export async function getCanvasFingerprint(): Promise<string> {
   return new Promise((resolve) => {
@@ -89,9 +100,15 @@ export async function getCanvasFingerprint(): Promise<string> {
     ctx.fillStyle = '#f60'
     ctx.fillRect(125, 1, 62, 20)
     ctx.fillStyle = '#069'
-    ctx.fillText('FANTACER', 2, 15)
+    ctx.fillText('FANTACER-PRO-2026', 2, 15)
     ctx.fillStyle = 'rgba(102, 204, 0, 0.7)'
-    ctx.fillText('FANTACER', 4, 17)
+    ctx.fillText('FANTACER-PRO-2026', 4, 17)
+    
+    // Add complex paths
+    ctx.strokeStyle = 'red'
+    ctx.beginPath()
+    ctx.arc(50, 50, 20, 0, Math.PI * 2, true)
+    ctx.stroke()
 
     const dataUrl = canvas.toDataURL()
     const hash = simpleHash(dataUrl)
@@ -99,24 +116,22 @@ export async function getCanvasFingerprint(): Promise<string> {
   })
 }
 
-function simpleHash(str: string): string {
-  let hash = 0
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
-    hash = hash & hash
-  }
-  return Math.abs(hash).toString(16)
-}
-
 export function getCombinedFingerprint(): Promise<string> {
   return new Promise(async (resolve) => {
-    const deviceId = getOrCreateDeviceId()
+    // Randomize fingerprint on every call if bypass is enabled for testing
+    if (isVotingBypassEnabled()) {
+      resolve(`dev-${Math.random().toString(36).substring(2, 10)}`)
+      return
+    }
+
+    // Hardware/Browser traits (stable across storage clears)
     const canvasFp = await getCanvasFingerprint()
     const screenRes = `${window.screen.width}x${window.screen.height}`
-    const userAgent = navigator.userAgent.substring(0, 50)
+    const timezone = typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'unknown'
+    const userAgentShort = navigator.userAgent.substring(0, 100)
     
-    const combined = simpleHash(`${deviceId}-${canvasFp}-${screenRes}-${userAgent}`)
+    // We focus ONLY on these for the uniqueness hash
+    const combined = simpleHash(`${canvasFp}-${screenRes}-${timezone}-${userAgentShort}`)
     resolve(combined)
   })
 }

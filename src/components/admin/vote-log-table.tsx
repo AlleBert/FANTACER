@@ -34,36 +34,37 @@ const columns = [
         variant="ghost"
         size="sm"
         onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-        className="-ml-4 text-[#F0EDE8]"
+        className="-ml-4 text-foreground hover:bg-secondary"
       >
         Data/Ora
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
     cell: info => (
-      <span className="text-[#8C8882]">
-        {format(new Date(info.getValue()), 'dd/MM/yyyy HH:mm', { locale: it })}
+      <span className="text-muted-foreground text-xs whitespace-nowrap">
+        {format(new Date(info.getValue()), 'dd/MM/yy HH:mm', { locale: it })}
       </span>
     ),
-    size: 160,
+    size: 130,
   }),
   columnHelper.accessor('company', {
     header: 'Azienda',
-    cell: info => <span className="font-medium text-[#F0EDE8]">{info.getValue()}</span>,
+    cell: info => <span className="font-semibold text-foreground text-sm truncate max-w-[200px] block">{info.getValue()}</span>,
   }),
   columnHelper.accessor('fingerprint', {
-    header: 'Fingerprint',
-    cell: info => <code className="text-xs text-[#8C8882]">{info.getValue()}</code>,
-    size: 120,
+    header: 'ID',
+    cell: info => <code className="text-[10px] text-muted-foreground bg-secondary/50 px-1 py-0.5 rounded font-mono">{info.getValue()?.substring(0, 8)}</code>,
+    size: 80,
   }),
   columnHelper.accessor('country', {
-    header: 'Paese',
-    cell: info => <span className="text-[#8C8882]">{info.getValue()}</span>,
-    size: 80,
+    header: 'P.',
+    cell: info => <span className="text-muted-foreground font-medium text-xs">{info.getValue() || 'IT'}</span>,
+    size: 40,
   }),
   columnHelper.accessor('device', {
     header: 'Device',
-    cell: info => <span className="text-[#8C8882]">{info.getValue()}</span>,
+    cell: info => <span className="text-muted-foreground text-[10px] truncate max-w-[120px] block">{info.getValue() || 'Desktop'}</span>,
+    size: 100,
   }),
 ]
 
@@ -74,7 +75,6 @@ export function VoteLogTable({ data, pagination, onPageChange, onSearch }: {
   onSearch: (search: string) => void
 }) {
   const [sorting, setSorting] = useState<SortingState>([])
-  const [search, setSearch] = useState('')
 
   const table = useReactTable({
     data,
@@ -84,66 +84,29 @@ export function VoteLogTable({ data, pagination, onPageChange, onSearch }: {
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    manualPagination: true,
-    pageCount: pagination.pages,
   })
 
-  const handleSearch = () => onSearch(search)
-
-  const handleExport = () => {
-    const csv = [
-      ['Timestamp', 'Azienda', 'Fingerprint', 'Paese', 'Device'].join(','),
-      ...data.map(v => [
-        v.timestamp,
-        v.company,
-        v.fingerprint,
-        v.country,
-        v.device
-      ].join(','))
-    ].join('\n')
-
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'vote_log.csv'
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#8C8882]" />
+    <div className="space-y-0">
+      <div className="flex flex-col sm:flex-row gap-4 p-6 bg-secondary/30 border-b border-border">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Cerca azienda..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleSearch()}
-            className="pl-9 bg-[#0D0C0B] border-[#2E2A26] text-[#F0EDE8] placeholder:text-[#8C8882]"
+            className="pl-9 bg-background border-border text-foreground ring-offset-background"
+            onChange={(e) => onSearch?.(e.target.value)}
           />
         </div>
-        <Button variant="outline" size="sm" onClick={handleExport} className="border-[#2E2A26] text-[#F0EDE8] hover:bg-[#221F1C]">
-          <Download className="w-4 h-4 mr-2" />
-          Export CSV
-        </Button>
       </div>
 
-      <div className="border border-[#2E2A26] rounded-lg overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-[#221F1C]">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm text-left">
+          <thead>
             {table.getHeaderGroups().map(headerGroup => (
-              <tr key={headerGroup.id}>
+              <tr key={headerGroup.id} className="border-b border-border bg-secondary/20">
                 {headerGroup.headers.map(header => (
-                  <th
-                    key={header.id}
-                    className="px-4 py-3 text-left text-sm font-medium text-[#8C8882]"
-                    style={{ width: header.getSize() }}
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
+                  <th key={header.id} className="px-6 py-4 font-semibold text-foreground uppercase tracking-wider text-[10px]">
+                    {flexRender(header.column.columnDef.header, header.getContext())}
                   </th>
                 ))}
               </tr>
@@ -151,9 +114,12 @@ export function VoteLogTable({ data, pagination, onPageChange, onSearch }: {
           </thead>
           <tbody>
             {table.getRowModel().rows.map(row => (
-              <tr key={row.id} className="border-t border-[#2E2A26] hover:bg-[#221F1C] transition-colors">
+              <tr 
+                key={row.id} 
+                className="border-b border-border/50 hover:bg-secondary/10 transition-colors group"
+              >
                 {row.getVisibleCells().map(cell => (
-                  <td key={cell.id} className="px-4 py-3 text-sm text-[#F0EDE8]">
+                  <td key={cell.id} className="px-6 py-4 whitespace-nowrap">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}
@@ -163,26 +129,26 @@ export function VoteLogTable({ data, pagination, onPageChange, onSearch }: {
         </table>
       </div>
 
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-[#8C8882]">
-          {pagination.total} voti totali • Pagina {pagination.page} di {pagination.pages}
+      <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-secondary/10">
+        <div className="text-xs text-muted-foreground">
+          Pagina {pagination.page} di {pagination.pages} ({pagination.total} voti totali)
         </div>
         <div className="flex gap-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onPageChange(pagination.page - 1)}
             disabled={pagination.page <= 1}
-            className="border-[#2E2A26] text-[#F0EDE8] hover:bg-[#221F1C]"
+            onClick={() => onPageChange(pagination.page - 1)}
+            className="border-border text-foreground hover:bg-secondary h-8"
           >
             Precedente
           </Button>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onPageChange(pagination.page + 1)}
             disabled={pagination.page >= pagination.pages}
-            className="border-[#2E2A26] text-[#F0EDE8] hover:bg-[#221F1C]"
+            onClick={() => onPageChange(pagination.page + 1)}
+            className="border-border text-foreground hover:bg-secondary h-8"
           >
             Successivo
           </Button>
