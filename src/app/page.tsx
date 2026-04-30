@@ -320,7 +320,7 @@ export default function Home() {
         <Header onSearch={handleSearch} hasVoted={hasVoted} />
         
         <div className="container px-4 py-4">
-          <RankingBar ranking={ranking} limit={3} />
+          {!searchQuery && <RankingBar ranking={ranking} limit={3} />}
           
           <TurnstileOverlay 
             isVisible={showTurnstileOverlay}
@@ -355,34 +355,30 @@ export default function Home() {
           )}
           
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            <AnimatePresence mode="popLayout" initial={false}>
-              {companies.slice(0, showAll ? companies.length : 20).map((company, index) => {
-                const rankItem = ranking.find(r => r.id === company.id)
-                return (
-                  <motion.div
-                    layout
-                    key={company.id}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ 
-                      duration: 0.2,
-                      layout: { duration: 0.3 }
-                    }}
-                  >
-                    <CompanyCard
-                      company={{
-                        ...company,
-                        position: rankItem ? ranking.findIndex(r => r.id === company.id) + 1 : undefined
-                      }}
-                      onVote={handleVote}
-                      disabled={hasVoted}
-                      loading={votingFor === company.id}
-                    />
-                  </motion.div>
-                )
-              })}
-            </AnimatePresence>
+              <AnimatePresence>
+                {(showAll ? companies : companies.slice(0, 20)).map((company, index) => {
+                  const rankItem = ranking.find(r => r.id === company.id)
+                  return (
+                    <motion.div
+                      key={company.id}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      <CompanyCard
+                        company={{
+                          ...company,
+                          position: rankItem ? ranking.findIndex(r => r.id === company.id) + 1 : undefined
+                        }}
+                        onVote={handleVote}
+                        disabled={hasVoted}
+                        loading={votingFor === company.id}
+                      />
+                    </motion.div>
+                  )
+                })}
+              </AnimatePresence>
           </div>
 
           {loading && (
