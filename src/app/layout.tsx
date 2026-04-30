@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
 import { DM_Serif_Display, DM_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -25,17 +25,6 @@ export const metadata: Metadata = {
   description: "Dashboard di gestione FANTACER",
 };
 
-export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#F9F9FB" },
-    { media: "(prefers-color-scheme: dark)", color: "#000000" },
-  ],
-  viewportFit: "cover",
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -47,7 +36,7 @@ export default function RootLayout({
       className={`${dmSerifDisplay.variable} ${dmSans.variable} ${jetbrainsMono.variable} h-full w-full antialiased theme-default`}
       suppressHydrationWarning
     >
-      <body className="min-h-full w-full flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]" suppressHydrationWarning>
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <ThemeSync />
         <TooltipProvider>
           {children}

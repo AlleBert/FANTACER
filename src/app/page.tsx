@@ -309,7 +309,7 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen w-full flex-1 bg-background overflow-x-hidden">
+    <main className="min-h-screen w-full flex-1 bg-background">
       <AnimatePresence>
         {showSplash && <SplashPreloader key="splash" isExiting={isSplashExiting} />}
       </AnimatePresence>
@@ -319,7 +319,7 @@ export default function Home() {
         
         <Header onSearch={handleSearch} hasVoted={hasVoted} />
         
-        <div className="container px-4 py-4 max-w-full overflow-hidden">
+        <div className="container px-4 py-4 max-w-full">
           {!searchQuery && <RankingBar ranking={ranking} limit={3} />}
           
           <TurnstileOverlay 

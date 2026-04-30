@@ -31,7 +31,7 @@ export function Header({ onSearch, hasVoted }: HeaderProps) {
   }, [])
 
   return (
-    <header className="sticky top-0 z-50 bg-background/70 backdrop-blur-xl border-b border-black/5 dark:border-white/10 shadow-sm pt-[env(safe-area-inset-top)]">
+    <header className="sticky top-0 z-50 bg-background/70 backdrop-blur-xl border-b border-black/5 dark:border-white/10 shadow-sm">
       <div className="flex items-center justify-between px-4 py-3 gap-3">
         <div className="flex items-center gap-2">
           <Trophy className="h-6 w-6 text-accent" />
