@@ -125,8 +125,6 @@ function AdminDashboardContent() {
     
     setShowThemeDialog(false)
     setActiveTheme(pendingTheme)
-    
-    window.location.reload()
   }
 
   useEffect(() => {
