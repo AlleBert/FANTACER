@@ -26,7 +26,7 @@ export function RankingBar({ ranking, limit = 3 }: RankingBarProps) {
     <motion.div 
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-card border border-border rounded-xl p-4"
+      className="bg-card/80 backdrop-blur-xl border border-black/5 dark:border-white/10 rounded-[2rem] p-5 shadow-[0_8px_30px_rgba(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)]"
     >
       <div className="flex items-center gap-2 mb-4">
         <Trophy className="h-5 w-5 text-accent" />
@@ -41,16 +41,16 @@ export function RankingBar({ ranking, limit = 3 }: RankingBarProps) {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.1 }}
             className={`
-              flex items-center justify-between p-3 rounded-lg transition-colors duration-200
-              ${index === 0 ? 'bg-secondary' : 'bg-transparent'}
+              flex items-center justify-between p-3.5 rounded-2xl transition-colors duration-200
+              ${index === 0 ? 'bg-secondary/70 dark:bg-secondary/40' : 'bg-transparent'}
             `}
           >
             <div className="flex items-center gap-3">
               <span className={`
-                w-7 h-7 rounded-full flex items-center justify-center font-bold text-white text-sm
-                ${index === 0 ? 'bg-yellow-500' : 
-                  index === 1 ? 'bg-gray-400' : 
-                  'bg-amber-700'}
+                w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-sm shadow-sm
+                ${index === 0 ? 'bg-gradient-to-br from-yellow-300 to-yellow-600 shadow-yellow-500/20' : 
+                  index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-500 shadow-gray-400/20' : 
+                  'bg-gradient-to-br from-amber-600 to-amber-800 shadow-amber-700/20'}
               `}>
                 {index + 1}
               </span>

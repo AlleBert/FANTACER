@@ -342,12 +342,12 @@ export default function Home() {
           )}
 
           {!loading && companies.length > 20 && (
-            <div className="text-center my-6">
+            <div className="text-center my-8">
               <Button 
-                variant="outline"
+                variant="secondary"
                 size="sm"
                 onClick={() => setShowAll(!showAll)}
-                className="rounded-full px-8 border-accent text-accent hover:bg-accent/10 font-semibold transition-all duration-300"
+                className="rounded-full px-8 bg-accent/10 border-transparent text-accent hover:bg-accent/20 font-semibold transition-all duration-300 h-10"
               >
                 {showAll ? 'Nascondi risultati' : `Visualizza tutte (${companies.length})`}
               </Button>
