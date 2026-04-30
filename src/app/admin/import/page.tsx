@@ -27,6 +27,7 @@ export default function ImportPage() {
   const [preview, setPreview] = useState<ParsedRow[]>([])
   const [uploading, setUploading] = useState(false)
   const [message, setMessage] = useState('')
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   useEffect(() => {
     checkAuth()
@@ -140,23 +141,25 @@ export default function ImportPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0D0C0B]">
-      <AdminSidebar />
+    <div className="min-h-screen bg-background transition-colors duration-300">
+      <AdminSidebar 
+        collapsed={sidebarCollapsed} 
+        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} 
+      />
       
-      <main className="md:ml-[240px] min-h-screen">
+      <main className={`transition-all duration-300 min-h-screen pb-12 ${sidebarCollapsed ? 'md:ml-[80px]' : 'md:ml-[260px]'}`}>
         <div className="max-w-[800px] mx-auto p-6 md:p-8 space-y-6">
-          {/* Page Title */}
           <div className="pt-12 md:pt-0">
-            <h1 className="text-2xl md:text-3xl font-bold text-[#F0EDE8]">
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">
               Import Aziende
             </h1>
-            <p className="text-[#8C8882] mt-1">Carica aziende da CSV</p>
+            <p className="text-muted-foreground mt-1">Carica aziende da CSV</p>
           </div>
 
-          <Card className="bg-[#181614] border-[#2E2A26] rounded-xl">
+          <Card className="bg-card border-border shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-[#F0EDE8]">
-                <Download className="h-5 w-5 text-[#FF6A1A]" />
+              <CardTitle className="flex items-center gap-2 text-foreground">
+                <Download className="h-5 w-5 text-primary" />
                 Scarica Template
               </CardTitle>
             </CardHeader>
@@ -164,59 +167,59 @@ export default function ImportPage() {
               <Button 
                 variant="outline" 
                 onClick={() => window.open('/api/admin/companies/template', '_blank')}
-                className="border-[#2E2A26] text-[#F0EDE8] hover:bg-[#221F1C] hover:border-[#8C8882]"
+                className="border-border text-foreground hover:bg-secondary"
               >
                 Scarica CSV Template
               </Button>
             </CardContent>
           </Card>
 
-          <Card className="bg-[#181614] border-[#2E2A26] rounded-xl">
+          <Card className="bg-card border-border shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-[#F0EDE8]">
-                <Upload className="h-5 w-5 text-[#FF6A1A]" />
+              <CardTitle className="flex items-center gap-2 text-foreground">
+                <Upload className="h-5 w-5 text-primary" />
                 Carica CSV
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-[#F0EDE8] mb-2">Nome Batch</label>
+                <label className="block text-sm font-medium text-foreground mb-2">Nome Batch</label>
                 <Input 
                   value={batchName} 
                   onChange={(e) => setBatchName(e.target.value)}
                   placeholder="es. PRODUZIONE_2024"
-                  className="bg-[#0D0C0B] border-[#2E2A26] text-[#F0EDE8] placeholder:text-[#8C8882]"
+                  className="bg-background border-border text-foreground placeholder:text-muted-foreground"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#F0EDE8] mb-2">Seleziona File CSV</label>
+                <label className="block text-sm font-medium text-foreground mb-2">Seleziona File CSV</label>
                 <Input 
                   type="file" 
                   accept=".csv"
                   onChange={handleFileChange}
-                  className="bg-[#0D0C0B] border-[#2E2A26] text-[#F0EDE8] file:text-[#F0EDE8] file:bg-[#FF6A1A] file:border-0 file:rounded-md file:px-3 file:py-1 file:mr-4"
+                  className="bg-background border-border text-foreground file:text-foreground file:bg-primary file:border-0 file:rounded-md file:px-3 file:py-1 file:mr-4"
                 />
               </div>
 
               {preview.length > 0 && (
                 <div>
-                  <p className="text-sm font-medium text-[#F0EDE8] mb-2">Preview (prime 5 righe):</p>
-                  <div className="border border-[#2E2A26] rounded-lg overflow-hidden">
+                  <p className="text-sm font-medium text-foreground mb-2">Preview (prime 5 righe):</p>
+                  <div className="border border-border rounded-lg overflow-hidden">
                     <table className="w-full text-sm">
-                      <thead className="bg-[#221F1C]">
+                      <thead className="bg-secondary">
                         <tr>
-                          <th className="px-3 py-2 text-left text-[#8C8882]">Nome</th>
-                          <th className="px-3 py-2 text-left text-[#8C8882]">Categoria</th>
-                          <th className="px-3 py-2 text-left text-[#8C8882]">Logo</th>
+                          <th className="px-3 py-2 text-left text-muted-foreground">Nome</th>
+                          <th className="px-3 py-2 text-left text-muted-foreground">Categoria</th>
+                          <th className="px-3 py-2 text-left text-muted-foreground">Logo</th>
                         </tr>
                       </thead>
                       <tbody>
                         {preview.map((row, i) => (
-                          <tr key={i} className="border-t border-[#2E2A26]">
-                            <td className="px-3 py-2 text-[#F0EDE8]">{row.name}</td>
-                            <td className="px-3 py-2 text-[#8C8882]">{row.category || '-'}</td>
-                            <td className="px-3 py-2 text-[#8C8882] truncate max-w-[100px]">{row.image_url || '-'}</td>
+                          <tr key={i} className="border-t border-border">
+                            <td className="px-3 py-2 text-foreground">{row.name}</td>
+                            <td className="px-3 py-2 text-muted-foreground">{row.category || '-'}</td>
+                            <td className="px-3 py-2 text-muted-foreground truncate max-w-[100px]">{row.image_url || '-'}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -229,7 +232,7 @@ export default function ImportPage() {
                 <Button 
                   onClick={handleImport} 
                   disabled={uploading}
-                  className="bg-[#FF6A1A] hover:bg-[#FF8040] text-white border-none"
+                  className="bg-primary hover:bg-primary/90 text-white"
                 >
                   {uploading ? 'Import in corso...' : 'Conferma Import'}
                 </Button>
@@ -243,9 +246,9 @@ export default function ImportPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-[#181614] border-[#2E2A26] rounded-xl">
+          <Card className="bg-card border-border shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-[#F0EDE8]">Gestione Batch</CardTitle>
+              <CardTitle className="text-foreground">Gestione Batch</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-wrap gap-2">
@@ -255,8 +258,8 @@ export default function ImportPage() {
                     variant={batchInfo.activeBatch === batch ? 'default' : 'outline'}
                     onClick={() => handleSetActive(batch)}
                     className={batchInfo.activeBatch === batch 
-                      ? 'bg-[#FF6A1A] hover:bg-[#FF8040] text-white border-none'
-                      : 'border-[#2E2A26] text-[#F0EDE8] hover:bg-[#221F1C]'
+                      ? 'bg-primary hover:bg-primary/90 text-white'
+                      : 'border-border text-foreground hover:bg-secondary'
                     }
                   >
                     {batchInfo.activeBatch === batch && <Check className="h-4 w-4 mr-1" />}
@@ -264,8 +267,8 @@ export default function ImportPage() {
                   </Button>
                 ))}
               </div>
-              <p className="text-sm text-[#8C8882]">
-                Batch attivo: <strong className="text-[#F0EDE8]">{batchInfo.activeBatch}</strong>
+              <p className="text-sm text-muted-foreground">
+                Batch attivo: <strong className="text-foreground">{batchInfo.activeBatch}</strong>
               </p>
             </CardContent>
           </Card>

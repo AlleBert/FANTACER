@@ -2,6 +2,7 @@
 
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { motion } from 'framer-motion'
 
 interface Company {
   id: string
@@ -22,11 +23,15 @@ export function CompanyCard({ company, onVote, disabled, loading }: CompanyCardP
   const isTop = company.position && company.position <= 3
   
   return (
-    <Card className={`
-      overflow-hidden transition-all duration-200
-      border border-gray-300 dark:border-gray-700
-      ${isTop ? 'border-orange-500 shadow-lg' : 'hover:border-orange-500 hover:shadow-lg'}
-    `}>
+    <motion.div
+      whileHover={{ y: -5, scale: 1.02 }}
+      transition={{ type: "spring", stiffness: 400, damping: 17 }}
+    >
+      <Card className={`
+        overflow-hidden transition-all duration-200
+        border border-gray-300 dark:border-gray-700
+        ${isTop ? 'border-orange-500 shadow-lg' : 'hover:border-orange-500 hover:shadow-lg'}
+      `}>
       <div className="aspect-video bg-gray-100 dark:bg-gray-800 flex items-center justify-center relative overflow-hidden">
         {company.image_url ? (
           <img 
@@ -70,5 +75,6 @@ export function CompanyCard({ company, onVote, disabled, loading }: CompanyCardP
         </Button>
       </CardContent>
     </Card>
+    </motion.div>
   )
 }

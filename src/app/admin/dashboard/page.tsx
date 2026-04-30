@@ -61,15 +61,10 @@ interface VotePagination {
   pages: number
 }
 
-import { AdminThemeProvider } from '@/components/admin/admin-theme-provider'
 import { isAdminBypassEnabled } from '@/lib/security-bypass'
 
 export default function AdminDashboard() {
-  return (
-    <AdminThemeProvider>
-      <AdminDashboardContent />
-    </AdminThemeProvider>
-  )
+  return <AdminDashboardContent />
 }
 
 function AdminDashboardContent() {
