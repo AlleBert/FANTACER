@@ -123,6 +123,40 @@
   }
 }
 
+/* === THEME OVERRIDES === */
+
+/* Theme: Cyber (Tech/Linear Vibe) */
+.theme-cyber {
+  --primary: #6366F1;
+  --accent: #6366F1;
+  --ring: #06B6D4;
+}
+.theme-cyber.dark {
+  --background: #050505;
+  --card: #111111;
+  --sidebar: #111111;
+  --primary: #6366F1;
+  --accent: #6366F1;
+  --ring: #06B6D4;
+  --border: #222222;
+}
+
+/* Theme: FinTech (Neobank Vibe) */
+.theme-fintech {
+  --primary: #10B981;
+  --accent: #10B981;
+  --ring: #10B981;
+}
+.theme-fintech.dark {
+  --background: #0B1120;
+  --card: #162032;
+  --sidebar: #162032;
+  --primary: #10B981;
+  --accent: #10B981;
+  --ring: #10B981;
+  --border: #1E293B;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

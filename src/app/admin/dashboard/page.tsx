@@ -10,7 +10,8 @@ import {
   Vote, 
   Download, 
   Upload,
-  TrendingUp
+  TrendingUp,
+  Palette
 } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { format } from 'date-fns'
@@ -97,6 +98,16 @@ function AdminDashboardContent() {
   const [auditSearch, setAuditSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [activeTheme, setActiveTheme] = useState('theme-default')
+
+  const changeTheme = async (theme: string) => {
+    setActiveTheme(theme)
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+    await supabase.from('settings').update({ value: theme }).eq('key', 'global_theme')
+  }
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -131,6 +142,16 @@ function AdminDashboardContent() {
   const loadData = async () => {
     setLoading(true)
     try {
+      // Load current theme
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      )
+      const { data: themeData } = await supabase.from('settings').select('value').eq('key', 'global_theme').single()
+      if (themeData && themeData.value) {
+        setActiveTheme(themeData.value)
+      }
+
       const statsRes = await fetch('/api/analytics?type=summary')
       const statsData = await statsRes.json()
       setStats({
@@ -285,6 +306,42 @@ function AdminDashboardContent() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Theme Settings Card */}
+          <Card className="bg-card border-border shadow-sm">
+            <CardHeader className="p-6 pb-2">
+              <div className="flex items-center gap-2">
+                <Palette className="h-5 w-5 text-primary" />
+                <CardTitle className="text-lg">Gestione Tema Globale</CardTitle>
+              </div>
+              <p className="text-sm text-muted-foreground">Seleziona il tema dell'applicazione principale. Questa modifica sarà applicata in tempo reale a tutti gli utenti.</p>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="flex flex-wrap gap-4">
+                <Button 
+                  onClick={() => changeTheme('theme-default')} 
+                  variant={activeTheme === 'theme-default' ? "default" : "outline"}
+                  className="rounded-full"
+                >
+                  Premium Default (OLED + Arancio)
+                </Button>
+                <Button 
+                  onClick={() => changeTheme('theme-cyber')} 
+                  variant={activeTheme === 'theme-cyber' ? "default" : "outline"}
+                  className="rounded-full"
+                >
+                  Cyber Tech (Indaco + Ciano)
+                </Button>
+                <Button 
+                  onClick={() => changeTheme('theme-fintech')} 
+                  variant={activeTheme === 'theme-fintech' ? "default" : "outline"}
+                  className="rounded-full"
+                >
+                  Neobank (Midnight + Smeraldo)
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="lg:col-span-2 bg-card border-border shadow-sm">
