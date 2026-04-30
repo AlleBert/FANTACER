@@ -100,24 +100,31 @@ function AdminDashboardContent() {
   const [loading, setLoading] = useState(true)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [activeTheme, setActiveTheme] = useState('theme-default')
+  const [pendingTheme, setPendingTheme] = useState<string | null>(null)
+  const [showThemeDialog, setShowThemeDialog] = useState(false)
 
   const changeTheme = async (theme: string) => {
-    const themeNames: Record<string, string> = {
-      'theme-default': 'Default',
-      'theme-cyber': 'Cyber',
-      'theme-fintech': 'Fintech'
-    }
-    const confirmed = window.confirm(`Confermi cambio tema a "${themeNames[theme] || theme}"?\n\nLa pagina principale verrà ricaricata.`)
-    if (!confirmed) {
-      setActiveTheme(activeTheme)
-      return
-    }
+    setPendingTheme(theme)
+    setShowThemeDialog(true)
+  }
+
+  const confirmThemeChange = async () => {
+    if (!pendingTheme) return
     
     const supabase = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     )
-    await supabase.from('settings').update({ value: theme }).eq('key', 'global_theme')
+    const { error } = await supabase.from('settings').update({ value: pendingTheme }).eq('key', 'global_theme')
+    
+    if (error) {
+      console.error('Error saving theme:', error)
+      alert('Errore nel salvataggio del tema')
+      return
+    }
+    
+    setShowThemeDialog(false)
+    setActiveTheme(pendingTheme)
     
     window.location.reload()
   }
@@ -525,6 +532,45 @@ function AdminDashboardContent() {
             </div>
           </div>
         </div>
+
+        {/* Theme Confirmation Dialog */}
+        {showThemeDialog && pendingTheme && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <div className="bg-card border border-border rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+              <h3 className="text-xl font-bold text-foreground mb-3">
+                Conferma Cambio Tema
+              </h3>
+              <p className="text-muted-foreground mb-6">
+                Vuoi cambiare il tema dell'applicazione a{' '}
+                <span className="font-semibold text-foreground">
+                  {pendingTheme === 'theme-default' ? 'Premium Default (OLED + Arancio)' :
+                   pendingTheme === 'theme-cyber' ? 'Cyber Tech (Indaco + Ciano)' :
+                   pendingTheme === 'theme-fintech' ? 'Neobank (Midnight + Smeraldo)' :
+                   pendingTheme}
+                </span>
+                ?
+              </p>
+              <div className="flex gap-3 justify-end">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowThemeDialog(false)
+                    setPendingTheme(null)
+                  }}
+                  className="border-border"
+                >
+                  Annulla
+                </Button>
+                <Button 
+                  onClick={confirmThemeChange}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  Conferma e Applica
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   )
