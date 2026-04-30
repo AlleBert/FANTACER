@@ -115,11 +115,19 @@ function AdminDashboardContent() {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     )
-    const { error } = await supabase.from('settings').update({ value: pendingTheme }).eq('key', 'global_theme')
+    
+    console.log('Saving theme:', pendingTheme)
+    
+    const { data, error } = await supabase
+      .from('settings')
+      .upsert({ key: 'global_theme', value: pendingTheme }, { onConflict: 'key' })
+      .select()
+    
+    console.log('Save result:', { data, error })
     
     if (error) {
       console.error('Error saving theme:', error)
-      alert('Errore nel salvataggio del tema')
+      alert('Errore nel salvataggio del tema: ' + error.message)
       return
     }
     
