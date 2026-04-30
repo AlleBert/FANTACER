@@ -2,7 +2,6 @@
 
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { motion } from 'framer-motion'
 
 interface Company {
   id: string
@@ -24,12 +23,14 @@ export function CompanyCard({ company, onVote, disabled, loading }: CompanyCardP
   
   return (
     <Card className={`
-      overflow-hidden transition-all duration-200
-      border border-gray-300 dark:border-gray-700
-      ${isTop ? 'border-orange-500 shadow-lg' : 'hover:border-orange-500 hover:shadow-lg'}
+      overflow-hidden transition-all duration-300
+      rounded-[1.75rem] border border-black/5 dark:border-white/10
+      bg-card/90 backdrop-blur-sm
+      ${isTop ? 'shadow-[0_8px_30px_rgba(255,106,26,0.15)] ring-1 ring-accent/50' : 'shadow-[0_8px_30px_rgba(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:-translate-y-1'}
     `}>
       <div className="aspect-video bg-gray-100 dark:bg-gray-800 flex items-center justify-center relative overflow-hidden">
         {company.image_url ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
           <img 
             src={company.image_url} 
             alt={company.name}
@@ -64,7 +65,7 @@ export function CompanyCard({ company, onVote, disabled, loading }: CompanyCardP
         <Button 
           onClick={() => onVote(company.id)}
           disabled={disabled || loading}
-          className="w-full"
+          className="w-full rounded-full font-medium"
           size="sm"
         >
           {loading ? 'Votando...' : 'Vota'}

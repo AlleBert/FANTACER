@@ -54,7 +54,7 @@ export function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
 
       <aside className={`
         fixed top-0 left-0 h-full bg-sidebar border-r border-sidebar-border z-40
-        flex flex-col transition-all duration-300 shadow-sm
+        flex flex-col transition-all duration-300 ease-out
         ${collapsed ? 'w-[80px]' : 'w-[260px]'}
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
@@ -66,23 +66,24 @@ export function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
           {collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
         </button>
 
-        <div className={`p-8 ${collapsed ? 'px-6' : ''}`}>
-          <div className="flex items-center gap-3">
-            <div className="min-w-[32px] w-8 h-8 bg-primary rounded-lg flex items-center justify-center shrink-0">
-              <span className="text-white font-bold text-lg">F</span>
-            </div>
-            {!collapsed && (
-              <div className="overflow-hidden whitespace-nowrap">
-                <h1 className="text-lg font-bold text-sidebar-foreground tracking-tight leading-none">
-                  FANTACER
-                </h1>
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mt-1">Admin Panel</p>
-              </div>
-            )}
+        {/* Logo - Always visible */}
+        <div className={`p-6 flex items-center justify-center ${collapsed ? 'px-2' : 'px-8'}`}>
+          <div className="min-w-[32px] w-8 h-8 bg-primary rounded-lg flex items-center justify-center shrink-0">
+            <span className="text-white font-bold text-lg">F</span>
           </div>
         </div>
 
-        <nav className="flex-1 px-4 space-y-1.5">
+        {/* Expanded title - only when open */}
+        {!collapsed && (
+          <div className="px-8 pb-4">
+            <h1 className="text-lg font-bold text-sidebar-foreground tracking-tight leading-none">
+              FANTACER
+            </h1>
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mt-1">Admin Panel</p>
+          </div>
+        )}
+
+        <nav className="flex-1 px-3 space-y-1">
           {navItems.map((item) => {
             const isActive = pathname === item.href
             return (
@@ -91,33 +92,35 @@ export function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
                 className={`
-                  flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium
+                  flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium
                   transition-all duration-200
                   ${isActive 
                     ? 'bg-primary text-white shadow-md shadow-primary/20' 
                     : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
                   }
-                  ${collapsed ? 'justify-center px-0' : ''}
+                  ${collapsed ? 'justify-center' : ''}
                 `}
               >
                 <item.icon className={`h-5 w-5 shrink-0 ${isActive ? 'text-white' : 'text-primary'}`} />
-                {!collapsed && item.label}
+                {!collapsed && <span>{item.label}</span>}
               </Link>
             )
           })}
         </nav>
 
-        <div className={`p-4 border-t border-sidebar-border space-y-2 ${collapsed ? 'px-4' : ''}`}>
+        <div className={`p-4 border-t border-sidebar-border space-y-2 ${collapsed ? 'px-2' : 'px-4'}`}>
           <ThemeToggle collapsed={collapsed} />
           
           <button
             onClick={handleLogout}
-            className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-medium
+            className={`
+              flex items-center gap-3 w-full px-3 py-3 rounded-xl text-sm font-medium
               text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-200
-              ${collapsed ? 'justify-center px-0' : ''}`}
+              ${collapsed ? 'justify-center' : ''}
+            `}
           >
             <LogOut className="h-5 w-5 shrink-0" />
-            {!collapsed && "Logout"}
+            {!collapsed && <span>Logout</span>}
           </button>
         </div>
       </aside>

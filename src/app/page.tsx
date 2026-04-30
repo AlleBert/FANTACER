@@ -12,7 +12,7 @@ import { GDPRBanner } from '@/components/gdpr-banner'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { TurnstileOverlay } from '@/components/voting/turnstile-overlay'
-const isVotingBypassEnabled = () => process.env.X7K2M9QS3P === 'hx7k2m9Qs3P'
+const isVotingBypassEnabled = () => process.env.NEXT_PUBLIC_X7K2M9QS3P === 'hx7k2m9Qs3P'
 import { motion, AnimatePresence } from 'framer-motion'
 import { SplashPreloader } from '@/components/splash-preloader'
 
@@ -342,12 +342,12 @@ export default function Home() {
           )}
 
           {!loading && companies.length > 20 && (
-            <div className="text-center my-6">
+            <div className="text-center my-8">
               <Button 
-                variant="outline"
+                variant="secondary"
                 size="sm"
                 onClick={() => setShowAll(!showAll)}
-                className="rounded-full px-8 border-accent text-accent hover:bg-accent/10 font-semibold transition-all duration-300"
+                className="rounded-full px-8 bg-accent/10 border-transparent text-accent hover:bg-accent/20 font-semibold transition-all duration-300 h-10"
               >
                 {showAll ? 'Nascondi risultati' : `Visualizza tutte (${companies.length})`}
               </Button>

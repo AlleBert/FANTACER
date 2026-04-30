@@ -31,7 +31,7 @@ export function Header({ onSearch, hasVoted }: HeaderProps) {
   }, [])
 
   return (
-    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b border-border">
+    <header className="sticky top-0 z-50 bg-background/70 backdrop-blur-xl border-b border-black/5 dark:border-white/10 shadow-sm">
       <div className="flex items-center justify-between px-4 py-3 gap-3">
         <div className="flex items-center gap-2">
           <Trophy className="h-6 w-6 text-accent" />
@@ -56,7 +56,7 @@ export function Header({ onSearch, hasVoted }: HeaderProps) {
               setSearchValue(e.target.value)
               onSearch(e.target.value)
             }}
-            className="pl-9 bg-secondary border-transparent focus:border-accent"
+            className="pl-9 bg-secondary/80 border-transparent focus:border-accent rounded-full transition-all duration-300 focus:bg-background shadow-inner"
           />
         </div>
       </div>

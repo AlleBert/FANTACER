@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-const isVotingBypassEnabled = () => process.env.X7K2M9QS3P === 'hx7k2m9Qs3P'
+const isVotingBypassEnabled = () => process.env.NEXT_PUBLIC_X7K2M9QS3P === 'hx7k2m9Qs3P'
 
 // Geo blocking: Italia + EU
 const ALLOWED_COUNTRIES = ['IT', 'DE', 'FR', 'ES', 'PT', 'AT', 'BE', 'NL', 'SI', 'HR', 'MT', 'CY', 'GR', 'GB', 'IE', 'PL', 'CZ', 'HU', 'SK', 'RO', 'BG', 'SE', 'FI', 'DK', 'NO']
