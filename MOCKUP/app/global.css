@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@config "../tailwind.config.js";
+
+:root {
+  --background: #ffffff;
+  --foreground: #000000;
+  --primary: #ff8a26;
+  --accent: #fccb27;
+  --ring: #8000ff;
+  
+  /* Mockup colors */
+  --mockup-purple: #8000ff;
+  --mockup-orange: #ff8a26;
+  --mockup-yellow: #fccb27;
+  --mockup-blue: #c2e1ff;
+  --mockup-dark: #4f03aa;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+}
