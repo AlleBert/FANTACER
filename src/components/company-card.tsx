@@ -23,54 +23,52 @@ export function CompanyCard({ company, onVote, disabled, loading }: CompanyCardP
   
   return (
     <Card className={`
-      overflow-hidden transition-all duration-300
-      rounded-[1.75rem] border border-black/5 dark:border-white/10
-      bg-card/90 backdrop-blur-sm
-      ${isTop ? 'shadow-[0_8px_30px_rgba(255,106,26,0.15)] ring-1 ring-accent/50' : 'shadow-[0_8px_30px_rgba(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:-translate-y-1'}
+      relative overflow-hidden transition-all duration-300
+      rounded-[32px] border-4 border-[#6B21A8]/10 group
+      bg-white hover:border-magenta-500 hover:-translate-y-2
+      ${isTop ? 'shadow-[0_12px_0_rgba(107,33,168,0.1)] ring-2 ring-[#6B21A8]/20' : 'shadow-[0_8px_0_rgba(0,0,0,0.05)]'}
     `}>
-      <div className="aspect-video bg-gray-100 dark:bg-gray-800 flex items-center justify-center relative overflow-hidden">
+      <div className="aspect-square bg-gray-50 flex items-center justify-center relative overflow-hidden p-6">
         {company.image_url ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img 
             src={company.image_url} 
             alt={company.name}
-            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+            className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110"
           />
         ) : (
-          <div className="text-4xl font-bold text-gray-400">
+          <div className="text-5xl font-black text-[#6B21A8]/20 italic">
             {company.name.substring(0, 2).toUpperCase()}
           </div>
         )}
         
-        {company.position && company.position <= 3 && (
+        {company.position && company.position <= 10 && (
           <div className={`
-            absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center font-bold text-white
-            shadow-lg
-            ${company.position === 1 ? 'bg-yellow-500 shadow-yellow-500/30' : 
-              company.position === 2 ? 'bg-gray-400 shadow-gray-400/30' : 
-              'bg-amber-700 shadow-amber-700/30'}
+            absolute top-4 left-4 w-10 h-10 rounded-full flex items-center justify-center font-black text-white
+            shadow-xl border-2 border-white
+            ${company.position === 1 ? 'bg-yellow-400' : 
+              company.position === 2 ? 'bg-gray-300' : 
+              company.position === 3 ? 'bg-orange-400' : 'bg-[#6B21A8]'}
           `}>
             {company.position}
           </div>
         )}
       </div>
       
-      <CardContent className="p-4 space-y-3">
-        <div>
-          <h3 className="font-semibold truncate text-gray-900 dark:text-white">{company.name}</h3>
-          {company.category && (
-            <p className="text-xs text-gray-500 dark:text-gray-400">{company.category}</p>
-          )}
+      <CardContent className="p-5 flex flex-col gap-4">
+        <div className="text-center">
+          <h3 className="font-black text-xl md:text-2xl uppercase italic text-[#6B21A8] leading-tight truncate">
+            {company.name}
+          </h3>
         </div>
         <Button 
           onClick={() => onVote(company.id)}
           disabled={disabled || loading}
-          className="w-full rounded-full font-medium"
-          size="sm"
+          className="w-full h-14 rounded-full bg-magenta-500 hover:bg-magenta-600 text-white font-black text-xl uppercase italic shadow-[0_6px_0_rgb(192,38,211)] active:translate-y-1 active:shadow-none transition-all"
         >
           {loading ? 'Votando...' : 'Vota'}
         </Button>
-</CardContent>
-      </Card>
+      </CardContent>
+    </Card>
   )
 }

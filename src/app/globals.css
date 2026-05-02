@@ -49,72 +49,44 @@
 }
 
 :root {
-  --background: #F9F9FB; /* Very soft light gray/blue tint for iOS look */
+  --background: #FFFFFF;
   --foreground: #000000;
+  
+  /* Canva Vibrant Palette */
+  --primary: #FF8C00;      /* Orange */
+  --primary-rgb: 255, 140, 0;
+  --magenta: #FF00FF;      /* Magenta */
+  --magenta-rgb: 255, 0, 255;
+  --purple: #6B21A8;       /* Royal Purple */
+  --purple-rgb: 107, 33, 168;
+  --yellow: #FFFF00;       /* Electric Yellow */
+  --yellow-rgb: 255, 255, 0;
+  
   --card: #FFFFFF;
   --card-foreground: #000000;
   --popover: #FFFFFF;
   --popover-foreground: #000000;
-  --primary: #FF5C00;
-  --primary-foreground: #FFFFFF;
-  --secondary: #F0F0F5; /* iOS system gray 6 style */
+  --secondary: #FDE68A;    /* Soft yellow for secondary targets */
   --secondary-foreground: #000000;
-  --muted: #E5E5EA; /* iOS system gray 5 */
-  --muted-foreground: #8E8E93; /* iOS system gray */
-  --accent: #FF5C00;
+  --muted: #F3F4F6;
+  --muted-foreground: #6B7280;
+  --accent: #FF8C00;
   --accent-foreground: #FFFFFF;
-  --destructive: #FF3B30; /* iOS red */
-  --border: #E5E5EA;
-  --input: #E5E5EA;
-  --ring: #FF5C00;
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 1.25rem; /* Large base radius for squircles */
-  --sidebar: #FFFFFF;
-  --sidebar-foreground: #000000;
-  --sidebar-primary: #FF5C00;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #F0F0F5;
-  --sidebar-accent-foreground: #000000;
-  --sidebar-border: #E5E5EA;
-  --sidebar-ring: #FF5C00;
+  --destructive: #EF4444;
+  --border: #E5E7EB;
+  --input: #E5E7EB;
+  --ring: #FF8C00;
+  --radius: 1.5rem;        /* Even rounder for playful look */
 }
 
 .dark {
-  --background: #000000; /* Pure OLED black */
-  --foreground: #FFFFFF;
-  --card: #1C1C1E; /* iOS native dark card bg */
-  --card-foreground: #FFFFFF;
-  --popover: #1C1C1E;
-  --popover-foreground: #FFFFFF;
-  --primary: #FF6A1A;
-  --primary-foreground: #FFFFFF;
-  --secondary: #2C2C2E; /* iOS system gray 5 dark */
-  --secondary-foreground: #FFFFFF;
-  --muted: #3A3A3C;
-  --muted-foreground: #98989D;
-  --accent: #FF6A1A;
-  --accent-foreground: #FFFFFF;
-  --destructive: #FF453A; /* iOS red dark */
-  --border: #3A3A3C;
-  --input: #2C2C2E;
-  --ring: #FF6A1A;
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: #1C1C1E;
-  --sidebar-foreground: #FFFFFF;
-  --sidebar-primary: #FF6A1A;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #2C2C2E;
-  --sidebar-accent-foreground: #FFFFFF;
-  --sidebar-border: #3A3A3C;
-  --sidebar-ring: #FF6A1A;
+  --background: #0D0C0B;
+  --foreground: #F0EDE8;
+  /* Keeping dark mode similar but vibrant */
+  --primary: #FF8C00;
+  --accent: #FF8C00;
+  --card: #181614;
+  --border: #2E2A26;
 }
 
 @layer utilities {

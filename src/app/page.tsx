@@ -15,6 +15,16 @@ import { TurnstileOverlay } from '@/components/voting/turnstile-overlay'
 const isVotingBypassEnabled = () => process.env.NEXT_PUBLIC_X7K2M9QS3P === 'hx7k2m9Qs3P'
 import { motion, AnimatePresence } from 'framer-motion'
 import { SplashPreloader } from '@/components/splash-preloader'
+import { HeroSection } from '@/components/sections/hero-section'
+import { IntroSection } from '@/components/sections/intro-section'
+import { RulesSection } from '@/components/sections/rules-section'
+import { DatesLocationSection } from '@/components/sections/dates-location-section'
+import { SearchSection } from '@/components/sections/search-section'
+import { PrizeSection } from '@/components/sections/prize-section'
+import { ContactSection } from '@/components/sections/contact-section'
+import { FooterSection } from '@/components/sections/footer-section'
+import { SectionContainer } from '@/components/layout/section-container'
+import { WavyDivider } from '@/components/ui/wavy-divider'
 
 interface Company {
   id: string
@@ -307,9 +317,8 @@ export default function Home() {
       }, 100)
     }
   }
-
   return (
-    <main className="min-h-screen w-full flex-1 bg-background">
+    <main className="min-h-screen w-full flex-1 bg-background select-none">
       <AnimatePresence>
         {showSplash && <SplashPreloader key="splash" isExiting={isSplashExiting} />}
       </AnimatePresence>
@@ -317,96 +326,116 @@ export default function Home() {
       <div className={isSplashExiting ? 'opacity-100 transition-opacity duration-500' : 'opacity-0'}>
         <GDPRBanner onAccept={setAnalyticsConsent} />
         
-        <Header onSearch={handleSearch} hasVoted={hasVoted} />
+        {/* New SPA Sections */}
+        <HeroSection />
+        <WavyDivider color="#FF00FF" />
         
-        <div className="container px-4 py-4 max-w-full">
-          {!searchQuery && <RankingBar ranking={ranking} limit={3} />}
-          
-          <TurnstileOverlay 
-            isVisible={showTurnstileOverlay}
-            onClose={() => { setShowTurnstileOverlay(false); setPendingVoteCompanyId(null); }}
-            onSuccess={handleTurnstileSuccess}
-            onError={(msg) => { setError(msg); setShowTurnstileOverlay(false); }}
-          />
-          
-          {error && (
-            <div className="bg-red-500/10 border border-red-500 text-red-500 px-4 py-2 rounded-lg my-4">
-              {error}
-            </div>
-          )}
-          
-          {hasVoted && !error && (
-            <div className="bg-green-500/10 border border-green-500 text-green-500 px-4 py-2 rounded-lg my-4">
-              ✓ Voto registrato! Grazie per aver votato.
-            </div>
-          )}
+        <IntroSection />
+        <WavyDivider color="#6B21A8" />
+        
+        <RulesSection />
+        <WavyDivider color="#FF8C00" />
+        
+        <DatesLocationSection />
+        
+        {/* Interactive Voting Section */}
+        <SearchSection onSearch={handleSearch} />
+        
+        <SectionContainer className="bg-white py-8" id="voting-results" fullHeight={false}>
+          <div className="w-full">
+            {!searchQuery && <RankingBar ranking={ranking} limit={3} />}
+            
+            <TurnstileOverlay 
+              isVisible={showTurnstileOverlay}
+              onClose={() => { setShowTurnstileOverlay(false); setPendingVoteCompanyId(null); }}
+              onSuccess={handleTurnstileSuccess}
+              onError={(msg) => { setError(msg); setShowTurnstileOverlay(false); }}
+            />
+            
+            {error && (
+              <div className="bg-red-500/10 border border-red-500 text-red-500 px-6 py-4 rounded-3xl my-6 font-bold text-center">
+                {error}
+              </div>
+            )}
+            
+            {hasVoted && !error && (
+              <div className="bg-green-500/10 border border-green-500 text-green-500 px-6 py-4 rounded-3xl my-6 font-bold text-center flex flex-col items-center gap-4">
+                <span className="text-3xl">✓ sei forte!</span>
+                <span className="text-xl">Voto registrato. Grazie per aver partecipato!</span>
+              </div>
+            )}
 
-          {!loading && companies.length > 20 && (
-            <div className="text-center my-8">
-              <Button 
-                variant="secondary"
-                size="sm"
-                onClick={() => setShowAll(!showAll)}
-                className="rounded-full px-8 bg-accent/10 border-transparent text-accent hover:bg-accent/20 font-semibold transition-all duration-300 h-10"
-              >
-                {showAll ? 'Nascondi risultati' : `Visualizza tutte (${companies.length})`}
-              </Button>
+            {!loading && companies.length > 20 && (
+              <div className="text-center my-8">
+                <Button 
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setShowAll(!showAll)}
+                  className="rounded-full px-12 bg-magenta-500 border-transparent text-white hover:bg-magenta-600 font-black transition-all duration-300 h-14 text-xl shadow-xl"
+                >
+                  {showAll ? 'Nascondi risultati' : `Visualizza tutte (${companies.length})`}
+                </Button>
+              </div>
+            )}
+            
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+                <AnimatePresence mode="popLayout">
+                  {(showAll ? companies : companies.slice(0, 20)).map((company, index) => {
+                    const rankItem = ranking.find(r => r.id === company.id)
+                    return (
+                      <motion.div
+                        key={company.id}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <CompanyCard
+                          company={{
+                            ...company,
+                            position: rankItem ? ranking.findIndex(r => r.id === company.id) + 1 : undefined
+                          }}
+                          onVote={handleVote}
+                          disabled={hasVoted}
+                          loading={votingFor === company.id}
+                        />
+                      </motion.div>
+                    )
+                  })}
+                </AnimatePresence>
             </div>
-          )}
-          
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              <AnimatePresence>
-                {(showAll ? companies : companies.slice(0, 20)).map((company, index) => {
-                  const rankItem = ranking.find(r => r.id === company.id)
-                  return (
-                    <motion.div
-                      key={company.id}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      transition={{ duration: 0.15 }}
-                    >
-                      <CompanyCard
-                        company={{
-                          ...company,
-                          position: rankItem ? ranking.findIndex(r => r.id === company.id) + 1 : undefined
-                        }}
-                        onVote={handleVote}
-                        disabled={hasVoted}
-                        loading={votingFor === company.id}
-                      />
-                    </motion.div>
-                  )
-                })}
-              </AnimatePresence>
+
+            {loading && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 mt-8">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="space-y-4 bg-gray-50 p-4 rounded-3xl">
+                    <Skeleton className="aspect-square rounded-2xl" />
+                    <Skeleton className="h-6 w-3/4 rounded-full" />
+                    <Skeleton className="h-12 w-full rounded-full" />
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {!loading && companies.length === 0 && (
+              <div className="text-center py-20 text-2xl font-bold text-gray-400">
+                Nessuna azienda trovata
+              </div>
+            )}
           </div>
+        </SectionContainer>
 
-          {loading && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-4">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="space-y-3">
-                  <Skeleton className="aspect-video rounded-lg" />
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-8 w-full" />
-                </div>
-              ))}
-            </div>
-          )}
-          
-          {!loading && companies.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              Nessuna azienda trovata
-            </div>
-          )}
-        </div>
+        <PrizeSection />
+        <ContactSection />
+        <FooterSection />
 
         {showScrollButton && (
           <button
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="fixed bottom-4 right-4 w-10 h-10 bg-accent text-white rounded-full flex items-center justify-center shadow-lg hover:bg-accent/80 transition-colors z-[60]"
+            className="fixed bottom-8 right-8 w-16 h-16 bg-magenta-500 text-white rounded-full flex items-center justify-center shadow-2xl hover:bg-magenta-600 transition-all z-[60] hover:scale-110 active:scale-95"
             aria-label="Torna su"
           >
-            <ArrowUp className="h-5 w-5" />
+            <ArrowUp className="h-8 w-8 stroke-[3]" />
           </button>
         )}
       </div>

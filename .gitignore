@@ -47,3 +47,6 @@ worktrees
 # security overrides
 src/lib/security-bypass.ts
 BACKGROUND.png
+
+# mockup
+/MOCKUP
