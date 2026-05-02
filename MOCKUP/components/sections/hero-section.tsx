@@ -9,11 +9,11 @@ interface HeroSectionProps {
 
 export function HeroSection({ onPlayClick }: HeroSectionProps) {
   return (
-    <div className="relative w-full h-[45.956rem] md:h-auto min-h-[80vh] bg-white">
+    <section className="relative w-full h-[100dvh] bg-white flex flex-col justify-end overflow-hidden">
       {/* Background image container */}
-      <div className="absolute inset-0 w-full h-[50.075rem]">
+      <div className="absolute inset-0 w-full h-full">
         <Image
-          src="/Container@2x.png"
+          src="/hero-background.png"
           alt=""
           fill
           className="object-cover"
@@ -22,14 +22,14 @@ export function HeroSection({ onPlayClick }: HeroSectionProps) {
       </div>
       
       {/* CTA Button - positioned to match design */}
-      <div className="absolute bottom-0 left-0 right-0 flex justify-center pb-0">
+      <div className="relative z-10 flex justify-center pb-12 md:pb-24">
         <Button
           onClick={onPlayClick}
-          className="bg-[#fccb27] hover:bg-[#c99900] text-black text-2xl font-bold px-16 py-4 rounded-full border-2 border-[#231f20] hover:border-[#575254] transition-colors"
+          className="bg-[#fccb27] hover:bg-[#c99900] text-black text-2xl md:text-4xl font-black px-16 py-8 md:px-24 md:py-12 rounded-full border-2 border-black shadow-[4px_4px_0_#000] uppercase tracking-tighter"
         >
           GIOCA
         </Button>
       </div>
-    </div>
+    </section>
   )
 }

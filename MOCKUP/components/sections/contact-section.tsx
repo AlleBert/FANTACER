@@ -1,59 +1,69 @@
 'use client'
 
-import Image from 'next/image'
+import { Button } from '@/components/ui/button'
 
 export function ContactSection() {
   return (
-    <section className="relative w-full bg-white py-16 md:py-24 lg:py-32">
-      {/* Background Frame */}
-      <Image
-        src="/Frame.svg"
-        alt=""
-        fill
-        className="absolute inset-0 object-cover pointer-events-none"
-        aria-hidden="true"
-      />
-      
-      <div className="relative z-10 max-w-6xl mx-auto px-4 flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
-        {/* Left: Logos */}
-        <div className="relative w-64 h-64 lg:w-80 lg:h-80 flex-shrink-0">
-          <Image
-            src="/e87e80273f472378a7e56db0ad11236b-png@2x.png"
-            alt="Company logo"
-            width={309}
-            height={310}
-            className="w-full h-full object-contain"
-          />
-          <Image
-            src="/2943c6147df3dccbfdf556fde3b7036e-png@2x.png"
-            alt="Secondary logo"
-            width={163}
-            height={118}
-            className="absolute top-0 left-0 w-32 h-24 object-contain"
-          />
+    <section id="contact-section" className="relative w-full min-h-[100dvh] bg-gradient-to-br from-[#4B00AB] via-[#FF8C23] to-[#FCCB27] flex items-center justify-center overflow-hidden py-16 md:py-24">
+      <div className="relative z-10 w-full max-w-[1200px] mx-auto px-4 md:px-8 flex flex-col-reverse lg:flex-row items-center justify-between gap-8 lg:gap-16">
+        
+        {/* Left: Contact Form (Work in Progress) */}
+        <div className="w-full lg:w-1/2 bg-white p-6 md:p-8 rounded-3xl border-[4px] border-[#231f20] shadow-[8px_8px_0_#000000]">
+          <h3 className="text-[clamp(1.2rem,2.5vw,36px)] font-[900] text-black uppercase tracking-tighter mb-6 text-center lg:text-left">
+            Inviaci un messaggio
+          </h3>
+          <form className="flex flex-col gap-4" onSubmit={(e) => e.preventDefault()}>
+            <input 
+              type="text" 
+              placeholder="NOME" 
+              className="w-full px-5 py-3 md:py-4 text-base md:text-lg bg-[#f5f5f5] text-black font-bold uppercase rounded-full border-[3px] border-[#231f20] focus:outline-none focus:bg-white focus:shadow-[4px_4px_0_#000] focus:-translate-y-1 transition-all"
+            />
+            <input 
+              type="email" 
+              placeholder="EMAIL" 
+              className="w-full px-5 py-3 md:py-4 text-base md:text-lg bg-[#f5f5f5] text-black font-bold uppercase rounded-full border-[3px] border-[#231f20] focus:outline-none focus:bg-white focus:shadow-[4px_4px_0_#000] focus:-translate-y-1 transition-all"
+            />
+            <textarea 
+              placeholder="MESSAGGIO..." 
+              rows={3}
+              className="w-full px-5 py-3 md:py-4 text-base md:text-lg bg-[#f5f5f5] text-black font-bold uppercase rounded-3xl border-[3px] border-[#231f20] focus:outline-none focus:bg-white focus:shadow-[4px_4px_0_#000] focus:-translate-y-1 transition-all resize-none"
+            />
+            <Button 
+              type="submit"
+              className="bg-[#8000ff] hover:bg-[#6b00d6] text-white text-xl md:text-2xl font-[900] px-10 py-6 mt-2 rounded-full border-[3px] md:border-[4px] border-[#231f20] shadow-[4px_4px_0_#000] hover:shadow-[6px_6px_0_#000] hover:-translate-y-1 transition-all"
+            >
+              INVIA
+            </Button>
+          </form>
         </div>
         
         {/* Right: Contact info */}
-        <div className="text-center lg:text-left">
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-8 tracking-tight">
-            Parla con noi
+        <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start text-center lg:text-left space-y-6 lg:space-y-10">
+          <h2 className="text-[clamp(2.5rem,5vw,80px)] leading-[0.9] font-black text-white tracking-tighter uppercase drop-shadow-[5px_5px_0_#231f20]">
+            PARLA CON NOI
           </h2>
           
-          <div className="space-y-4">
-            <p className="text-xl md:text-2xl lg:text-3xl text-gray-700">
-              fantacer@fantacer.com
-            </p>
+          <div className="flex flex-col gap-4 md:gap-6 w-full items-center lg:items-start">
+            <div className="bg-white px-6 py-4 md:py-5 rounded-full border-[3px] border-[#231f20] shadow-[6px_6px_0_#000] transform -rotate-2 hover:rotate-0 transition-transform cursor-default">
+              <p className="text-lg md:text-xl lg:text-2xl font-[900] text-black lowercase">
+                fantacer@fantacer.com
+              </p>
+            </div>
             
-            <div className="space-y-2">
-              <p className="text-lg md:text-xl lg:text-2xl text-gray-700">
+            <div className="bg-[#fccb27] px-6 py-4 md:py-5 rounded-full border-[3px] border-[#231f20] shadow-[6px_6px_0_#000] transform rotate-2 hover:rotate-0 transition-transform cursor-default">
+              <p className="text-lg md:text-xl lg:text-2xl font-[900] text-black tracking-widest">
                 00 000 000
               </p>
-              <p className="text-lg md:text-xl lg:text-2xl text-gray-700">
+            </div>
+            
+            <div className="bg-white px-6 py-4 md:py-5 rounded-full border-[3px] border-[#231f20] shadow-[6px_6px_0_#000] transform -rotate-1 hover:rotate-0 transition-transform cursor-pointer hover:-translate-y-1">
+              <p className="text-lg md:text-xl lg:text-2xl font-[900] text-[#8000ff] lowercase">
                 www.fantacer.com
               </p>
             </div>
           </div>
         </div>
+        
       </div>
     </section>
   )

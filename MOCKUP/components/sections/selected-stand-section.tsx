@@ -13,45 +13,43 @@ export function SelectedStandSection({
   onWhyClick 
 }: SelectedStandSectionProps) {
   return (
-    <section className="relative w-full bg-white py-16 md:py-24 lg:py-32">
-      {/* Background Frame */}
-      <Image
-        src="/Frame.svg"
-        alt=""
-        fill
-        className="absolute inset-0 object-cover pointer-events-none"
-        aria-hidden="true"
-      />
+    <section className="relative w-full h-[100dvh] bg-white flex flex-col items-center justify-center overflow-hidden pt-8">
       
-      <div className="relative z-10 max-w-4xl mx-auto text-center px-4">
+      <div className="relative z-10 w-full max-w-[1200px] mx-auto text-center px-4 md:px-8">
         {/* Company name */}
-        <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
-          {companyName}
-        </h2>
-        
-        {/* Stand preference text */}
-        <div className="relative inline-block mb-8">
-          <h3 className="text-2xl md:text-3xl lg:text-4xl font-normal text-[#8000ff]">
-            è il tuo stand preferito!
-          </h3>
-          <Image
-            src="/66575995e12c5eb39d73e52b4f11e549-png1@2x.png"
-            alt=""
-            width={141}
-            height={139}
-            className="absolute -top-4 -right-8 md:-right-12 w-20 h-20 md:w-24 md:h-24 object-contain"
-          />
+        <div className="space-y-12">
+          {/* Headline - What do you think of? */}
+          <div className="space-y-4">
+            <h2 className="text-[clamp(1.5rem,5vw,72px)] font-black text-[#8000ff] tracking-tighter uppercase whitespace-pre-line leading-none">
+              cosa ne pensi
+              di
+            </h2>
+            
+            {/* Brand/Stand name flanked by stars */}
+            <div className="flex items-center justify-center gap-4 md:gap-8">
+              <div className="hidden sm:block">
+                <Image src="/decoration-star.png" alt="" width={60} height={60} className="w-12 h-12 md:w-20 md:h-20 object-contain drop-shadow-[4px_4px_0_#000]" />
+              </div>
+              <h3 className="text-[clamp(2.5rem,7vw,96px)] font-black text-[#8000ff] border-b-[4px] md:border-b-8 border-[#fccb27] pb-2 tracking-tighter uppercase whitespace-nowrap">
+                {companyName}
+              </h3>
+              <div className="hidden sm:block">
+                <Image src="/decoration-star.png" alt="" width={60} height={60} className="w-12 h-12 md:w-20 md:h-20 object-contain drop-shadow-[4px_4px_0_#000]" />
+              </div>
+            </div>
+          </div>
+          
+          {/* CTA transformed into a single-line text input area */}
+          <div className="pt-8 flex justify-center w-full">
+            <input
+              type="text"
+              placeholder="PERCHÉ...?"
+              className="bg-[#fccb27] focus:bg-white text-black placeholder:text-black/50 text-2xl md:text-4xl font-black px-12 py-6 md:px-20 md:py-8 rounded-full border-[3px] border-black shadow-[6px_6px_0_#000] focus:shadow-[8px_8px_0_#000] focus:-translate-y-1 uppercase tracking-tighter w-full max-w-xl outline-none focus-visible:ring-0 focus-visible:ring-offset-0 transition-all duration-300 text-center"
+            />
+          </div>
         </div>
         
-        {/* Why button */}
-        <Button
-          onClick={onWhyClick}
-          className="bg-[#c2e1ff] hover:bg-[#a8c7e6] text-black text-xl md:text-2xl font-bold px-8 md:px-12 py-4 rounded-full border-2 border-[#231f20] mb-6"
-        >
-          perché?
-        </Button>
-        
-        <p className="text-base md:text-lg lg:text-xl text-gray-700 font-medium">
+        <p className="text-[clamp(1rem,2.5vw,24px)] text-[#231f20] font-[900] mt-8 md:mt-12 uppercase opacity-80 tracking-tight">
           completa il gioco per poter ritirare il premio!
         </p>
       </div>
@@ -59,14 +57,14 @@ export function SelectedStandSection({
       {/* Decorative images - left side */}
       <div className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 hidden md:flex flex-col gap-2">
         <Image
-          src="/66575995e12c5eb39d73e52b4f11e549-png1@2x.png"
+          src="/decoration-flower.png"
           alt=""
           width={134}
           height={132}
           className="w-20 h-20 lg:w-24 lg:h-24 object-contain"
         />
         <Image
-          src="/840edc06-e826-44c6-bba4-2b5d4e2b5b7f@2x.png"
+          src="/decoration-star.png"
           alt=""
           width={130}
           height={127}

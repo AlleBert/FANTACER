@@ -1,7 +1,7 @@
 'use client'
 
-import Image from 'next/image'
 import { Input } from '@/components/ui/input'
+import { Search } from 'lucide-react'
 
 interface SearchSectionProps {
   onSearch?: (query: string) => void
@@ -9,30 +9,29 @@ interface SearchSectionProps {
 
 export function SearchSection({ onSearch }: SearchSectionProps) {
   return (
-    <section className="relative w-full bg-white py-16 md:py-24 lg:py-32 text-[#8000ff]">
-      <div className="max-w-4xl mx-auto px-4">
-        <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-center mb-12 tracking-tight">
+    <section className="relative w-full h-[100dvh] bg-white text-[#8000ff] flex flex-col items-center justify-center overflow-hidden pt-8">
+      <div className="w-full max-w-[1200px] mx-auto px-4 md:px-8 flex flex-col items-center justify-center">
+        {/* Main Title - Responsive & Lowercase */}
+        <h2 className="text-[clamp(2.5rem,7.5vw,91px)] font-[900] text-center mb-[clamp(3rem,8vh,5rem)] tracking-tighter lowercase leading-[1.1] md:whitespace-nowrap w-full text-[#8000ff]">
           vota la tua azienda preferita
         </h2>
         
-        {/* Search input - rounded pill shape */}
-        <div className="relative max-w-xl mx-auto">
-          <Input
-            type="text"
-            placeholder="cerca"
-            onChange={(e) => onSearch?.(e.target.value)}
-            className="w-full bg-[#c2e1ff] border-2 border-[#231f20] rounded-full px-8 py-4 text-lg font-bold text-center"
-          />
+        {/* Search input container - embedding Lucide icon */}
+        <div className="relative w-full max-w-2xl mx-auto flex flex-col items-center">
+          <div className="relative w-full">
+            <Input
+              type="text"
+              placeholder="CERCA"
+              onChange={(e) => onSearch?.(e.target.value)}
+              className="w-full bg-[#c2e1ff] border-[3px] md:border-[4px] border-[#231f20] rounded-full pl-8 pr-16 md:pr-24 h-20 md:h-24 text-[clamp(1.5rem,4vw,32px)] md:text-[40px] font-[900] text-left shadow-[6px_6px_0_#000] placeholder:text-black/40 focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all duration-300 focus:bg-white focus:shadow-[8px_8px_0_#000] focus:-translate-y-1"
+            />
+            
+            {/* Embedded Search Icon */}
+            <div className="absolute right-6 md:right-8 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
+              <Search className="w-8 h-8 md:w-12 md:h-12 stroke-[#231f20] stroke-[3px]" />
+            </div>
+          </div>
         </div>
-        
-        {/* Decorative image - right side */}
-        <Image
-          src="/e883cd33-c802-43cb-a42a-cc3ab534b159@2x.png"
-          alt=""
-          width={102}
-          height={104}
-          className="absolute right-8 md:right-16 bottom-8 md:bottom-16 w-16 h-16 md:w-20 md:h-20 object-contain hidden md:block"
-        />
       </div>
     </section>
   )
