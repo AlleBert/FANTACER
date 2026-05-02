@@ -4,7 +4,8 @@ import Image from 'next/image'
 
 export function ContactSection() {
   return (
-    <section className="relative w-full bg-white py-16 md:py-24 px-4">
+    <section className="relative w-full bg-white py-16 md:py-24 lg:py-32">
+      {/* Background Frame */}
       <Image
         src="/Frame.svg"
         alt=""
@@ -13,7 +14,8 @@ export function ContactSection() {
         aria-hidden="true"
       />
       
-      <div className="relative z-10 max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-12">
+      <div className="relative z-10 max-w-6xl mx-auto px-4 flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
+        {/* Left: Logos */}
         <div className="relative w-64 h-64 lg:w-80 lg:h-80 flex-shrink-0">
           <Image
             src="/e87e80273f472378a7e56db0ad11236b-png@2x.png"
@@ -31,6 +33,7 @@ export function ContactSection() {
           />
         </div>
         
+        {/* Right: Contact info */}
         <div className="text-center lg:text-left">
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-8 tracking-tight">
             Parla con noi

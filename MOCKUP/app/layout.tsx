@@ -1,12 +1,7 @@
 import type { Metadata } from "next";
-import { Poppins } from "next/font/google";
+import "@fontsource/open-sauce-one/400.css";
+import "@fontsource/open-sauce-one/700.css";
 import "./global.css";
-
-const poppins = Poppins({
-  weight: ["400", "700"],
-  subsets: ["latin"],
-  variable: "--font-poppins",
-});
 
 export const metadata: Metadata = {
   title: "FANTACER - Gioca e Vinci",
@@ -21,7 +16,7 @@ export default function RootLayout({
   return (
     <html
       lang="it"
-      className={`${poppins.variable} antialiased`}
+      className="antialiased font-open-sauce"
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col font-sans" suppressHydrationWarning>

@@ -1,40 +1,42 @@
 'use client'
 
 import Image from 'next/image'
+import { Button } from '@/components/ui/button'
 
 interface CategoryRatingSectionProps {
   companyName?: string
-  categories?: { name: string; rating: number }[]
   onNext?: () => void
 }
 
+const categories = [
+  'design',
+  'innovazione',
+  'wow effect',
+]
+
 export function CategoryRatingSection({ 
-  companyName = "Ceramica",
+  companyName = "Ceramica", 
   onNext 
 }: CategoryRatingSectionProps) {
-  const categories = [
-    { name: 'design', rating: 0 },
-    { name: 'innovazione', rating: 0 },
-    { name: 'wow effect', rating: 0 },
-  ]
-
   return (
-    <section className="relative w-full bg-white py-16 md:py-24 px-4">
-      <div className="max-w-4xl mx-auto">
-        <p className="text-center text-lg md:text-xl mb-8">
-          come valuti lo stand di <span className="text-mockup-orange font-bold">{companyName}</span> ?
+    <section className="relative w-full bg-white py-16 md:py-24 lg:py-32">
+      <div className="max-w-4xl mx-auto px-4">
+        {/* Question */}
+        <p className="text-base md:text-lg lg:text-xl text-center mb-8">
+          come valuti lo stand di <span className="text-[#ff803b] font-bold">{companyName}</span> ?
         </p>
         
+        {/* Categories with rating bars */}
         <div className="space-y-8 mb-12">
           {categories.map((cat, index) => (
-            <div key={index} className="flex flex-col md:flex-row items-center gap-4">
-              <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold text-mockup-purple w-full md:w-auto text-center md:text-left">
-                {cat.name}
+            <div key={index} className="flex flex-col md:flex-row items-center gap-4 md:gap-8">
+              <h3 className="text-2xl md:text-3xl lg:text-4xl font-bold text-[#8000ff] w-full md:w-auto text-center md:text-left min-w-[10rem]">
+                {cat}
               </h3>
-              <div className="flex-1 max-w-md">
+              <div className="flex-1 max-w-md w-full">
                 <Image
                   src="/88abf11b3ae5bbe4b5f50a3583be0986-png@2x.png"
-                  alt={`Rating for ${cat.name}`}
+                  alt={`Rating for ${cat}`}
                   width={336}
                   height={60}
                   className="w-full h-auto"
@@ -44,13 +46,14 @@ export function CategoryRatingSection({
           ))}
         </div>
         
+        {/* Next button */}
         <div className="flex justify-center">
-          <button
+          <Button
             onClick={onNext}
-            className="bg-mockup-yellow hover:bg-[#c99900] text-black text-xl md:text-2xl font-bold px-16 py-4 rounded-full border-2 border-[#231f20] hover:border-[#575254] transition-colors"
+            className="bg-[#fccb27] hover:bg-[#c99900] text-black text-xl md:text-2xl font-bold px-16 py-4 rounded-full border-2 border-[#231f20] hover:border-[#575254] transition-colors"
           >
             &gt;&gt;
-          </button>
+          </Button>
         </div>
       </div>
     </section>

@@ -5,7 +5,6 @@ module.exports = {
     extend: {
       fontFamily: {
         'open-sauce': ['"Open Sauce One"', 'sans-serif'],
-        arial: ['Arial', 'sans-serif'],
       },
     },
   },
