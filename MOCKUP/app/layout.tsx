@@ -16,10 +16,10 @@ export default function RootLayout({
   return (
     <html
       lang="it"
-      className="antialiased font-open-sauce"
+      className="antialiased font-open-sauce scroll-smooth"
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col font-sans" suppressHydrationWarning>
+      <body className="min-h-full flex flex-col font-open-sauce bg-white" suppressHydrationWarning>
         {children}
       </body>
     </html>

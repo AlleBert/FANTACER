@@ -2,18 +2,27 @@
 
 @config "../tailwind.config.js";
 
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
 :root {
-  /* Colors */
-  --mockup-purple: #8000ff;
-  --mockup-orange: #ff8a26;
-  --mockup-yellow: #fccb27;
-  --mockup-blue: #c2e1ff;
-  --mockup-dark: #4f03aa;
-  --mockup-dark-text: #ff803b;
-  --mockup-black: #231f20;
-  --mockup-white: #ffffff;
+  /* Primary Colors */
+  --color-white: #ffffff;
+  --color-black: #231f20;
+  --color-orange: #ff8a26;
+  --color-orange-dark: #ff803b;
+  --color-yellow: #fccb27;
+  --color-yellow-hover: #c99900;
+  --color-purple: #8000ff;
+  --color-purple-dark: #4f03aa;
+  --color-blue: #c2e1ff;
+  --color-blue-hover: #a8c7e6;
+  --color-gray: #575254;
   
-  /* Font */
+  /* Typography */
   --font-open-sauce: "Open Sauce One", sans-serif;
 }
 
@@ -21,6 +30,11 @@
   * {
     @apply border-0;
   }
+  
+  html {
+    @apply scroll-smooth;
+  }
+  
   body {
     @apply bg-white text-black;
     font-family: var(--font-open-sauce);
@@ -28,59 +42,83 @@
 }
 
 @layer components {
-  /* Button styles */
+  /* === BUTTON COMPONENTS === */
   .btn-primary {
-    @apply bg-[#fccb27] text-black font-bold rounded-full border-2 border-[#231f20] transition-colors;
+    @apply bg-yellow-400 text-black font-bold rounded-full border-2 border-black transition-colors;
+    background-color: var(--color-yellow);
+    border-color: var(--color-black);
   }
   .btn-primary:hover {
-    @apply bg-[#c99900] border-[#575254];
+    background-color: var(--color-yellow-hover);
+    border-color: var(--color-gray);
   }
   
   .btn-secondary {
-    @apply bg-[#c2e1ff] text-black font-bold rounded-full border-2 border-[#231f20] transition-colors;
+    @apply text-black font-bold rounded-full border-2 transition-colors;
+    background-color: var(--color-blue);
+    border-color: var(--color-black);
   }
   .btn-secondary:hover {
-    @apply bg-[#a8c7e6] border-[#575254];
+    background-color: var(--color-blue-hover);
+    border-color: var(--color-gray);
   }
   
-  /* Section containers */
+  /* === SECTION COMPONENTS === */
+  .section-white {
+    @apply bg-white text-black;
+  }
+  
   .section-orange {
-    @apply bg-[#ff8a26] text-white;
+    background-color: var(--color-orange);
+    @apply text-white;
   }
   
   .section-purple {
-    @apply bg-[#4f03aa] text-white;
+    background-color: var(--color-purple-dark);
+    @apply text-white;
   }
   
-  .section-white {
-    @apply bg-white text-[#8000ff];
-  }
-  
-  /* Text colors */
+  /* === TEXT UTILITIES === */
   .text-purple {
-    color: var(--mockup-purple);
+    color: var(--color-purple);
   }
   .text-orange {
-    color: var(--mockup-orange);
+    color: var(--color-orange);
   }
-  .text-dark-orange {
-    color: var(--mockup-dark-text);
+  .text-orange-dark {
+    color: var(--color-orange-dark);
+  }
+  .text-black {
+    color: var(--color-black);
   }
   
-  /* Backgrounds */
+  /* === BACKGROUND UTILITIES === */
   .bg-purple {
-    background-color: var(--mockup-purple);
+    background-color: var(--color-purple);
   }
   .bg-orange {
-    background-color: var(--mockup-orange);
+    background-color: var(--color-orange);
   }
   .bg-yellow {
-    background-color: var(--mockup-yellow);
+    background-color: var(--color-yellow);
   }
   .bg-blue {
-    background-color: var(--mockup-blue);
+    background-color: var(--color-blue);
   }
   .bg-dark {
-    background-color: var(--mockup-dark);
+    background-color: var(--color-purple-dark);
+  }
+
+  /* === NEUBRUTALISM UTILITIES === */
+  .border-bold {
+    @apply border-2 md:border-3 border-black;
+  }
+  
+  .shadow-neo {
+    @apply shadow-[4px_4px_0_#000];
+  }
+  
+  .shadow-neo-hover {
+    @apply hover:shadow-[2px_2px_0_#000] hover:translate-x-[2px] hover:translate-y-[2px] transition-all;
   }
 }
