@@ -28,13 +28,13 @@ export function SelectedStandSection({
             {/* Brand/Stand name flanked by stars */}
             <div className="flex items-center justify-center gap-4 md:gap-8">
               <div className="hidden sm:block">
-                <Image src="/decoration-star.png" alt="" width={60} height={60} className="w-12 h-12 md:w-20 md:h-20 object-contain drop-shadow-[4px_4px_0_#000]" />
+                <Image src="/star-decoration-alt.svg" alt="" width={60} height={60} className="w-12 h-12 md:w-20 md:h-20 object-contain drop-shadow-[4px_4px_0_#000] -rotate-12 scale-90" />
               </div>
               <h3 className="text-[clamp(2.5rem,7vw,96px)] font-black text-[#8000ff] border-b-[4px] md:border-b-8 border-[#fccb27] pb-2 tracking-tighter uppercase whitespace-nowrap">
                 {companyName}
               </h3>
               <div className="hidden sm:block">
-                <Image src="/decoration-star.png" alt="" width={60} height={60} className="w-12 h-12 md:w-20 md:h-20 object-contain drop-shadow-[4px_4px_0_#000]" />
+                <Image src="/star-decoration.svg" alt="" width={60} height={60} className="w-12 h-12 md:w-20 md:h-20 object-contain drop-shadow-[4px_4px_0_#000] rotate-12" />
               </div>
             </div>
           </div>
@@ -57,18 +57,18 @@ export function SelectedStandSection({
       {/* Decorative images - left side */}
       <div className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 hidden md:flex flex-col gap-2">
         <Image
-          src="/decoration-flower.png"
+          src="/star-decoration-alt.svg"
           alt=""
           width={134}
           height={132}
-          className="w-20 h-20 lg:w-24 lg:h-24 object-contain"
+          className="w-20 h-20 lg:w-24 lg:h-24 object-contain rotate-12 scale-105"
         />
         <Image
-          src="/decoration-star.png"
+          src="/star-decoration.svg"
           alt=""
           width={130}
           height={127}
-          className="w-20 h-20 lg:w-24 lg:h-24 object-contain"
+          className="w-20 h-20 lg:w-24 lg:h-24 object-contain -rotate-6 scale-90"
         />
       </div>
     </section>

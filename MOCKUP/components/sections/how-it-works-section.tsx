@@ -49,18 +49,18 @@ export function HowItWorksSection() {
             {/* Overlapping Stars (Yellow) */}
             <span className="flex items-center -space-x-3 md:-space-x-4 ml-2 md:ml-4 -mt-2">
               <Image
-                src="/decoration-flower.png"
+                src="/star-decoration.svg"
                 alt="Yellow star"
                 width={83}
                 height={82}
-                className="w-10 h-10 md:w-14 md:h-14 lg:w-[60px] lg:h-[60px] object-contain relative z-10"
+                className="w-10 h-10 md:w-14 md:h-14 lg:w-[60px] lg:h-[60px] object-contain relative z-10 rotate-12 scale-95"
               />
               <Image
-                src="/decoration-flower-alt.png"
+                src="/star-decoration-alt.svg"
                 alt="Secondary yellow star with border"
                 width={81}
                 height={79}
-                className="w-8 h-8 md:w-10 md:h-10 lg:w-[45px] lg:h-[45px] object-contain relative z-0"
+                className="w-8 h-8 md:w-10 md:h-10 lg:w-[45px] lg:h-[45px] object-contain relative z-0 -rotate-[15deg] scale-110"
               />
             </span>
           </span>

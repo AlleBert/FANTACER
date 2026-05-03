@@ -17,18 +17,18 @@ export function PlayAgainSection({ onPlayClick }: PlayAgainSectionProps) {
           {/* Overlapping Stars (Top Left offset) */}
           <div className="absolute -top-[10%] -left-[10%] md:-top-[20%] md:-left-[15%] flex items-center -space-x-3 md:-space-x-5 z-20 pointer-events-none -rotate-12">
             <Image
-              src="/decoration-flower.png"
+              src="/star-decoration-alt.svg"
               alt=""
               width={83}
               height={82}
-              className="w-14 h-14 md:w-20 md:h-20 lg:w-[85px] lg:h-[85px] object-contain relative z-10"
+              className="w-14 h-14 md:w-20 md:h-20 lg:w-[85px] lg:h-[85px] object-contain relative z-10 rotate-6"
             />
             <Image
-              src="/decoration-flower-alt.png"
+              src="/star-decoration.svg"
               alt=""
               width={81}
               height={79}
-              className="w-10 h-10 md:w-16 md:h-16 lg:w-[65px] lg:h-[65px] object-contain relative z-0"
+              className="w-10 h-10 md:w-16 md:h-16 lg:w-[65px] lg:h-[65px] object-contain relative z-0 -rotate-12 scale-90"
             />
           </div>
 
