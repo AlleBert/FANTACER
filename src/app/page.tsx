@@ -11,11 +11,6 @@ import { RankingSection } from '@/components/sections/ranking-section'
 import { InnovationSection } from '@/components/sections/innovation-section'
 import { SuccessSection } from '@/components/sections/success-section'
 import { ContactSection } from '@/components/sections/contact-section'
-import { FooterSection } from '@/components/sections/footer-section'
-import { DatesLocationSection } from '@/components/sections/dates-location-section'
-import { RulesSection } from '@/components/sections/rules-section'
-import { PrizeSection } from '@/components/sections/prize-section'
-
 export default function Page() {
   return (
     <main
@@ -33,10 +28,6 @@ export default function Page() {
       <div className="snap-screen"><InnovationSection /></div>
       <div className="snap-screen"><SuccessSection /></div>
       <div className="snap-screen"><ContactSection /></div>
-      <div className="snap-screen"><DatesLocationSection /></div>
-      <div className="snap-screen"><RulesSection /></div>
-      <div className="snap-screen"><PrizeSection /></div>
-      <div className="snap-screen"><FooterSection /></div>
     </main>
   )
 }
