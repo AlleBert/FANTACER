@@ -68,7 +68,7 @@ function IphoneStoryMockup() {
 
 export function SuccessSection() {
   return (
-    <section className="relative app-screen w-full overflow-hidden bg-[linear-gradient(to_bottom,#ffffff_0%,#ffffff_20%,#4B00AB_100%)]">
+    <section className="relative w-full overflow-hidden bg-[linear-gradient(to_bottom,#ffffff_0%,#ffffff_20%,#4B00AB_100%)] min-h-[100dvh]">
       <div className="relative z-10 mx-auto flex w-full max-w-[1200px] flex-1 flex-col items-center justify-center gap-10 px-6 lg:flex-row lg:justify-between lg:gap-20 lg:px-16 py-4 md:py-8">
         
           {/* Left Column: Text & Logos */}
