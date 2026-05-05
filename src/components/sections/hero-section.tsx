@@ -1,52 +1,35 @@
 'use client'
 
-import React from 'react'
-import { motion } from 'framer-motion'
-import { SectionContainer } from '../layout/section-container'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 
-export function HeroSection() {
-  const scrollToVoting = () => {
-    const el = document.getElementById('search-section')
-    el?.scrollIntoView({ behavior: 'smooth' })
-  }
+interface HeroSectionProps {
+  onPlayClick?: () => void
+}
 
+export function HeroSection({ onPlayClick }: HeroSectionProps) {
   return (
-    <SectionContainer 
-      className="bg-[#FF00FF] bg-[url('/BACKGROUND.png')] bg-cover bg-center"
-      id="hero-section"
-    >
-      {/* Fallback gradient if background image fails */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#FF00FF] via-[#6B21A8] to-[#FF8C00] opacity-40 mix-blend-overlay" />
-      
-      <div className="flex flex-col items-center gap-12 text-center">
-        <motion.div
-           initial={{ opacity: 0, y: 20 }}
-           animate={{ opacity: 1, y: 0 }}
-           transition={{ duration: 0.8 }}
-        >
-          {/* Logo Placeholder - assuming Logo is in the image or text-styled */}
-          <h1 className="text-6xl md:text-9xl font-bold text-white drop-shadow-[0_5px_15px_rgba(0,0,0,0.3)] tracking-tighter italic">
-            FANTACER
-          </h1>
-          <p className="text-xl md:text-3xl font-semibold text-yellow-300 mt-4 tracking-wider uppercase">
-            Play to Win
-          </p>
-        </motion.div>
+    <section className="relative app-screen w-full overflow-hidden bg-white">
+      <div className="absolute inset-0">
+        <Image
+          src="/hero-background.png"
+          alt=""
+          fill
+          className="object-cover"
+          priority
+        />
+      </div>
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.5, duration: 0.5 }}
-        >
-          <Button 
-            onClick={scrollToVoting}
-            className="bg-yellow-400 hover:bg-yellow-300 text-black text-2xl md:text-5xl font-black px-12 py-8 md:px-20 md:py-14 rounded-full shadow-[0_10px_0_rgb(202,138,4)] active:translate-y-1 active:shadow-none transition-all uppercase tracking-widest"
+      <div className="relative z-10 flex w-full flex-col justify-end safe-shell">
+        <div className="flex justify-center pb-4 md:pb-10">
+          <Button
+            onClick={onPlayClick}
+            className="bg-[#fccb27] hover:bg-[#c99900] text-black text-2xl md:text-4xl font-black px-16 py-8 md:px-24 md:py-12 rounded-full border-2 border-black shadow-[4px_4px_0_#000] uppercase tracking-tighter"
           >
             GIOCA
           </Button>
-        </motion.div>
+        </div>
       </div>
-    </SectionContainer>
+    </section>
   )
 }

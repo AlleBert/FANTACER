@@ -21,13 +21,27 @@ body {
   
   /* Typography */
   --font-open-sauce: "Open Sauce One", sans-serif;
+  
+  /* Safe Area Insets (Notch Support) */
+  --safe-area-inset-top: env(safe-area-inset-top, 0);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0);
+  --safe-area-inset-left: env(safe-area-inset-left, 0);
+  --safe-area-inset-right: env(safe-area-inset-right, 0);
+  --app-height: 100vh;
+  --safe-top: max(1rem, var(--safe-area-inset-top));
+  --safe-bottom: max(1rem, var(--safe-area-inset-bottom));
+  --safe-x: max(1rem, var(--safe-area-inset-left), var(--safe-area-inset-right));
+  --safe-top-offset: calc(var(--safe-top) + 1rem);
+  --safe-bottom-offset: calc(var(--safe-bottom) + 1rem);
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --app-height: 100dvh;
+  }
 }
 
 @layer base {
-  * {
-    @apply border-0;
-  }
-  
   html {
     @apply scroll-smooth;
   }
@@ -39,6 +53,39 @@ body {
 }
 
 @layer components {
+  .app-screen {
+    min-height: var(--app-height);
+  }
+
+  .snap-screen {
+    min-height: var(--app-height);
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+
+  .safe-pt {
+    padding-top: var(--safe-top-offset);
+  }
+
+  .safe-pb {
+    padding-bottom: var(--safe-bottom-offset);
+  }
+
+  .safe-px {
+    padding-left: var(--safe-x);
+    padding-right: var(--safe-x);
+  }
+
+  .safe-shell {
+    box-sizing: border-box;
+    min-height: var(--app-height);
+    width: 100%;
+    padding-top: var(--safe-top-offset);
+    padding-bottom: var(--safe-bottom-offset);
+    padding-left: var(--safe-x);
+    padding-right: var(--safe-x);
+  }
+
   /* === BUTTON COMPONENTS === */
   .btn-primary {
     @apply bg-yellow-400 text-black font-bold rounded-full border-2 border-black transition-colors;
@@ -85,9 +132,6 @@ body {
   .text-orange-dark {
     color: var(--color-orange-dark);
   }
-  .text-black {
-    color: var(--color-black);
-  }
   
   /* === BACKGROUND UTILITIES === */
   .bg-purple {
@@ -108,7 +152,7 @@ body {
 
   /* === NEUBRUTALISM UTILITIES === */
   .border-bold {
-    @apply border-2 md:border-3 border-black;
+    @apply border-2 md:border-[3px] border-black;
   }
   
   .shadow-neo {

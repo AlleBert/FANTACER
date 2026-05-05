@@ -1,15 +1,16 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "@fontsource/open-sauce-one";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-dm-sans);
+  --font-sans: var(--font-open-sauce);
   --font-mono: var(--font-mono);
-  --font-heading: var(--font-dm-serif);
+  --font-heading: var(--font-open-sauce);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -41,7 +42,7 @@
   --color-card: var(--card);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
+  --radius-lg: calc(var(--radius));
   --radius-xl: calc(var(--radius) * 1.4);
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
@@ -50,41 +51,67 @@
 
 :root {
   --background: #FFFFFF;
-  --foreground: #000000;
-  
-  /* Canva Vibrant Palette */
-  --primary: #FF8C00;      /* Orange */
-  --primary-rgb: 255, 140, 0;
-  --magenta: #FF00FF;      /* Magenta */
+  --foreground: #231f20;
+
+  --primary: #ff8a26;
+  --primary-foreground: #ffffff;
+  --primary-rgb: 255, 138, 38;
+
+  --magenta: #FF00FF;
   --magenta-rgb: 255, 0, 255;
-  --purple: #6B21A8;       /* Royal Purple */
-  --purple-rgb: 107, 33, 168;
-  --yellow: #FFFF00;       /* Electric Yellow */
-  --yellow-rgb: 255, 255, 0;
-  
+  --purple: #8000ff;
+  --purple-rgb: 128, 0, 255;
+  --purple-dark: #4f03aa;
+  --yellow: #fccb27;
+  --yellow-rgb: 252, 203, 39;
+  --yellow-hover: #c99900;
+  --orange: #ff8a26;
+  --orange-dark: #ff803b;
+  --blue: #c2e1ff;
+  --blue-hover: #a8c7e6;
+  --gray: #575254;
+
   --card: #FFFFFF;
-  --card-foreground: #000000;
+  --card-foreground: #231f20;
   --popover: #FFFFFF;
-  --popover-foreground: #000000;
-  --secondary: #FDE68A;    /* Soft yellow for secondary targets */
+  --popover-foreground: #231f20;
+  --secondary: #FDE68A;
   --secondary-foreground: #000000;
   --muted: #F3F4F6;
   --muted-foreground: #6B7280;
-  --accent: #FF8C00;
+  --accent: #ff8a26;
   --accent-foreground: #FFFFFF;
   --destructive: #EF4444;
   --border: #E5E7EB;
   --input: #E5E7EB;
-  --ring: #FF8C00;
-  --radius: 1.5rem;        /* Even rounder for playful look */
+  --ring: #ff8a26;
+  --radius: 1.5rem;
+
+  --font-open-sauce: "Open Sauce One", sans-serif;
+
+  --safe-area-inset-top: env(safe-area-inset-top, 0);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0);
+  --safe-area-inset-left: env(safe-area-inset-left, 0);
+  --safe-area-inset-right: env(safe-area-inset-right, 0);
+  --app-height: 100vh;
+  --safe-top: max(1rem, var(--safe-area-inset-top));
+  --safe-bottom: max(1rem, var(--safe-area-inset-bottom));
+  --safe-x: max(1rem, var(--safe-area-inset-left), var(--safe-area-inset-right));
+  --safe-top-offset: calc(var(--safe-top) + 1rem);
+  --safe-bottom-offset: calc(var(--safe-bottom) + 1rem);
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --app-height: 100dvh;
+  }
 }
 
 .dark {
   --background: #0D0C0B;
   --foreground: #F0EDE8;
-  /* Keeping dark mode similar but vibrant */
-  --primary: #FF8C00;
-  --accent: #FF8C00;
+  --primary: #ff8a26;
+  --accent: #ff8a26;
   --card: #181614;
   --border: #2E2A26;
 }
@@ -94,8 +121,6 @@
     box-shadow: 0 4px 20px rgba(255, 106, 26, 0.15);
   }
 }
-
-/* === THEME OVERRIDES === */
 
 /* Theme: Cyber (Tech/Linear Vibe) */
 .theme-cyber {
@@ -136,10 +161,118 @@
   body {
     @apply text-foreground;
     background-color: transparent !important;
+    font-family: var(--font-open-sauce);
   }
   html {
-    @apply font-sans;
+    @apply font-sans scroll-smooth;
     min-height: 100vh;
     min-width: 100vw;
+  }
+}
+
+@layer components {
+  .app-screen {
+    min-height: var(--app-height);
+  }
+
+  .snap-screen {
+    min-height: var(--app-height);
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+
+  .safe-pt {
+    padding-top: var(--safe-top-offset);
+  }
+
+  .safe-pb {
+    padding-bottom: var(--safe-bottom-offset);
+  }
+
+  .safe-px {
+    padding-left: var(--safe-x);
+    padding-right: var(--safe-x);
+  }
+
+  .safe-shell {
+    box-sizing: border-box;
+    min-height: var(--app-height);
+    width: 100%;
+    padding-top: var(--safe-top-offset);
+    padding-bottom: var(--safe-bottom-offset);
+    padding-left: var(--safe-x);
+    padding-right: var(--safe-x);
+  }
+
+  .btn-primary {
+    @apply text-black font-bold rounded-full border-2 border-black transition-colors;
+    background-color: var(--yellow);
+    border-color: var(--gray);
+  }
+  .btn-primary:hover {
+    background-color: var(--yellow-hover);
+    border-color: var(--gray);
+  }
+
+  .btn-secondary {
+    @apply text-black font-bold rounded-full border-2 transition-colors;
+    background-color: var(--blue);
+    border-color: var(--gray);
+  }
+  .btn-secondary:hover {
+    background-color: var(--blue-hover);
+    border-color: var(--gray);
+  }
+
+  .section-white {
+    @apply bg-white text-black;
+  }
+
+  .section-orange {
+    background-color: var(--orange);
+    @apply text-white;
+  }
+
+  .section-purple {
+    background-color: var(--purple-dark);
+    @apply text-white;
+  }
+
+  .text-purple {
+    color: var(--purple);
+  }
+  .text-orange {
+    color: var(--orange);
+  }
+  .text-orange-dark {
+    color: var(--orange-dark);
+  }
+
+  .bg-purple {
+    background-color: var(--purple);
+  }
+  .bg-orange {
+    background-color: var(--orange);
+  }
+  .bg-yellow {
+    background-color: var(--yellow);
+  }
+  .bg-blue {
+    background-color: var(--blue);
+  }
+  .bg-dark {
+    background-color: var(--purple-dark);
+  }
+
+  .border-bold {
+    @apply border-2 md:border-[3px] border-black;
+  }
+
+  .shadow-neo {
+    @apply shadow-[4px_4px_0_#000];
+  }
+
+  .shadow-neo-hover {
+    @apply hover:shadow-[2px_2px_0_#000] hover:translate-x-[2px] hover:translate-y-[2px] transition-all;
   }
 }
