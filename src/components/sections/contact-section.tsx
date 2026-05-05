@@ -4,9 +4,9 @@ import { Button } from '@/components/ui/button'
 
 export function ContactSection() {
   return (
-    <section id="contact-section" className="relative app-screen w-full overflow-hidden bg-[linear-gradient(to_bottom,#4B00AB_0%,#a088db_40%,#efdeff_100%)]">
-      <div className="safe-shell flex">
-        <div className="relative z-10 mx-auto flex w-full max-w-[1200px] flex-1 flex-col-reverse items-center justify-center gap-10 px-4 md:px-8 lg:flex-row lg:gap-16">
+    <section id="contact-section" className="relative w-full overflow-hidden bg-[linear-gradient(to_bottom,#4B00AB_0%,#a088db_40%,#efdeff_100%)] min-h-[100dvh]">
+      <div className="relative z-10 mx-auto flex w-full max-w-[1200px] flex-1 flex-col-reverse items-center justify-center gap-10 px-4 md:px-8 lg:flex-row lg:gap-16 py-4 md:py-8">
+
         
         {/* Left: Contact Form (Work in Progress) */}
         <div className="w-full max-w-md rounded-3xl border-[4px] border-[#231f20] bg-white p-6 shadow-[6px_6px_0_#000] md:p-8 md:shadow-[8px_8px_0_#000] lg:w-5/12 lg:max-w-none">
@@ -65,7 +65,6 @@ export function ContactSection() {
           </div>
         </div>
         
-        </div>
       </div>
     </section>
   )
