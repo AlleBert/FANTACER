@@ -5,7 +5,7 @@ import Image from 'next/image'
 function IphoneStoryMockup() {
   return (
     <div 
-      className="relative w-[180px] xs:w-[200px] sm:w-[250px] md:w-[280px] lg:w-[320px] mx-auto lg:mx-0 shrink-0 transform md:rotate-1"
+      className="relative w-[140px] xs:w-[160px] sm:w-[200px] md:w-[250px] lg:w-[300px] mx-auto lg:mx-0 shrink-0 transform md:rotate-1"
       style={{ aspectRatio: '252 / 479' }}
     >
       {/* Background/Shadow layer - matches phone shape without shadowing SVG text */}
@@ -69,12 +69,12 @@ function IphoneStoryMockup() {
 export function SuccessSection() {
   return (
     <section className="relative w-full overflow-hidden bg-[linear-gradient(to_bottom,#ffffff_0%,#ffffff_20%,#4B00AB_100%)] min-h-[100dvh]">
-      <div className="relative z-10 mx-auto flex w-full max-w-[1200px] flex-1 flex-col items-center justify-center gap-10 px-6 lg:flex-row lg:justify-between lg:gap-20 lg:px-16 py-4 md:py-8">
+      <div className="relative z-10 mx-auto flex w-full max-w-[1200px] flex-1 flex-col items-center justify-center gap-6 px-6 lg:flex-row lg:justify-between lg:gap-20 lg:px-16 py-2 md:py-4">
         
           {/* Left Column: Text & Logos */}
           <div className="relative flex w-full flex-col items-center text-center lg:w-[55%] lg:items-start lg:text-left">
           {/* Title */}
-          <h2 className="text-[clamp(2.5rem,10vw,120px)] leading-[0.85] font-black mb-6 lg:mb-10 text-[#8000ff] uppercase tracking-tighter">
+          <h2 className="text-[clamp(2rem,8vw,80px)] leading-[0.85] font-black mb-4 lg:mb-10 text-[#8000ff] uppercase tracking-tighter">
             sei <br className="hidden lg:block"/>forte!
           </h2>
         

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 export function ContactSection() {
   return (
     <section id="contact-section" className="relative w-full overflow-hidden bg-[linear-gradient(to_bottom,#4B00AB_0%,#a088db_40%,#efdeff_100%)] min-h-[100dvh]">
-      <div className="relative z-10 mx-auto flex w-full max-w-[1200px] flex-1 flex-col-reverse items-center justify-center gap-10 px-4 md:px-8 lg:flex-row lg:gap-16 py-4 md:py-8">
+      <div className="relative z-10 mx-auto flex w-full max-w-[1200px] flex-1 flex-col-reverse items-center justify-center gap-6 px-4 md:px-8 lg:flex-row lg:gap-16 py-2 md:py-4">
 
         
         {/* Left: Contact Form (Work in Progress) */}
