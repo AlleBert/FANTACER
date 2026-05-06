@@ -49,6 +49,8 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+
+
 :root {
   --background: #FFFFFF;
   --foreground: #231f20;
@@ -128,6 +130,7 @@
   --accent: #6366F1;
   --ring: #06B6D4;
 }
+
 .theme-cyber.dark {
   --background: #050505;
   --card: #111111;
@@ -144,6 +147,7 @@
   --accent: #10B981;
   --ring: #10B981;
 }
+
 .theme-fintech.dark {
   --background: #0B1120;
   --card: #162032;
@@ -158,21 +162,30 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply text-foreground;
     background-color: transparent !important;
     font-family: var(--font-open-sauce);
+    min-height: 100dvh !important;
   }
+
   html {
     @apply font-sans scroll-smooth;
-    min-height: 100vh;
+    min-height: 100dvh;
     min-width: 100vw;
+    background: transparent;
   }
 }
 
 @layer components {
   .app-screen {
     min-height: var(--app-height);
+  }
+
+  .snap-start {
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
   }
 
   .snap-screen {
@@ -209,6 +222,7 @@
     background-color: var(--yellow);
     border-color: var(--gray);
   }
+
   .btn-primary:hover {
     background-color: var(--yellow-hover);
     border-color: var(--gray);
@@ -219,6 +233,7 @@
     background-color: var(--blue);
     border-color: var(--gray);
   }
+
   .btn-secondary:hover {
     background-color: var(--blue-hover);
     border-color: var(--gray);
@@ -241,9 +256,11 @@
   .text-purple {
     color: var(--purple);
   }
+
   .text-orange {
     color: var(--orange);
   }
+
   .text-orange-dark {
     color: var(--orange-dark);
   }
@@ -251,15 +268,19 @@
   .bg-purple {
     background-color: var(--purple);
   }
+
   .bg-orange {
     background-color: var(--orange);
   }
+
   .bg-yellow {
     background-color: var(--yellow);
   }
+
   .bg-blue {
     background-color: var(--blue);
   }
+
   .bg-dark {
     background-color: var(--purple-dark);
   }
@@ -281,7 +302,7 @@
   .contact-section {
     padding: clamp(2rem, 4vw, 5rem) clamp(1.5rem, 6vw, 4rem);
     background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.12), transparent 40%),
-                linear-gradient(180deg, #0f172a 0%, #020617 100%);
+      linear-gradient(180deg, #0f172a 0%, #020617 100%);
     color: #f8fafc;
     display: grid;
     gap: clamp(1.5rem, 3vw, 3rem);
@@ -290,7 +311,7 @@
     overflow: hidden;
   }
 
-  .contact-section > * {
+  .contact-section>* {
     width: min(100%, 90rem);
   }
 

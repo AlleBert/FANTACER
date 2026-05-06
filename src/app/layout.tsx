@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "@fontsource/open-sauce-one/400.css";
 import "@fontsource/open-sauce-one/700.css";
-import "./global.css";
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "FANTACER - Gioca e Vinci",
@@ -12,7 +12,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#ffffff", // Opzionale: imposta il colore della barra browser
+  /*themeColor: "#ffffff", */// Opzionale: imposta il colore della barra browser
 };
 
 export default function RootLayout({
@@ -23,9 +23,9 @@ export default function RootLayout({
   return (
     // "suppressHydrationWarning" è utile se usi librerie come next-themes
     <html suppressHydrationWarning lang="it" className="antialiased scroll-smooth">
-      <body 
-        suppressHydrationWarning 
-        className="min-h-screen flex flex-col bg-white text-black font-['Open_Sauce_One',_sans-serif]"
+      <body
+        suppressHydrationWarning
+        className="flex flex-col text-black font-['Open_Sauce_One',_sans-serif]"
       >
         {children}
       </body>

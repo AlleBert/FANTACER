@@ -57,7 +57,7 @@ export function InnovationSection({
   }
 
   return (
-    <section id="innovation-section" className="relative w-full h-[100dvh] min-h-[600px] bg-white flex flex-col items-center overflow-hidden">
+    <section id="innovation-section" className="snap-start relative w-full h-[100dvh] min-h-[600px] bg-white flex flex-col items-center overflow-hidden">
       <div className="safe-shell flex flex-col items-center justify-between max-w-[1200px] mx-auto">
 
         {/* Question */}

@@ -9,7 +9,7 @@ interface PlayAgainSectionProps {
 
 export function PlayAgainSection({ onPlayClick }: PlayAgainSectionProps) {
   return (
-    <section className="relative w-full h-[100dvh] bg-[linear-gradient(to_bottom,#FF2FB2_0%,#4B00AB_60%,#4B00AB_100%)] flex items-center justify-center overflow-hidden">
+    <section className="snap-start relative w-full h-[100dvh] bg-[linear-gradient(to_bottom,#FF2FB2_0%,#4B00AB_60%,#4B00AB_100%)] flex items-center justify-center overflow-hidden">
       
       <div className="relative z-10 w-full max-w-[1200px] mx-auto text-center px-4 md:px-8 flex flex-col items-center justify-center min-h-[50vh] gap-8 md:gap-10">
         <p className="text-[clamp(1.5rem,4vw,46px)] text-white font-medium leading-[1.3] md:leading-[1.4] max-w-[90%] md:max-w-none">

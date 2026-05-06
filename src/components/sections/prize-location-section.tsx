@@ -2,7 +2,7 @@
 
 export function PrizeLocationSection() {
   return (
-    <section className="relative w-full h-[100dvh] bg-[linear-gradient(to_bottom,#4B00AB_0%,#4B00AB_30%,#8A2BE2_60%,#E0B0FF_85%,#FFFFFF_100%)] text-white flex flex-col items-center justify-center overflow-hidden">
+    <section className="snap-start relative w-full h-[100dvh] bg-[linear-gradient(to_bottom,#4B00AB_0%,#4B00AB_30%,#8A2BE2_60%,#E0B0FF_85%,#FFFFFF_100%)] text-white flex flex-col items-center justify-center overflow-hidden">
       <div className="safe-shell w-full max-w-[1200px] mx-auto flex flex-col items-center justify-evenly h-full py-10 md:py-12 gap-0">
 
         {/* Main Title */}

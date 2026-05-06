@@ -13,7 +13,7 @@ export function SelectedStandSection({
   onWhyClick 
 }: SelectedStandSectionProps) {
   return (
-    <section className="relative w-full h-[100dvh] bg-white flex flex-col items-center justify-center overflow-hidden pt-8">
+    <section className="snap-start relative w-full h-[100dvh] bg-white flex flex-col items-center justify-center overflow-hidden pt-8">
       
       <div className="relative z-10 w-full max-w-[1200px] mx-auto text-center px-4 md:px-8">
         {/* Company name */}

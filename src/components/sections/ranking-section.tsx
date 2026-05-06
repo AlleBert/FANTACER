@@ -47,7 +47,7 @@ export function RankingSection({
   }
 
   return (
-    <section id="ranking-section" className="relative w-full h-[100dvh] min-h-[600px] bg-white flex flex-col items-center overflow-hidden">
+    <section id="ranking-section" className="snap-start relative w-full h-[100dvh] min-h-[600px] bg-white flex flex-col items-center overflow-hidden">
       <div className="safe-shell flex flex-col items-center justify-between max-w-[1200px] mx-auto">
         {/* Question */}
         <p className="text-[clamp(1.5rem,5vw,40px)] font-[900] text-black text-center lowercase tracking-tighter w-full max-w-4xl mx-auto flex-none pt-4">

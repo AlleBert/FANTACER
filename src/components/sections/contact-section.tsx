@@ -6,13 +6,10 @@ export function ContactSection() {
   return (
     <section
       id="contact-section"
-      className="relative w-full overflow-hidden"
+      className="snap-start relative w-full overflow-hidden bg-[linear-gradient(to_bottom,#4B00AB_0%,#a088db_40%,#efdeff_100%)]"
     >
-      {/* Background gradient esteso nel notch */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,#4B00AB_0%,#a088db_40%,#efdeff_100%)]" />
-      
-      {/* Content - senza padding-top per lasciare che il background copra il notch */}
-      <div className="relative z-10 flex flex-col items-center justify-center gap-2 md:gap-4 lg:gap-8 px-4 lg:px-16" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))', paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+      {/* safe-shell gestisce min-height, safe area e padding laterale */}
+      <div className="safe-shell flex flex-col items-center justify-center gap-2 md:gap-4 lg:gap-8">
         <div className="relative z-10 mx-auto flex w-full flex-col items-center justify-center gap-6 md:gap-8 lg:flex-row-reverse lg:gap-16">
 
           {/* Top mobile / Right desktop: info */}
