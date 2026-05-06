@@ -6,10 +6,13 @@ export function ContactSection() {
   return (
     <section
       id="contact-section"
-      className="relative w-full overflow-hidden bg-[linear-gradient(to_bottom,#4B00AB_0%,#a088db_40%,#efdeff_100%)]"
+      className="relative w-full overflow-hidden"
     >
-      {/* safe-shell gestisce min-height, safe area e padding laterale */}
-      <div className="safe-shell flex flex-col items-center justify-center gap-2 md:gap-4 lg:gap-8">
+      {/* Background gradient esteso nel notch */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,#4B00AB_0%,#a088db_40%,#efdeff_100%)]" />
+      
+      {/* Content con safe area padding */}
+      <div className="relative z-10 flex flex-col items-center justify-center gap-2 md:gap-4 lg:gap-8 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] px-4 lg:px-16">
         <div className="relative z-10 mx-auto flex w-full flex-col items-center justify-center gap-6 md:gap-8 lg:flex-row-reverse lg:gap-16">
 
           {/* Top mobile / Right desktop: info */}

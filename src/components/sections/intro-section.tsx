@@ -7,7 +7,7 @@ export function IntroSection() {
       <div className="absolute inset-x-0 bottom-0 h-[30vh] bg-gradient-to-b from-transparent to-[#FF8A26] pointer-events-none" />
 
       <div className="safe-shell flex">
-        <div className="relative z-10 mx-auto grid flex-1 w-full max-w-[1440px] items-center gap-12 px-4 md:px-12 lg:grid-cols-[0.7fr_1.3fr] lg:gap-24 lg:px-24">
+        <div className="relative z-10 mx-auto grid flex-1 w-full max-w-[1440px] items-center gap-4 md:gap-12 px-4 md:px-12 lg:grid-cols-[0.7fr_1.3fr] lg:gap-24 lg:px-24">
           {/* Left: iPhone like in penultimate slide */}
           <div className="relative flex flex-col items-center lg:items-start flex-shrink-0">
             <div className="relative w-[min(80vw,350px)] h-[min(80vw,350px)] md:w-[min(60vw,450px)] md:h-[min(60vw,450px)] lg:w-[min(40vw,520px)] lg:h-[min(40vw,520px)] xl:w-[550px] xl:h-[550px]">
@@ -19,11 +19,11 @@ export function IntroSection() {
                 />
               </svg>
 
-              {/* Phone frame */}
+              {/* Phone frame — smaller on mobile, normal on desktop */}
               <img
                 src="/iphone2.svg"
                 alt="iPhone"
-                className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0 scale-90 md:scale-75"
+                className="absolute inset-0 w-full h-full object-contain pointer-events-none z-0 scale-[0.65] md:scale-75"
               />
             </div>
           </div>

@@ -9,7 +9,9 @@ interface HeroSectionProps {
 
 export function HeroSection({ onPlayClick }: HeroSectionProps) {
   return (
-    <section className="relative app-screen w-full overflow-hidden bg-white">
+    <section className="relative w-full overflow-hidden">
+      {/* Background esteso nel notch */}
+      <div className="absolute inset-0 bg-white" />
       <div className="absolute inset-0">
         {/* Desktop Background */}
         <div className="hidden md:block absolute inset-0">
@@ -35,7 +37,8 @@ export function HeroSection({ onPlayClick }: HeroSectionProps) {
         </div>
       </div>
 
-      <div className="relative z-10 flex w-full flex-col justify-end safe-shell">
+      {/* Content con safe area padding */}
+      <div className="relative z-10 flex w-full flex-col justify-end min-h-[100dvh] pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] px-4">
         <div className="flex justify-center pb-4 md:pb-10">
           <Button
             onClick={onPlayClick}
