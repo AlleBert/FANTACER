@@ -21,12 +21,22 @@ const options: Option[] = [
   { left: 'wow effect', right: 'normale' },
 ]
 
-export function InnovationSection({ 
-  companyName = "Ceramica Mimma", 
+const renderLabel = (text: string) => {
+  const words = text.split(' ')
+  return words.map((word, index) => (
+    <span key={index} className="block sm:inline">
+      {word}
+      {index < words.length - 1 ? '\u00A0' : ''}
+    </span>
+  ))
+}
+
+export function InnovationSection({
+  companyName = "Ceramica Mimma",
   onSelect,
-  onNext 
+  onNext
 }: InnovationSectionProps) {
-  
+
   // Track 0-100 values for the 3 sliders (start in the middle at 50)
   const [sliderValues, setSliderValues] = useState<number[]>([50, 50, 50])
 
@@ -47,26 +57,28 @@ export function InnovationSection({
   }
 
   return (
-    <section id="innovation-section" className="relative w-full h-[100dvh] min-h-[600px] bg-white flex flex-col items-center overflow-hidden py-10 md:py-16 lg:py-20">
-      <div className="w-full h-full max-w-[1200px] mx-auto px-4 md:px-8 flex flex-col items-center justify-between">
-        
+    <section id="innovation-section" className="relative w-full h-[100dvh] min-h-[600px] bg-white flex flex-col items-center overflow-hidden">
+      <div className="safe-shell flex flex-col items-center justify-between max-w-[1200px] mx-auto">
+
         {/* Question */}
-        <p className="text-[clamp(1.125rem,3.5vw,40px)] font-[900] text-black text-center lowercase tracking-tighter w-full max-w-3xl mx-auto flex-none">
+        <p className="text-[clamp(2rem,5vw,40px)] font-[900] text-black text-center lowercase tracking-tighter w-full max-w-4xl mx-auto flex-none pt-4">
           per te, le novità di <span className="text-[#ff803b] underline decoration-4 underline-offset-4">{companyName}</span> sono più...
         </p>
-        
-        <div className="flex-1 min-h-[4vh]" />
-        
+
+        <div className="flex-1 min-h-[2vh]" />
+
         {/* Options */}
-        <div className="space-y-12 md:space-y-16 w-full max-w-5xl mx-auto flex-none">
+        <div className="space-y-10 md:space-y-14 w-full max-w-5xl mx-auto flex-none">
           {options.map((option, index) => (
-            <div key={index} className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-8 lg:gap-12 w-full">
-              <h3 className="text-[clamp(1.2rem,2.5vw,36px)] font-[900] text-[#8000ff] text-center md:text-right uppercase tracking-tighter w-full md:w-[30%] leading-[1.1]">
-                {option.left}
-              </h3>
+            <div key={index} className="flex flex-row items-center justify-center gap-4 md:gap-12 w-full py-2">
+              <div className="flex-none basis-[25%] md:basis-[20%] flex items-center justify-end">
+                <h3 className="text-[clamp(1rem,3vw,26px)] md:text-[clamp(1.35rem,3.8vw,38px)] font-[900] text-[#8000ff] text-right uppercase tracking-tighter leading-[1.05]">
+                  {renderLabel(option.left)}
+                </h3>
+              </div>
               
               {/* Interactive Range Slider mapped to Star */}
-              <div className="relative flex-1 w-full h-16 flex items-center group md:max-w-[40%]">
+              <div className="relative flex-none basis-[45%] md:basis-[56%] w-full h-16 flex items-center group px-16 md:px-24 lg:px-44">
                 
                 {/* Visual Track - Sleek Solid Line */}
                 <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[6px] bg-black rounded-full" />
@@ -76,7 +88,7 @@ export function InnovationSection({
                   className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 pointer-events-none transition-transform duration-75"
                   style={{ left: `${sliderValues[index]}%` }}
                 >
-                  <Star className="w-12 h-12 md:w-16 md:h-16 lg:w-[72px] lg:h-[72px] fill-[#fccb27] stroke-[#231f20] stroke-[2px] drop-shadow-[2px_2px_0_#000]" />
+                  <Star className="w-10 h-10 sm:w-12 sm:h-12 md:w-18 md:h-18 lg:w-[84px] lg:h-[84px] fill-[#fccb27] stroke-[#231f20] stroke-[2px] drop-shadow-[2px_2px_0_#000]" />
                 </div>
                 
                 {/* Hidden input controlling the slider */}
@@ -91,28 +103,31 @@ export function InnovationSection({
                     setSliderValues(newValues)
                   }}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize m-0 p-0"
+                  style={{ touchAction: 'pan-x' }}
                 />
               </div>
               
-              <h3 className="text-[clamp(1.2rem,2.5vw,36px)] font-[900] text-[#8000ff] text-center md:text-left uppercase tracking-tighter w-full md:w-[30%] leading-[1.1]">
-                {option.right}
-              </h3>
+              <div className="flex-none basis-[25%] md:basis-[20%] flex items-center justify-start">
+                <h3 className="text-[clamp(1rem,3vw,26px)] md:text-[clamp(1.35rem,3.8vw,38px)] font-[900] text-[#8000ff] text-left uppercase tracking-tighter leading-[1.05]">
+                  {renderLabel(option.right)}
+                </h3>
+              </div>
             </div>
           ))}
         </div>
-        
-        <div className="flex-1 min-h-[4vh]" />
-        
+
+        <div className="flex-1 min-h-[2vh]" />
+
         {/* Submit button */}
         <div className="flex justify-center w-full flex-none">
-          <Button 
+          <Button
             onClick={handleNext}
             className="bg-[#fccb27] hover:bg-[#ffe066] text-black text-2xl md:text-3xl font-[900] px-12 py-6 md:px-16 md:py-8 rounded-full border-[3px] md:border-[4px] border-[#231f20] shadow-[4px_4px_0_#000] hover:shadow-[6px_6px_0_#000] hover:-translate-y-1 transition-all duration-300 w-full max-w-[16rem]"
           >
             FATTO!
           </Button>
         </div>
-        
+
       </div>
     </section>
   )

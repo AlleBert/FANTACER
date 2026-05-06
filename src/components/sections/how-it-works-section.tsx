@@ -37,7 +37,7 @@ const steps: Step[] = [
 
 export function HowItWorksSection() {
   return (
-    <section className="relative w-full h-[100dvh] bg-[linear-gradient(to_bottom,#FF8A26_10%,#FF2FB2_100%)] text-white flex items-center justify-center overflow-hidden">
+    <section className="relative w-full min-h-[100dvh] py-10 md:py-20 bg-[linear-gradient(to_bottom,#FF8A26_10%,#FF2FB2_100%)] text-white flex items-center justify-center overflow-hidden">
       {/* Content */}
       <div className="relative z-10 max-w-[1600px] w-full mx-auto px-4 md:px-6 lg:px-12 py-12 lg:py-16 flex flex-col items-center">
         {/* Responsive, lowercase heading with inline decorations */}

@@ -1,5 +1,3 @@
-'use client'
-
 import { HeroSection } from '@/components/sections/hero-section'
 import { IntroSection } from '@/components/sections/intro-section'
 import { HowItWorksSection } from '@/components/sections/how-it-works-section'
@@ -14,7 +12,7 @@ import { ContactSection } from '@/components/sections/contact-section'
 export default function Page() {
   return (
     <main
-      className="overflow-y-auto snap-y snap-mandatory scroll-smooth no-scrollbar"
+      className="overflow-y-auto snap-y snap-mandatory scroll-smooth no-scrollbar pb-safe"
       style={{ height: 'var(--app-height)' }}
     >
       <div className="snap-screen"><HeroSection /></div>

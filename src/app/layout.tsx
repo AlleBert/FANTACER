@@ -12,6 +12,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  themeColor: "#ffffff", // Opzionale: imposta il colore della barra browser
 };
 
 export default function RootLayout({
@@ -20,8 +21,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+    // "suppressHydrationWarning" è utile se usi librerie come next-themes
     <html suppressHydrationWarning lang="it" className="antialiased scroll-smooth">
-      <body suppressHydrationWarning className="min-h-screen flex flex-col bg-white text-black">
+      <body 
+        suppressHydrationWarning 
+        className="min-h-screen flex flex-col bg-white text-black font-['Open_Sauce_One',_sans-serif]"
+      >
         {children}
       </body>
     </html>

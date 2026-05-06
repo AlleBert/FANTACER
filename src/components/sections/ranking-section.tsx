@@ -47,14 +47,14 @@ export function RankingSection({
   }
 
   return (
-    <section id="ranking-section" className="relative w-full h-[100dvh] min-h-[600px] bg-white flex flex-col items-center overflow-hidden py-10 md:py-16 lg:py-20">
-      <div className="w-full h-full max-w-[1200px] mx-auto px-4 md:px-8 flex flex-col items-center justify-between">
+    <section id="ranking-section" className="relative w-full h-[100dvh] min-h-[600px] bg-white flex flex-col items-center overflow-hidden">
+      <div className="safe-shell flex flex-col items-center justify-between max-w-[1200px] mx-auto">
         {/* Question */}
-        <p className="text-[clamp(1.125rem,3.5vw,40px)] font-[900] text-black text-center lowercase tracking-tighter w-full max-w-3xl mx-auto flex-none">
-          rispetto agli altri stand che hai visto, quello di <span className="text-[#ff803b] underline decoration-4 underline-offset-4">{companyName}</span> è ...
+        <p className="text-[clamp(1.5rem,5vw,40px)] font-[900] text-black text-center lowercase tracking-tighter w-full max-w-4xl mx-auto flex-none pt-4">
+          rispetto agli altri stand che hai visto, quello di <span className="text-[#ff803b] underline decoration-2 underline-offset-4">{companyName}</span> è ...
         </p>
         
-        <div className="flex-1 min-h-[4vh]" />
+        <div className="flex-1 min-h-[2vh]" />
 
         {/* Options stack */}
         <div className="flex flex-col gap-4 md:gap-6 w-full max-w-md mx-auto flex-none">
@@ -68,7 +68,7 @@ export function RankingSection({
           ))}
         </div>
         
-        <div className="flex-1 min-h-[4vh]" />
+        <div className="flex-1 min-h-[2vh]" />
 
         {/* Next button */}
         <div className="flex justify-center w-full flex-none">

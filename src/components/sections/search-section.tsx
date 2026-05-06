@@ -9,7 +9,7 @@ interface SearchSectionProps {
 
 export function SearchSection({ onSearch }: SearchSectionProps) {
   return (
-    <section className="relative app-screen w-full overflow-hidden bg-white text-[#8000ff]">
+    <section className="relative app-screen w-full overflow-hidden bg-[radial-gradient(circle_at_center,rgba(194,225,255,0.2)_0%,rgba(255,255,255,1)_100%)] text-[#8000ff]">
       <div className="safe-shell flex">
         <div className="mx-auto flex flex-1 w-full max-w-[1200px] flex-col items-center justify-center px-4 md:px-8">
           {/* Main Title - Responsive & Lowercase */}

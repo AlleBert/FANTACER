@@ -27,14 +27,14 @@ export function SelectedStandSection({
             
             {/* Brand/Stand name flanked by stars */}
             <div className="flex items-center justify-center gap-4 md:gap-8">
-              <div className="hidden sm:block">
-                <Image src="/star-decoration-alt.svg" alt="" width={60} height={60} className="w-12 h-12 md:w-20 md:h-20 object-contain drop-shadow-[4px_4px_0_#000] -rotate-12 scale-90" />
+              <div className="">
+                <Image src="/star-decoration-alt.svg" alt="" width={60} height={60} className="w-8 h-8 md:w-20 md:h-20 object-contain drop-shadow-[4px_4px_0_#000] -rotate-12 scale-90" />
               </div>
-              <h3 className="text-[clamp(2.5rem,7vw,96px)] font-black text-[#8000ff] border-b-[4px] md:border-b-8 border-[#fccb27] pb-2 tracking-tighter uppercase whitespace-nowrap">
+              <h3 className="text-[clamp(1.5rem,7vw,96px)] font-black text-[#8000ff] border-b-[4px] md:border-b-8 border-[#fccb27] pb-2 tracking-tighter uppercase whitespace-nowrap">
                 {companyName}
               </h3>
-              <div className="hidden sm:block">
-                <Image src="/star-decoration.svg" alt="" width={60} height={60} className="w-12 h-12 md:w-20 md:h-20 object-contain drop-shadow-[4px_4px_0_#000] rotate-12" />
+              <div className="">
+                <Image src="/star-decoration.svg" alt="" width={60} height={60} className="w-8 h-8 md:w-20 md:h-20 object-contain drop-shadow-[4px_4px_0_#000] rotate-12" />
               </div>
             </div>
           </div>
