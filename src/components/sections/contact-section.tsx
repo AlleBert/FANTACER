@@ -11,8 +11,8 @@ export function ContactSection() {
       {/* Background gradient esteso nel notch */}
       <div className="absolute inset-0 bg-[linear-gradient(to_bottom,#4B00AB_0%,#a088db_40%,#efdeff_100%)]" />
       
-      {/* Content con safe area padding */}
-      <div className="relative z-10 flex flex-col items-center justify-center gap-2 md:gap-4 lg:gap-8 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] px-4 lg:px-16">
+      {/* Content - senza padding-top per lasciare che il background copra il notch */}
+      <div className="relative z-10 flex flex-col items-center justify-center gap-2 md:gap-4 lg:gap-8 px-4 lg:px-16" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))', paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
         <div className="relative z-10 mx-auto flex w-full flex-col items-center justify-center gap-6 md:gap-8 lg:flex-row-reverse lg:gap-16">
 
           {/* Top mobile / Right desktop: info */}
