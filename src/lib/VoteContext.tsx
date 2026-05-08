@@ -43,14 +43,14 @@ function voteReducer(state: VoteState, action: VoteAction): VoteState {
     case 'SET_SLIDER':
       return {
         ...state,
-        sliders: { ...state.sliders, [action.payload.key]: action.payload.value },
+         sliders: { ...state.sliders, [action.payload.key]: Math.min(100, Math.max(0, action.payload.value)) },
       };
     case 'SET_SECTION':
       return { ...state, currentSection: action.payload };
     case 'RESET':
       return initialState;
-    default:
-      return state;
+     default:
+       throw new Error(`Unhandled action type: ${(action as VoteAction).type}`);
   }
 }
 
