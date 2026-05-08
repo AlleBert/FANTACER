@@ -1,37 +1,46 @@
-'use client'
+'use client';
 
-import Image from 'next/image'
-import { Button } from '@/components/ui/button'
+import { useState } from 'react';
+import { useVote } from '@/lib/VoteContext';
+import Image from 'next/image';
 
-interface SelectedStandSectionProps {
-  companyName?: string
-  onWhyClick?: () => void
-}
+export default function CommentSection() {
+  const { state, setComment, setCurrentSection } = useVote();
+  const [localComment, setLocalComment] = useState(state.comment);
 
-export function SelectedStandSection({ 
-  companyName = "Ceramica Mimma", 
-  onWhyClick 
-}: SelectedStandSectionProps) {
+  const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setLocalComment(value);
+    setComment(value);
+  };
+
+  const canProceed = state.selectedCompany && localComment.length >= 1;
+
+  const handleNext = () => {
+    if (canProceed) {
+      setCurrentSection(3);
+    }
+  };
+
   return (
     <section className="snap-start relative w-full h-[100dvh] bg-white flex flex-col items-center justify-center overflow-hidden pt-8">
-      
       <div className="relative z-10 w-full max-w-[1200px] mx-auto text-center px-4 md:px-8">
         {/* Company name */}
         <div className="space-y-12">
-          {/* Headline - What do you think of? */}
+          {/* Headline */}
           <div className="space-y-4">
             <h2 className="text-[clamp(1.5rem,5vw,72px)] font-black text-[#8000ff] tracking-tighter uppercase whitespace-pre-line leading-none">
               cosa ne pensi
               di
             </h2>
-            
+
             {/* Brand/Stand name flanked by stars */}
             <div className="flex items-center justify-center gap-4 md:gap-8">
               <div className="">
                 <Image src="/star-decoration-alt.svg" alt="" width={60} height={60} className="w-8 h-8 md:w-20 md:h-20 object-contain drop-shadow-[4px_4px_0_#000] -rotate-12 scale-90" />
               </div>
               <h3 className="text-[clamp(1.5rem,7vw,96px)] font-black text-[#8000ff] border-b-[4px] md:border-b-8 border-[#fccb27] pb-2 tracking-tighter uppercase whitespace-nowrap">
-                {companyName}
+                {state.selectedCompany?.name || 'Nessuna azienda selezionata'}
               </h3>
               <div className="">
                 <Image src="/star-decoration.svg" alt="" width={60} height={60} className="w-8 h-8 md:w-20 md:h-20 object-contain drop-shadow-[4px_4px_0_#000] rotate-12" />
@@ -39,12 +48,14 @@ export function SelectedStandSection({
             </div>
           </div>
           
-          {/* CTA transformed into a single-line text input area */}
+          {/* Comment textarea */}
           <div className="pt-8 flex justify-center w-full">
-            <input
-              type="text"
+            <textarea
+              value={localComment}
+              onChange={handleCommentChange}
               placeholder="PERCHÉ...?"
-              className="bg-[#fccb27] focus:bg-white text-black placeholder:text-black/50 text-2xl md:text-4xl font-black px-12 py-6 md:px-20 md:py-8 rounded-full border-[3px] border-black shadow-[6px_6px_0_#000] focus:shadow-[8px_8px_0_#000] focus:-translate-y-1 uppercase tracking-tighter w-full max-w-xl outline-none focus-visible:ring-0 focus-visible:ring-offset-0 transition-all duration-300 text-center"
+              rows={4}
+              className="bg-[#fccb27] focus:bg-white text-black placeholder:text-black/50 text-2xl md:text-4xl font-black px-12 py-6 md:px-20 md:py-8 rounded-full border-[3px] border-black shadow-[6px_6px_0_#000] focus:shadow-[8px_8px_0_#000] focus:-translate-y-1 uppercase tracking-tighter w-full max-w-xl outline-none focus-visible:ring-0 focus-visible:ring-offset-0 transition-all duration-300 text-center resize-none"
             />
           </div>
         </div>
@@ -53,6 +64,15 @@ export function SelectedStandSection({
           completa il gioco per poter ritirare il premio!
         </p>
       </div>
+      
+      {/* Next Button */}
+      <button
+        disabled={!canProceed}
+        onClick={handleNext}
+        className="mt-8 px-8 py-3 bg-[#8000ff] text-white font-[900] text-[clamp(1.2rem,3vw,24px)] rounded-full shadow-[4px_4px_0_#000] hover:shadow-[6px_6px_0_#000] hover:-translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-[4px_4px_0_#000] disabled:hover:translate-y-0"
+      >
+        Next
+      </button>
       
       {/* Decorative images - left side */}
       <div className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 hidden md:flex flex-col gap-2">
@@ -72,5 +92,5 @@ export function SelectedStandSection({
         />
       </div>
     </section>
-  )
+  );
 }
