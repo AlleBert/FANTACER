@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button'
 import { 
   BarChart3, 
   Users, 
-  Vote, 
   Download, 
   Upload,
   TrendingUp,
@@ -38,12 +37,17 @@ interface DailyStats {
 }
 
 interface Vote {
-  id: string
-  timestamp: string
-  company: string
-  fingerprint: string
-  country: string
-  device: string
+  id: string;
+  timestamp: string;
+  company: string;
+  fingerprint: string;
+  country: string;
+  device: string;
+  comment: string;
+  adjective: string;
+  slider_innovation: number;
+  slider_sales: number;
+  slider_wow: number;
 }
 
 interface Company {

@@ -16,8 +16,8 @@ interface CompanyResult {
   name: string;
 }
 
-export default function SearchSection() {
-  const { state, setSelectedCompany, setCurrentSection } = useVote();
+export function SearchSection() {
+  const { selectedCompany, setSelectedCompany, setCurrentSection } = useVote();
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState<CompanyResult[]>([]);
   const [showAll, setShowAll] = useState(false);
@@ -56,7 +56,7 @@ export default function SearchSection() {
   };
 
   const handleNext = () => {
-    if (state.selectedCompany) {
+    if (selectedCompany) {
       setCurrentSection(2);
     }
   };
@@ -114,16 +114,16 @@ export default function SearchSection() {
             )}
 
             {/* Selected Company Display */}
-            {state.selectedCompany && (
+            {selectedCompany && (
               <div className="mt-4 p-4 bg-green-100 border-2 border-green-500 rounded-lg w-full max-w-2xl">
-                <p className="text-center font-[700]">Selected: {state.selectedCompany.name}</p>
+                <p className="text-center font-[700]">Selected: {selectedCompany.name}</p>
               </div>
             )}
           </div>
 
           {/* Next Button */}
           <button
-            disabled={!state.selectedCompany}
+            disabled={!selectedCompany}
             onClick={handleNext}
             className="mt-8 px-8 py-3 bg-[#8000ff] text-white font-[900] text-[clamp(1.2rem,3vw,24px)] rounded-full shadow-[4px_4px_0_#000] hover:shadow-[6px_6px_0_#000] hover:-translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-[4px_4px_0_#000] disabled:hover:translate-y-0"
           >

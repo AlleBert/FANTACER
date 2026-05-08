@@ -10,15 +10,15 @@ const adjectives = [
   'peggiore',
 ];
 
-export default function RankingSection() {
-  const { state, setAdjective, setCurrentSection } = useVote();
+export function RankingSection() {
+  const { adjective, setAdjective, setCurrentSection } = useVote();
 
   const handleSelect = (option: string) => {
     setAdjective(option as typeof adjectives[number]);
   };
 
   const handleNext = () => {
-    if (state.adjective) {
+    if (adjective) {
       setCurrentSection(4);
     }
   };
@@ -28,7 +28,7 @@ export default function RankingSection() {
       <div className="safe-shell flex flex-col items-center justify-between max-w-[1200px] mx-auto">
         {/* Question */}
         <p className="text-[clamp(1.5rem,5vw,40px)] font-[900] text-black text-center lowercase tracking-tighter w-full max-w-4xl mx-auto flex-none pt-4">
-          rispetto agli altri stand che hai visto, quello di <span className="text-[#ff803b] underline decoration-2 underline-offset-4">{state.selectedCompany?.name || 'Nessuna azienda'}</span> è ...
+          rispetto agli altri stand che hai visto, quello di <span className="text-[#ff803b] underline decoration-2 underline-offset-4">{selectedCompany?.name || 'Nessuna azienda'}</span> è ...
         </p>
          
         <div className="flex-1 min-h-[2vh]" />
@@ -39,7 +39,7 @@ export default function RankingSection() {
             <RankingOption
               key={option}
               label={option}
-              isSelected={state.adjective === option}
+              isSelected={adjective === option}
               onClick={() => handleSelect(option)}
             />
           ))}
@@ -51,7 +51,7 @@ export default function RankingSection() {
         <div className="flex justify-center w-full flex-none">
           <button
             onClick={handleNext}
-            disabled={!state.adjective}
+            disabled={!adjective}
             className="bg-[#fccb27] hover:bg-[#ffe066] text-black text-2xl md:text-3xl font-[900] px-12 py-6 md:px-16 md:py-8 rounded-full border-[3px] md:border-[4px] border-[#231f20] shadow-[4px_4px_0_#000] hover:shadow-[6px_6px_0_#000] hover:-translate-y-1 transition-all duration-300 w-full max-w-[16rem] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-[4px_4px_0_#000] disabled:hover:translate-y-0"
           >
             &gt;&gt;

@@ -12,7 +12,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  /*themeColor: "#ffffff", */// Opzionale: imposta il colore della barra browser
+  themeColor: "#814545ff", // Opzionale: imposta il colore della barra browser
 };
 
 export default function RootLayout({

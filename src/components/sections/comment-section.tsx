@@ -4,9 +4,9 @@ import { useState } from 'react';
 import { useVote } from '@/lib/VoteContext';
 import Image from 'next/image';
 
-export default function CommentSection() {
-  const { state, setComment, setCurrentSection } = useVote();
-  const [localComment, setLocalComment] = useState(state.comment);
+export function CommentSection() {
+  const { selectedCompany, comment, setComment, setCurrentSection } = useVote();
+  const [localComment, setLocalComment] = useState(comment);
 
   const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
@@ -14,7 +14,7 @@ export default function CommentSection() {
     setComment(value);
   };
 
-  const canProceed = state.selectedCompany && localComment.length >= 1;
+  const canProceed = selectedCompany && localComment.length >= 1;
 
   const handleNext = () => {
     if (canProceed) {
@@ -40,7 +40,7 @@ export default function CommentSection() {
                 <Image src="/star-decoration-alt.svg" alt="" width={60} height={60} className="w-8 h-8 md:w-20 md:h-20 object-contain drop-shadow-[4px_4px_0_#000] -rotate-12 scale-90" />
               </div>
               <h3 className="text-[clamp(1.5rem,7vw,96px)] font-black text-[#8000ff] border-b-[4px] md:border-b-8 border-[#fccb27] pb-2 tracking-tighter uppercase whitespace-nowrap">
-                {state.selectedCompany?.name || 'Nessuna azienda selezionata'}
+                {selectedCompany?.name || 'Nessuna azienda selezionata'}
               </h3>
               <div className="">
                 <Image src="/star-decoration.svg" alt="" width={60} height={60} className="w-8 h-8 md:w-20 md:h-20 object-contain drop-shadow-[4px_4px_0_#000] rotate-12" />

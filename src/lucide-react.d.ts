@@ -1,0 +1,34 @@
+declare module 'lucide-react' {
+  import React from 'react';
+  
+  export const Search: React.ComponentType<any>;
+  export const Loader2: React.ComponentType<any>;
+  export const ArrowUpDown: React.ComponentType<any>;
+  export const Download: React.ComponentType<any>;
+  export const Star: React.ComponentType<any>;
+  export const Heart: React.ComponentType<any>;
+  export const MessageCircleMore: React.ComponentType<any>;
+  export const Smartphone: React.ComponentType<any>;
+  export const AtSign: React.ComponentType<any>;
+  export const Gift: React.ComponentType<any>;
+  export const BarChart3: React.ComponentType<any>;
+  export const Users: React.ComponentType<any>;
+  export const Upload: React.ComponentType<any>;
+  export const TrendingUp: React.ComponentType<any>;
+  export const Palette: React.ComponentType<any>;
+  export const ShieldAlert: React.ComponentType<any>;
+  export const Vote: React.ComponentType<any>;
+  export const Check: React.ComponentType<any>;
+  export const Lock: React.ComponentType<any>;
+  export const KeyRound: React.ComponentType<any>;
+  export const TrendingDown: React.ComponentType<any>;
+  export const Minus: React.ComponentType<any>;
+  export const LayoutDashboard: React.ComponentType<any>;
+  export const LogOut: React.ComponentType<any>;
+  export const Menu: React.ComponentType<any>;
+  export const X: React.ComponentType<any>;
+  export const Crown: React.ComponentType<any>;
+  export const ChevronDown: React.ComponentType<any>;
+  export const Info: React.ComponentType<any>;
+  export const ShieldCheck: React.ComponentType<any>;
+}

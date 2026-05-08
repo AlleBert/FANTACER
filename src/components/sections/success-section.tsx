@@ -63,7 +63,7 @@ function IphoneStoryMockup({ companyName }: { companyName?: string }) {
 }
 
 export function SuccessSection() {
-  const { state, resetVote } = useVote();
+  const { selectedCompany, resetVote } = useVote();
 
   const handlePlayAgain = () => {
     resetVote();
@@ -136,7 +136,7 @@ export function SuccessSection() {
               />
             </div>
             
-            <IphoneStoryMockup companyName={state.selectedCompany?.name} />
+            <IphoneStoryMockup companyName={selectedCompany?.name} />
           </div>
       </div>
     </section>
