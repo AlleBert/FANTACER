@@ -51,8 +51,7 @@ export default function InnovationSection() {
     });
     setSubmitting(false);
     if (result.success) {
-      resetVote();
-      // Navigate to success section
+      // Navigate to success section (don't reset yet - let success section access state)
       const successSection = document.querySelector('[data-section="success"]');
       if (successSection) {
         successSection.scrollIntoView({ behavior: 'smooth' });

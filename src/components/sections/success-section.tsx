@@ -1,6 +1,6 @@
 import Image from 'next/image'
 
-function IphoneStoryMockup() {
+function IphoneStoryMockup({ companyName }: { companyName?: string }) {
   return (
     <div 
       className="relative w-[140px] xs:w-[160px] sm:w-[200px] md:w-[250px] lg:w-[300px] xl:w-[340px] mx-auto lg:mx-0 shrink-0 transform md:rotate-1"
@@ -27,7 +27,7 @@ function IphoneStoryMockup() {
         <div className="flex flex-col items-center justify-center space-y-2.5 text-center mt-2 md:mt-4">
           <div className="bg-black/85 px-3.5 py-1.5 rounded-xl backdrop-blur-sm inline-block">
             <h3 className="text-sm md:text-base font-bold text-white leading-tight">
-              Hai votato ceramica <br/> <span className="text-[#fccb27]">xyz</span>
+              Hai votato ceramica <br/> <span className="text-[#fccb27]">{companyName || 'Nessuna azienda'}</span>
             </h3>
           </div>
           
@@ -63,6 +63,17 @@ function IphoneStoryMockup() {
 }
 
 export function SuccessSection() {
+  const { state, resetVote } = useVote();
+
+  const handlePlayAgain = () => {
+    resetVote();
+    // Scroll back to first section
+    const firstSection = document.querySelector('[data-section="hero"]') || document.querySelector('section');
+    if (firstSection) {
+      firstSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <section data-section="success" className="snap-start relative w-full overflow-hidden bg-[linear-gradient(to_bottom,#ffffff_0%,#ffffff_20%,#4B00AB_100%)] min-h-[100dvh]">
       <div className="safe-shell relative z-10 flex flex-col items-center justify-center max-w-[1200px] mx-auto gap-16 py-12 lg:flex-row lg:justify-between lg:gap-20 lg:py-20">
@@ -73,6 +84,13 @@ export function SuccessSection() {
           <h2 className="text-[clamp(2.5rem,10vw,80px)] leading-[0.85] font-black mb-4 lg:mb-10 text-[#8000ff] uppercase tracking-tighter">
             sei forte!
           </h2>
+          
+          <button
+            onClick={handlePlayAgain}
+            className="mt-8 px-8 py-3 bg-[#8000ff] text-white font-[900] text-[clamp(1.2rem,3vw,24px)] rounded-full shadow-[4px_4px_0_#000] hover:shadow-[6px_6px_0_#000] hover:-translate-y-1 transition-all"
+          >
+            GIOCA ANCORA
+          </button>
         
           <div className="space-y-8 mb-12 lg:mb-12 w-full max-w-xl">
             <p className="text-2xl sm:text-xl md:text-3xl lg:text-4xl font-[900] text-[#231f20] leading-tight uppercase tracking-tight">
@@ -118,7 +136,7 @@ export function SuccessSection() {
               />
             </div>
             
-            <IphoneStoryMockup />
+            <IphoneStoryMockup companyName={state.selectedCompany?.name} />
           </div>
       </div>
     </section>
