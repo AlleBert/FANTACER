@@ -58,9 +58,25 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { companyId, fingerprint, turnstile_token, comment, adjective, sliders } = body
 
+    // Validate required fields
     if (!companyId || !fingerprint || !comment || !adjective || !sliders) {
       console.error('API Vota: Missing fields', { companyId, fingerprint, comment, adjective, sliders })
       return NextResponse.json({ error: 'Campi obbligatori mancanti' }, { status: 400 })
+    }
+
+    // Validate adjective
+    const validAdjectives = ['eccezionale', 'migliore', 'nella media', 'peggiore'] as const
+    if (!validAdjectives.includes(adjective)) {
+      return NextResponse.json({ error: 'Adjective non valido' }, { status: 400 })
+    }
+
+    // Validate sliders structure and values
+    const requiredSliderKeys = ['innovation', 'sales', 'wow'] as const
+    for (const key of requiredSliderKeys) {
+      const value = sliders[key]
+      if (typeof value !== 'number' || value < 0 || value > 100) {
+        return NextResponse.json({ error: `Slider ${key} non valido (deve essere 0-100)` }, { status: 400 })
+      }
     }
 
     // 4. Verify Turnstile
@@ -110,13 +126,16 @@ export async function POST(request: NextRequest) {
 
     const { success, error: submitError } = await submitVote(voteSubmission)
 
-    if (submitError) {
-      return NextResponse.json({ error: submitError }, { status: 500 })
-    }
-
     if (!success) {
-      console.warn('API Vota: submitVote rejected vote', submitError)
-      return NextResponse.json({ error: submitError }, { status: 400 })
+      // Check if it's a duplicate vote (user already voted today)
+      if (submitError?.includes('Hai già votato oggi')) {
+        return NextResponse.json({ error: submitError }, { status: 409 })
+      }
+      // Other client errors (invalid data, etc.)
+      if (submitError) {
+        return NextResponse.json({ error: submitError }, { status: 400 })
+      }
+      return NextResponse.json({ error: 'Vote rejected' }, { status: 400 })
     }
 
     return NextResponse.json({ success: true })
