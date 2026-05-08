@@ -1,31 +1,49 @@
-import { createClient } from './client'
+import { createClient } from '@supabase/supabase-js';
+
+let supabase: ReturnType<typeof createClient> | null = null;
+
+const getSupabase = () => {
+  if (!supabase) {
+    supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+  }
+  return supabase;
+};
 
 export interface VoteSubmission {
-  userId: string
-  worldId: string
-  optionId: string
+  companyId: string;
+  fingerprint: string;
+  ip: string;
+  userAgent: string;
+  country?: string;
+  comment: string;
+  adjective: 'eccezionale' | 'migliore' | 'nella media' | 'peggiore';
+  sliders: {
+    innovation: number;
+    sales: number;
+    wow: number;
+  };
 }
 
-let supabase: ReturnType<typeof createClient> | null = null
-
-function getSupabase() {
-  if (!supabase) {
-    supabase = createClient()
-  }
-  return supabase
-}
-
-export async function submitVote(submission: VoteSubmission) {
-  const client = getSupabase()
+export async function submitVote(vote: VoteSubmission): Promise<{ success: boolean; error?: string }> {
+  const client = getSupabase();
   const { data, error } = await client.rpc('submit_vote', {
-    p_user_id: submission.userId,
-    p_world_id: submission.worldId,
-    p_option_id: submission.optionId,
-  })
+    company_id_param: vote.companyId,
+    fingerprint_param: vote.fingerprint,
+    ip_param: vote.ip,
+    user_agent_param: vote.userAgent,
+    country_param: vote.country || 'IT',
+    comment_param: vote.comment,
+    adjective_param: vote.adjective,
+    slider_innovation_param: vote.sliders.innovation,
+    slider_sales_param: vote.sliders.sales,
+    slider_wow_param: vote.sliders.wow,
+  });
 
   if (error) {
-    throw error
+    return { success: false, error: error.message };
   }
-
-  return data
+  return data as { success: boolean; error?: string };
 }
