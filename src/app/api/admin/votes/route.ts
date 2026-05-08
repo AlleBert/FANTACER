@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from('votes')
-      .select('id, company_id, fingerprint, country, user_agent, created_at')
+      .select('id, company_id, fingerprint, country, user_agent, created_at, comment, adjective, slider_innovation, slider_sales, slider_wow')
       .order('created_at', { ascending: false })
 
     if (search) {
@@ -80,7 +80,12 @@ export async function GET(request: NextRequest) {
       company: companyMap.get(v.company_id) || 'Unknown',
       fingerprint: v.fingerprint ? v.fingerprint.slice(0, 8) + '...' : '-',
       country: v.country || '-',
-      device: parseDevice(v.user_agent)
+      device: parseDevice(v.user_agent),
+      comment: v.comment || '-',
+      adjective: v.adjective || '-',
+      slider_innovation: v.slider_innovation,
+      slider_sales: v.slider_sales,
+      slider_wow: v.slider_wow,
     }))
 
     // Get total count

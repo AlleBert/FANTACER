@@ -23,6 +23,11 @@ interface Vote {
   fingerprint: string
   country: string
   device: string
+  comment: string
+  adjective: string
+  slider_innovation: number
+  slider_sales: number
+  slider_wow: number
 }
 
 const columnHelper = createColumnHelper<Vote>()
@@ -65,6 +70,31 @@ const columns = [
     header: 'Device',
     cell: info => <span className="text-muted-foreground text-[10px] truncate max-w-[120px] block">{info.getValue() || 'Desktop'}</span>,
     size: 100,
+  }),
+  columnHelper.accessor('comment', {
+    header: 'Commento',
+    cell: info => <span className="text-muted-foreground text-xs truncate max-w-[200px] block">{info.getValue() || '-'}</span>,
+    size: 200,
+  }),
+  columnHelper.accessor('adjective', {
+    header: 'Aggettivo',
+    cell: info => <span className="text-muted-foreground text-xs font-medium">{info.getValue() || '-'}</span>,
+    size: 100,
+  }),
+  columnHelper.accessor('slider_innovation', {
+    header: 'Innovazione',
+    cell: info => <span className="text-muted-foreground text-xs">{info.getValue() ?? '-'}</span>,
+    size: 80,
+  }),
+  columnHelper.accessor('slider_sales', {
+    header: 'Vendibilità',
+    cell: info => <span className="text-muted-foreground text-xs">{info.getValue() ?? '-'}</span>,
+    size: 80,
+  }),
+  columnHelper.accessor('slider_wow', {
+    header: 'Wow',
+    cell: info => <span className="text-muted-foreground text-xs">{info.getValue() ?? '-'}</span>,
+    size: 80,
   }),
 ]
 
