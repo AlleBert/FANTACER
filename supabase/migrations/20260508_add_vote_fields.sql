@@ -109,5 +109,4 @@ CREATE POLICY "Admin read audit_logs" ON audit_logs FOR SELECT USING (
   auth.uid() IN (SELECT id FROM admin_users)
 );
 
--- Remove direct insert policy for votes (only RPC can insert)
-DROP POLICY IF EXISTS "Insert votes" ON votes;
+
