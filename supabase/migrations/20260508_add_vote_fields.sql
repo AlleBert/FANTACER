@@ -1,13 +1,13 @@
 -- Migration: Add vote fields, update submit_vote RPC, update RLS policies
 -- Date: 20260508
 
--- 1. Add new columns to votes table (assumed slider1/slider2/slider3, adjust if plan specifies otherwise)
+-- 1. Add new columns to votes table: slider_innovation, slider_sales, slider_wow
 ALTER TABLE votes
 ADD COLUMN IF NOT EXISTS comment TEXT,
 ADD COLUMN IF NOT EXISTS adjective TEXT,
-ADD COLUMN IF NOT EXISTS slider1 INT,
-ADD COLUMN IF NOT EXISTS slider2 INT,
-ADD COLUMN IF NOT EXISTS slider3 INT;
+ADD COLUMN IF NOT EXISTS slider_innovation INT,
+ADD COLUMN IF NOT EXISTS slider_sales INT,
+ADD COLUMN IF NOT EXISTS slider_wow INT;
 
 -- 2. Update submit_vote RPC to accept new parameters and use md5 for ip_hash
 CREATE OR REPLACE FUNCTION submit_vote(
@@ -18,9 +18,9 @@ CREATE OR REPLACE FUNCTION submit_vote(
   country_param TEXT DEFAULT 'IT',
   comment_param TEXT DEFAULT NULL,
   adjective_param TEXT DEFAULT NULL,
-  slider1_param INT DEFAULT NULL,
-  slider2_param INT DEFAULT NULL,
-  slider3_param INT DEFAULT NULL
+  slider_innovation_param INT DEFAULT NULL,
+  slider_sales_param INT DEFAULT NULL,
+  slider_wow_param INT DEFAULT NULL
 )
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -44,11 +44,11 @@ BEGIN
   -- Insert vote with new fields, use md5 for ip_hash as per plan
   INSERT INTO votes (
     company_id, fingerprint, ip_hash, user_agent, country,
-    comment, adjective, slider1, slider2, slider3
+    comment, adjective, slider_innovation, slider_sales, slider_wow
   )
   VALUES (
     company_id_param, fingerprint_param, md5(ip_param), user_agent_param, country_param,
-    comment_param, adjective_param, slider1_param, slider2_param, slider3_param
+    comment_param, adjective_param, slider_innovation_param, slider_sales_param, slider_wow_param
   );
 
   -- Update daily stats
@@ -68,9 +68,9 @@ BEGIN
       'company_id', company_id_param,
       'comment', comment_param,
       'adjective', adjective_param,
-      'slider1', slider1_param,
-      'slider2', slider2_param,
-      'slider3', slider3_param
+      'slider_innovation', slider_innovation_param,
+      'slider_sales', slider_sales_param,
+      'slider_wow', slider_wow_param
     )
   );
 
@@ -92,21 +92,21 @@ DROP POLICY IF EXISTS "Admin read daily_stats" ON daily_stats;
 DROP POLICY IF EXISTS "Admin read audit_logs" ON audit_logs;
 
 -- 5. Create new RLS policies using auth.uid() + admin_users
--- Assumes admin_users has user_id column referencing auth.users.id
+-- Assumes admin_users has id column referencing auth.users.id
 CREATE POLICY "Admin read votes" ON votes FOR SELECT USING (
-  auth.uid() IN (SELECT user_id FROM admin_users)
+  auth.uid() IN (SELECT id FROM admin_users)
 );
 
 CREATE POLICY "Admin read analytics" ON analytics_raw FOR SELECT USING (
-  auth.uid() IN (SELECT user_id FROM admin_users)
+  auth.uid() IN (SELECT id FROM admin_users)
 );
 
 CREATE POLICY "Admin read daily_stats" ON daily_stats FOR SELECT USING (
-  auth.uid() IN (SELECT user_id FROM admin_users)
+  auth.uid() IN (SELECT id FROM admin_users)
 );
 
 CREATE POLICY "Admin read audit_logs" ON audit_logs FOR SELECT USING (
-  auth.uid() IN (SELECT user_id FROM admin_users)
+  auth.uid() IN (SELECT id FROM admin_users)
 );
 
 -- Remove direct insert policy for votes (only RPC can insert)
