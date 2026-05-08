@@ -9,6 +9,11 @@ ADD COLUMN IF NOT EXISTS slider_innovation INT,
 ADD COLUMN IF NOT EXISTS slider_sales INT,
 ADD COLUMN IF NOT EXISTS slider_wow INT;
 
+-- Add CHECK constraints for slider columns (0-100 range)
+ALTER TABLE votes ADD CONSTRAINT check_slider_innovation CHECK (slider_innovation BETWEEN 0 AND 100);
+ALTER TABLE votes ADD CONSTRAINT check_slider_sales CHECK (slider_sales BETWEEN 0 AND 100);
+ALTER TABLE votes ADD CONSTRAINT check_slider_wow CHECK (slider_wow BETWEEN 0 AND 100);
+
 -- 2. Update submit_vote RPC to accept new parameters and use md5 for ip_hash
 CREATE OR REPLACE FUNCTION submit_vote(
   company_id_param UUID,
@@ -94,19 +99,19 @@ DROP POLICY IF EXISTS "Admin read audit_logs" ON audit_logs;
 -- 5. Create new RLS policies using auth.uid() + admin_users
 -- Assumes admin_users has id column referencing auth.users.id
 CREATE POLICY "Admin read votes" ON votes FOR SELECT USING (
-  auth.uid() IN (SELECT id FROM admin_users)
+  EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
 );
 
 CREATE POLICY "Admin read analytics" ON analytics_raw FOR SELECT USING (
-  auth.uid() IN (SELECT id FROM admin_users)
+  EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
 );
 
 CREATE POLICY "Admin read daily_stats" ON daily_stats FOR SELECT USING (
-  auth.uid() IN (SELECT id FROM admin_users)
+  EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
 );
 
 CREATE POLICY "Admin read audit_logs" ON audit_logs FOR SELECT USING (
-  auth.uid() IN (SELECT id FROM admin_users)
+  EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
 );
 
 
