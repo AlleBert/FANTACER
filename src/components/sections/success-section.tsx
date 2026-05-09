@@ -1,4 +1,7 @@
+'use client';
+
 import Image from 'next/image'
+import { useVote } from '@/lib/VoteContext'
 
 function IphoneStoryMockup({ companyName }: { companyName?: string }) {
   return (
