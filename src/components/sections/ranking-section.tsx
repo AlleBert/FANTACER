@@ -1,6 +1,7 @@
 'use client';
 
 import { useVote } from '@/lib/VoteContext';
+import type { Adjective } from '@/lib/VoteContext';
 import { RankingOption } from '@/components/ranking-option';
 
 const adjectives = [
@@ -8,13 +9,13 @@ const adjectives = [
   'migliore',
   'nella media',
   'peggiore',
-];
+] as const satisfies readonly Adjective[];
 
 export function RankingSection() {
   const { selectedCompany, adjective, setAdjective, setCurrentSection } = useVote();
 
-  const handleSelect = (option: string) => {
-    setAdjective(option as typeof adjectives[number]);
+  const handleSelect = (option: Adjective) => {
+    setAdjective(option);
   };
 
   const handleNext = () => {
