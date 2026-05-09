@@ -40,7 +40,7 @@ export async function submitVote(vote: VoteSubmission): Promise<{ success: boole
     slider_innovation_param: vote.sliders.innovation,
     slider_sales_param: vote.sliders.sales,
     slider_wow_param: vote.sliders.wow,
-  });
+  } as any);
 
   if (error) {
     return { success: false, error: error.message };
