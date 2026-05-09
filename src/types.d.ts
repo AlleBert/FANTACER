@@ -4,7 +4,25 @@ declare module 'lucide-react' {
   export const ArrowUpDown: React.ComponentType<any>;
   export const Download: React.ComponentType<any>;
   export const Star: React.ComponentType<any>;
-  // Add more exports as needed
+  export const ChevronLeft: React.ComponentType<any>;
+  export const ChevronRight: React.ComponentType<any>;
+  export const Moon: React.ComponentType<any>;
+  export const Sun: React.ComponentType<any>;
+  export const Cookie: React.ComponentType<any>;
+  export const Trophy: React.ComponentType<any>;
+  export const Clock: React.ComponentType<any>;
+  export const Menu: React.ComponentType<any>;
+  export const X: React.ComponentType<any>;
+  export const LogOut: React.ComponentType<any>;
+  export const LayoutDashboard: React.ComponentType<any>;
+  export const Upload: React.ComponentType<any>;
+  export const Users: React.ComponentType<any>;
+  export const TrendingUp: React.ComponentType<any>;
+  export const TrendingDown: React.ComponentType<any>;
+  export const Minus: React.ComponentType<any>;
+  export const BarChart3: React.ComponentType<any>;
+  export const Palette: React.ComponentType<any>;
+  export const Vote: React.ComponentType<any>;
 }
 
 declare module 'recharts' {

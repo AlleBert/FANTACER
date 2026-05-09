@@ -5,13 +5,15 @@ import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { 
-  BarChart3, 
-  Users, 
-  Download, 
+import {
+  BarChart3,
+  Users,
+  Download,
   Upload,
   TrendingUp,
-  Palette
+  Palette,
+  Vote,
+  Search
 } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { format } from 'date-fns'
@@ -20,7 +22,7 @@ import { CompanyTable } from '@/components/admin/company-table'
 import { VoteLogTable } from '@/components/admin/vote-log-table'
 import { AuditLogTable } from '@/components/admin/audit-log-table'
 import { AdminSidebar } from '@/components/admin/sidebar'
-import { ShieldAlert, Search } from 'lucide-react'
+import { ShieldAlert } from 'lucide-react'
 
 interface Stats {
   totalVotes: number
@@ -400,7 +402,7 @@ function AdminDashboardContent() {
                           fontSize={11}
                           tickLine={false}
                           axisLine={false}
-                          tickFormatter={(v) => {
+                          tickFormatter={(v: string) => {
                             try { return format(new Date(v), 'dd/MM', { locale: it }) } 
                             catch { return v }
                           }}
@@ -415,7 +417,7 @@ function AdminDashboardContent() {
                           }}
                           labelStyle={{ color: 'var(--foreground)', fontWeight: 'bold' }}
                           itemStyle={{ fontSize: '12px' }}
-                          labelFormatter={(label) => {
+                          labelFormatter={(label: string) => {
                             try { return format(new Date(label), 'dd MMMM yyyy', { locale: it }) }
                             catch { return label }
                           }}
