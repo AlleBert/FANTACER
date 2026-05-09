@@ -11,7 +11,7 @@ const adjectives = [
 ];
 
 export function RankingSection() {
-  const { adjective, setAdjective, setCurrentSection } = useVote();
+  const { selectedCompany, adjective, setAdjective, setCurrentSection } = useVote();
 
   const handleSelect = (option: string) => {
     setAdjective(option as typeof adjectives[number]);
