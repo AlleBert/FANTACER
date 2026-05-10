@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { submitVote } from '@/lib/supabase/vote-api'
 
 const isVotingBypassEnabled = () => process.env.NEXT_PUBLIC_X7K2M9QS3P === 'hx7k2m9Qs3P'
 
@@ -56,11 +56,27 @@ export async function POST(request: NextRequest) {
 
     // 3. Parse body
     const body = await request.json()
-    const { company_id, fingerprint, turnstile_token, metadata } = body
+    const { companyId, fingerprint, turnstile_token, comment, adjective, sliders } = body
 
-    if (!company_id || !fingerprint) {
-      console.error('API Vota: Missing fields', { company_id, fingerprint })
+    // Validate required fields
+    if (!companyId || !fingerprint || !comment || !adjective || !sliders) {
+      console.error('API Vota: Missing fields', { companyId, fingerprint, comment, adjective, sliders })
       return NextResponse.json({ error: 'Campi obbligatori mancanti' }, { status: 400 })
+    }
+
+    // Validate adjective
+    const validAdjectives = ['eccezionale', 'migliore', 'nella media', 'peggiore'] as const
+    if (!validAdjectives.includes(adjective)) {
+      return NextResponse.json({ error: 'Adjective non valido' }, { status: 400 })
+    }
+
+    // Validate sliders structure and values
+    const requiredSliderKeys = ['innovation', 'sales', 'wow'] as const
+    for (const key of requiredSliderKeys) {
+      const value = sliders[key]
+      if (typeof value !== 'number' || value < 0 || value > 100) {
+        return NextResponse.json({ error: `Slider ${key} non valido (deve essere 0-100)` }, { status: 400 })
+      }
     }
 
     // 4. Verify Turnstile
@@ -85,8 +101,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Verifica di sicurezza fallita. Ricarica la pagina.' }, { status: 400 })
     }
 
-    const supabase = await createClient()
-    
     // Enhanced user-agent capture (try multiple headers for better device detection)
     const userAgent = request.headers.get('user-agent') || ''
     const secChUa = request.headers.get('sec-ch-ua') || ''
@@ -98,22 +112,30 @@ export async function POST(request: NextRequest) {
       (secChUaPlatform && secChUaMobile ? `${secChUaPlatform}; ${secChUaMobile}` : '') ||
       'Unknown'
     
-    // 5. Submit vote via RPC (Atomic & Secured)
-    const { data: rpcResult, error: rpcError } = await supabase.rpc('submit_vote', {
-      company_id_param: company_id,
-      fingerprint_param: fingerprint,
-      ip_param: ip,
-      user_agent_param: enhancedUserAgent,
-      country_param: country
-    })
-
-    if (rpcError) {
-      return NextResponse.json({ error: rpcError.message }, { status: 500 })
+    // 5. Submit vote via submitVote
+    const voteSubmission = {
+      companyId,
+      fingerprint,
+      ip,
+      userAgent: enhancedUserAgent,
+      country,
+      comment,
+      adjective,
+      sliders,
     }
 
-    if (rpcResult && !rpcResult.success) {
-      console.warn('API Vota: RPC rejected vote', rpcResult.error)
-      return NextResponse.json({ error: rpcResult.error }, { status: 400 })
+    const { success, error: submitError } = await submitVote(voteSubmission)
+
+    if (!success) {
+      // Check if it's a duplicate vote (user already voted today)
+      if (submitError?.includes('Hai già votato oggi')) {
+        return NextResponse.json({ error: submitError }, { status: 409 })
+      }
+      // Other client errors (invalid data, etc.)
+      if (submitError) {
+        return NextResponse.json({ error: submitError }, { status: 400 })
+      }
+      return NextResponse.json({ error: 'Vote rejected' }, { status: 400 })
     }
 
     return NextResponse.json({ success: true })

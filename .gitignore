@@ -47,3 +47,15 @@ worktrees
 # security overrides
 src/lib/security-bypass.ts
 BACKGROUND.png
+
+# mockup
+MOCKUP/
+backup-src/
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
