@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createBrowserClient } from '@supabase/ssr'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -11,9 +10,7 @@ import {
   Download,
   Upload,
   TrendingUp,
-  Palette,
-  Vote,
-  Search
+  Vote
 } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { format } from 'date-fns'
@@ -69,6 +66,13 @@ interface VotePagination {
   pages: number
 }
 
+interface AuditPagination {
+  page: number
+  limit: number
+  total: number
+  pages: number
+}
+
 const isBypassEnabled = () => process.env.NEXT_PUBLIC_X7K2M9QS3P === 'hx7k2m9Qs3P'
 
 export default function AdminDashboard() {
@@ -95,8 +99,8 @@ function AdminDashboardContent() {
     pages: 0
   })
   const [voteSearch, setVoteSearch] = useState('')
-  const [auditLogs, setAuditLogs] = useState<any[]>([])
-  const [auditPagination, setAuditPagination] = useState<any>({
+  const [auditLogs, setAuditLogs] = useState<Record<string, unknown>[]>([])
+  const [auditPagination, setAuditPagination] = useState<AuditPagination>({
     page: 1,
     limit: 25,
     total: 0,
@@ -105,43 +109,50 @@ function AdminDashboardContent() {
   const [auditSearch, setAuditSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-  const [activeTheme, setActiveTheme] = useState('theme-default')
-  const [pendingTheme, setPendingTheme] = useState<string | null>(null)
-  const [showThemeDialog, setShowThemeDialog] = useState(false)
 
-  const changeTheme = async (theme: string) => {
-    // SE il tema è già attivo, NON aprire il modal
-    if (theme === activeTheme) return
-    
-    setPendingTheme(theme)
-    setShowThemeDialog(true)
+  const loadVotes = async (page: number, search: string) => {
+    const params = new URLSearchParams({ page: page.toString(), limit: '25' })
+    if (search) params.append('search', search)
+    const res = await fetch(`/api/admin/votes?${params}`)
+    const data = await res.json()
+    setVotes(data.data || [])
+    setVotePagination(data.pagination || { page: 1, limit: 25, total: 0, pages: 0 })
   }
 
-  const confirmThemeChange = async () => {
-    if (!pendingTheme) return
-    
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
-    
-    console.log('Saving theme:', pendingTheme)
-    
-    const { data, error } = await supabase
-      .from('settings')
-      .upsert({ key: 'global_theme', value: pendingTheme }, { onConflict: 'key' })
-      .select()
-    
-    console.log('Save result:', { data, error })
-    
-    if (error) {
-      console.error('Error saving theme:', error)
-      alert('Errore nel salvataggio del tema: ' + error.message)
-      return
+  const loadAuditLogs = async (page: number, search: string) => {
+    const params = new URLSearchParams({ page: page.toString(), limit: '25' })
+    if (search) params.append('search', search)
+    const res = await fetch(`/api/admin/audit-logs?${params}`)
+    const data = await res.json()
+    setAuditLogs(data.data || [])
+    setAuditPagination(data.pagination || { page: 1, limit: 25, total: 0, pages: 0 })
+  }
+
+  const loadData = async () => {
+    setLoading(true)
+    try {
+      const statsRes = await fetch('/api/analytics?type=summary')
+      const statsData = await statsRes.json()
+      setStats({
+        totalVotes: statsData.totalVotes || 0,
+        uniqueVoters: statsData.uniqueVoters || 0,
+        todayVotes: statsData.todayVotes || 0,
+        yesterdayVotes: statsData.yesterdayVotes || 0,
+        activeNow: statsData.activeNow || 0
+      })
+      setDailyStats(statsData.dailyStats || [])
+
+      const companiesRes = await fetch('/api/admin/companies')
+      const companiesData = await companiesRes.json()
+      setCompanies(companiesData.data || [])
+
+      loadVotes(1, '')
+      loadAuditLogs(1, '')
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
     }
-    
-    setShowThemeDialog(false)
-    setActiveTheme(pendingTheme)
   }
 
   useEffect(() => {
@@ -173,61 +184,6 @@ function AdminDashboardContent() {
 
     checkAuth()
   }, [router])
-
-  const loadData = async () => {
-    setLoading(true)
-    try {
-      // Load current theme
-      const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      )
-      const { data: themeData } = await supabase.from('settings').select('value').eq('key', 'global_theme').single()
-      if (themeData && themeData.value) {
-        setActiveTheme(themeData.value)
-      }
-
-      const statsRes = await fetch('/api/analytics?type=summary')
-      const statsData = await statsRes.json()
-      setStats({
-        totalVotes: statsData.totalVotes || 0,
-        uniqueVoters: statsData.uniqueVoters || 0,
-        todayVotes: statsData.todayVotes || 0,
-        yesterdayVotes: statsData.yesterdayVotes || 0,
-        activeNow: statsData.activeNow || 0
-      })
-      setDailyStats(statsData.dailyStats || [])
-
-      const companiesRes = await fetch('/api/admin/companies')
-      const companiesData = await companiesRes.json()
-      setCompanies(companiesData.data || [])
-
-      loadVotes(1, '')
-      loadAuditLogs(1, '')
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const loadVotes = async (page: number, search: string) => {
-    const params = new URLSearchParams({ page: page.toString(), limit: '25' })
-    if (search) params.append('search', search)
-    const res = await fetch(`/api/admin/votes?${params}`)
-    const data = await res.json()
-    setVotes(data.data || [])
-    setVotePagination(data.pagination || { page: 1, limit: 25, total: 0, pages: 0 })
-  }
-
-  const loadAuditLogs = async (page: number, search: string) => {
-    const params = new URLSearchParams({ page: page.toString(), limit: '25' })
-    if (search) params.append('search', search)
-    const res = await fetch(`/api/admin/audit-logs?${params}`)
-    const data = await res.json()
-    setAuditLogs(data.data || [])
-    setAuditPagination(data.pagination || { page: 1, limit: 25, total: 0, pages: 0 })
-  }
 
   const handleExport = async (format: 'csv' | 'excel') => {
     window.open(`/api/analytics?type=export&format=${format}`, '_blank')
@@ -341,42 +297,6 @@ function AdminDashboardContent() {
               </CardContent>
             </Card>
           </div>
-
-          {/* Theme Settings Card */}
-          <Card className="bg-card border-border shadow-sm">
-            <CardHeader className="p-6 pb-2">
-              <div className="flex items-center gap-2">
-                <Palette className="h-5 w-5 text-primary" />
-                <CardTitle className="text-lg">Gestione Tema Globale</CardTitle>
-              </div>
-              <p className="text-sm text-muted-foreground">Seleziona il tema dell'applicazione principale. Questa modifica sarà applicata in tempo reale a tutti gli utenti.</p>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="flex flex-wrap gap-4">
-                <Button 
-                  onClick={() => changeTheme('theme-default')} 
-                  variant={activeTheme === 'theme-default' ? "default" : "outline"}
-                  className="rounded-full"
-                >
-                  Premium Default (OLED + Arancio)
-                </Button>
-                <Button 
-                  onClick={() => changeTheme('theme-cyber')} 
-                  variant={activeTheme === 'theme-cyber' ? "default" : "outline"}
-                  className="rounded-full"
-                >
-                  Cyber Tech (Indaco + Ciano)
-                </Button>
-                <Button 
-                  onClick={() => changeTheme('theme-fintech')} 
-                  variant={activeTheme === 'theme-fintech' ? "default" : "outline"}
-                  className="rounded-full"
-                >
-                  Neobank (Midnight + Smeraldo)
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="lg:col-span-2 bg-card border-border shadow-sm">
@@ -546,46 +466,7 @@ function AdminDashboardContent() {
               </Card>
             </div>
           </div>
-        </div>
-
-        {/* Theme Confirmation Dialog */}
-        {showThemeDialog && pendingTheme && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-            <div className="bg-card border border-border rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
-              <h3 className="text-xl font-bold text-foreground mb-3">
-                Conferma Cambio Tema
-              </h3>
-              <p className="text-muted-foreground mb-6">
-                Vuoi cambiare il tema dell'applicazione a{' '}
-                <span className="font-semibold text-foreground">
-                  {pendingTheme === 'theme-default' ? 'Premium Default (OLED + Arancio)' :
-                   pendingTheme === 'theme-cyber' ? 'Cyber Tech (Indaco + Ciano)' :
-                   pendingTheme === 'theme-fintech' ? 'Neobank (Midnight + Smeraldo)' :
-                   pendingTheme}
-                </span>
-                ?
-              </p>
-              <div className="flex gap-3 justify-end">
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setShowThemeDialog(false)
-                    setPendingTheme(null)
-                  }}
-                  className="border-border"
-                >
-                  Annulla
-                </Button>
-                <Button 
-                  onClick={confirmThemeChange}
-                  className="bg-primary hover:bg-primary/90"
-                >
-                  Conferma e Applica
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
+</div>
       </main>
     </div>
   )
