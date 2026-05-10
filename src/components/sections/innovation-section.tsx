@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useVote } from '@/lib/VoteContext';
 import { getCombinedFingerprint } from '@/lib/fingerprint';
 import { Button } from '@/components/ui/button';
+import { TurnstileOverlay } from '@/components/voting/turnstile-overlay';
 import { Star } from 'lucide-react';
 
 interface Option {
@@ -27,6 +28,14 @@ export function InnovationSection() {
     wow: false,
   });
   const [submitting, setSubmitting] = useState(false);
+  const [isTurnstileVisible, setIsTurnstileVisible] = useState(false);
+  const [pendingVoteData, setPendingVoteData] = useState<{
+    companyId: string;
+    fingerprint: string;
+    comment: string;
+    adjective: string;
+    sliders: { innovation: number; sales: number; wow: number };
+  } | null>(null);
 
   const handleSliderChange = (key: typeof sliderKeys[number], value: number) => {
     setSlider(key, value);
@@ -38,37 +47,38 @@ export function InnovationSection() {
 
   const handleSubmit = async () => {
     if (!canSubmit || !selectedCompany) return;
+
+    setPendingVoteData({
+      companyId: selectedCompany.id,
+      fingerprint: await getCombinedFingerprint(),
+      comment: comment,
+      adjective: adjective!,
+      sliders: sliders,
+    });
+    setIsTurnstileVisible(true);
+  };
+
+  const handleTurnstileSuccess = async (token: string) => {
+    if (!pendingVoteData) return;
+
+    setIsTurnstileVisible(false);
     setSubmitting(true);
-
-    // DEV BYPASS DISABLED FOR TESTING
-    // const turnstileToken = process.env.NEXT_PUBLIC_X7K2M9QS3P === 'hx7k2m9Qs3P'
-    //   ? 'debug-bypass-token'
-    //   : '';
-    const turnstileToken = '';
-
-    const fingerprint = await getCombinedFingerprint();
 
     try {
       const res = await fetch('/api/vota', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          companyId: selectedCompany.id,
-          fingerprint: fingerprint,
-          turnstile_token: turnstileToken,
-          comment: comment,
-          adjective: adjective,
-          sliders: sliders,
+          ...pendingVoteData,
+          turnstile_token: token,
         }),
       });
 
       const data = await res.json();
-
       setSubmitting(false);
 
       if (res.ok) {
         unlockGameStep('success');
-        // Wait for React to render SuccessSection before scrolling
         setTimeout(() => {
           const successSection = document.querySelector('[data-section="success"]');
           if (successSection) {
@@ -82,6 +92,8 @@ export function InnovationSection() {
       setSubmitting(false);
       alert('Errore di connessione');
     }
+
+    setPendingVoteData(null);
   };
 
   return (
@@ -154,6 +166,20 @@ export function InnovationSection() {
           </Button>
         </div>
       </div>
+
+      <TurnstileOverlay
+        isVisible={isTurnstileVisible}
+        onClose={() => {
+          setIsTurnstileVisible(false);
+          setPendingVoteData(null);
+        }}
+        onSuccess={handleTurnstileSuccess}
+        onError={(err) => {
+          alert(err);
+          setIsTurnstileVisible(false);
+          setPendingVoteData(null);
+        }}
+      />
     </section>
   );
 }
