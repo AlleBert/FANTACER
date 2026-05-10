@@ -17,7 +17,10 @@ export default function AdminLogin() {
 
   // Auto-login for development
   useEffect(() => {
-    if (isBypassEnabled()) {
+    const bypassEnabled = isBypassEnabled();
+    console.log('Admin login - Bypass enabled:', bypassEnabled);
+    if (bypassEnabled) {
+      console.log('Dev bypass enabled - auto-login');
       localStorage.setItem('admin_session', 'dev-bypass-token')
       router.push('/admin/dashboard')
     }
