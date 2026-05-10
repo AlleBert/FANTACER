@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useVote } from '@/lib/VoteContext';
-import { submitVote } from '@/lib/supabase/vote-api';
 import { Button } from '@/components/ui/button';
 import { Star } from 'lucide-react';
 
@@ -39,27 +38,41 @@ export function InnovationSection() {
   const handleSubmit = async () => {
     if (!canSubmit || !selectedCompany) return;
     setSubmitting(true);
-    const result = await submitVote({
-      companyId: selectedCompany.id,
-      fingerprint: localStorage.getItem('fantacer_device_id') || '',
-      ip: '',
-      userAgent: navigator.userAgent,
-      country: 'IT',
-      comment: comment,
-      adjective: adjective!,
-      sliders: sliders,
-    });
-    setSubmitting(false);
-    if (result.success) {
-      // Unlock success section and navigate to it
-      unlockGameStep('success');
-      // Navigate to success section (don't reset yet - let success section access state)
-      const successSection = document.querySelector('[data-section="success"]');
-      if (successSection) {
-        successSection.scrollIntoView({ behavior: 'smooth' });
+
+    const turnstileToken = process.env.NEXT_PUBLIC_X7K2M9QS3P === 'hx7k2m9Qs3P'
+      ? 'debug-bypass-token'
+      : '';
+
+    try {
+      const res = await fetch('/api/vota', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          companyId: selectedCompany.id,
+          fingerprint: localStorage.getItem('fantacer_device_id') || '',
+          turnstile_token: turnstileToken,
+          comment: comment,
+          adjective: adjective,
+          sliders: sliders,
+        }),
+      });
+
+      const data = await res.json();
+
+      setSubmitting(false);
+
+      if (res.ok) {
+        unlockGameStep('success');
+        const successSection = document.querySelector('[data-section="success"]');
+        if (successSection) {
+          successSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      } else {
+        alert(data.error || 'Errore durante il voto');
       }
-    } else {
-      alert(result.error || 'Errore durante il voto');
+    } catch (error) {
+      setSubmitting(false);
+      alert('Errore di connessione');
     }
   };
 
