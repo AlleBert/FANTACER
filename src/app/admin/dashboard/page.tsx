@@ -205,7 +205,7 @@ function AdminDashboardContent() {
       <main className={`transition-all duration-300 min-h-screen pb-12 overflow-x-hidden ${isSidebarCollapsed ? 'md:ml-[80px]' : 'md:ml-[260px]'}`}>
         {/* Header */}
         <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border">
-          <div className="max-w-[1400px] mx-auto px-6 py-4">
+          <div className="w-full mx-auto px-4 md:px-6 py-4">
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold text-foreground tracking-tight">Analytics Dashboard</h1>
@@ -271,7 +271,7 @@ function AdminDashboardContent() {
           </div>
         </header>
 
-        <div className="max-w-[1400px] mx-auto p-6 space-y-6">
+        <div className="w-full mx-auto p-4 md:p-6 space-y-6">
           {activeTab === 'overview' && (
             <>
               {/* Stats Grid */}
