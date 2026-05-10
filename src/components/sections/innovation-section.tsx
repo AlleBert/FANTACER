@@ -40,9 +40,11 @@ export function InnovationSection() {
     if (!canSubmit || !selectedCompany) return;
     setSubmitting(true);
 
-    const turnstileToken = process.env.NEXT_PUBLIC_X7K2M9QS3P === 'hx7k2m9Qs3P'
-      ? 'debug-bypass-token'
-      : '';
+    // DEV BYPASS DISABLED FOR TESTING
+    // const turnstileToken = process.env.NEXT_PUBLIC_X7K2M9QS3P === 'hx7k2m9Qs3P'
+    //   ? 'debug-bypass-token'
+    //   : '';
+    const turnstileToken = '';
 
     const fingerprint = await getCombinedFingerprint();
 
@@ -66,10 +68,13 @@ export function InnovationSection() {
 
       if (res.ok) {
         unlockGameStep('success');
-        const successSection = document.querySelector('[data-section="success"]');
-        if (successSection) {
-          successSection.scrollIntoView({ behavior: 'smooth' });
-        }
+        // Wait for React to render SuccessSection before scrolling
+        setTimeout(() => {
+          const successSection = document.querySelector('[data-section="success"]');
+          if (successSection) {
+            successSection.scrollIntoView({ behavior: 'smooth' });
+          }
+        }, 200);
       } else {
         alert(data.error || 'Errore durante il voto');
       }
