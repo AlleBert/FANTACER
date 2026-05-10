@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useVote } from '@/lib/VoteContext';
+import { getCombinedFingerprint } from '@/lib/fingerprint';
 import { Button } from '@/components/ui/button';
 import { Star } from 'lucide-react';
 
@@ -43,13 +44,15 @@ export function InnovationSection() {
       ? 'debug-bypass-token'
       : '';
 
+    const fingerprint = await getCombinedFingerprint();
+
     try {
       const res = await fetch('/api/vota', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           companyId: selectedCompany.id,
-          fingerprint: localStorage.getItem('fantacer_device_id') || '',
+          fingerprint: fingerprint,
           turnstile_token: turnstileToken,
           comment: comment,
           adjective: adjective,
