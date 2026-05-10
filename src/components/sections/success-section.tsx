@@ -71,7 +71,7 @@ export function SuccessSection() {
   const { selectedCompany, resetVote } = useVote();
 
   useEffect(() => {
-    const duration = 3000;
+    const duration = 4000;
     const animationEnd = Date.now() + duration;
     const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
 
