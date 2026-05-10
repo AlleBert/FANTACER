@@ -10,7 +10,11 @@ import {
   Download,
   Upload,
   TrendingUp,
-  Vote
+  Vote,
+  LayoutDashboard,
+  Building2,
+  FileText,
+  Shield
 } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { format } from 'date-fns'
@@ -109,6 +113,7 @@ function AdminDashboardContent() {
   const [auditSearch, setAuditSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [activeTab, setActiveTab] = useState<'overview' | 'companies' | 'votes' | 'security'>('overview')
 
   const loadVotes = async (page: number, search: string) => {
     const params = new URLSearchParams({ page: page.toString(), limit: '25' })
@@ -159,6 +164,7 @@ function AdminDashboardContent() {
     const checkAuth = async () => {
       if (isBypassEnabled()) {
         setLoading(false)
+        loadData()
         return
       }
       
@@ -196,109 +202,141 @@ function AdminDashboardContent() {
         onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} 
       />
       
-      <main className={`transition-all duration-300 min-h-screen pb-12 ${isSidebarCollapsed ? 'md:ml-[80px]' : 'md:ml-[260px]'}`}>
-        {/* Header / Top Bar */}
-        <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border px-6 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-foreground">
-              Dashboard
-            </h1>
-            <p className="text-xs text-muted-foreground">Benvenuto, ecco i dati di oggi</p>
-          </div>
-          <div className="flex items-center gap-3">
-             <Button 
+      <main className={`transition-all duration-300 min-h-screen pb-12 overflow-x-hidden ${isSidebarCollapsed ? 'md:ml-[80px]' : 'md:ml-[260px]'}`}>
+        {/* Header */}
+        <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border">
+          <div className="max-w-[1400px] mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-foreground tracking-tight">Analytics Dashboard</h1>
+                <p className="text-sm text-muted-foreground">Monitoraggio votazioni e statistiche</p>
+              </div>
+              <Button 
                 variant="outline"
                 size="sm"
                 onClick={() => loadData()}
                 className="h-9 border-border text-foreground hover:bg-secondary"
               >
-                Aggiorna Dati
+                Aggiorna
               </Button>
+            </div>
+            
+            {/* Tab Navigation */}
+            <div className="flex gap-1 mt-4 -mb-px">
+              <button
+                onClick={() => setActiveTab('overview')}
+                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg border-b-2 transition-all ${
+                  activeTab === 'overview'
+                    ? 'border-primary text-primary bg-primary/5'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+                }`}
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                Panoramica
+              </button>
+              <button
+                onClick={() => setActiveTab('companies')}
+                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg border-b-2 transition-all ${
+                  activeTab === 'companies'
+                    ? 'border-primary text-primary bg-primary/5'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+                }`}
+              >
+                <Building2 className="h-4 w-4" />
+                Aziende
+              </button>
+              <button
+                onClick={() => setActiveTab('votes')}
+                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg border-b-2 transition-all ${
+                  activeTab === 'votes'
+                    ? 'border-primary text-primary bg-primary/5'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+                }`}
+              >
+                <Vote className="h-4 w-4" />
+                Voti
+              </button>
+              <button
+                onClick={() => setActiveTab('security')}
+                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg border-b-2 transition-all ${
+                  activeTab === 'security'
+                    ? 'border-primary text-primary bg-primary/5'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+                }`}
+              >
+                <Shield className="h-4 w-4" />
+                Sicurezza
+              </button>
+            </div>
           </div>
         </header>
 
-        <div className="max-w-[1200px] mx-auto p-6 md:p-8 space-y-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="bg-card border-border shadow-sm hover:shadow-md transition-all group cursor-default">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Voti Totali</p>
-                    <h3 className="text-3xl font-bold text-foreground tabular-nums">{stats.totalVotes}</h3>
-                  </div>
-                  <div className="p-3 bg-primary/10 rounded-xl group-hover:scale-110 transition-transform">
-                    <Vote className="h-5 w-5 text-primary" />
-                  </div>
-                </div>
-                <div className="mt-4 flex items-center gap-2">
-                  <span className="text-[10px] px-1.5 py-0.5 bg-blue-500/10 text-blue-500 rounded font-bold">TOTAL</span>
-                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">Dato complessivo</span>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-card border-border shadow-sm hover:shadow-md transition-all group cursor-default">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Elettori Unici</p>
-                    <h3 className="text-3xl font-bold text-foreground tabular-nums">{stats.uniqueVoters}</h3>
-                  </div>
-                  <div className="p-3 bg-blue-500/10 rounded-xl group-hover:scale-110 transition-transform">
-                    <Users className="h-5 w-5 text-blue-500" />
-                  </div>
-                </div>
-                <div className="mt-4 flex items-center gap-2">
-                  <span className="text-[10px] px-1.5 py-0.5 bg-blue-500/10 text-blue-500 rounded font-bold">BY FP</span>
-                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">Hardware ID</span>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-card border-border shadow-sm hover:shadow-md transition-all group cursor-default">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Voti Oggi</p>
-                    <h3 className="text-3xl font-bold text-foreground tabular-nums">{stats.todayVotes}</h3>
-                  </div>
-                  <div className="p-3 bg-green-500/10 rounded-xl group-hover:scale-110 transition-transform">
-                    <TrendingUp className="h-5 w-5 text-green-500" />
-                  </div>
-                </div>
-                <div className="mt-4 flex items-center gap-2">
-                  {stats.todayVotes >= stats.yesterdayVotes ? (
-                    <span className="text-[10px] px-1.5 py-0.5 bg-green-500/10 text-green-500 rounded font-bold">↑ {stats.todayVotes - stats.yesterdayVotes}</span>
-                  ) : (
-                    <span className="text-[10px] px-1.5 py-0.5 bg-red-500/10 text-red-500 rounded font-bold">↓ {stats.yesterdayVotes - stats.todayVotes}</span>
-                  )}
-                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">rispetto a ieri ({stats.yesterdayVotes})</span>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-card border-border shadow-sm hover:shadow-md transition-all group cursor-default">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Attivi Ora</p>
-                    <h3 className="text-3xl font-bold text-foreground tabular-nums">{stats.activeNow}</h3>
-                  </div>
-                  <div className="p-3 bg-orange-500/10 rounded-xl group-hover:scale-110 transition-transform">
-                    <Users className="h-5 w-5 text-orange-500" />
-                  </div>
-                </div>
-                <div className="mt-4 flex items-center gap-2">
-                  <div className={`h-1.5 w-1.5 rounded-full ${stats.activeNow > 0 ? 'bg-orange-500 animate-pulse' : 'bg-muted'}`} />
-                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                    {stats.activeNow > 0 ? 'Attività negli ultimi 15 min' : 'Nessuna attività recente'}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        <div className="max-w-[1400px] mx-auto p-6 space-y-6">
+          {activeTab === 'overview' && (
+            <>
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Card className="bg-gradient-to-br from-violet-500/10 to-violet-500/5 border-violet-500/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-violet-600 dark:text-violet-400 uppercase tracking-wide">Voti Totali</p>
+                        <p className="text-2xl font-bold text-foreground mt-1">{stats.totalVotes}</p>
+                      </div>
+                      <div className="p-2 bg-violet-500/20 rounded-lg">
+                        <Vote className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wide">Elettori Unici</p>
+                        <p className="text-2xl font-bold text-foreground mt-1">{stats.uniqueVoters}</p>
+                      </div>
+                      <div className="p-2 bg-blue-500/20 rounded-lg">
+                        <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border-emerald-500/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">Voti Oggi</p>
+                        <p className="text-2xl font-bold text-foreground mt-1">{stats.todayVotes}</p>
+                      </div>
+                      <div className="p-2 bg-emerald-500/20 rounded-lg">
+                        <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {stats.todayVotes >= stats.yesterdayVotes ? '+' : ''}{stats.todayVotes - stats.yesterdayVotes} vs ieri
+                    </p>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-gradient-to-br from-orange-500/10 to-orange-500/5 border-orange-500/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-orange-600 dark:text-orange-400 uppercase tracking-wide">Attivi Ora</p>
+                        <p className="text-2xl font-bold text-foreground mt-1">{stats.activeNow}</p>
+                      </div>
+                      <div className="p-2 bg-orange-500/20 rounded-lg">
+                        <Users className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="lg:col-span-2 bg-card border-border shadow-sm">
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2 text-foreground text-lg">
@@ -404,18 +442,16 @@ function AdminDashboardContent() {
                 </div>
               </CardContent>
             </Card>
-          </div>
+</div>
+            </>
+          )}
 
-          {/* Ranking & Logs Section */}
-          <div className="space-y-8 pt-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-foreground">Gestione Dati & Sicurezza</h2>
-            </div>
-
-            <Card className="bg-card border-border shadow-sm overflow-hidden">
-              <CardHeader className="bg-secondary/50 border-b border-border">
-                <CardTitle className="flex items-center gap-2 text-foreground text-lg">
-                  <Users className="h-5 w-5 text-primary" />
+          {/* Aziende Tab */}
+          {activeTab === 'companies' && (
+            <Card className="border-border">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Building2 className="h-5 w-5" />
                   Classifica Aziende
                 </CardTitle>
               </CardHeader>
@@ -423,50 +459,54 @@ function AdminDashboardContent() {
                 <CompanyTable data={companies} />
               </CardContent>
             </Card>
+          )}
 
-            <div className="space-y-8">
-              <Card className="bg-card border-border shadow-sm overflow-hidden">
-                <CardHeader className="bg-secondary/50 border-b border-border">
-                  <CardTitle className="flex items-center gap-2 text-foreground text-lg">
-                    <Vote className="h-5 w-5 text-primary" />
-                    Registro Voti
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <VoteLogTable 
-                    data={votes} 
-                    pagination={votePagination}
-                    onPageChange={(page: number) => loadVotes(page, voteSearch)}
-                    onSearch={(search: string) => {
-                      setVoteSearch(search)
-                      loadVotes(1, search)
-                    }}
-                  />
-                </CardContent>
-              </Card>
+          {/* Voti Tab */}
+          {activeTab === 'votes' && (
+            <Card className="border-border">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Registro Voti
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <VoteLogTable 
+                  data={votes} 
+                  pagination={votePagination}
+                  onPageChange={(page: number) => loadVotes(page, voteSearch)}
+                  onSearch={(search: string) => {
+                    setVoteSearch(search)
+                    loadVotes(1, search)
+                  }}
+                />
+              </CardContent>
+            </Card>
+          )}
 
-              <Card className="bg-card border-border shadow-sm overflow-hidden">
-                <CardHeader className="bg-red-500/5 border-b border-border">
-                  <CardTitle className="flex items-center gap-2 text-foreground text-lg">
-                    <ShieldAlert className="h-5 w-5 text-red-500" />
-                    Security Audit Logs
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <AuditLogTable 
-                    data={auditLogs} 
-                    pagination={auditPagination}
-                    onPageChange={(page: number) => loadAuditLogs(page, auditSearch)}
-                    onSearch={(search: string) => {
-                      setAuditSearch(search)
-                      loadAuditLogs(1, search)
-                    }}
-                  />
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-</div>
+          {/* Security Tab */}
+          {activeTab === 'security' && (
+            <Card className="border-border">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Audit Log
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <AuditLogTable 
+                  data={auditLogs} 
+                  pagination={auditPagination}
+                  onPageChange={(page: number) => loadAuditLogs(page, auditSearch)}
+                  onSearch={(search: string) => {
+                    setAuditSearch(search)
+                    loadAuditLogs(1, search)
+                  }}
+                />
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </main>
     </div>
   )
