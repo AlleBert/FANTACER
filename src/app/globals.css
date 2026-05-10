@@ -173,7 +173,7 @@
   html {
     @apply font-sans scroll-smooth;
     min-height: 100dvh;
-    min-width: 100vw;
+    width: 100%;
     background: transparent;
   }
 }
