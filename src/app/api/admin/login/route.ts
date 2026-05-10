@@ -53,7 +53,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      user: { id: authData.user.id, email: authData.user.email }
+      user: { id: authData.user.id, email: authData.user.email },
+      session: { access_token: authData.session.access_token }
     })
   } catch (error) {
     console.error('Login error:', error)

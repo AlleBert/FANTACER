@@ -40,8 +40,8 @@ export default function AdminLogin() {
       if (!res.ok) {
         setError(data.error || 'Login failed')
       } else {
-        // Store the user ID for Supabase Auth
-        localStorage.setItem('admin_session', data.user.id)
+        // Store the access token for Supabase Auth
+        localStorage.setItem('admin_session', data.session.access_token)
         router.push('/admin/dashboard')
       }
     } catch {
