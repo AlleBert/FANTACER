@@ -38,6 +38,8 @@ function ScrollManager() {
 }
 
 export default function Page() {
+  const { gameUnlock } = useVote();
+
   useEffect(() => {
     getOrCreateDeviceId();
   }, []);
@@ -55,10 +57,10 @@ export default function Page() {
         <PlayAgainSection />
         <PrizeLocationSection />
         <SearchSection />
-        <CommentSection />
-        <RankingSection />
-        <InnovationSection />
-        <SuccessSection />
+        {gameUnlock.comment && <CommentSection />}
+        {gameUnlock.ranking && <RankingSection />}
+        {gameUnlock.innovation && <InnovationSection />}
+        {gameUnlock.success && <SuccessSection />}
         <ContactSection />
       </main>
     </VoteProvider>
