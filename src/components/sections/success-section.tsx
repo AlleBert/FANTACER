@@ -68,6 +68,8 @@ function IphoneStoryMockup({ companyName }: { companyName?: string }) {
 export function SuccessSection() {
   const { selectedCompany, resetVote } = useVote();
 
+  // Keep this available for potential internal navigation handlers.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handlePlayAgain = () => {
     resetVote();
     // Scroll back to first section
@@ -88,12 +90,6 @@ export function SuccessSection() {
             sei forte!
           </h2>
           
-          <button
-            onClick={handlePlayAgain}
-            className="mt-8 px-8 py-3 bg-[#8000ff] text-white font-[900] text-[clamp(1.2rem,3vw,24px)] rounded-full shadow-[4px_4px_0_#000] hover:shadow-[6px_6px_0_#000] hover:-translate-y-1 transition-all"
-          >
-            GIOCA ANCORA
-          </button>
         
           <div className="space-y-8 mb-12 lg:mb-12 w-full max-w-xl">
             <p className="text-2xl sm:text-xl md:text-3xl lg:text-4xl font-[900] text-[#231f20] leading-tight uppercase tracking-tight">

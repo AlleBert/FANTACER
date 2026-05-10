@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { useVote } from '@/lib/VoteContext';
 import { createClient } from '@supabase/supabase-js';
 import { useDebouncedCallback } from 'use-debounce';
 import { Search, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -42,6 +43,9 @@ export function SearchSection() {
     const term = e.target.value;
     setSearchTerm(term);
     fetchCompanies(term);
+    if (selectedCompany && term !== selectedCompany.name) {
+      setSelectedCompany(null);
+    }
   };
 
   const handleSelectCompany = (company: CompanyResult) => {
@@ -57,6 +61,11 @@ export function SearchSection() {
 
   const handleNext = () => {
     if (selectedCompany) {
+      const main = document.querySelector('main');
+      const sections = main?.children;
+      if (sections && sections[6]) {
+        (sections[6] as HTMLElement).scrollIntoView({ behavior: 'smooth' });
+      }
       setCurrentSection(2);
     }
   };
@@ -64,7 +73,9 @@ export function SearchSection() {
   return (
     <section className="snap-start relative app-screen w-full overflow-hidden bg-[radial-gradient(circle_at_center,rgba(194,225,255,0.2)_0%,rgba(255,255,255,1)_100%)] text-[#8000ff]">
       <div className="safe-shell flex">
-        <div className="mx-auto flex flex-1 w-full max-w-[1200px] flex-col items-center justify-center px-4 md:px-8">
+        <div className="mx-auto flex flex-1 w-full max-w-[1200px] flex-col items-center px-4 md:px-8">
+          <div className="flex-1 min-h-[4vh]" />
+
           {/* Main Title */}
           <h2 className="text-[clamp(2.5rem,7.5vw,91px)] font-[900] text-center mb-[clamp(3rem,8vh,5rem)] tracking-tighter lowercase leading-[1.1] md:whitespace-nowrap w-full text-[#8000ff]">
             vota la tua azienda preferita
@@ -113,22 +124,21 @@ export function SearchSection() {
               </ul>
             )}
 
-            {/* Selected Company Display */}
-            {selectedCompany && (
-              <div className="mt-4 p-4 bg-green-100 border-2 border-green-500 rounded-lg w-full max-w-2xl">
-                <p className="text-center font-[700]">Selected: {selectedCompany.name}</p>
-              </div>
-            )}
+            
           </div>
 
+          <div className="flex-1 min-h-[2vh]" />
+
           {/* Next Button */}
-          <button
-            disabled={!selectedCompany}
-            onClick={handleNext}
-            className="mt-8 px-8 py-3 bg-[#8000ff] text-white font-[900] text-[clamp(1.2rem,3vw,24px)] rounded-full shadow-[4px_4px_0_#000] hover:shadow-[6px_6px_0_#000] hover:-translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-[4px_4px_0_#000] disabled:hover:translate-y-0"
-          >
-            Next
-          </button>
+          <div className="flex justify-center w-full flex-none pb-8">
+            <Button
+              onClick={handleNext}
+              disabled={!selectedCompany}
+              className="bg-[#fccb27] hover:bg-[#ffe066] text-black text-2xl md:text-3xl font-[900] px-12 py-6 md:px-16 md:py-8 rounded-full border-[3px] md:border-[4px] border-[#231f20] shadow-[4px_4px_0_#000] hover:shadow-[6px_6px_0_#000] hover:-translate-y-1 transition-all duration-300 w-full max-w-[16rem] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-[4px_4px_0_#000] disabled:hover:translate-y-0"
+            >
+              &gt;&gt;
+            </Button>
+          </div>
         </div>
       </div>
     </section>

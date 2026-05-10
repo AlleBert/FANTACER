@@ -51,7 +51,7 @@ export function ContactSection() {
               <textarea
                 placeholder="MESSAGGIO..."
                 rows={4}
-                className="w-full px-5 py-2 md:py-3 lg:py-5 text-[clamp(0.8rem,1.5vw,1rem)] bg-white text-black font-black uppercase rounded-2xl border-[3px] border-[#231f20] focus:outline-none focus:shadow-[4px_4px_0_#000] focus:-translate-y-0.5 shadow-[2px_2px_0_#000] transition-all resize-none"
+                className="w-full px-5 py-2 md:py-3 lg:py-5 text-[clamp(0.8rem,1.5vw,1rem)] bg-white text-black font-black uppercase rounded-full border-[3px] border-[#231f20] focus:outline-none focus:shadow-[4px_4px_0_#000] focus:-translate-y-0.5 shadow-[2px_2px_0_#000] transition-all resize-none"
               />
               <Button
                 type="submit"

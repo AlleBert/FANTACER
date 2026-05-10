@@ -86,7 +86,6 @@ END;
 $$;
 
 -- 3. Add performance indexes
-CREATE INDEX IF NOT EXISTS idx_votes_created_at_date ON votes (created_at::DATE);
 CREATE INDEX IF NOT EXISTS idx_votes_fingerprint ON votes (fingerprint);
 CREATE INDEX IF NOT EXISTS idx_votes_company_id ON votes (company_id);
 
@@ -96,22 +95,7 @@ DROP POLICY IF EXISTS "Admin read analytics" ON analytics_raw;
 DROP POLICY IF EXISTS "Admin read daily_stats" ON daily_stats;
 DROP POLICY IF EXISTS "Admin read audit_logs" ON audit_logs;
 
--- 5. Create new RLS policies using auth.uid() + admin_users
--- Assumes admin_users has id column referencing auth.users.id
-CREATE POLICY "Admin read votes" ON votes FOR SELECT USING (
-  EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
-);
-
-CREATE POLICY "Admin read analytics" ON analytics_raw FOR SELECT USING (
-  EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
-);
-
-CREATE POLICY "Admin read daily_stats" ON daily_stats FOR SELECT USING (
-  EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
-);
-
-CREATE POLICY "Admin read audit_logs" ON audit_logs FOR SELECT USING (
-  EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid())
-);
+-- 5. Create new RLS policies - admin_users table not yet created
+-- TODO: Add admin policies after creating admin_users table
 
 

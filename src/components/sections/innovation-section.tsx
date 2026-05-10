@@ -72,31 +72,29 @@ export function InnovationSection() {
         <div className="flex-1 min-h-[2vh]" />
 
         {/* Sliders */}
-        <div className="space-y-10 md:space-y-14 w-full max-w-5xl mx-auto flex-none">
+        <div className="space-y-10 md:space-y-14 w-full max-w-[1200px] mx-auto flex-none">
           {options.map((option, index) => (
-            <div key={index} className="flex flex-row items-center justify-center gap-4 md:gap-12 w-full py-2">
-              <div className="flex-none basis-[25%] md:basis-[20%] flex items-center justify-end">
-                <h3 className="text-[clamp(1rem,3vw,26px)] md:text-[clamp(1.35rem,3.8vw,38px)] font-[900] text-[#8000ff] text-right uppercase tracking-tighter leading-[1.05]">
-                  {option.left.split(' ').map((word, i) => (
-                    <span key={i} className="block sm:inline">
-                      {word}
-                      {i < option.left.split(' ').length - 1 ? '\u00A0' : ''}
-                    </span>
-                  ))}
+            <div key={index} className="flex flex-row items-center justify-center gap-4 md:gap-8 w-full py-2">
+              <div className="flex-none w-[20%] flex items-center justify-end">
+                <h3 className="text-[clamp(1.125rem,5vw,1.5rem)] xs:text-[clamp(1.25rem,4.5vw,1.75rem)] sm:text-[clamp(1.25rem,4vw,2rem)] md:text-[clamp(1.35rem,3.5vw,2.25rem)] lg:text-[clamp(1.35rem,3vw,2.375rem)] font-[900] text-[#8000ff] text-right uppercase tracking-tighter leading-[1.05] break-words mr-2 sm:mr-4 md:mr-6">
+                  {option.left}
                 </h3>
               </div>
 
               {/* Interactive Range Slider mapped to Star */}
-              <div className="relative flex-none basis-[45%] md:basis-[56%] w-full h-16 flex items-center group px-16 md:px-24 lg:px-44">
-                {/* Visual Track */}
-                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[6px] bg-black rounded-full" />
+              <div className="relative flex-none w-[45%] md:w-[56%] h-16 flex items-center group">
+                {/* Padding wrapper per contenuto interno */}
+                <div className="absolute inset-0 flex items-center px-8 sm:px-12 md:px-16 lg:px-24">
+                  {/* Visual Track */}
+                  <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[6px] bg-black rounded-full" />
 
-                {/* Visual Thumb */}
-                <div
-                  className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 pointer-events-none transition-transform duration-75"
-                  style={{ left: `${sliders[sliderKeys[index]]}%` }}
-                >
-                  <Star className="w-10 h-10 sm:w-12 sm:h-12 md:w-18 md:h-18 lg:w-[84px] lg:h-[84px] fill-[#fccb27] stroke-[#231f20] stroke-[2px] drop-shadow-[2px_2px_0_#000]" />
+                  {/* Visual Thumb - limitato tra 5% e 95% per evitare sovrapposizioni */}
+                  <div
+                    className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 pointer-events-none transition-transform duration-75"
+                    style={{ left: `${sliders[sliderKeys[index]]}%` }}
+                  >
+                    <Star className="w-8 h-8 sm:w-10 sm:h-10 md:w-14 md:h-14 lg:w-18 lg:h-18 fill-[#fccb27] stroke-[#231f20] stroke-[2px] drop-shadow-[2px_2px_0_#000]" />
+                  </div>
                 </div>
 
                 {/* Hidden input controlling the slider */}
@@ -111,14 +109,9 @@ export function InnovationSection() {
                 />
               </div>
 
-              <div className="flex-none basis-[25%] md:basis-[20%] flex items-center justify-start">
-                <h3 className="text-[clamp(1rem,3vw,26px)] md:text-[clamp(1.35rem,3.8vw,38px)] font-[900] text-[#8000ff] text-left uppercase tracking-tighter leading-[1.05]">
-                  {option.right.split(' ').map((word, i) => (
-                    <span key={i} className="block sm:inline">
-                      {word}
-                      {i < option.right.split(' ').length - 1 ? '\u00A0' : ''}
-                    </span>
-                  ))}
+              <div className="flex-none w-[20%] flex items-center justify-start">
+                <h3 className="text-[clamp(1.125rem,5vw,1.5rem)] xs:text-[clamp(1.25rem,4.5vw,1.75rem)] sm:text-[clamp(1.25rem,4vw,2rem)] md:text-[clamp(1.35rem,3.5vw,2.25rem)] lg:text-[clamp(1.35rem,3vw,2.375rem)] font-[900] text-[#8000ff] text-left uppercase tracking-tighter leading-[1.05] break-words ml-2 sm:ml-4 md:ml-6">
+                  {option.right}
                 </h3>
               </div>
             </div>
@@ -128,14 +121,14 @@ export function InnovationSection() {
         <div className="flex-1 min-h-[2vh]" />
 
         {/* Submit button */}
-        <div className="flex justify-center w-full flex-none">
-          <button
+        <div className="flex justify-center w-full flex-none pb-8">
+          <Button
             onClick={handleSubmit}
             disabled={!canSubmit || submitting}
             className="bg-[#fccb27] hover:bg-[#ffe066] text-black text-2xl md:text-3xl font-[900] px-12 py-6 md:px-16 md:py-8 rounded-full border-[3px] md:border-[4px] border-[#231f20] shadow-[4px_4px_0_#000] hover:shadow-[6px_6px_0_#000] hover:-translate-y-1 transition-all duration-300 w-full max-w-[16rem] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-[4px_4px_0_#000] disabled:hover:translate-y-0"
           >
             {submitting ? 'INVIO...' : 'FATTO!'}
-          </button>
+          </Button>
         </div>
       </div>
     </section>
