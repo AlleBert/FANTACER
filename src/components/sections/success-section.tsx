@@ -81,11 +81,7 @@ export function SuccessSection() {
       const timeLeft = animationEnd - Date.now();
       if (timeLeft <= 0) {
         clearInterval(interval);
-        // Scroll to ContactSection after confetti ends
-        setTimeout(() => {
-          const main = document.querySelector('main');
-          main?.lastElementChild?.scrollIntoView({ behavior: 'smooth' });
-        }, 1000);
+        // Confetti complete - user stays on this page
         return;
       }
       const particleCount = 50 * (timeLeft / duration);
