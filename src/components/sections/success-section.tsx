@@ -80,7 +80,13 @@ export function SuccessSection() {
     const interval: NodeJS.Timeout = setInterval(() => {
       const timeLeft = animationEnd - Date.now();
       if (timeLeft <= 0) {
-        return clearInterval(interval);
+        clearInterval(interval);
+        // Scroll to ContactSection after confetti ends
+        setTimeout(() => {
+          const main = document.querySelector('main');
+          main?.lastElementChild?.scrollIntoView({ behavior: 'smooth' });
+        }, 1000);
+        return;
       }
       const particleCount = 50 * (timeLeft / duration);
       confetti({
