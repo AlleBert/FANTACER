@@ -20,7 +20,7 @@ const options: Option[] = [
 const sliderKeys = ['innovation', 'sales', 'wow'] as const;
 
 export function InnovationSection() {
-  const { selectedCompany, comment, adjective, sliders, setSlider, resetVote } = useVote();
+  const { selectedCompany, comment, adjective, sliders, setSlider, resetVote, unlockGameStep } = useVote();
   const [touched, setTouched] = useState({
     innovation: false,
     sales: false,
@@ -51,6 +51,8 @@ export function InnovationSection() {
     });
     setSubmitting(false);
     if (result.success) {
+      // Unlock success section and navigate to it
+      unlockGameStep('success');
       // Navigate to success section (don't reset yet - let success section access state)
       const successSection = document.querySelector('[data-section="success"]');
       if (successSection) {
