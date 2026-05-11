@@ -12,7 +12,6 @@ import {
   TrendingUp,
   Vote,
   LayoutDashboard,
-  Building2,
   FileText,
   Shield
 } from 'lucide-react'
@@ -242,7 +241,7 @@ function AdminDashboardContent() {
                     : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/50'
                 }`}
               >
-                <Building2 className="h-4 w-4" />
+                <Users className="h-4 w-4" />
                 Aziende
               </button>
               <button
@@ -451,7 +450,7 @@ function AdminDashboardContent() {
             <Card className="border-border">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <Building2 className="h-5 w-5" />
+                  <Users className="h-5 w-5" />
                   Classifica Aziende
                 </CardTitle>
               </CardHeader>
