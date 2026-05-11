@@ -42,7 +42,7 @@ function PageContent() {
 
   return (
     <main
-      className="overflow-y-auto scroll-smooth no-scrollbar safe-pb"
+      className={`overflow-y-auto scroll-smooth no-scrollbar safe-pb ${!gameUnlock.success ? 'snap-y snap-mandatory' : ''}`}
       style={{ height: 'var(--app-height)' }}
     >
       <HeroSection />

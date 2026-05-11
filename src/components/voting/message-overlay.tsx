@@ -92,9 +92,9 @@ export function MessageOverlay({
 
   return (
     <div 
-      className={`fixed inset-0 z-[100] flex items-center justify-center p-4 transition-all duration-300 ${
+      className={`fixed inset-0 z-[100] flex items-center justify-center p-4 transition-all duration-300 pointer-events-auto ${
         isClosing ? 'opacity-0' : 'opacity-100'
-      }`}
+      } ${!isVisible && !isClosing ? 'pointer-events-none' : ''}`}
     >
       {/* Backdrop */}
       <div 
