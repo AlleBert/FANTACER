@@ -94,6 +94,8 @@ function AdminDashboardContent() {
   })
   const [dailyStats, setDailyStats] = useState<DailyStats[]>([])
   const [companies, setCompanies] = useState<Company[]>([])
+  const [selectedBatch, setSelectedBatch] = useState<string>('all')
+  const [batchInfo, setBatchInfo] = useState<{ activeBatch: string; batches: string[] } | null>(null)
   const [votes, setVotes] = useState<Vote[]>([])
   const [votePagination, setVotePagination] = useState<VotePagination>({
     page: 1,
@@ -146,7 +148,13 @@ function AdminDashboardContent() {
       })
       setDailyStats(statsData.dailyStats || [])
 
-      const companiesRes = await fetch('/api/admin/companies')
+      const batchRes = await fetch('/api/admin/batch')
+      const batchData = await batchRes.json()
+      setBatchInfo(batchData)
+      setSelectedBatch(batchData.activeBatch)
+
+      const batchParam = `?batch=${batchData.activeBatch}`
+      const companiesRes = await fetch(`/api/admin/companies${batchParam}`)
       const companiesData = await companiesRes.json()
       setCompanies(companiesData.data || [])
 
