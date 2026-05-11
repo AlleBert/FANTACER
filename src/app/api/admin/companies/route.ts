@@ -6,13 +6,20 @@ export async function GET(request: NextRequest) {
     const supabase = createAdminClient()
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search') || ''
+    const batch = searchParams.get('batch')
 
     // Get companies with vote counts
-    const { data: companies, error } = await supabase
+    let query = supabase
       .from('companies')
       .select('id, name, category, image_url, batch')
       .ilike('name', `%${search}%`)
       .order('name')
+
+    if (batch) {
+      query = query.eq('batch', batch)
+    }
+
+    const { data: companies, error } = await query
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
