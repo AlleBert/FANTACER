@@ -45,7 +45,11 @@ function PageContent() {
       className="overflow-y-auto scroll-smooth no-scrollbar safe-pb snap-y snap-mandatory"
       style={{ height: 'var(--app-height)' }}
     >
-      <HeroSection />
+      <HeroSection 
+        onPlayClick={() => {
+          document.querySelector('main')?.children[5]?.scrollIntoView({ behavior: 'smooth' })
+        }}
+      />
       <IntroSection />
       <HowItWorksSection />
       <PlayAgainSection />
