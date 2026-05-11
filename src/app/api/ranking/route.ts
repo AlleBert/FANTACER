@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { getActiveBatch } from '@/lib/supabase/batch'
 
 export async function GET(request: NextRequest) {
   try {
@@ -7,6 +8,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '10')
     const includeTrend = searchParams.get('trend') === 'true'
+    const activeBatch = await getActiveBatch()
 
     // Get vote counts by company
     const { data: votes, error } = await supabase
@@ -31,10 +33,11 @@ export async function GET(request: NextRequest) {
       voteCounts.set(companyId, current)
     }
 
-    // Get top companies
+    // Get top companies (only from active batch)
     const { data: companies } = await supabase
       .from('companies')
       .select('id, name, category, image_url')
+      .eq('batch', activeBatch)
 
     // Merge with vote counts
     const ranking = (companies || [])
