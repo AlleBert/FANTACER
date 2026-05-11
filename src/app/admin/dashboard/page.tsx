@@ -134,6 +134,16 @@ function AdminDashboardContent() {
     setAuditPagination(data.pagination || { page: 1, limit: 25, total: 0, pages: 0 })
   }
 
+  useEffect(() => {
+    if (activeTab === 'companies' && batchInfo) {
+      const batch = selectedBatch === 'all' ? '' : selectedBatch
+      const url = batch ? `/api/admin/companies?batch=${batch}` : '/api/admin/companies'
+      fetch(url)
+        .then(res => res.json())
+        .then(data => setCompanies(data.data || []))
+    }
+  }, [selectedBatch, activeTab, batchInfo])
+
   const loadData = async () => {
     setLoading(true)
     try {
@@ -457,10 +467,39 @@ function AdminDashboardContent() {
           {activeTab === 'companies' && (
             <Card className="border-border">
               <CardHeader className="pb-4">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Classifica Aziende
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Classifica Aziende
+                  </CardTitle>
+                  {batchInfo && batchInfo.batches.length > 0 && (
+                    <div className="flex gap-1 flex-wrap">
+                      <button
+                        onClick={() => setSelectedBatch('all')}
+                        className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                          selectedBatch === 'all' 
+                            ? 'bg-primary text-primary-foreground' 
+                            : 'bg-muted hover:bg-muted/80'
+                        }`}
+                      >
+                        Tutti
+                      </button>
+                      {batchInfo.batches.map(batch => (
+                        <button
+                          key={batch}
+                          onClick={() => setSelectedBatch(batch)}
+                          className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                            selectedBatch === batch 
+                              ? 'bg-primary text-primary-foreground' 
+                              : 'bg-muted hover:bg-muted/80'
+                          }`}
+                        >
+                          {batch}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="p-0">
                 <CompanyTable data={companies} />
