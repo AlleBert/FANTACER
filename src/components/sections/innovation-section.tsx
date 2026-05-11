@@ -5,6 +5,7 @@ import { useVote } from '@/lib/VoteContext';
 import { getCombinedFingerprint } from '@/lib/fingerprint';
 import { Button } from '@/components/ui/button';
 import { TurnstileOverlay } from '@/components/voting/turnstile-overlay';
+import { MessageOverlay } from '@/components/voting/message-overlay';
 import { Star } from 'lucide-react';
 
 interface Option {
@@ -29,6 +30,12 @@ export function InnovationSection() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [isTurnstileVisible, setIsTurnstileVisible] = useState(false);
+  const [messageOverlay, setMessageOverlay] = useState<{
+    visible: boolean;
+    type: 'success' | 'error' | 'warning';
+    title: string;
+    message: string;
+  }>({ visible: false, type: 'success', title: '', message: '' });
   const [pendingVoteData, setPendingVoteData] = useState<{
     companyId: string;
     fingerprint: string;
@@ -85,12 +92,29 @@ export function InnovationSection() {
             successSection.scrollIntoView({ behavior: 'smooth' });
           }
         }, 200);
+      } else if (res.status === 409) {
+        setMessageOverlay({
+          visible: true,
+          type: 'warning',
+          title: 'Ops, troppo tardi!',
+          message: 'Hai già votato oggi! Torna domani per votare un\'altra azienda.',
+        });
       } else {
-        alert(data.error || 'Errore durante il voto');
+        setMessageOverlay({
+          visible: true,
+          type: 'error',
+          title: 'Errore',
+          message: data.error || 'Qualcosa è andato storto. Riprova.',
+        });
       }
     } catch (error) {
       setSubmitting(false);
-      alert('Errore di connessione');
+      setMessageOverlay({
+        visible: true,
+        type: 'error',
+        title: 'Errore',
+        message: 'Problemi di connessione. Verifica la tua linea e riprova.',
+      });
     }
 
     setPendingVoteData(null);
@@ -175,10 +199,23 @@ export function InnovationSection() {
         }}
         onSuccess={handleTurnstileSuccess}
         onError={(err) => {
-          alert(err);
+          setMessageOverlay({
+            visible: true,
+            type: 'error',
+            title: 'Errore',
+            message: err || 'La verifica di sicurezza è fallita. Riprova.',
+          });
           setIsTurnstileVisible(false);
           setPendingVoteData(null);
         }}
+      />
+
+      <MessageOverlay
+        isVisible={messageOverlay.visible}
+        type={messageOverlay.type}
+        title={messageOverlay.title}
+        message={messageOverlay.message}
+        onClose={() => setMessageOverlay((prev) => ({ ...prev, visible: false }))}
       />
     </section>
   );
