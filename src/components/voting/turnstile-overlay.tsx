@@ -24,6 +24,7 @@ export function TurnstileOverlay({ isVisible, onClose, onSuccess, onError }: Tur
       }, 0)
     } else {
       document.body.style.overflow = 'unset'
+      setIsClosing(false)
     }
     return () => {
       document.body.style.overflow = 'unset'
@@ -49,12 +50,12 @@ export function TurnstileOverlay({ isVisible, onClose, onSuccess, onError }: Tur
     <div 
       className={`fixed inset-0 z-[100] flex items-center justify-center p-4 transition-all duration-300 ${
         isClosing ? 'opacity-0' : 'opacity-100'
-      } ${!isVisible && !isClosing ? 'pointer-events-none' : 'pointer-events-auto'}`}
+      }`}
     >
-      {/* Backdrop */}
+      {/* Backdrop - only this gets pointer-events when visible */}
       <div 
-        className="absolute inset-0 bg-[#8000ff]/10 backdrop-blur-sm"
-        onClick={handleClose}
+        className={`absolute inset-0 bg-[#8000ff]/10 backdrop-blur-sm ${isVisible && !isClosing ? 'cursor-pointer' : ''}`}
+        onClick={isVisible && !isClosing ? handleClose : undefined}
       />
 
       {/* Card */}

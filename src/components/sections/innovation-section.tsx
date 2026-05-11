@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useVote } from '@/lib/VoteContext';
 import { getCombinedFingerprint } from '@/lib/fingerprint';
 import { Button } from '@/components/ui/button';
@@ -22,7 +22,7 @@ const options: Option[] = [
 const sliderKeys = ['innovation', 'sales', 'wow'] as const;
 
 export function InnovationSection() {
-  const { selectedCompany, comment, adjective, sliders, setSlider, resetVote, unlockGameStep } = useVote();
+  const { selectedCompany, comment, adjective, sliders, setSlider, resetVote, unlockGameStep, gameUnlock } = useVote();
   const [touched, setTouched] = useState({
     innovation: false,
     sales: false,
@@ -43,6 +43,13 @@ export function InnovationSection() {
     adjective: string;
     sliders: { innovation: number; sales: number; wow: number };
   } | null>(null);
+
+  useEffect(() => {
+    if (gameUnlock.success) {
+      setIsTurnstileVisible(false);
+      setMessageOverlay((prev) => ({ ...prev, visible: false }));
+    }
+  }, [gameUnlock.success]);
 
   const handleSliderChange = (key: typeof sliderKeys[number], value: number) => {
     setSlider(key, value);
