@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { useVote } from '@/lib/VoteContext';
-import { submitVote } from '@/lib/supabase/vote-api';
+import { getCombinedFingerprint } from '@/lib/fingerprint';
 import { Button } from '@/components/ui/button';
+import { TurnstileOverlay } from '@/components/voting/turnstile-overlay';
 import { Star } from 'lucide-react';
 
 interface Option {
@@ -20,13 +21,21 @@ const options: Option[] = [
 const sliderKeys = ['innovation', 'sales', 'wow'] as const;
 
 export function InnovationSection() {
-  const { selectedCompany, comment, adjective, sliders, setSlider, resetVote } = useVote();
+  const { selectedCompany, comment, adjective, sliders, setSlider, resetVote, unlockGameStep } = useVote();
   const [touched, setTouched] = useState({
     innovation: false,
     sales: false,
     wow: false,
   });
   const [submitting, setSubmitting] = useState(false);
+  const [isTurnstileVisible, setIsTurnstileVisible] = useState(false);
+  const [pendingVoteData, setPendingVoteData] = useState<{
+    companyId: string;
+    fingerprint: string;
+    comment: string;
+    adjective: string;
+    sliders: { innovation: number; sales: number; wow: number };
+  } | null>(null);
 
   const handleSliderChange = (key: typeof sliderKeys[number], value: number) => {
     setSlider(key, value);
@@ -38,27 +47,53 @@ export function InnovationSection() {
 
   const handleSubmit = async () => {
     if (!canSubmit || !selectedCompany) return;
-    setSubmitting(true);
-    const result = await submitVote({
+
+    setPendingVoteData({
       companyId: selectedCompany.id,
-      fingerprint: localStorage.getItem('fantacer_device_id') || '',
-      ip: '',
-      userAgent: navigator.userAgent,
-      country: 'IT',
+      fingerprint: await getCombinedFingerprint(),
       comment: comment,
       adjective: adjective!,
       sliders: sliders,
     });
-    setSubmitting(false);
-    if (result.success) {
-      // Navigate to success section (don't reset yet - let success section access state)
-      const successSection = document.querySelector('[data-section="success"]');
-      if (successSection) {
-        successSection.scrollIntoView({ behavior: 'smooth' });
+    setIsTurnstileVisible(true);
+  };
+
+  const handleTurnstileSuccess = async (token: string) => {
+    if (!pendingVoteData) return;
+
+    setIsTurnstileVisible(false);
+    setSubmitting(true);
+
+    try {
+      const res = await fetch('/api/vota', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...pendingVoteData,
+          turnstile_token: token,
+        }),
+      });
+
+      const data = await res.json();
+      setSubmitting(false);
+
+      if (res.ok) {
+        unlockGameStep('success');
+        setTimeout(() => {
+          const successSection = document.querySelector('[data-section="success"]');
+          if (successSection) {
+            successSection.scrollIntoView({ behavior: 'smooth' });
+          }
+        }, 200);
+      } else {
+        alert(data.error || 'Errore durante il voto');
       }
-    } else {
-      alert(result.error || 'Errore durante il voto');
+    } catch (error) {
+      setSubmitting(false);
+      alert('Errore di connessione');
     }
+
+    setPendingVoteData(null);
   };
 
   return (
@@ -131,6 +166,20 @@ export function InnovationSection() {
           </Button>
         </div>
       </div>
+
+      <TurnstileOverlay
+        isVisible={isTurnstileVisible}
+        onClose={() => {
+          setIsTurnstileVisible(false);
+          setPendingVoteData(null);
+        }}
+        onSuccess={handleTurnstileSuccess}
+        onError={(err) => {
+          alert(err);
+          setIsTurnstileVisible(false);
+          setPendingVoteData(null);
+        }}
+      />
     </section>
   );
 }

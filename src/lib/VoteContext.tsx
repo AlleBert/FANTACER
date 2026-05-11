@@ -14,6 +14,12 @@ export interface VoteState {
     wow: number;
   };
   currentSection: 1 | 2 | 3 | 4;
+  gameUnlock: {
+    comment: boolean;
+    ranking: boolean;
+    innovation: boolean;
+    success: boolean;
+  };
 }
 
 type VoteAction =
@@ -22,6 +28,7 @@ type VoteAction =
   | { type: 'SET_ADJECTIVE'; payload: Adjective }
   | { type: 'SET_SLIDER'; payload: { key: keyof VoteState['sliders']; value: number } }
   | { type: 'SET_SECTION'; payload: VoteState['currentSection'] }
+  | { type: 'UNLOCK_GAME_STEP'; payload: keyof Omit<VoteState['gameUnlock'], 'search'> }
   | { type: 'RESET' };
 
 const initialState: VoteState = {
@@ -30,6 +37,12 @@ const initialState: VoteState = {
   adjective: null,
   sliders: { innovation: 50, sales: 50, wow: 50 },
   currentSection: 1,
+  gameUnlock: {
+    comment: false,
+    ranking: false,
+    innovation: false,
+    success: false,
+  },
 };
 
 function voteReducer(state: VoteState, action: VoteAction): VoteState {
@@ -47,6 +60,8 @@ function voteReducer(state: VoteState, action: VoteAction): VoteState {
       };
     case 'SET_SECTION':
       return { ...state, currentSection: action.payload };
+    case 'UNLOCK_GAME_STEP':
+      return { ...state, gameUnlock: { ...state.gameUnlock, [action.payload]: true } };
     case 'RESET':
       return initialState;
      default:
@@ -60,11 +75,13 @@ interface VoteContextType {
   adjective: Adjective;
   sliders: VoteState['sliders'];
   currentSection: VoteState['currentSection'];
+  gameUnlock: VoteState['gameUnlock'];
   setSelectedCompany: (company: { id: string; name: string } | null) => void;
   setComment: (comment: string) => void;
   setAdjective: (adj: Adjective) => void;
   setSlider: (key: keyof VoteState['sliders'], value: number) => void;
   setCurrentSection: (section: VoteState['currentSection']) => void;
+  unlockGameStep: (step: keyof VoteState['gameUnlock']) => void;
   resetVote: () => void;
 }
 
@@ -79,11 +96,13 @@ export function VoteProvider({ children }: { children: ReactNode }) {
     adjective: state.adjective,
     sliders: state.sliders,
     currentSection: state.currentSection,
+    gameUnlock: state.gameUnlock,
     setSelectedCompany: (company) => dispatch({ type: 'SET_COMPANY', payload: company }),
     setComment: (comment) => dispatch({ type: 'SET_COMMENT', payload: comment }),
     setAdjective: (adj) => dispatch({ type: 'SET_ADJECTIVE', payload: adj }),
     setSlider: (key, value) => dispatch({ type: 'SET_SLIDER', payload: { key, value } }),
     setCurrentSection: (section) => dispatch({ type: 'SET_SECTION', payload: section }),
+    unlockGameStep: (step) => dispatch({ type: 'UNLOCK_GAME_STEP', payload: step }),
     resetVote: () => dispatch({ type: 'RESET' }),
   };
 

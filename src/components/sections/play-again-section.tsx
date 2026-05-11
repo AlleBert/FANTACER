@@ -8,6 +8,11 @@ interface PlayAgainSectionProps {
 }
 
 export function PlayAgainSection({ onPlayClick }: PlayAgainSectionProps) {
+  const handlePlayClick = () => {
+    document.querySelector('main')?.children[5]?.scrollIntoView({ behavior: 'smooth' })
+    onPlayClick?.()
+  }
+
   return (
     <section className="snap-start relative w-full h-[100dvh] bg-[linear-gradient(to_bottom,#FF2FB2_0%,#4B00AB_60%,#4B00AB_100%)] flex items-center justify-center overflow-hidden">
       
@@ -38,7 +43,7 @@ export function PlayAgainSection({ onPlayClick }: PlayAgainSectionProps) {
           </div>
 
           <Button
-            onClick={onPlayClick}
+            onClick={handlePlayClick}
             className="bg-[#c2e1ff] hover:bg-[#a8c7e6] text-[#000000] text-[clamp(2.25rem,7vw,88px)] font-[900] px-[clamp(4.5rem,11vw,9rem)] py-[clamp(2.25rem,5.5vw,4.5rem)] rounded-full border-[3px] md:border-[4px] border-black transition-transform hover:scale-105 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] uppercase tracking-tight"
           >
             GIOCA
