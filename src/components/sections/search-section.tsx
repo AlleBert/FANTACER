@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useVote } from '@/lib/VoteContext';
 import { createClient } from '@supabase/supabase-js';
 import { useDebouncedCallback } from 'use-debounce';
@@ -23,9 +23,17 @@ export function SearchSection() {
   const [results, setResults] = useState<CompanyResult[]>([]);
   const [showAll, setShowAll] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [activeBatch, setActiveBatch] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/public/batch')
+      .then(res => res.json())
+      .then(data => setActiveBatch(data.activeBatch))
+      .catch(() => setActiveBatch('TEST'));
+  }, []);
 
   const fetchCompanies = useDebouncedCallback(async (term: string) => {
-    if (!term || term.length < 2) {
+    if (!term || term.length < 2 || !activeBatch) {
       setResults([]);
       return;
     }
@@ -33,6 +41,7 @@ export function SearchSection() {
     const { data } = await supabase
       .from('companies')
       .select('id, name')
+      .eq('batch', activeBatch)
       .ilike('name', `%${term}%`)
       .limit(showAll ? 50 : 4);
     setResults(data || []);
