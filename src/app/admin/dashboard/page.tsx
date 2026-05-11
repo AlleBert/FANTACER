@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createBrowserClient } from '@supabase/ssr'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -11,9 +10,10 @@ import {
   Download,
   Upload,
   TrendingUp,
-  Palette,
   Vote,
-  Search
+  LayoutDashboard,
+  FileText,
+  Shield
 } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { format } from 'date-fns'
@@ -69,6 +69,13 @@ interface VotePagination {
   pages: number
 }
 
+interface AuditPagination {
+  page: number
+  limit: number
+  total: number
+  pages: number
+}
+
 const isBypassEnabled = () => process.env.NEXT_PUBLIC_X7K2M9QS3P === 'hx7k2m9Qs3P'
 
 export default function AdminDashboard() {
@@ -95,8 +102,8 @@ function AdminDashboardContent() {
     pages: 0
   })
   const [voteSearch, setVoteSearch] = useState('')
-  const [auditLogs, setAuditLogs] = useState<any[]>([])
-  const [auditPagination, setAuditPagination] = useState<any>({
+  const [auditLogs, setAuditLogs] = useState<Record<string, unknown>[]>([])
+  const [auditPagination, setAuditPagination] = useState<AuditPagination>({
     page: 1,
     limit: 25,
     total: 0,
@@ -105,49 +112,58 @@ function AdminDashboardContent() {
   const [auditSearch, setAuditSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-  const [activeTheme, setActiveTheme] = useState('theme-default')
-  const [pendingTheme, setPendingTheme] = useState<string | null>(null)
-  const [showThemeDialog, setShowThemeDialog] = useState(false)
+  const [activeTab, setActiveTab] = useState<'overview' | 'companies' | 'votes' | 'security'>('overview')
 
-  const changeTheme = async (theme: string) => {
-    // SE il tema è già attivo, NON aprire il modal
-    if (theme === activeTheme) return
-    
-    setPendingTheme(theme)
-    setShowThemeDialog(true)
+  const loadVotes = async (page: number, search: string) => {
+    const params = new URLSearchParams({ page: page.toString(), limit: '25' })
+    if (search) params.append('search', search)
+    const res = await fetch(`/api/admin/votes?${params}`)
+    const data = await res.json()
+    setVotes(data.data || [])
+    setVotePagination(data.pagination || { page: 1, limit: 25, total: 0, pages: 0 })
   }
 
-  const confirmThemeChange = async () => {
-    if (!pendingTheme) return
-    
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
-    
-    console.log('Saving theme:', pendingTheme)
-    
-    const { data, error } = await supabase
-      .from('settings')
-      .upsert({ key: 'global_theme', value: pendingTheme }, { onConflict: 'key' })
-      .select()
-    
-    console.log('Save result:', { data, error })
-    
-    if (error) {
-      console.error('Error saving theme:', error)
-      alert('Errore nel salvataggio del tema: ' + error.message)
-      return
+  const loadAuditLogs = async (page: number, search: string) => {
+    const params = new URLSearchParams({ page: page.toString(), limit: '25' })
+    if (search) params.append('search', search)
+    const res = await fetch(`/api/admin/audit-logs?${params}`)
+    const data = await res.json()
+    setAuditLogs(data.data || [])
+    setAuditPagination(data.pagination || { page: 1, limit: 25, total: 0, pages: 0 })
+  }
+
+  const loadData = async () => {
+    setLoading(true)
+    try {
+      const statsRes = await fetch('/api/analytics?type=summary')
+      const statsData = await statsRes.json()
+      setStats({
+        totalVotes: statsData.totalVotes || 0,
+        uniqueVoters: statsData.uniqueVoters || 0,
+        todayVotes: statsData.todayVotes || 0,
+        yesterdayVotes: statsData.yesterdayVotes || 0,
+        activeNow: statsData.activeNow || 0
+      })
+      setDailyStats(statsData.dailyStats || [])
+
+      const companiesRes = await fetch('/api/admin/companies')
+      const companiesData = await companiesRes.json()
+      setCompanies(companiesData.data || [])
+
+      loadVotes(1, '')
+      loadAuditLogs(1, '')
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
     }
-    
-    setShowThemeDialog(false)
-    setActiveTheme(pendingTheme)
   }
 
   useEffect(() => {
     const checkAuth = async () => {
       if (isBypassEnabled()) {
         setLoading(false)
+        loadData()
         return
       }
       
@@ -174,61 +190,6 @@ function AdminDashboardContent() {
     checkAuth()
   }, [router])
 
-  const loadData = async () => {
-    setLoading(true)
-    try {
-      // Load current theme
-      const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      )
-      const { data: themeData } = await supabase.from('settings').select('value').eq('key', 'global_theme').single()
-      if (themeData && themeData.value) {
-        setActiveTheme(themeData.value)
-      }
-
-      const statsRes = await fetch('/api/analytics?type=summary')
-      const statsData = await statsRes.json()
-      setStats({
-        totalVotes: statsData.totalVotes || 0,
-        uniqueVoters: statsData.uniqueVoters || 0,
-        todayVotes: statsData.todayVotes || 0,
-        yesterdayVotes: statsData.yesterdayVotes || 0,
-        activeNow: statsData.activeNow || 0
-      })
-      setDailyStats(statsData.dailyStats || [])
-
-      const companiesRes = await fetch('/api/admin/companies')
-      const companiesData = await companiesRes.json()
-      setCompanies(companiesData.data || [])
-
-      loadVotes(1, '')
-      loadAuditLogs(1, '')
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const loadVotes = async (page: number, search: string) => {
-    const params = new URLSearchParams({ page: page.toString(), limit: '25' })
-    if (search) params.append('search', search)
-    const res = await fetch(`/api/admin/votes?${params}`)
-    const data = await res.json()
-    setVotes(data.data || [])
-    setVotePagination(data.pagination || { page: 1, limit: 25, total: 0, pages: 0 })
-  }
-
-  const loadAuditLogs = async (page: number, search: string) => {
-    const params = new URLSearchParams({ page: page.toString(), limit: '25' })
-    if (search) params.append('search', search)
-    const res = await fetch(`/api/admin/audit-logs?${params}`)
-    const data = await res.json()
-    setAuditLogs(data.data || [])
-    setAuditPagination(data.pagination || { page: 1, limit: 25, total: 0, pages: 0 })
-  }
-
   const handleExport = async (format: 'csv' | 'excel') => {
     window.open(`/api/analytics?type=export&format=${format}`, '_blank')
   }
@@ -240,145 +201,141 @@ function AdminDashboardContent() {
         onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} 
       />
       
-      <main className={`transition-all duration-300 min-h-screen pb-12 ${isSidebarCollapsed ? 'md:ml-[80px]' : 'md:ml-[260px]'}`}>
-        {/* Header / Top Bar */}
-        <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border px-6 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-foreground">
-              Dashboard
-            </h1>
-            <p className="text-xs text-muted-foreground">Benvenuto, ecco i dati di oggi</p>
-          </div>
-          <div className="flex items-center gap-3">
-             <Button 
+      <main className={`transition-all duration-300 min-h-screen pb-12 overflow-x-hidden ${isSidebarCollapsed ? 'md:ml-[80px]' : 'md:ml-[260px]'}`}>
+        {/* Header */}
+        <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border">
+          <div className="w-full mx-auto px-4 md:px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-foreground tracking-tight">Analytics Dashboard</h1>
+                <p className="text-sm text-muted-foreground">Monitoraggio votazioni e statistiche</p>
+              </div>
+              <Button 
                 variant="outline"
                 size="sm"
                 onClick={() => loadData()}
                 className="h-9 border-border text-foreground hover:bg-secondary"
               >
-                Aggiorna Dati
+                Aggiorna
               </Button>
+            </div>
+            
+            {/* Tab Navigation */}
+            <div className="flex gap-1 mt-4 -mb-px">
+              <button
+                onClick={() => setActiveTab('overview')}
+                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg border-b-2 transition-all ${
+                  activeTab === 'overview'
+                    ? 'border-primary text-primary bg-primary/5'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+                }`}
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                Panoramica
+              </button>
+              <button
+                onClick={() => setActiveTab('companies')}
+                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg border-b-2 transition-all ${
+                  activeTab === 'companies'
+                    ? 'border-primary text-primary bg-primary/5'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+                }`}
+              >
+                <Users className="h-4 w-4" />
+                Aziende
+              </button>
+              <button
+                onClick={() => setActiveTab('votes')}
+                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg border-b-2 transition-all ${
+                  activeTab === 'votes'
+                    ? 'border-primary text-primary bg-primary/5'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+                }`}
+              >
+                <Vote className="h-4 w-4" />
+                Voti
+              </button>
+              <button
+                onClick={() => setActiveTab('security')}
+                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg border-b-2 transition-all ${
+                  activeTab === 'security'
+                    ? 'border-primary text-primary bg-primary/5'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+                }`}
+              >
+                <Shield className="h-4 w-4" />
+                Sicurezza
+              </button>
+            </div>
           </div>
         </header>
 
-        <div className="max-w-[1200px] mx-auto p-6 md:p-8 space-y-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="bg-card border-border shadow-sm hover:shadow-md transition-all group cursor-default">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Voti Totali</p>
-                    <h3 className="text-3xl font-bold text-foreground tabular-nums">{stats.totalVotes}</h3>
-                  </div>
-                  <div className="p-3 bg-primary/10 rounded-xl group-hover:scale-110 transition-transform">
-                    <Vote className="h-5 w-5 text-primary" />
-                  </div>
-                </div>
-                <div className="mt-4 flex items-center gap-2">
-                  <span className="text-[10px] px-1.5 py-0.5 bg-blue-500/10 text-blue-500 rounded font-bold">TOTAL</span>
-                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">Dato complessivo</span>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-card border-border shadow-sm hover:shadow-md transition-all group cursor-default">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Elettori Unici</p>
-                    <h3 className="text-3xl font-bold text-foreground tabular-nums">{stats.uniqueVoters}</h3>
-                  </div>
-                  <div className="p-3 bg-blue-500/10 rounded-xl group-hover:scale-110 transition-transform">
-                    <Users className="h-5 w-5 text-blue-500" />
-                  </div>
-                </div>
-                <div className="mt-4 flex items-center gap-2">
-                  <span className="text-[10px] px-1.5 py-0.5 bg-blue-500/10 text-blue-500 rounded font-bold">BY FP</span>
-                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">Hardware ID</span>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-card border-border shadow-sm hover:shadow-md transition-all group cursor-default">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Voti Oggi</p>
-                    <h3 className="text-3xl font-bold text-foreground tabular-nums">{stats.todayVotes}</h3>
-                  </div>
-                  <div className="p-3 bg-green-500/10 rounded-xl group-hover:scale-110 transition-transform">
-                    <TrendingUp className="h-5 w-5 text-green-500" />
-                  </div>
-                </div>
-                <div className="mt-4 flex items-center gap-2">
-                  {stats.todayVotes >= stats.yesterdayVotes ? (
-                    <span className="text-[10px] px-1.5 py-0.5 bg-green-500/10 text-green-500 rounded font-bold">↑ {stats.todayVotes - stats.yesterdayVotes}</span>
-                  ) : (
-                    <span className="text-[10px] px-1.5 py-0.5 bg-red-500/10 text-red-500 rounded font-bold">↓ {stats.yesterdayVotes - stats.todayVotes}</span>
-                  )}
-                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">rispetto a ieri ({stats.yesterdayVotes})</span>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-card border-border shadow-sm hover:shadow-md transition-all group cursor-default">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Attivi Ora</p>
-                    <h3 className="text-3xl font-bold text-foreground tabular-nums">{stats.activeNow}</h3>
-                  </div>
-                  <div className="p-3 bg-orange-500/10 rounded-xl group-hover:scale-110 transition-transform">
-                    <Users className="h-5 w-5 text-orange-500" />
-                  </div>
-                </div>
-                <div className="mt-4 flex items-center gap-2">
-                  <div className={`h-1.5 w-1.5 rounded-full ${stats.activeNow > 0 ? 'bg-orange-500 animate-pulse' : 'bg-muted'}`} />
-                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                    {stats.activeNow > 0 ? 'Attività negli ultimi 15 min' : 'Nessuna attività recente'}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Theme Settings Card */}
-          <Card className="bg-card border-border shadow-sm">
-            <CardHeader className="p-6 pb-2">
-              <div className="flex items-center gap-2">
-                <Palette className="h-5 w-5 text-primary" />
-                <CardTitle className="text-lg">Gestione Tema Globale</CardTitle>
+        <div className="w-full mx-auto p-4 md:p-6 space-y-6">
+          {activeTab === 'overview' && (
+            <>
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Card className="bg-gradient-to-br from-violet-500/10 to-violet-500/5 border-violet-500/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-violet-600 dark:text-violet-400 uppercase tracking-wide">Voti Totali</p>
+                        <p className="text-2xl font-bold text-foreground mt-1">{stats.totalVotes}</p>
+                      </div>
+                      <div className="p-2 bg-violet-500/20 rounded-lg">
+                        <Vote className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wide">Elettori Unici</p>
+                        <p className="text-2xl font-bold text-foreground mt-1">{stats.uniqueVoters}</p>
+                      </div>
+                      <div className="p-2 bg-blue-500/20 rounded-lg">
+                        <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border-emerald-500/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">Voti Oggi</p>
+                        <p className="text-2xl font-bold text-foreground mt-1">{stats.todayVotes}</p>
+                      </div>
+                      <div className="p-2 bg-emerald-500/20 rounded-lg">
+                        <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {stats.todayVotes >= stats.yesterdayVotes ? '+' : ''}{stats.todayVotes - stats.yesterdayVotes} vs ieri
+                    </p>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-gradient-to-br from-orange-500/10 to-orange-500/5 border-orange-500/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-orange-600 dark:text-orange-400 uppercase tracking-wide">Attivi Ora</p>
+                        <p className="text-2xl font-bold text-foreground mt-1">{stats.activeNow}</p>
+                      </div>
+                      <div className="p-2 bg-orange-500/20 rounded-lg">
+                        <Users className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-              <p className="text-sm text-muted-foreground">Seleziona il tema dell'applicazione principale. Questa modifica sarà applicata in tempo reale a tutti gli utenti.</p>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="flex flex-wrap gap-4">
-                <Button 
-                  onClick={() => changeTheme('theme-default')} 
-                  variant={activeTheme === 'theme-default' ? "default" : "outline"}
-                  className="rounded-full"
-                >
-                  Premium Default (OLED + Arancio)
-                </Button>
-                <Button 
-                  onClick={() => changeTheme('theme-cyber')} 
-                  variant={activeTheme === 'theme-cyber' ? "default" : "outline"}
-                  className="rounded-full"
-                >
-                  Cyber Tech (Indaco + Ciano)
-                </Button>
-                <Button 
-                  onClick={() => changeTheme('theme-fintech')} 
-                  variant={activeTheme === 'theme-fintech' ? "default" : "outline"}
-                  className="rounded-full"
-                >
-                  Neobank (Midnight + Smeraldo)
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="lg:col-span-2 bg-card border-border shadow-sm">
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2 text-foreground text-lg">
@@ -484,18 +441,16 @@ function AdminDashboardContent() {
                 </div>
               </CardContent>
             </Card>
-          </div>
+</div>
+            </>
+          )}
 
-          {/* Ranking & Logs Section */}
-          <div className="space-y-8 pt-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-foreground">Gestione Dati & Sicurezza</h2>
-            </div>
-
-            <Card className="bg-card border-border shadow-sm overflow-hidden">
-              <CardHeader className="bg-secondary/50 border-b border-border">
-                <CardTitle className="flex items-center gap-2 text-foreground text-lg">
-                  <Users className="h-5 w-5 text-primary" />
+          {/* Aziende Tab */}
+          {activeTab === 'companies' && (
+            <Card className="border-border">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Users className="h-5 w-5" />
                   Classifica Aziende
                 </CardTitle>
               </CardHeader>
@@ -503,89 +458,54 @@ function AdminDashboardContent() {
                 <CompanyTable data={companies} />
               </CardContent>
             </Card>
+          )}
 
-            <div className="space-y-8">
-              <Card className="bg-card border-border shadow-sm overflow-hidden">
-                <CardHeader className="bg-secondary/50 border-b border-border">
-                  <CardTitle className="flex items-center gap-2 text-foreground text-lg">
-                    <Vote className="h-5 w-5 text-primary" />
-                    Registro Voti
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <VoteLogTable 
-                    data={votes} 
-                    pagination={votePagination}
-                    onPageChange={(page: number) => loadVotes(page, voteSearch)}
-                    onSearch={(search: string) => {
-                      setVoteSearch(search)
-                      loadVotes(1, search)
-                    }}
-                  />
-                </CardContent>
-              </Card>
-
-              <Card className="bg-card border-border shadow-sm overflow-hidden">
-                <CardHeader className="bg-red-500/5 border-b border-border">
-                  <CardTitle className="flex items-center gap-2 text-foreground text-lg">
-                    <ShieldAlert className="h-5 w-5 text-red-500" />
-                    Security Audit Logs
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <AuditLogTable 
-                    data={auditLogs} 
-                    pagination={auditPagination}
-                    onPageChange={(page: number) => loadAuditLogs(page, auditSearch)}
-                    onSearch={(search: string) => {
-                      setAuditSearch(search)
-                      loadAuditLogs(1, search)
-                    }}
-                  />
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-
-        {/* Theme Confirmation Dialog */}
-        {showThemeDialog && pendingTheme && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-            <div className="bg-card border border-border rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
-              <h3 className="text-xl font-bold text-foreground mb-3">
-                Conferma Cambio Tema
-              </h3>
-              <p className="text-muted-foreground mb-6">
-                Vuoi cambiare il tema dell'applicazione a{' '}
-                <span className="font-semibold text-foreground">
-                  {pendingTheme === 'theme-default' ? 'Premium Default (OLED + Arancio)' :
-                   pendingTheme === 'theme-cyber' ? 'Cyber Tech (Indaco + Ciano)' :
-                   pendingTheme === 'theme-fintech' ? 'Neobank (Midnight + Smeraldo)' :
-                   pendingTheme}
-                </span>
-                ?
-              </p>
-              <div className="flex gap-3 justify-end">
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setShowThemeDialog(false)
-                    setPendingTheme(null)
+          {/* Voti Tab */}
+          {activeTab === 'votes' && (
+            <Card className="border-border">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Registro Voti
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <VoteLogTable 
+                  data={votes} 
+                  pagination={votePagination}
+                  onPageChange={(page: number) => loadVotes(page, voteSearch)}
+                  onSearch={(search: string) => {
+                    setVoteSearch(search)
+                    loadVotes(1, search)
                   }}
-                  className="border-border"
-                >
-                  Annulla
-                </Button>
-                <Button 
-                  onClick={confirmThemeChange}
-                  className="bg-primary hover:bg-primary/90"
-                >
-                  Conferma e Applica
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Security Tab */}
+          {activeTab === 'security' && (
+            <Card className="border-border">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Audit Log
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <AuditLogTable 
+                  data={auditLogs} 
+                  pagination={auditPagination}
+                  onPageChange={(page: number) => loadAuditLogs(page, auditSearch)}
+                  onSearch={(search: string) => {
+                    setAuditSearch(search)
+                    loadAuditLogs(1, search)
+                  }}
+                />
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </main>
     </div>
   )

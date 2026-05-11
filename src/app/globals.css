@@ -3,6 +3,22 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource/open-sauce-one";
 
+/* Disable text selection globally */
+* {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Allow selection for input/textarea */
+input, textarea {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -173,7 +189,7 @@
   html {
     @apply font-sans scroll-smooth;
     min-height: 100dvh;
-    min-width: 100vw;
+    width: 100%;
     background: transparent;
   }
 }

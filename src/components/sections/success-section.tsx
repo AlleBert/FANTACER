@@ -1,7 +1,9 @@
 'use client';
 
+import { useEffect } from 'react'
 import Image from 'next/image'
 import { useVote } from '@/lib/VoteContext'
+import confetti from 'canvas-confetti'
 
 function IphoneStoryMockup({ companyName }: { companyName?: string }) {
   return (
@@ -67,6 +69,38 @@ function IphoneStoryMockup({ companyName }: { companyName?: string }) {
 
 export function SuccessSection() {
   const { selectedCompany, resetVote } = useVote();
+
+  useEffect(() => {
+    const duration = 4000;
+    const animationEnd = Date.now() + duration;
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
+
+    const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+
+    const interval: NodeJS.Timeout = setInterval(() => {
+      const timeLeft = animationEnd - Date.now();
+      if (timeLeft <= 0) {
+        clearInterval(interval);
+        // Confetti complete - user stays on this page
+        return;
+      }
+      const particleCount = 50 * (timeLeft / duration);
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+        colors: ['#fccb27', '#8000ff', '#ff803b', '#4B00AB', '#ffffff'],
+      });
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+        colors: ['#fccb27', '#8000ff', '#ff803b', '#4B00AB', '#ffffff'],
+      });
+    }, 250);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Keep this available for potential internal navigation handlers.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

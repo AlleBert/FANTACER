@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Turnstile } from '@marsidev/react-turnstile'
-import { ShieldCheck, X, Loader2 } from 'lucide-react'
+import { Star, X, Loader2 } from 'lucide-react'
 
 interface TurnstileOverlayProps {
   isVisible: boolean
@@ -37,11 +37,10 @@ export function TurnstileOverlay({ isVisible, onClose, onSuccess, onError }: Tur
 
   const handleSuccess = (token: string) => {
     setStatus('success')
-    // Wait a bit to show the success state
     setTimeout(() => {
       onSuccess(token)
       handleClose()
-    }, 1000)
+    }, 800)
   }
 
   if (!isVisible && !isClosing) return null
@@ -54,46 +53,52 @@ export function TurnstileOverlay({ isVisible, onClose, onSuccess, onError }: Tur
     >
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-[#0D0C0B]/80 backdrop-blur-md"
+        className="absolute inset-0 bg-[#8000ff]/10 backdrop-blur-sm"
         onClick={handleClose}
       />
 
       {/* Card */}
       <div 
-        className={`relative w-full max-w-md bg-[#181614] border border-[#2E2A26] rounded-2xl shadow-2xl p-8 transform transition-all duration-300 ${
-          isClosing ? 'scale-95 translate-y-4' : 'scale-100 translate-y-0'
+        className={`relative w-full max-w-sm bg-white border-2 border-[#8000ff] rounded-3xl shadow-[0_8px_0_#231f20] p-6 transform transition-all duration-300 ${
+          isClosing ? 'scale-95 opacity-0' : 'scale-100 opacity-100'
         }`}
       >
         {/* Close Button */}
         <button 
           onClick={handleClose}
-          className="absolute top-4 right-4 p-2 text-[#8C8882] hover:text-[#F0EDE8] transition-colors"
+          className="absolute top-3 right-3 p-1.5 text-[#8000ff] hover:bg-[#8000ff]/10 rounded-full transition-colors"
         >
-          <X className="h-5 w-5" />
+          <X className="h-4 w-4" />
         </button>
 
-        <div className="flex flex-col items-center text-center space-y-6">
-          <div className={`p-4 rounded-full bg-[#FF6A1A]/10 transition-transform duration-500 ${status === 'success' ? 'rotate-[360deg] scale-110' : ''}`}>
+        <div className="flex flex-col items-center text-center space-y-4">
+          {/* Icon */}
+          <div className={`
+            relative p-3 rounded-full transition-all duration-500
+            ${status === 'success' ? 'bg-[#fccb27]' : 'bg-[#8000ff]/10'}
+          `}>
             {status === 'success' ? (
-              <ShieldCheck className="h-10 w-10 text-green-500" />
+              <Star className="h-8 w-8 fill-[#231f20] stroke-[#231f20] stroke-2" />
             ) : (
-              <ShieldCheck className="h-10 w-10 text-[#FF6A1A]" />
+              <Star className="h-8 w-8 fill-[#8000ff] stroke-[#8000ff] stroke-2" />
             )}
           </div>
 
-          <div className="space-y-2">
-            <h2 className="text-xl font-bold text-[#F0EDE8]">
-              {status === 'success' ? 'Verifica Completata' : 'Sicurezza Voto'}
+          {/* Text */}
+          <div className="space-y-1">
+            <h2 className="text-lg font-black text-[#8000ff] uppercase tracking-tight">
+              {status === 'success' ? 'Tutto pronto!' : 'Verifica'}
             </h2>
-            <p className="text-[#8C8882] text-sm max-w-[280px]">
+            <p className="text-sm text-[#231f20]/70 max-w-[260px]">
               {status === 'success' ? (
-                'Identità confermata! Stiamo registrando il tuo voto...'
+                'Il tuo voto è in arrivo!'
               ) : (
-                'Per garantire l\'equità del concorso, ti chiediamo una breve verifica anti-bot.'
+                'Conferma di essere una persona reale'
               )}
             </p>
           </div>
 
+          {/* Turnstile Container */}
           <div className="relative w-full min-h-[65px] flex items-center justify-center">
             {status === 'idle' && (
               <Turnstile 
@@ -101,22 +106,23 @@ export function TurnstileOverlay({ isVisible, onClose, onSuccess, onError }: Tur
                 onSuccess={handleSuccess}
                 onExpire={() => setStatus('idle')}
                 onError={() => onError('Errore di verifica. Riprova.')}
-                options={{ theme: 'dark' }}
+                options={{ theme: 'light' }}
               />
             )}
             
             {(status === 'verifying' || status === 'success') && (
-              <div className="flex items-center gap-3 text-[#FF6A1A] animate-pulse">
+              <div className="flex items-center gap-2 text-[#8000ff]">
                 <Loader2 className="h-5 w-5 animate-spin" />
-                <span className="text-sm font-semibold uppercase tracking-wider">
-                  {status === 'success' ? 'CONFERMATO' : 'ELABORAZIONE...'}
+                <span className="text-sm font-bold uppercase tracking-wide">
+                  {status === 'success' ? 'OK!' : 'Verifica...'}
                 </span>
               </div>
             )}
           </div>
 
-          <p className="text-[10px] text-[#8C8882] pt-4">
-            Protetto da Cloudflare. Nessun dato personale viene memorizzato.
+          {/* Footer */}
+          <p className="text-[10px] text-[#231f20]/40 pt-2">
+            Nessun dato personale memorizzato
           </p>
         </div>
       </div>
