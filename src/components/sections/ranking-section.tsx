@@ -13,7 +13,7 @@ const adjectives = [
 ] as const satisfies readonly Adjective[];
 
 export function RankingSection() {
-  const { selectedCompany, adjective, setAdjective, setCurrentSection, unlockGameStep } = useVote();
+  const { selectedCompany, adjective, setAdjective, setCurrentSection } = useVote();
 
   const handleSelect = (option: Adjective) => {
     setAdjective(option);
@@ -21,11 +21,10 @@ export function RankingSection() {
 
   const handleNext = () => {
     if (adjective) {
-      unlockGameStep('innovation');
       const main = document.querySelector('main');
       const sections = main?.children;
-      if (sections && sections[9]) {
-        (sections[9] as HTMLElement).scrollIntoView({ behavior: 'smooth' });
+      if (sections && sections[8]) {
+        (sections[8] as HTMLElement).scrollIntoView({ behavior: 'smooth' });
       }
       setCurrentSection(4);
     }

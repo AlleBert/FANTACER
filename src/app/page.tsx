@@ -37,29 +37,6 @@ function ScrollManager() {
   return null;
 }
 
-function PageContent() {
-  const { gameUnlock } = useVote();
-
-  return (
-    <main
-      className="overflow-y-auto snap-y snap-mandatory scroll-smooth no-scrollbar safe-pb"
-      style={{ height: 'var(--app-height)' }}
-    >
-      <HeroSection />
-      <IntroSection />
-      <HowItWorksSection />
-      <PlayAgainSection />
-      <PrizeLocationSection />
-      <SearchSection />
-      {gameUnlock.comment && <CommentSection />}
-      {gameUnlock.ranking && <RankingSection />}
-      {gameUnlock.innovation && <InnovationSection />}
-      {gameUnlock.success && <SuccessSection />}
-      <ContactSection />
-    </main>
-  )
-}
-
 export default function Page() {
   useEffect(() => {
     getOrCreateDeviceId();
@@ -68,7 +45,22 @@ export default function Page() {
   return (
     <VoteProvider>
       <ScrollManager />
-      <PageContent />
+      <main
+        className="overflow-y-auto snap-y snap-mandatory scroll-smooth no-scrollbar safe-pb"
+        style={{ height: 'var(--app-height)' }}
+      >
+        <HeroSection />
+        <IntroSection />
+        <HowItWorksSection />
+        <PlayAgainSection />
+        <PrizeLocationSection />
+        <SearchSection />
+        <CommentSection />
+        <RankingSection />
+        <InnovationSection />
+        <SuccessSection />
+        <ContactSection />
+      </main>
     </VoteProvider>
   )
 }

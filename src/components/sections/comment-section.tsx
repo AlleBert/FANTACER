@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 
 export function CommentSection() {
-  const { selectedCompany, comment, setComment, setCurrentSection, unlockGameStep } = useVote();
+  const { selectedCompany, comment, setComment, setCurrentSection } = useVote();
   const [localComment, setLocalComment] = useState(comment);
 
   const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -24,11 +24,10 @@ export function CommentSection() {
 
   const handleNext = () => {
     if (canProceed) {
-      unlockGameStep('ranking');
       const main = document.querySelector('main');
       const sections = main?.children;
-      if (sections && sections[8]) {
-        (sections[8] as HTMLElement).scrollIntoView({ behavior: 'smooth' });
+      if (sections && sections[7]) {
+        (sections[7] as HTMLElement).scrollIntoView({ behavior: 'smooth' });
       }
       setCurrentSection(3);
     }

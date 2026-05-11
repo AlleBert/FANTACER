@@ -5,23 +5,28 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Lock } from 'lucide-react'
+import { Lock, KeyRound } from 'lucide-react'
 const isBypassEnabled = () => process.env.NEXT_PUBLIC_X7K2M9QS3P === 'hx7k2m9Qs3P'
+const getBypassSession = () => ({
+  user: { email: 'dev@fantacer.it', role: 'admin' },
+  expires: new Date(Date.now() + 3600000).toISOString(),
+  token: 'dev-bypass-token'
+})
 
 export default function AdminLogin() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [mfaCode, setMfaCode] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [requiresMfa, setRequiresMfa] = useState(false)
 
   // Auto-login for development
   useEffect(() => {
-    const bypassEnabled = isBypassEnabled();
-    console.log('Admin login - Bypass enabled:', bypassEnabled);
-    if (bypassEnabled) {
-      console.log('Dev bypass enabled - auto-login');
-      localStorage.setItem('admin_session', 'dev-bypass-token')
+    if (isBypassEnabled()) {
+      const session = getBypassSession()
+      localStorage.setItem('admin_session', JSON.stringify(session))
       router.push('/admin/dashboard')
     }
   }, [router])
@@ -35,16 +40,20 @@ export default function AdminLogin() {
       const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password, mfaCode: requiresMfa ? mfaCode : undefined })
       })
 
       const data = await res.json()
 
       if (!res.ok) {
-        setError(data.error || 'Login failed')
+        if (data.requiresMfa) {
+          setRequiresMfa(true)
+        } else {
+          setError(data.error || 'Login failed')
+        }
       } else {
-        // Store the access token for Supabase Auth
-        localStorage.setItem('admin_session', data.session.access_token)
+        // Store session
+        localStorage.setItem('admin_session', data.sessionToken)
         router.push('/admin/dashboard')
       }
     } catch {
@@ -87,6 +96,23 @@ export default function AdminLogin() {
                 required
               />
             </div>
+
+            {requiresMfa && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Codice MFA</label>
+                <div className="flex gap-2">
+                  <KeyRound className="h-5 w-5 text-muted-foreground mt-2" />
+                  <Input
+                    type="text"
+                    placeholder="123456"
+                    value={mfaCode}
+                    onChange={(e) => setMfaCode(e.target.value)}
+                    maxLength={6}
+                    required
+                  />
+                </div>
+              </div>
+            )}
 
             {error && (
               <div className="text-sm text-red-500">{error}</div>

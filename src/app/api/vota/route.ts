@@ -89,13 +89,12 @@ export async function POST(request: NextRequest) {
     const isBypassToken = turnstile_token === 'debug-bypass-token'
     
     let isHuman = false
-    // DEV BYPASS DISABLED FOR TESTING
-    // if (isBypass && isBypassToken) {
-    //   console.log('API Vota: Bypassing Turnstile verification (DEV MODE)')
-    //   isHuman = true
-    // } else {
+    if (isBypass && isBypassToken) {
+      console.log('API Vota: Bypassing Turnstile verification (DEV MODE)')
+      isHuman = true
+    } else {
       isHuman = await verifyTurnstile(turnstile_token, ip)
-    // }
+    }
 
     if (!isHuman) {
       console.error('API Vota: Verifica Turnstile fallita per il token fornito')

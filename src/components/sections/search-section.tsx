@@ -18,7 +18,7 @@ interface CompanyResult {
 }
 
 export function SearchSection() {
-  const { selectedCompany, setSelectedCompany, setCurrentSection, unlockGameStep } = useVote();
+  const { selectedCompany, setSelectedCompany, setCurrentSection } = useVote();
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState<CompanyResult[]>([]);
   const [showAll, setShowAll] = useState(false);
@@ -61,11 +61,10 @@ export function SearchSection() {
 
   const handleNext = () => {
     if (selectedCompany) {
-      unlockGameStep('comment');
       const main = document.querySelector('main');
       const sections = main?.children;
-      if (sections && sections[7]) {
-        (sections[7] as HTMLElement).scrollIntoView({ behavior: 'smooth' });
+      if (sections && sections[6]) {
+        (sections[6] as HTMLElement).scrollIntoView({ behavior: 'smooth' });
       }
       setCurrentSection(2);
     }
