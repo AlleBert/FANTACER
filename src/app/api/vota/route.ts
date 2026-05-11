@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { submitVote } from '@/lib/supabase/vote-api'
+import { getActiveBatch } from '@/lib/supabase/batch'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 const isVotingBypassEnabled = () => process.env.NEXT_PUBLIC_X7K2M9QS3P === 'hx7k2m9Qs3P'
 
@@ -62,6 +64,19 @@ export async function POST(request: NextRequest) {
     if (!companyId || !fingerprint || !comment || !adjective || !sliders) {
       console.error('API Vota: Missing fields', { companyId, fingerprint, comment, adjective, sliders })
       return NextResponse.json({ error: 'Campi obbligatori mancanti' }, { status: 400 })
+    }
+
+    // Validate company belongs to active batch
+    const activeBatch = await getActiveBatch()
+    const supabaseAdmin = createAdminClient()
+    const { data: company } = await supabaseAdmin
+      .from('companies')
+      .select('batch')
+      .eq('id', companyId)
+      .single()
+
+    if (!company || company.batch !== activeBatch) {
+      return NextResponse.json({ error: 'Azienda non disponibile nel batch attivo' }, { status: 400 })
     }
 
     // Validate adjective
