@@ -1,10 +1,22 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function proxy(request: NextRequest) {
-  const isComingSoon = process.env.NEXT_PUBLIC_9X4M2K8L === 'm9fK2pL7xQ';
+export async function proxy(request: NextRequest) {
+  const envOverride = process.env.NEXT_PUBLIC_9X4M2K8L === 'm9fK2pL7xQ';
 
-  if (!isComingSoon) {
+  let dbEnabled = false;
+  try {
+    const flagUrl = new URL('/api/public/flag/coming-soon', request.url);
+    const res = await fetch(flagUrl);
+    if (res.ok) {
+      const data = await res.json();
+      dbEnabled = data.enabled === true;
+    }
+  } catch {
+    // failsafe: if fetch fails, site stays live
+  }
+
+  if (!envOverride && !dbEnabled) {
     return NextResponse.next();
   }
 
