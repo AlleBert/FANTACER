@@ -16,7 +16,8 @@ export async function GET() {
 
     if (error) throw error;
     return NextResponse.json({ enabled: data.value === 'true' });
-  } catch {
+  } catch (e) {
+    console.error('Failed to read coming_soon_enabled:', e);
     return NextResponse.json({ enabled: false });
   }
 }
