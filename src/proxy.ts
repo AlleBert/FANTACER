@@ -24,6 +24,10 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  if (pathname.startsWith('/admin/')) {
+    return NextResponse.next();
+  }
+
   if (pathname === '/coming-soon') {
     return NextResponse.next();
   }
