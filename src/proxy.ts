@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export async function proxy(request: NextRequest) {
-  const envOverride = process.env.NEXT_PUBLIC_9X4M2K8L === 'm9fK2pL7xQ';
-
   let dbEnabled = false;
   try {
     const flagUrl = new URL('/api/public/flag/coming-soon', request.url);
@@ -16,7 +14,7 @@ export async function proxy(request: NextRequest) {
     // failsafe: if fetch fails, site stays live
   }
 
-  if (!envOverride && !dbEnabled) {
+  if (!dbEnabled) {
     return NextResponse.next();
   }
 
