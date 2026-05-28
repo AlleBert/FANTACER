@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   experimental: {
-    optimizePackageImports: ['@/components/ui'],
+    optimizePackageImports: ['@/components/ui', 'lucide-react'],
   },
   images: {
     formats: ['image/avif', 'image/webp'],
