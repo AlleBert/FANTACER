@@ -52,6 +52,15 @@ BACKGROUND.png
 MOCKUP/
 backup-src/
 
+# supabase auto-generated temp files
+supabase/.temp/
+
+# opencode agent config
+.opencode/
+
+# plan documents
+docs/superpowers/plans/
+
 # Playwright
 node_modules/
 /test-results/
