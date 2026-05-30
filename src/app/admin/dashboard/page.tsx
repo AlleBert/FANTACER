@@ -580,7 +580,10 @@ function SettingsTabContent() {
   const [loadingFlag, setLoadingFlag] = useState(true)
 
   useEffect(() => {
-    fetch('/api/admin/settings/coming-soon')
+    const session = localStorage.getItem('admin_session')
+    fetch('/api/admin/settings/coming-soon', {
+      headers: session ? { Authorization: `Bearer ${session}` } : {}
+    })
       .then(res => res.json())
       .then(data => setComingSoonEnabled(data.enabled))
       .finally(() => setLoadingFlag(false))
