@@ -3,9 +3,21 @@ import "@fontsource/open-sauce-one/400.css";
 import "@fontsource/open-sauce-one/700.css";
 import "./globals.css";
 
+const siteUrl = "https://fantacer.it";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "FANTACER - Gioca e Vinci",
   description: "Il primo gioco semiserio del distretto ceramico",
+  icons: {
+    icon: "/favicon.svg",
+  },
+  openGraph: {
+    title: "FANTACER - Gioca e Vinci",
+    description: "Il primo gioco semiserio del distretto ceramico",
+    siteName: "FANTACER",
+    type: "website",
+  },
 };
 
 export const viewport: Viewport = {
