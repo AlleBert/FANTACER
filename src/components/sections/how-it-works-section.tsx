@@ -1,11 +1,9 @@
-'use client'
-
 import Image from 'next/image'
-import React from 'react'
+import type { ReactNode } from 'react'
 import { Heart, MessageCircleMore, Smartphone, AtSign, Gift } from 'lucide-react'
 
 interface Step {
-  icon: React.ReactNode
+  icon: ReactNode
   label: string
 }
 

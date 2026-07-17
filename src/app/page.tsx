@@ -29,7 +29,7 @@ function ScrollManager() {
     if (main) {
       const sections = main.children;
       if (sections[sectionIndex]) {
-        (sections[sectionIndex] as HTMLElement).scrollIntoView({ behavior: 'smooth' });
+        main.scrollTo({ top: (sections[sectionIndex] as HTMLElement).offsetTop, behavior: 'smooth' });
       }
     }
   }, [currentSection]);
@@ -47,7 +47,9 @@ function PageContent() {
     >
       <HeroSection 
         onPlayClick={() => {
-          document.querySelector('main')?.children[5]?.scrollIntoView({ behavior: 'smooth' })
+          const main = document.querySelector('main');
+          const target = main?.children[5] as HTMLElement | undefined;
+          if (main && target) main.scrollTo({ top: target.offsetTop, behavior: 'smooth' });
         }}
       />
       <IntroSection />
@@ -66,7 +68,19 @@ function PageContent() {
 
 export default function Page() {
   useEffect(() => {
-    getOrCreateDeviceId();
+    const deviceId = getOrCreateDeviceId();
+
+    const sendHeartbeat = () => {
+      fetch('/api/presence/heartbeat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fingerprint: deviceId }),
+      }).catch(() => {})
+    }
+
+    sendHeartbeat()
+    const interval = setInterval(sendHeartbeat, 30000)
+    return () => clearInterval(interval)
   }, []);
 
   return (

@@ -1,6 +1,6 @@
 'use client'
 
-import { Trophy, TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { Trophy } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 interface RankingItem {

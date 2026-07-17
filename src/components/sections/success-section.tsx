@@ -102,17 +102,6 @@ export function SuccessSection() {
     return () => clearInterval(interval);
   }, []);
 
-  // Keep this available for potential internal navigation handlers.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handlePlayAgain = () => {
-    resetVote();
-    // Scroll back to first section
-    const firstSection = document.querySelector('[data-section="hero"]') || document.querySelector('section');
-    if (firstSection) {
-      firstSection.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
   return (
     <section data-section="success" className="snap-start relative w-full overflow-hidden bg-[linear-gradient(to_bottom,#ffffff_0%,#ffffff_20%,#4B00AB_100%)] min-h-[100dvh]">
       <div className="safe-shell relative z-10 flex flex-col items-center justify-center max-w-[1200px] mx-auto gap-16 py-12 lg:flex-row lg:justify-between lg:gap-20 lg:py-20">

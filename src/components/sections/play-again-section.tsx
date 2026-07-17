@@ -9,7 +9,9 @@ interface PlayAgainSectionProps {
 
 export function PlayAgainSection({ onPlayClick }: PlayAgainSectionProps) {
   const handlePlayClick = () => {
-    document.querySelector('main')?.children[5]?.scrollIntoView({ behavior: 'smooth' })
+    const main = document.querySelector('main');
+    const target = main?.children[5] as HTMLElement | undefined;
+    if (main && target) main.scrollTo({ top: target.offsetTop, behavior: 'smooth' })
     onPlayClick?.()
   }
 

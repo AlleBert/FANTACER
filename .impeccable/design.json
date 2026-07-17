@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-04T00:00:00.000Z",
+  "title": "Design System: FANTACER",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Arancio Energia",
+        "canonical": "#ff8a26",
+        "tonalRamp": ["#3d1f08", "#663410", "#8f4a18", "#b85f20", "#e07524", "#ff8a26", "#ffa552", "#ffc07e", "#ffdaa9", "#fff4d4"]
+      },
+      "accent-purple": {
+        "role": "accent",
+        "displayName": "Viola Coraggioso",
+        "canonical": "#8000ff",
+        "tonalRamp": ["#1a0033", "#330066", "#4d0099", "#6600cc", "#8000ff", "#9933ff", "#b366ff", "#cc99ff", "#e6ccff", "#f5eaff"]
+      },
+      "accent-yellow": {
+        "role": "accent",
+        "displayName": "Giallo Squillante",
+        "canonical": "#fccb27",
+        "tonalRamp": ["#3d3209", "#66530f", "#8f7515", "#b8971c", "#e1b822", "#fccb27", "#fdd552", "#fde07e", "#feeaa9", "#fff4d4"]
+      },
+      "accent-blue": {
+        "role": "accent",
+        "displayName": "Azzurro Ceramica",
+        "canonical": "#c2e1ff",
+        "tonalRamp": ["#203040", "#406080", "#6090bf", "#80bfff", "#a0d0ff", "#c2e1ff", "#cee7ff", "#daedff", "#e6f3ff", "#f2f9ff"]
+      },
+      "neutral-ink": {
+        "role": "neutral",
+        "displayName": "Inky Black",
+        "canonical": "#231f20",
+        "tonalRamp": ["#000000", "#0a0808", "#151112", "#231f20", "#3a3536", "#514b4c", "#686163", "#7f7779", "#968d8f", "#ada3a5"]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Hero headlines and main section titles only."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section sub-titles and emphasis headings."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Descriptive text, paragraphs, instructions."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Small text, timers, badges, secondary info."
+      }
+    },
+    "shadows": [
+      { "name": "neo-default", "value": "4px 4px 0 #000", "purpose": "Standard neo-brutalist shadow for cards, buttons, inputs." },
+      { "name": "neo-large", "value": "6px 6px 0 #000", "purpose": "Hero-level shadow for primary CTA and featured elements." },
+      { "name": "neo-pressed", "value": "2px 2px 0 #000", "purpose": "Pressed/active state shadow, combined with translate." }
+    ],
+    "motion": [
+      { "name": "ease-default", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Default easing for state transitions." },
+      { "name": "duration-hover", "value": "180ms", "purpose": "Hover/focus state transitions." },
+      { "name": "duration-enter", "value": "300ms", "purpose": "Entrance and reveal animations." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button (Giallo)",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Azione principale — GIOCA, FATTO, >>. Sempre giallo, pill, ombra dura.",
+      "html": "<button class=\"ds-btn-primary\">GIOCA</button>",
+      "css": ".ds-btn-primary { background: #fccb27; color: #000; font-family: 'Open Sauce One', sans-serif; font-weight: 900; font-size: clamp(1.5rem, 5vw, 2.5rem); padding: 1.5rem 3rem; border: 3px solid #231f20; border-radius: 9999px; box-shadow: 4px 4px 0 #000; cursor: pointer; text-transform: uppercase; letter-spacing: -0.02em; transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-primary:hover { box-shadow: 6px 6px 0 #000; transform: translateY(-2px); background: #ffe066; } .ds-btn-primary:active { transform: scale(0.95); box-shadow: 2px 2px 0 #000; }"
+    },
+    {
+      "name": "Search Input",
+      "kind": "input",
+      "refersTo": "input-search",
+      "description": "Campo di ricerca aziende. Pill blu con ombra marcata.",
+      "html": "<input class=\"ds-input-search\" placeholder=\"Cerca azienda...\" />",
+      "css": ".ds-input-search { width: 100%; background: #c2e1ff; border: 3px solid #231f20; border-radius: 9999px; padding: 1rem 2rem; font-family: 'Open Sauce One', sans-serif; font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 900; color: #231f20; box-shadow: 6px 6px 0 #000; outline: none; transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-input-search:focus { background: #fff; box-shadow: 8px 8px 0 #000; transform: translateY(-2px); } .ds-input-search::placeholder { color: rgba(35, 31, 32, 0.4); font-weight: 900; }"
+    },
+    {
+      "name": "Ranking Option Pill",
+      "kind": "chip",
+      "refersTo": "chip-default",
+      "description": "Opzione di ranking selezionabile. Pill bianco con bordo nero.",
+      "html": "<button class=\"ds-chip-ranking\">eccezionale</button>",
+      "css": ".ds-chip-ranking { background: #fff; color: #231f20; border: 2px solid #231f20; border-radius: 9999px; padding: 1rem 2rem; font-family: 'Open Sauce One', sans-serif; font-size: 1.25rem; font-weight: 700; cursor: pointer; transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1); width: 100%; text-align: center; } .ds-chip-ranking:hover { background: #c2e1ff; } .ds-chip-ranking[aria-selected=\"true\"] { background: #fccb27; }"
+    },
+    {
+      "name": "Contact Card",
+      "kind": "card",
+      "refersTo": "card-default",
+      "description": "Card informativa con sfondo scuro, usata nella contact-section.",
+      "html": "<div class=\"ds-card-contact\"><h3 class=\"ds-card-contact-title\">Contattaci</h3><p class=\"ds-card-contact-text\">Email: info@fantacer.it</p></div>",
+      "css": ".ds-card-contact { background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(248, 250, 252, 0.07); border-radius: 2rem; padding: 2rem; box-shadow: 0 28px 60px rgba(15, 23, 42, 0.22); font-family: 'Open Sauce One', sans-serif; color: #f8fafc; } .ds-card-contact-title { font-size: clamp(1.1rem, 1.8vw, 1.4rem); font-weight: 700; margin: 0 0 0.75rem 0; } .ds-card-contact-text { font-size: 1rem; line-height: 1.6; color: rgba(248, 250, 252, 0.84); margin: 0; }"
+    },
+    {
+      "name": "Range Slider Thumb",
+      "kind": "custom",
+      "refersTo": "slider-thumb",
+      "description": "Slider a stella per la sezione Innovation. Thumb giallo, track nero.",
+      "html": "<div class=\"ds-slider-track\"><div class=\"ds-slider-thumb\" style=\"left: 50%;\">★</div></div>",
+      "css": ".ds-slider-track { position: relative; width: 100%; height: 6px; background: #231f20; border-radius: 9999px; } .ds-slider-thumb { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 48px; height: 48px; background: #fccb27; border-radius: 50%; border: 2px solid #231f20; box-shadow: 2px 2px 0 #000; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #231f20; transition: left 75ms ease; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Festival Floor",
+    "overview": "FANTACER è una giostra. Ogni schermo è uno stand della fiera che grida \"guardami!\". Colori saturi, bordi spessi, ombre dure — niente è timido o sfumato. L'energia è quella di Cersaie il primo giorno: folla, colori, movimento, sorpresa. Il sistema rifiuta esplicitamente qualsiasi deriva corporate: niente gradienti sobri, niente vetro, niente eleganza trattenuta. Se è arancione, è ARANCIONE. Se è viola, è VIOLA.",
+    "keyCharacteristics": [
+      "Audace e giocoso — il neo-brutalismo è la grammatica, non l'eccezione",
+      "Mobile-native — ogni decisione parte dallo schermo più piccolo (99% utenti)",
+      "Saturo e contrastato — la palette non ha colori \"muti\"",
+      "Tattile e reattivo — ombre che si schiacciano al click, bordi che rispondono"
+    ],
+    "rules": [
+      { "name": "The Saturation Rule", "body": "Mai ridurre la saturazione per \"eleganza\". Se un colore sembra troppo forte, il problema è il contesto, non il colore. Usalo su più superficie invece di attenuarlo.", "section": "colors" },
+      { "name": "The Block Rule", "body": "I colori vanno usati in blocchi pieni (sfondi sezione, card piene, bottoni pieni). Niente bordini sottili, niente stripe laterali, niente gradient text.", "section": "colors" },
+      { "name": "The Weight-Not-Font Rule", "body": "Non esiste secondo font. La gerarchia si costruisce con peso e scala all'interno di Open Sauce One.", "section": "typography" },
+      { "name": "The Lowercase Rule", "body": "Titoli sempre lowercase (salvo CTA e badge).", "section": "typography" },
+      { "name": "The Hard Shadow Rule", "body": "Mai usare blur, spread, o rgba per soft shadow. Ombre esagonali nette con #000 solido.", "section": "elevation" }
+    ],
+    "dos": [
+      "Usare colori pieni e saturi per gli sfondi sezione. Ogni sezione ha un colore dominante diverso (bianco, arancione, viola, gradient).",
+      "Mantenere bordi spessi (2-4px) e ombre dure (4px 4px 0 #000) come firma visiva.",
+      "Usare il giallo #fccb27 per ogni pulsante di azione primaria.",
+      "Usare lowercase per tutti i titoli, con tracking stretto.",
+      "Testare ogni componente a 375px viewport (iPhone SE) prima del desktop."
+    ],
+    "donts": [
+      "Usare gradient text (background-clip: text). Mai. I titoli sono colore pieno.",
+      "Usare ombre morbide, blur, o rgba per elevazione. Ombre dure #000 solido o niente.",
+      "Usare stripe laterali (border-left/right come accento). Preferire sfondi pieni.",
+      "Annidare card. Una card contiene solo contenuto, mai altre card.",
+      "Usare il font in pesi medi (400) per titoli. I titoli sono sempre 900.",
+      "Usare grigio chiaro per testo corpo. Il testo è #231f20 su fondo chiaro.",
+      "Scrivere testi corpo in maiuscolo. Riservato a bottoni CTA e badge (≤4 parole).",
+      "Creare sezioni con eyebrow \"ABOUT\" / \"PROCESS\" / \"PRICING\" in tracking largo sopra ogni titolo."
+    ]
+  }
+}

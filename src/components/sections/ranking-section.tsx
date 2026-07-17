@@ -25,7 +25,7 @@ export function RankingSection() {
       const main = document.querySelector('main');
       const sections = main?.children;
       if (sections && sections[9]) {
-        (sections[9] as HTMLElement).scrollIntoView({ behavior: 'smooth' });
+        main.scrollTo({ top: (sections[9] as HTMLElement).offsetTop, behavior: 'smooth' });
       }
       setCurrentSection(4);
     }

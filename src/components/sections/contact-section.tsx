@@ -1,8 +1,36 @@
 'use client'
 
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { Loader2 } from 'lucide-react'
 
 export function ContactSection() {
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [message, setMessage] = useState('')
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!name || !email || !message) return
+
+    setStatus('loading')
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, message }),
+      })
+      if (!res.ok) throw new Error('Errore invio')
+      setStatus('success')
+      setName('')
+      setEmail('')
+      setMessage('')
+    } catch {
+      setStatus('error')
+    }
+  }
+
   return (
     <section
       id="contact-section"
@@ -37,27 +65,63 @@ export function ContactSection() {
             <h3 className="text-[clamp(1rem,2.5vw,1.75rem)] font-black text-black uppercase tracking-tighter mb-2 md:mb-4 lg:mb-8 text-center leading-tight">
               Inviaci un messaggio
             </h3>
-            <form className="flex flex-col gap-3 md:gap-4 lg:gap-6" onSubmit={(e) => e.preventDefault()}>
+
+            {status === 'success' && (
+              <div className="mb-4 md:mb-6 px-4 py-3 bg-green-100 text-green-900 font-bold text-sm rounded-2xl border-2 border-green-500 text-center">
+                Messaggio inviato con successo!
+              </div>
+            )}
+
+            {status === 'error' && (
+              <div className="mb-4 md:mb-6 px-4 py-3 bg-red-100 text-red-900 font-bold text-sm rounded-2xl border-2 border-red-400 text-center">
+                Errore nell&apos;invio. Riprova pi&ugrave; tardi.
+              </div>
+            )}
+
+            <form className="flex flex-col gap-3 md:gap-4 lg:gap-6" onSubmit={handleSubmit}>
               <input
                 type="text"
+                name="nome"
                 placeholder="NOME"
-                className="w-full px-5 py-2 md:py-3 lg:py-5 text-[clamp(0.8rem,1.5vw,1rem)] bg-white text-black font-black uppercase rounded-full border-[3px] border-[#231f20] focus:outline-none focus:shadow-[4px_4px_0_#000] focus:-translate-y-0.5 shadow-[2px_2px_0_#000] transition-all"
+                required
+                aria-label="Il tuo nome"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-5 py-2 md:py-3 lg:py-5 text-[clamp(0.8rem,1.5vw,1rem)] bg-white text-black font-bold uppercase rounded-full border-[3px] border-[#231f20] focus:outline-none focus:shadow-[4px_4px_0_#000] focus:-translate-y-0.5 shadow-[2px_2px_0_#000] transition-all"
               />
               <input
                 type="email"
+                name="email"
                 placeholder="EMAIL"
-                className="w-full px-5 py-2 md:py-3 lg:py-5 text-[clamp(0.8rem,1.5vw,1rem)] bg-white text-black font-black uppercase rounded-full border-[3px] border-[#231f20] focus:outline-none focus:shadow-[4px_4px_0_#000] focus:-translate-y-0.5 shadow-[2px_2px_0_#000] transition-all"
+                required
+                aria-label="La tua email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-5 py-2 md:py-3 lg:py-5 text-[clamp(0.8rem,1.5vw,1rem)] bg-white text-black font-bold uppercase rounded-full border-[3px] border-[#231f20] focus:outline-none focus:shadow-[4px_4px_0_#000] focus:-translate-y-0.5 shadow-[2px_2px_0_#000] transition-all"
               />
               <textarea
+                name="messaggio"
                 placeholder="MESSAGGIO..."
                 rows={4}
-                className="w-full px-5 py-2 md:py-3 lg:py-5 text-[clamp(0.8rem,1.5vw,1rem)] bg-white text-black font-black uppercase rounded-full border-[3px] border-[#231f20] focus:outline-none focus:shadow-[4px_4px_0_#000] focus:-translate-y-0.5 shadow-[2px_2px_0_#000] transition-all resize-none"
+                required
+                aria-label="Il tuo messaggio"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                className="w-full px-5 md:px-6 py-4 md:py-5 lg:py-6 text-[clamp(0.8rem,1.5vw,1rem)] bg-white text-black font-bold uppercase rounded-[18px] border-[3px] border-[#231f20] focus:outline-none focus:shadow-[4px_4px_0_#000] focus:-translate-y-0.5 shadow-[2px_2px_0_#000] transition-all resize-none"
               />
               <Button
                 type="submit"
-                className="bg-[#8000ff] hover:bg-[#6b00d6] text-[clamp(0.875rem,1.5vw,1.125rem)] font-black px-6 py-2 md:py-3 lg:py-6 mt-1 rounded-full border-[3px] border-[#231f20] shadow-[3px_3px_0_#000] hover:shadow-[5px_5px_0_#000] hover:-translate-y-0.5 transition-all"
+                disabled={status === 'loading' || !name || !email || !message}
+                className="bg-[#8000ff] hover:bg-[#6b00d6] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-[3px_3px_0_#000] disabled:hover:translate-y-0 text-[clamp(0.875rem,1.5vw,1.125rem)] font-black px-6 py-2 md:py-3 lg:py-6 mt-1 rounded-full border-[3px] border-[#231f20] shadow-[3px_3px_0_#000] hover:shadow-[5px_5px_0_#000] hover:-translate-y-0.5 transition-all"
               >
-                INVIA
+                {status === 'loading' ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    INVIO...
+                  </span>
+                ) : (
+                  'INVIA'
+                )}
               </Button>
             </form>
           </div>

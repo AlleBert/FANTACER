@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useReducer, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useMemo, ReactNode } from 'react';
 
 export type Adjective = 'eccezionale' | 'migliore' | 'nella media' | 'peggiore' | null;
 
@@ -90,7 +90,7 @@ const VoteContext = createContext<VoteContextType | undefined>(undefined);
 export function VoteProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(voteReducer, initialState);
 
-  const value: VoteContextType = {
+  const value = useMemo<VoteContextType>(() => ({
     selectedCompany: state.selectedCompany,
     comment: state.comment,
     adjective: state.adjective,
@@ -104,7 +104,7 @@ export function VoteProvider({ children }: { children: ReactNode }) {
     setCurrentSection: (section) => dispatch({ type: 'SET_SECTION', payload: section }),
     unlockGameStep: (step) => dispatch({ type: 'UNLOCK_GAME_STEP', payload: step }),
     resetVote: () => dispatch({ type: 'RESET' }),
-  };
+  }), [state]);
 
   return <VoteContext.Provider value={value}>{children}</VoteContext.Provider>;
 }

@@ -1,5 +1,3 @@
-'use client'
-
 export function IntroSection() {
   return (
     <section className="snap-start relative app-screen w-full overflow-hidden bg-[radial-gradient(circle_at_top_left,#FF8C23_0%,#FF2FB2_50%,#4B00AB_100%)]">

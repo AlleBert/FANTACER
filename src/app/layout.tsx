@@ -1,6 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import "@fontsource/open-sauce-one/400.css";
-import "@fontsource/open-sauce-one/700.css";
 import "./globals.css";
 
 const siteUrl = "https://fantacer.it";

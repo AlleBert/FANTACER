@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { 
   LayoutDashboard, 
   Upload, 
+  Settings,
   LogOut,
   Menu,
   X,
@@ -18,6 +19,7 @@ import { ThemeToggle } from './theme-toggle'
 const navItems = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/import', label: 'Import Aziende', icon: Upload },
+  { href: '/admin/dashboard/impostazioni', label: 'Impostazioni', icon: Settings },
 ]
 
 interface AdminSidebarProps {

@@ -22,7 +22,7 @@ const options: Option[] = [
 const sliderKeys = ['innovation', 'sales', 'wow'] as const;
 
 export function InnovationSection() {
-  const { selectedCompany, comment, adjective, sliders, setSlider, resetVote, unlockGameStep, gameUnlock } = useVote();
+  const { selectedCompany, comment, adjective, sliders, setSlider, unlockGameStep, gameUnlock } = useVote();
   const [touched, setTouched] = useState({
     innovation: false,
     sales: false,
@@ -94,9 +94,10 @@ export function InnovationSection() {
       if (res.ok) {
         unlockGameStep('success');
         setTimeout(() => {
+          const main = document.querySelector('main');
           const successSection = document.querySelector('[data-section="success"]');
-          if (successSection) {
-            successSection.scrollIntoView({ behavior: 'smooth' });
+          if (main && successSection) {
+            main.scrollTo({ top: (successSection as HTMLElement).offsetTop, behavior: 'smooth' });
           }
         }, 200);
       } else if (res.status === 409) {
@@ -159,20 +160,20 @@ export function InnovationSection() {
                     className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 pointer-events-none transition-transform duration-75"
                     style={{ left: `${sliders[sliderKeys[index]]}%` }}
                   >
-                    <Star className="w-8 h-8 sm:w-10 sm:h-10 md:w-14 md:h-14 lg:w-18 lg:h-18 fill-[#fccb27] stroke-[#231f20] stroke-[2px] drop-shadow-[2px_2px_0_#000]" />
+                    <Star className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-18 lg:h-18 fill-[#fccb27] stroke-[#231f20] stroke-[2px] drop-shadow-[2px_2px_0_#000]" />
                   </div>
-                </div>
 
-                {/* Hidden input controlling the slider */}
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={sliders[sliderKeys[index]]}
-                  onChange={(e) => handleSliderChange(sliderKeys[index], Number(e.target.value))}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize m-0 p-0"
-                  style={{ touchAction: 'pan-x' }}
-                />
+                  {/* Hidden input controlling the slider */}
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={sliders[sliderKeys[index]]}
+                    onChange={(e) => handleSliderChange(sliderKeys[index], Number(e.target.value))}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize m-0 p-0"
+                    style={{ touchAction: 'none' }}
+                  />
+                </div>
               </div>
 
               <div className="flex-none w-[20%] flex items-center justify-start">

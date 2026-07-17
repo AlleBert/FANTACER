@@ -41,9 +41,9 @@ const FrameComponent: NextPage<FrameComponentType> = ({
       <div className="flex-1 flex items-end gap-[clamp(1.063rem,3vw,2.131rem)] @sm:gap-[1.063rem] @sm:flex-wrap">
         <Image
           className="h-[2.631rem] w-[2.838rem] relative z-[1]"
-          width={45.4}
-          height={42.1}
-          sizes="100vw"
+          width={45}
+          height={42}
+          sizes="2.838rem"
           alt=""
           src="/Mask-Group2.svg"
         />

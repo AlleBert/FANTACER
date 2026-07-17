@@ -2,15 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useVote } from '@/lib/VoteContext';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase/client';
 import { useDebouncedCallback } from 'use-debounce';
 import { Search, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabase = createClient();
 
 interface CompanyResult {
   id: string;
@@ -74,7 +71,7 @@ export function SearchSection() {
       const main = document.querySelector('main');
       const sections = main?.children;
       if (sections && sections[7]) {
-        (sections[7] as HTMLElement).scrollIntoView({ behavior: 'smooth' });
+        main.scrollTo({ top: (sections[7] as HTMLElement).offsetTop, behavior: 'smooth' });
       }
       setCurrentSection(2);
     }

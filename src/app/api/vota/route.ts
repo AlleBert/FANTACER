@@ -8,21 +8,18 @@ const isVotingBypassEnabled = () => process.env.NEXT_PUBLIC_X7K2M9QS3P === 'hx7k
 // Geo blocking: Italia + EU
 const ALLOWED_COUNTRIES = ['IT', 'DE', 'FR', 'ES', 'PT', 'AT', 'BE', 'NL', 'SI', 'HR', 'MT', 'CY', 'GR', 'GB', 'IE', 'PL', 'CZ', 'HU', 'SK', 'RO', 'BG', 'SE', 'FI', 'DK', 'NO']
 
-// Simple in-memory rate limiter
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
-
-function checkRateLimit(ip: string, windowMs = 3600000): boolean {
-  const now = Date.now()
-  const record = rateLimitMap.get(ip)
-  
-  if (!record || now > record.resetTime) {
-    rateLimitMap.set(ip, { count: 1, resetTime: now + windowMs })
-    return true
+async function checkRateLimit(ip: string): Promise<boolean> {
+  const supabase = createAdminClient()
+  const { data, error } = await supabase.rpc('check_rate_limit', {
+    ip_param: ip,
+    window_ms: 3600000,
+    max_requests: 100,
+  } as any)
+  if (error) {
+    console.error('Rate limiter error:', error)
+    return true // fail open
   }
-  
-  if (record.count > 100) return false
-  record.count++
-  return true
+  return data as boolean
 }
 
 async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
@@ -46,7 +43,7 @@ export async function POST(request: NextRequest) {
       || 'unknown'
     
     // 1. Rate limiting
-    if (!checkRateLimit(ip)) {
+    if (!await checkRateLimit(ip)) {
       return NextResponse.json({ error: 'Too many requests' }, { status: 429 } )
     }
 

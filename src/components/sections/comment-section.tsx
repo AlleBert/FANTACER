@@ -28,7 +28,7 @@ export function CommentSection() {
       const main = document.querySelector('main');
       const sections = main?.children;
       if (sections && sections[8]) {
-        (sections[8] as HTMLElement).scrollIntoView({ behavior: 'smooth' });
+        main.scrollTo({ top: (sections[8] as HTMLElement).offsetTop, behavior: 'smooth' });
       }
       setCurrentSection(3);
     }
@@ -73,7 +73,6 @@ export function CommentSection() {
                 style={{
                   minHeight: '3rem',
                   maxHeight: '8rem',
-                  fieldSizing: 'content',
                   overflowY: 'auto',
                   boxSizing: 'border-box',
                 }}

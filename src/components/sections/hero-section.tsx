@@ -12,22 +12,20 @@ export function HeroSection({ onPlayClick }: HeroSectionProps) {
     <section className="snap-start relative w-full h-[100dvh] overflow-hidden">
       {/* Background Layer - Riempie tutto, notch incluso */}
       <div className="absolute inset-0 z-0">
-        <Image
-          src="/hero-background.webp"
-          alt=""
-          fill
-          priority
-          className="hidden md:block object-cover"
-          sizes="100vw"
-        />
-        <Image
-          src="/FANTACER_16_9.webp"
-          alt=""
-          fill
-          priority
-          className="block md:hidden object-cover"
-          sizes="100vw"
-        />
+        <picture className="absolute inset-0">
+          <source
+            media="(max-width: 767px)"
+            srcSet="/FANTACER_16_9.webp"
+          />
+          <Image
+            src="/hero-background.webp"
+            alt=""
+            fill
+            priority
+            className="object-cover"
+            sizes="100vw"
+          />
+        </picture>
       </div>
 
       {/* Content Layer - Gestito dalla tua classe safe-shell */}
