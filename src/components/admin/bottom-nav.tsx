@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Building2, Vote, Upload, Settings, type LucideIcon } from 'lucide-react'
+import { LayoutDashboard, Building2, Vote, Upload, Settings, Image as ImageIcon, type LucideIcon } from 'lucide-react'
 
 interface NavItem {
   href: string
@@ -12,6 +12,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { href: '/admin/dashboard/panoramica', label: 'Panoramica', icon: LayoutDashboard },
+  { href: '/admin/dashboard/sponsor', label: 'Sponsor', icon: ImageIcon },
   { href: '/admin/dashboard/aziende', label: 'Aziende', icon: Building2 },
   { href: '/admin/dashboard/voti', label: 'Voti', icon: Vote },
   { href: '/admin/import', label: 'Import', icon: Upload },

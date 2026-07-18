@@ -10,7 +10,8 @@ import {
   Menu,
   X,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Image as ImageIcon,
 } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
@@ -18,6 +19,7 @@ import { ThemeToggle } from './theme-toggle'
 
 const navItems = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/admin/dashboard/sponsor', label: 'Sponsor', icon: ImageIcon },
   { href: '/admin/import', label: 'Import Aziende', icon: Upload },
   { href: '/admin/dashboard/impostazioni', label: 'Impostazioni', icon: Settings },
 ]
