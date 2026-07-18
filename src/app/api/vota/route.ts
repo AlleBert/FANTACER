@@ -3,9 +3,6 @@ import { submitVote } from '@/lib/supabase/vote-api'
 import { getActiveBatch } from '@/lib/supabase/batch'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-const isVotingBypassEnabled = () => process.env.NEXT_PUBLIC_X7K2M9QS3P === 'hx7k2m9Qs3P'
-
-// Geo blocking: Italia + EU
 const ALLOWED_COUNTRIES = ['IT', 'DE', 'FR', 'ES', 'PT', 'AT', 'BE', 'NL', 'SI', 'HR', 'MT', 'CY', 'GR', 'GB', 'IE', 'PL', 'CZ', 'HU', 'SK', 'RO', 'BG', 'SE', 'FI', 'DK', 'NO']
 
 async function checkRateLimit(ip: string): Promise<boolean> {
@@ -17,7 +14,7 @@ async function checkRateLimit(ip: string): Promise<boolean> {
   } as any)
   if (error) {
     console.error('Rate limiter error:', error)
-    return true // fail open
+    return true
   }
   return data as boolean
 }
@@ -38,113 +35,72 @@ async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
 
 export async function POST(request: NextRequest) {
   try {
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() 
-      || request.headers.get('x-real-ip') 
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || request.headers.get('x-real-ip')
       || 'unknown'
-    
-    // 1. Rate limiting
+
     if (!await checkRateLimit(ip)) {
-      return NextResponse.json({ error: 'Too many requests' }, { status: 429 } )
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
     }
 
-    // 2. Geo blocking
     const country = request.headers.get('cf-ipcountry') || 'IT'
     if (!ALLOWED_COUNTRIES.includes(country)) {
       return NextResponse.json({ error: 'Access denied from your region' }, { status: 403 })
     }
 
-    // 3. Parse body
     const body = await request.json()
-    const { companyId, fingerprint, turnstile_token, comment, adjective, sliders } = body
+    const { company1Id, company2Id, company3Id, fingerprint, turnstile_token } = body
 
-    // Validate required fields
-    if (!companyId || !fingerprint || !comment || !adjective || !sliders) {
-      console.error('API Vota: Missing fields', { companyId, fingerprint, comment, adjective, sliders })
+    if (!company1Id || !company2Id || !company3Id || !fingerprint) {
       return NextResponse.json({ error: 'Campi obbligatori mancanti' }, { status: 400 })
     }
 
-    // Validate company belongs to active batch
+    if (company1Id === company2Id || company1Id === company3Id || company2Id === company3Id) {
+      return NextResponse.json({ error: 'Le aziende devono essere diverse' }, { status: 400 })
+    }
+
     const activeBatch = await getActiveBatch()
     const supabaseAdmin = createAdminClient()
-    const { data: company } = await supabaseAdmin
+    const { data: companies } = await supabaseAdmin
       .from('companies')
-      .select('batch')
-      .eq('id', companyId)
-      .single()
+      .select('id, batch')
+      .in('id', [company1Id, company2Id, company3Id])
 
-    if (!company || company.batch !== activeBatch) {
-      return NextResponse.json({ error: 'Azienda non disponibile nel batch attivo' }, { status: 400 })
+    if (!companies || companies.length !== 3) {
+      return NextResponse.json({ error: 'Una o più aziende non trovate' }, { status: 400 })
     }
 
-    // Validate adjective
-    const validAdjectives = ['eccezionale', 'migliore', 'nella media', 'peggiore'] as const
-    if (!validAdjectives.includes(adjective)) {
-      return NextResponse.json({ error: 'Adjective non valido' }, { status: 400 })
-    }
-
-    // Validate sliders structure and values
-    const requiredSliderKeys = ['innovation', 'sales', 'wow'] as const
-    for (const key of requiredSliderKeys) {
-      const value = sliders[key]
-      if (typeof value !== 'number' || value < 0 || value > 100) {
-        return NextResponse.json({ error: `Slider ${key} non valido (deve essere 0-100)` }, { status: 400 })
+    for (const company of companies) {
+      if (company.batch !== activeBatch) {
+        return NextResponse.json({ error: `Azienda non disponibile nel batch attivo` }, { status: 400 })
       }
     }
 
-    // 4. Verify Turnstile
     if (!turnstile_token) {
-      console.error('API Vota: Token Turnstile mancante')
       return NextResponse.json({ error: 'Verifica di sicurezza mancante' }, { status: 400 })
     }
 
-    const isBypass = isVotingBypassEnabled()
-    const isBypassToken = turnstile_token === 'debug-bypass-token'
-    
-    let isHuman = false
-    // DEV BYPASS DISABLED FOR TESTING
-    // if (isBypass && isBypassToken) {
-    //   console.log('API Vota: Bypassing Turnstile verification (DEV MODE)')
-    //   isHuman = true
-    // } else {
-      isHuman = await verifyTurnstile(turnstile_token, ip)
-    // }
-
+    const isHuman = await verifyTurnstile(turnstile_token, ip)
     if (!isHuman) {
-      console.error('API Vota: Verifica Turnstile fallita per il token fornito')
       return NextResponse.json({ error: 'Verifica di sicurezza fallita. Ricarica la pagina.' }, { status: 400 })
     }
 
-    // Enhanced user-agent capture (try multiple headers for better device detection)
     const userAgent = request.headers.get('user-agent') || ''
-    const secChUa = request.headers.get('sec-ch-ua') || ''
-    const secChUaMobile = request.headers.get('sec-ch-ua-mobile') || ''
-    const secChUaPlatform = request.headers.get('sec-ch-ua-platform') || ''
-    
-    // Build enhanced device info
-    const enhancedUserAgent = userAgent || 
-      (secChUaPlatform && secChUaMobile ? `${secChUaPlatform}; ${secChUaMobile}` : '') ||
-      'Unknown'
-    
-    // 5. Submit vote via submitVote
-    const voteSubmission = {
-      companyId,
+
+    const { success, error: submitError } = await submitVote({
       fingerprint,
       ip,
-      userAgent: enhancedUserAgent,
+      userAgent,
       country,
-      comment,
-      adjective,
-      sliders,
-    }
-
-    const { success, error: submitError } = await submitVote(voteSubmission)
+      company1Id,
+      company2Id,
+      company3Id,
+    })
 
     if (!success) {
-      // Check if it's a duplicate vote (user already voted today)
       if (submitError?.includes('Hai già votato oggi')) {
         return NextResponse.json({ error: submitError }, { status: 409 })
       }
-      // Other client errors (invalid data, etc.)
       if (submitError) {
         return NextResponse.json({ error: submitError }, { status: 400 })
       }
