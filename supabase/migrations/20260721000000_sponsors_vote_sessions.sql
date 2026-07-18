@@ -93,10 +93,10 @@ create or replace function submit_vote(
   fingerprint_param text,
   ip_param text,
   user_agent_param text,
-  country_param text default 'IT',
   company1_id_param uuid,
   company2_id_param uuid,
-  company3_id_param uuid
+  company3_id_param uuid,
+  country_param text default 'IT'
 ) returns jsonb
 language plpgsql
 security definer

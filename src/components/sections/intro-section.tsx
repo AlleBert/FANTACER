@@ -1,3 +1,5 @@
+import { SponsorCards } from '@/components/sponsor/sponsor-cards'
+
 export function IntroSection() {
   return (
     <section className="snap-start relative app-screen w-full overflow-hidden bg-[radial-gradient(circle_at_top_left,#FF8C23_0%,#FF2FB2_50%,#4B00AB_100%)]">
@@ -37,6 +39,7 @@ distretto ceramico`}
             <p className="mt-4 lg:mt-6 text-[clamp(1.25rem,2.5vw,2.25rem)] font-open-sauce font-medium text-white leading-[1.2]">
               usa il cellulare per qualcosa di davvero importante!
             </p>
+            <SponsorCards className="mt-8 md:mt-12" />
           </div>
         </div>
       </div>
