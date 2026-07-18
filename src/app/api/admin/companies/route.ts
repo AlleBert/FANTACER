@@ -23,28 +23,33 @@ export async function GET(request: NextRequest) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    // Get vote counts per company
-    const { data: votes } = await supabase
-      .from('votes')
-      .select('company_id, created_at')
+    // Get pallet counts per company from vote_sessions
+    const { data: sessions } = await supabase
+      .from('vote_sessions')
+      .select('company1_id, company2_id, company3_id, pallet1, pallet2, pallet3, created_at')
 
-    const voteCounts: Record<string, number> = {}
+    const palletCounts: Record<string, number> = {}
+    const todayVotes: Record<string, number> = {}
+    const yesterdayVotes: Record<string, number> = {}
     const today = new Date().toISOString().split('T')[0]
     const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
 
-    const yesterdayVotes: Record<string, number> = {}
-    const todayVotes: Record<string, number> = {}
-
-    votes?.forEach(v => {
-      const date = v.created_at.split('T')[0]
-      voteCounts[v.company_id] = (voteCounts[v.company_id] || 0) + 1
-      
-      if (date === today) todayVotes[v.company_id] = (todayVotes[v.company_id] || 0) + 1
-      if (date === yesterday) yesterdayVotes[v.company_id] = (yesterdayVotes[v.company_id] || 0) + 1
-    })
+    for (const s of sessions || []) {
+      const date = s.created_at.split('T')[0]
+      const entries = [
+        { id: s.company1_id, pallet: s.pallet1 },
+        { id: s.company2_id, pallet: s.pallet2 },
+        { id: s.company3_id, pallet: s.pallet3 },
+      ]
+      for (const e of entries) {
+        palletCounts[e.id] = (palletCounts[e.id] || 0) + e.pallet
+        if (date === today) todayVotes[e.id] = (todayVotes[e.id] || 0) + 1
+        if (date === yesterday) yesterdayVotes[e.id] = (yesterdayVotes[e.id] || 0) + 1
+      }
+    }
 
     const result = (companies || []).map((c, idx) => {
-      const votes = voteCounts[c.id] || 0
+      const totalPallets = palletCounts[c.id] || 0
       const todayV = todayVotes[c.id] || 0
       const yesterdayV = yesterdayVotes[c.id] || 0
       const trend = todayV - yesterdayV
@@ -55,12 +60,12 @@ export async function GET(request: NextRequest) {
         name: c.name,
         category: c.category || '-',
         image_url: c.image_url,
-        votes,
+        votes: totalPallets,
         trend
       }
     })
 
-    // Sort by votes desc by default
+    // Sort by pallets desc by default
     result.sort((a, b) => b.votes - a.votes)
 
     // Re-assign ranks after sorting
