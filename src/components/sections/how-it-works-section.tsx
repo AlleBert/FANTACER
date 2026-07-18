@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import type { ReactNode } from 'react'
-import { Heart, MessageCircleMore, Smartphone, AtSign, Gift } from 'lucide-react'
+import { Heart, Smartphone, AtSign, Gift } from 'lucide-react'
 
 interface Step {
   icon: ReactNode
@@ -11,10 +11,6 @@ const steps: Step[] = [
   { 
     icon: <Heart className="w-14 h-14 md:w-[72px] md:h-[72px] lg:w-20 lg:h-20 stroke-black stroke-[1.5] animate-pulse hover:fill-black fill-transparent transition-colors duration-300 relative z-10" />, 
     label: 'vota la tua azienda preferita' 
-  },
-  { 
-    icon: <MessageCircleMore className="w-14 h-14 md:w-[72px] md:h-[72px] lg:w-20 lg:h-20 stroke-black stroke-[1.5] relative z-10" />, 
-    label: 'rispondi a 3 domande sul suo stand' 
   },
   { 
     icon: (
@@ -65,7 +61,7 @@ export function HowItWorksSection() {
         </h2>
         
         {/* Steps grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 w-full max-w-6xl mx-auto">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 w-full max-w-6xl mx-auto">
           {steps.map((step, index) => (
             <div key={index} className="flex flex-col items-center">
               {/* React Component Card */}
