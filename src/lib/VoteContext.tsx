@@ -2,45 +2,32 @@
 
 import React, { createContext, useContext, useReducer, useMemo, ReactNode } from 'react';
 
-export type Adjective = 'eccezionale' | 'migliore' | 'nella media' | 'peggiore' | null;
+export interface SelectedCompany {
+  company: { id: string; name: string };
+  pallet: 4 | 2 | 1;
+}
 
 export interface VoteState {
-  selectedCompany: { id: string; name: string } | null;
-  comment: string;
-  adjective: Adjective;
-  sliders: {
-    innovation: number;
-    sales: number;
-    wow: number;
-  };
-  currentSection: 1 | 2 | 3 | 4;
+  selectedCompanies: SelectedCompany[];
+  currentSection: 1 | 2;
   gameUnlock: {
-    comment: boolean;
-    ranking: boolean;
-    innovation: boolean;
+    submit: boolean;
     success: boolean;
   };
 }
 
 type VoteAction =
-  | { type: 'SET_COMPANY'; payload: { id: string; name: string } | null }
-  | { type: 'SET_COMMENT'; payload: string }
-  | { type: 'SET_ADJECTIVE'; payload: Adjective }
-  | { type: 'SET_SLIDER'; payload: { key: keyof VoteState['sliders']; value: number } }
-  | { type: 'SET_SECTION'; payload: VoteState['currentSection'] }
-  | { type: 'UNLOCK_GAME_STEP'; payload: keyof Omit<VoteState['gameUnlock'], 'search'> }
+  | { type: 'SET_COMPANY'; payload: { company: { id: string; name: string }; pallet: 4 | 2 | 1 } }
+  | { type: 'REMOVE_COMPANY'; payload: number }
+  | { type: 'SET_PALLET'; payload: { index: number; pallet: 4 | 2 | 1 } }
+  | { type: 'UNLOCK_GAME_STEP'; payload: keyof VoteState['gameUnlock'] }
   | { type: 'RESET' };
 
 const initialState: VoteState = {
-  selectedCompany: null,
-  comment: '',
-  adjective: null,
-  sliders: { innovation: 50, sales: 50, wow: 50 },
+  selectedCompanies: [],
   currentSection: 1,
   gameUnlock: {
-    comment: false,
-    ranking: false,
-    innovation: false,
+    submit: false,
     success: false,
   },
 };
@@ -48,41 +35,39 @@ const initialState: VoteState = {
 function voteReducer(state: VoteState, action: VoteAction): VoteState {
   switch (action.type) {
     case 'SET_COMPANY':
-      return { ...state, selectedCompany: action.payload };
-    case 'SET_COMMENT':
-      return { ...state, comment: action.payload };
-    case 'SET_ADJECTIVE':
-      return { ...state, adjective: action.payload };
-    case 'SET_SLIDER':
+      if (state.selectedCompanies.length >= 3) return state;
+      return { ...state, selectedCompanies: [...state.selectedCompanies, action.payload] };
+    case 'REMOVE_COMPANY':
       return {
         ...state,
-         sliders: { ...state.sliders, [action.payload.key]: Math.min(100, Math.max(0, action.payload.value)) },
+        selectedCompanies: state.selectedCompanies.filter((_, i) => i !== action.payload),
       };
-    case 'SET_SECTION':
-      return { ...state, currentSection: action.payload };
+    case 'SET_PALLET':
+      return {
+        ...state,
+        selectedCompanies: state.selectedCompanies.map((item, i) =>
+          i === action.payload.index ? { ...item, pallet: action.payload.pallet } : item
+        ),
+      };
     case 'UNLOCK_GAME_STEP':
       return { ...state, gameUnlock: { ...state.gameUnlock, [action.payload]: true } };
     case 'RESET':
       return initialState;
-     default:
-       throw new Error(`Unhandled action type: ${(action as VoteAction).type}`);
+    default:
+      throw new Error(`Unhandled action type: ${(action as VoteAction).type}`);
   }
 }
 
 interface VoteContextType {
-  selectedCompany: VoteState['selectedCompany'];
-  comment: string;
-  adjective: Adjective;
-  sliders: VoteState['sliders'];
+  selectedCompanies: VoteState['selectedCompanies'];
   currentSection: VoteState['currentSection'];
   gameUnlock: VoteState['gameUnlock'];
-  setSelectedCompany: (company: { id: string; name: string } | null) => void;
-  setComment: (comment: string) => void;
-  setAdjective: (adj: Adjective) => void;
-  setSlider: (key: keyof VoteState['sliders'], value: number) => void;
-  setCurrentSection: (section: VoteState['currentSection']) => void;
+  setCompany: (company: { id: string; name: string }, pallet: 4 | 2 | 1) => void;
+  removeCompany: (index: number) => void;
+  setPallet: (index: number, pallet: 4 | 2 | 1) => void;
   unlockGameStep: (step: keyof VoteState['gameUnlock']) => void;
   resetVote: () => void;
+  usedPallets: () => (4 | 2 | 1)[];
 }
 
 const VoteContext = createContext<VoteContextType | undefined>(undefined);
@@ -91,19 +76,15 @@ export function VoteProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(voteReducer, initialState);
 
   const value = useMemo<VoteContextType>(() => ({
-    selectedCompany: state.selectedCompany,
-    comment: state.comment,
-    adjective: state.adjective,
-    sliders: state.sliders,
+    selectedCompanies: state.selectedCompanies,
     currentSection: state.currentSection,
     gameUnlock: state.gameUnlock,
-    setSelectedCompany: (company) => dispatch({ type: 'SET_COMPANY', payload: company }),
-    setComment: (comment) => dispatch({ type: 'SET_COMMENT', payload: comment }),
-    setAdjective: (adj) => dispatch({ type: 'SET_ADJECTIVE', payload: adj }),
-    setSlider: (key, value) => dispatch({ type: 'SET_SLIDER', payload: { key, value } }),
-    setCurrentSection: (section) => dispatch({ type: 'SET_SECTION', payload: section }),
+    setCompany: (company, pallet) => dispatch({ type: 'SET_COMPANY', payload: { company, pallet } }),
+    removeCompany: (index) => dispatch({ type: 'REMOVE_COMPANY', payload: index }),
+    setPallet: (index, pallet) => dispatch({ type: 'SET_PALLET', payload: { index, pallet } }),
     unlockGameStep: (step) => dispatch({ type: 'UNLOCK_GAME_STEP', payload: step }),
     resetVote: () => dispatch({ type: 'RESET' }),
+    usedPallets: () => state.selectedCompanies.map((c) => c.pallet),
   }), [state]);
 
   return <VoteContext.Provider value={value}>{children}</VoteContext.Provider>;
