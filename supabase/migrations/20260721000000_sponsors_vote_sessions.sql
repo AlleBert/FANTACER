@@ -82,6 +82,11 @@ alter table votes
   drop column if exists slider_sales,
   drop column if exists slider_wow;
 
+-- ========== DAILY STATS: ADD UNIQUE VOTERS ==========
+
+alter table daily_stats
+  add column if not exists unique_voters integer default 0;
+
 -- ========== RPC: SUBMIT VOTE ==========
 
 create or replace function submit_vote(
