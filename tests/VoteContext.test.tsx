@@ -4,13 +4,12 @@ import { VoteProvider, useVote } from '../src/lib/VoteContext';
 describe('VoteContext', () => {
   it('initializes with default state', () => {
     const TestComponent = () => {
-      const { selectedCompany, comment, adjective, currentSection } = useVote();
+      const { selectedCompanies, gameUnlock } = useVote();
       return (
         <>
-          <span data-testid="company">{selectedCompany ? selectedCompany.name : 'null'}</span>
-          <span data-testid="comment">{comment}</span>
-          <span data-testid="adjective">{adjective || 'null'}</span>
-          <span data-testid="section">{currentSection}</span>
+          <span data-testid="companies">{selectedCompanies.length}</span>
+          <span data-testid="submit">{gameUnlock.submit ? 'yes' : 'no'}</span>
+          <span data-testid="success">{gameUnlock.success ? 'yes' : 'no'}</span>
         </>
       );
     };
@@ -19,19 +18,20 @@ describe('VoteContext', () => {
         <TestComponent />
       </VoteProvider>
     );
-    expect(screen.getByTestId('company')).toHaveTextContent('null');
-    expect(screen.getByTestId('comment')).toHaveTextContent('');
-    expect(screen.getByTestId('adjective')).toHaveTextContent('null');
-    expect(screen.getByTestId('section')).toHaveTextContent('1');
+    expect(screen.getByTestId('companies')).toHaveTextContent('0');
+    expect(screen.getByTestId('submit')).toHaveTextContent('no');
+    expect(screen.getByTestId('success')).toHaveTextContent('no');
   });
 
-   it('updates selectedCompany', () => {
+   it('adds companies via setCompany', () => {
      const TestComponent = () => {
-       const { selectedCompany, setSelectedCompany } = useVote();
+       const { selectedCompanies, setCompany } = useVote();
        return (
          <>
-           <button onClick={() => setSelectedCompany({ id: '123', name: 'Test Co' })}>Set</button>
-           <span data-testid="company">{selectedCompany?.name || 'null'}</span>
+           <button onClick={() => setCompany({ id: '123', name: 'Test Co' }, 4)}>Set</button>
+           <span data-testid="companies">{selectedCompanies.length}</span>
+           <span data-testid="name">{selectedCompanies[0]?.company.name || 'null'}</span>
+           <span data-testid="pallet">{selectedCompanies[0]?.pallet || 0}</span>
          </>
        );
      };
@@ -41,16 +41,19 @@ describe('VoteContext', () => {
        </VoteProvider>
      );
      act(() => { screen.getByText('Set').click(); });
-     expect(screen.getByTestId('company')).toHaveTextContent('Test Co');
+     expect(screen.getByTestId('companies')).toHaveTextContent('1');
+     expect(screen.getByTestId('name')).toHaveTextContent('Test Co');
+     expect(screen.getByTestId('pallet')).toHaveTextContent('4');
    });
 
-  it('updates comment via SET_COMMENT', () => {
+  it('removes companies via removeCompany', () => {
     const TestComponent = () => {
-      const { comment, setComment } = useVote();
+      const { selectedCompanies, setCompany, removeCompany } = useVote();
       return (
         <>
-          <button onClick={() => setComment('Test comment')}>Set</button>
-          <span data-testid="comment">{comment}</span>
+          <button onClick={() => setCompany({ id: '123', name: 'Test Co' }, 4)}>Add</button>
+          <button onClick={() => removeCompany(0)}>Remove</button>
+          <span data-testid="companies">{selectedCompanies.length}</span>
         </>
       );
     };
@@ -59,17 +62,20 @@ describe('VoteContext', () => {
         <TestComponent />
       </VoteProvider>
     );
-    act(() => { screen.getByText('Set').click(); });
-    expect(screen.getByTestId('comment')).toHaveTextContent('Test comment');
+    act(() => { screen.getByText('Add').click(); });
+    expect(screen.getByTestId('companies')).toHaveTextContent('1');
+    act(() => { screen.getByText('Remove').click(); });
+    expect(screen.getByTestId('companies')).toHaveTextContent('0');
   });
 
-  it('updates adjective via SET_ADJECTIVE', () => {
+  it('changes pallet via setPallet', () => {
     const TestComponent = () => {
-      const { adjective, setAdjective } = useVote();
+      const { selectedCompanies, setCompany, setPallet } = useVote();
       return (
         <>
-          <button onClick={() => setAdjective('eccezionale')}>Set</button>
-          <span data-testid="adjective">{adjective || 'null'}</span>
+          <button onClick={() => setCompany({ id: '123', name: 'Test Co' }, 4)}>Add</button>
+          <button onClick={() => setPallet(0, 2)}>Change</button>
+          <span data-testid="pallet">{selectedCompanies[0]?.pallet || 0}</span>
         </>
       );
     };
@@ -78,19 +84,22 @@ describe('VoteContext', () => {
         <TestComponent />
       </VoteProvider>
     );
-    act(() => { screen.getByText('Set').click(); });
-    expect(screen.getByTestId('adjective')).toHaveTextContent('eccezionale');
+    act(() => { screen.getByText('Add').click(); });
+    expect(screen.getByTestId('pallet')).toHaveTextContent('4');
+    act(() => { screen.getByText('Change').click(); });
+    expect(screen.getByTestId('pallet')).toHaveTextContent('2');
   });
 
-  it('updates slider value and clamps to 0-100 via SET_SLIDER', () => {
+  it('limits to 3 companies', () => {
     const TestComponent = () => {
-      const { sliders, setSlider } = useVote();
+      const { selectedCompanies, setCompany } = useVote();
       return (
         <>
-          <button onClick={() => setSlider('innovation', 75)}>Set Valid</button>
-          <button onClick={() => setSlider('innovation', 150)}>Set Over</button>
-          <button onClick={() => setSlider('innovation', -20)}>Set Under</button>
-          <span data-testid="innovation">{sliders.innovation}</span>
+          <button onClick={() => setCompany({ id: 'a', name: 'A' }, 4)}>A</button>
+          <button onClick={() => setCompany({ id: 'b', name: 'B' }, 2)}>B</button>
+          <button onClick={() => setCompany({ id: 'c', name: 'C' }, 1)}>C</button>
+          <button onClick={() => setCompany({ id: 'd', name: 'D' }, 4)}>D</button>
+          <span data-testid="count">{selectedCompanies.length}</span>
         </>
       );
     };
@@ -99,47 +108,27 @@ describe('VoteContext', () => {
         <TestComponent />
       </VoteProvider>
     );
-    act(() => { screen.getByText('Set Valid').click(); });
-    expect(screen.getByTestId('innovation')).toHaveTextContent('75');
-    act(() => { screen.getByText('Set Over').click(); });
-    expect(screen.getByTestId('innovation')).toHaveTextContent('100');
-    act(() => { screen.getByText('Set Under').click(); });
-    expect(screen.getByTestId('innovation')).toHaveTextContent('0');
-  });
-
-  it('updates currentSection via SET_SECTION', () => {
-    const TestComponent = () => {
-      const { currentSection, setCurrentSection } = useVote();
-      return (
-        <>
-          <button onClick={() => setCurrentSection(3)}>Set</button>
-          <span data-testid="section">{currentSection}</span>
-        </>
-      );
-    };
-    render(
-      <VoteProvider>
-        <TestComponent />
-      </VoteProvider>
-    );
-    act(() => { screen.getByText('Set').click(); });
-    expect(screen.getByTestId('section')).toHaveTextContent('3');
+    act(() => { screen.getByText('A').click(); });
+    act(() => { screen.getByText('B').click(); });
+    act(() => { screen.getByText('C').click(); });
+    act(() => { screen.getByText('D').click(); });
+    expect(screen.getByTestId('count')).toHaveTextContent('3');
   });
 
   it('resets to initial state via RESET', () => {
     const TestComponent = () => {
-      const { comment, adjective, currentSection, setComment, setAdjective, setCurrentSection, resetVote } = useVote();
+      const { selectedCompanies, gameUnlock, setCompany, unlockGameStep, resetVote } = useVote();
       return (
         <>
           <button onClick={() => {
-            setComment('Changed');
-            setAdjective('peggiore');
-            setCurrentSection(4);
+            setCompany({ id: '123', name: 'Test Co' }, 4);
+            unlockGameStep('submit');
+            unlockGameStep('success');
           }}>Modify</button>
           <button onClick={resetVote}>Reset</button>
-          <span data-testid="comment">{comment}</span>
-          <span data-testid="adjective">{adjective || 'null'}</span>
-          <span data-testid="section">{currentSection}</span>
+          <span data-testid="count">{selectedCompanies.length}</span>
+          <span data-testid="submit">{gameUnlock.submit ? 'yes' : 'no'}</span>
+          <span data-testid="success">{gameUnlock.success ? 'yes' : 'no'}</span>
         </>
       );
     };
@@ -149,12 +138,34 @@ describe('VoteContext', () => {
       </VoteProvider>
     );
     act(() => { screen.getByText('Modify').click(); });
-    expect(screen.getByTestId('comment')).toHaveTextContent('Changed');
-    expect(screen.getByTestId('adjective')).toHaveTextContent('peggiore');
-    expect(screen.getByTestId('section')).toHaveTextContent('4');
+    expect(screen.getByTestId('count')).toHaveTextContent('1');
+    expect(screen.getByTestId('submit')).toHaveTextContent('yes');
+    expect(screen.getByTestId('success')).toHaveTextContent('yes');
     act(() => { screen.getByText('Reset').click(); });
-    expect(screen.getByTestId('comment')).toHaveTextContent('');
-    expect(screen.getByTestId('adjective')).toHaveTextContent('null');
-    expect(screen.getByTestId('section')).toHaveTextContent('1');
+    expect(screen.getByTestId('count')).toHaveTextContent('0');
+    expect(screen.getByTestId('submit')).toHaveTextContent('no');
+    expect(screen.getByTestId('success')).toHaveTextContent('no');
   });
- });
+
+  it('reports used pallets via usedPallets', () => {
+    const TestComponent = () => {
+      const { usedPallets, setCompany } = useVote();
+      return (
+        <>
+          <button onClick={() => setCompany({ id: 'a', name: 'A' }, 4)}>A4</button>
+          <button onClick={() => setCompany({ id: 'b', name: 'B' }, 2)}>B2</button>
+          <span data-testid="used">{usedPallets().join(',')}</span>
+        </>
+      );
+    };
+    render(
+      <VoteProvider>
+        <TestComponent />
+      </VoteProvider>
+    );
+    act(() => { screen.getByText('A4').click(); });
+    expect(screen.getByTestId('used')).toHaveTextContent('4');
+    act(() => { screen.getByText('B2').click(); });
+    expect(screen.getByTestId('used')).toHaveTextContent('4,2');
+  });
+});
