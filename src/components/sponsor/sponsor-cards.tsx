@@ -30,7 +30,7 @@ export function SponsorCards({ className }: { className?: string }) {
             href={sponsor.website_url || '#'}
             target="_blank"
             rel="noopener noreferrer"
-            className="relative w-[20dvh] aspect-square bg-white rounded-2xl md:rounded-[2rem] shadow-[4px_4px_0px_0px_#000] border-[3px] md:border-[4px] border-black flex items-center justify-center overflow-hidden transition-transform hover:-translate-y-2"
+            className="relative w-[clamp(72px,12dvh,140px)] aspect-square bg-white rounded-2xl md:rounded-[2rem] shadow-[4px_4px_0px_0px_#000] border-[3px] md:border-[4px] border-black flex items-center justify-center overflow-hidden transition-transform hover:-translate-y-2"
           >
             {sponsor.image_url ? (
               <img
