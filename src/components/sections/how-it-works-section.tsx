@@ -40,9 +40,10 @@ const cardSizeClasses = [
 export function HowItWorksSection() {
   return (
     <section className="snap-start relative w-full h-[100dvh] bg-[linear-gradient(to_bottom,#FF8A26_10%,#FF2FB2_100%)] text-white flex flex-col items-center justify-center overflow-hidden">
-      <div className="relative z-10 w-full max-w-[1600px] mx-auto px-4 md:px-6 lg:px-12 py-8 lg:py-12 flex flex-col items-center justify-center flex-1 min-h-0">
+      <div className="safe-shell h-full flex flex-col">
+      <div className="relative z-10 w-full max-w-7xl mx-auto flex flex-col items-center justify-center flex-1 min-h-0 py-8 lg:py-12">
 
-        <h2 className="text-[clamp(1.75rem,6.2vw,91px)] font-[900] text-center mb-8 lg:mb-12 tracking-tighter lowercase leading-[0.95] flex flex-wrap xl:flex-nowrap justify-center items-center gap-x-2 md:gap-x-4 w-full [text-wrap:balance] flex-shrink-0">
+        <h2 className="text-[clamp(1.75rem,6.2vw,4.5rem)] font-[900] text-center mb-8 lg:mb-12 tracking-tighter lowercase leading-[0.95] flex flex-wrap xl:flex-nowrap justify-center items-center gap-x-2 md:gap-x-4 w-full [text-wrap:balance] flex-shrink-0 [text-shadow:0_0_12px_rgba(0,0,0,0.4),2px_2px_0_#000]">
           <span className="whitespace-nowrap">è semplice...</span>
           <span className="whitespace-nowrap flex items-center">
             e si vince sempre!
@@ -71,20 +72,17 @@ export function HowItWorksSection() {
           {steps.map((step, index) => (
             <div key={index} className="relative flex flex-col items-center w-full max-w-xs lg:max-w-none shrink">
 
-              <span className="text-[clamp(0.6rem,1.5vw,0.85rem)] font-[700] text-white/40 mb-1 md:mb-2 tracking-[0.15em] uppercase flex-shrink-0">
-                passo {(index + 1).toString().padStart(2, '0')}
-              </span>
-
-              <div className={`relative ${cardSizeClasses[index]} bg-white rounded-[2.2rem] md:rounded-[2.7rem] lg:rounded-[3.2rem] border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center overflow-hidden transition-transform hover:-translate-y-2 shrink`}>
+              <div className={`relative ${cardSizeClasses[index]} bg-white rounded-3xl md:rounded-4xl border-[3px] border-black shadow-[4px_4px_0px_0px_#000] flex items-center justify-center overflow-hidden transition-transform hover:-translate-y-2 shrink`}>
                 {step.icon}
               </div>
 
-              <p className="text-[min(3.5vw,24px)] font-[600] text-center max-w-[14rem] leading-tight mt-3 flex-shrink-0">
+              <p className="text-[clamp(0.875rem,2.5vw,1.125rem)] font-[700] text-center max-w-[14rem] leading-tight mt-4 flex-shrink-0 [text-shadow:0_0_8px_rgba(0,0,0,0.4),1px_1px_0_#000]">
                 {step.label}
               </p>
             </div>
           ))}
         </div>
+      </div>
       </div>
     </section>
   )
