@@ -19,7 +19,7 @@ export function PrizeLocationSection() {
         </div>
 
         {/* Subtitle */}
-        <p className="text-[clamp(1.15rem,3.5vw,2.625rem)] text-center text-white font-medium leading-[1.35] max-w-[92%] w-full [text-shadow:0_0_12px_rgba(0,0,0,0.5),2px_2px_0px_#000] drop-shadow-[2px_2px_0px_#000]">
+        <p className="text-[clamp(1.15rem,3.5vw,2.625rem)] text-center text-white font-medium leading-[1.35] max-w-[92%] w-full drop-shadow-[2px_2px_0px_#000]">
           all&apos;interno di <strong className="font-[900]">Cersaie, a Bologna Fiere</strong>
           <br />
           <span className="block mt-2 md:mt-4 font-[900]">dal 21 al 25 settembre 2026</span>

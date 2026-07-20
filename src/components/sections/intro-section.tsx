@@ -9,13 +9,13 @@ export function IntroSection() {
 
       <div className="safe-shell h-full flex flex-col">
         <div className="flex-1 flex flex-col items-center justify-center text-center w-full max-w-7xl mx-auto">
-          <h1 className="text-[clamp(2.5rem,7.5vw,4.5rem)] font-open-sauce font-black text-white tracking-[-0.05em] leading-[1.1] md:leading-[0.9] lowercase max-w-[14ch] [text-shadow:0_0_12px_rgba(0,0,0,0.35),2px_2px_0_#000]">
+          <h1 className="text-[clamp(2.5rem,7.5vw,4.5rem)] font-open-sauce font-black text-white tracking-[-0.05em] leading-[1.1] md:leading-[0.9] lowercase max-w-[14ch] drop-shadow-[2px_2px_0_#000]">
             il primo gioco<br />
             semiserio del<br />
             distretto ceramico
           </h1>
 
-          <p className="mt-4 lg:mt-6 text-[clamp(1.25rem,2.5vw,2.25rem)] font-open-sauce font-medium text-white leading-[1.2] [text-wrap:balance] max-w-[20ch] [text-shadow:0_0_10px_rgba(0,0,0,0.3),1px_1px_0_#000]">
+          <p className="mt-4 lg:mt-6 text-[clamp(1.25rem,2.5vw,2.25rem)] font-open-sauce font-medium text-white leading-[1.2] [text-wrap:balance] max-w-[20ch] drop-shadow-[2px_2px_0_#000]">
             usa il cellulare per qualcosa di davvero importante!
           </p>
 
