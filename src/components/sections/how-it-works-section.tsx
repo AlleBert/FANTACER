@@ -29,11 +29,11 @@ const steps: Step[] = [
   },
 ]
 
-// Asymmetric card sizes — steps 1 & 3 larger, step 2 smaller
+// Uniform card sizes — all 3 steps same size
 // dvh caps prevent overflow on short viewports
 const cardSizeClasses = [
   'w-32 h-32 max-h-[18dvh] md:w-40 md:h-40 md:max-h-[22dvh] lg:w-52 lg:h-52 lg:max-h-[28dvh]',
-  'w-32 h-32 max-h-[18dvh] md:w-36 md:h-36 md:max-h-[20dvh] lg:w-40 lg:h-40 lg:max-h-[24dvh]',
+  'w-32 h-32 max-h-[18dvh] md:w-40 md:h-40 md:max-h-[22dvh] lg:w-52 lg:h-52 lg:max-h-[28dvh]',
   'w-32 h-32 max-h-[18dvh] md:w-40 md:h-40 md:max-h-[22dvh] lg:w-52 lg:h-52 lg:max-h-[28dvh]',
 ]
 
@@ -68,7 +68,7 @@ export function HowItWorksSection() {
         </h2>
 
         {/* Mobile: vertical stack | Desktop: asymmetric 3-col grid */}
-        <div className="flex flex-col items-center gap-8 lg:grid lg:grid-cols-[1.2fr_0.8fr_1.2fr] lg:gap-6 lg:items-center lg:w-full lg:max-w-6xl flex-shrink min-h-0">
+        <div className="flex flex-col items-center gap-8 lg:grid lg:grid-cols-[1fr_1fr_1fr] lg:gap-6 lg:items-center lg:w-full lg:max-w-6xl flex-shrink min-h-0">
           {steps.map((step, index) => (
             <div key={index} className="relative flex flex-col items-center w-full max-w-xs lg:max-w-none shrink">
 
