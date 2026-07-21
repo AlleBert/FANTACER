@@ -36,8 +36,8 @@ export default function PanoramicaPage() {
   const [error, setError] = useState<string | null>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  const loadData = useCallback(async () => {
-    setLoading(true)
+  const loadData = useCallback(async (showLoading = false) => {
+    if (showLoading) setLoading(true)
     setError(null)
     try {
       const session = localStorage.getItem('admin_session')
@@ -72,12 +72,38 @@ export default function PanoramicaPage() {
   }, [])
 
   useEffect(() => {
-    loadData()
-    intervalRef.current = setInterval(loadData, 30000)
+    const doLoad = () => {
+      const session = localStorage.getItem('admin_session')
+      const headers: Record<string, string> = {}
+      if (session) headers['Authorization'] = `Bearer ${session}`
+      return Promise.all([
+        fetch('/api/analytics?type=summary', { headers }).then(r => r.json()),
+        fetch('/api/admin/batch').then(r => r.json()),
+      ]).then(([statsData, batchData]) => {
+        setStats({
+          totalVotes: statsData.totalVotes || 0,
+          uniqueVoters: statsData.uniqueVoters || 0,
+          todayVotes: statsData.todayVotes || 0,
+          yesterdayVotes: statsData.yesterdayVotes || 0,
+          activeNow: statsData.activeNow || 0,
+          onlineUsers: statsData.onlineUsers || 0,
+        })
+        setDailyStats(statsData.dailyStats || [])
+        setBatchInfo(batchData)
+        setSelectedBatch(batchData.activeBatch)
+        setLoading(false)
+      }).catch(e => {
+        console.error(e)
+        setError(e instanceof Error ? e.message : 'Errore di caricamento')
+        setLoading(false)
+      })
+    }
+    doLoad()
+    intervalRef.current = setInterval(doLoad, 30000)
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
-  }, [loadData])
+  }, [])
 
   const handleExport = (format: 'csv' | 'excel') => {
     window.open(`/api/analytics?type=export&format=${format}`, '_blank')
@@ -99,7 +125,7 @@ export default function PanoramicaPage() {
           <h1 className="text-2xl font-bold text-foreground tracking-tight">Panoramica</h1>
           <p className="text-sm text-muted-foreground">Monitoraggio votazioni e statistiche</p>
         </div>
-        <Button variant="outline" size="sm" onClick={loadData}
+        <Button variant="outline" size="sm" onClick={() => loadData(true)}
           className="h-10 border-border text-foreground hover:bg-secondary">
           Aggiorna
         </Button>
@@ -125,7 +151,7 @@ export default function PanoramicaPage() {
         <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 dark:bg-red-950/30 dark:text-red-400 px-4 py-2 rounded-lg border border-red-200 dark:border-red-800">
           <AlertCircle className="h-4 w-4 shrink-0" />
           <span>{error}</span>
-          <Button variant="ghost" size="sm" onClick={loadData} className="ml-auto h-7 text-xs">Riprova</Button>
+          <Button variant="ghost" size="sm" onClick={() => loadData(true)} className="ml-auto h-7 text-xs">Riprova</Button>
         </div>
       )}
 
@@ -198,14 +224,14 @@ export default function PanoramicaPage() {
                     }}
                       labelStyle={{ color: 'var(--foreground)', fontWeight: 'bold' }}
                       itemStyle={{ fontSize: '12px' }}
-                      labelFormatter={(label: string) => {
-                        try { return format(new Date(label), 'dd MMMM yyyy', { locale: it }) }
-                        catch { return label }
+                      labelFormatter={(label) => {
+                        try { return format(new Date(label as string), 'dd MMMM yyyy', { locale: it }) }
+                        catch { return label as string }
                       }} />
-                    <RechartLine type="monotone" dataKey="vote_count" stroke="var(--primary)"
+                    <Line type="monotone" dataKey="vote_count" stroke="var(--primary)"
                       strokeWidth={3} dot={{ fill: 'var(--primary)', r: 4, strokeWidth: 0 }}
                       activeDot={{ r: 6, strokeWidth: 0 }} name="Voti" />
-                    <RechartLine type="monotone" dataKey="unique_voters" stroke="var(--muted-foreground)"
+                    <Line type="monotone" dataKey="unique_voters" stroke="var(--muted-foreground)"
                       strokeWidth={2} strokeDasharray="5 5" dot={false} name="Elettori" />
                   </RechartLine>
                 </ResponsiveContainer>

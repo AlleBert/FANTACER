@@ -28,7 +28,14 @@ export default function SponsorPage() {
     setLoading(false)
   }
 
-  useEffect(() => { loadSponsors() }, [])
+  useEffect(() => {
+    fetch('/api/admin/sponsors')
+      .then(res => res.json())
+      .then(json => {
+        setSponsors(json.data || [])
+        setLoading(false)
+      })
+  }, [])
 
   const openCreate = () => {
     setEditing(null)
@@ -106,7 +113,7 @@ export default function SponsorPage() {
           {loading ? (
             <div className="text-center py-8 text-muted-foreground">Caricamento...</div>
           ) : sponsors.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">Nessuno sponsor presente. Clicca "Nuovo Sponsor" per aggiungerne uno.</div>
+            <div className="text-center py-8 text-muted-foreground">Nessuno sponsor presente. Clicca &quot;Nuovo Sponsor&quot; per aggiungerne uno.</div>
           ) : (
             <div className="md:hidden">
               {sponsors.map((s) => (

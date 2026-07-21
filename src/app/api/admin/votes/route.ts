@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const { data: companies } = await supabase.from('companies').select('id, name')
     const companyMap = new Map((companies || []).map(c => [c.id, c.name]))
 
-    let query = supabase
+    const query = supabase
       .from('vote_sessions')
       .select('id, fingerprint, ip_hash, user_agent, country, company1_id, company2_id, company3_id, pallet1, pallet2, pallet3, created_at', { count: 'exact' })
 

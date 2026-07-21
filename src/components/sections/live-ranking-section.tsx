@@ -32,8 +32,18 @@ export function LiveRankingSection() {
   };
 
   useEffect(() => {
-    fetchRanking(true);
-    const interval = setInterval(() => fetchRanking(false), 30000);
+    const fetchSilent = async () => {
+      try {
+        const res = await fetch('/api/public/ranking');
+        if (!res.ok) throw new Error('fetch failed');
+        const data = await res.json();
+        setCompanies(data.companies || []);
+      } catch {
+        setError('classifica non disponibile');
+      }
+    };
+    fetchSilent();
+    const interval = setInterval(fetchSilent, 30000);
     return () => clearInterval(interval);
   }, []);
 

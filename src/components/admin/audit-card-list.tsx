@@ -13,7 +13,7 @@ interface AuditLog {
   event_type: string
   fingerprint: string
   ip_address: string
-  metadata: any
+  metadata: Record<string, unknown>
 }
 
 interface AuditCardListProps {

@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   experimental: {
@@ -11,4 +12,8 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ['192.168.1.14'],
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  silent: process.env.NODE_ENV !== "production",
+  sourcemaps: { disable: true },
+  webpack: { treeshake: { removeDebugLogging: true } },
+});

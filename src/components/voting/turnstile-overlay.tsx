@@ -18,13 +18,13 @@ export function TurnstileOverlay({ isVisible, onClose, onSuccess, onError }: Tur
   useEffect(() => {
     if (isVisible) {
       document.body.style.overflow = 'hidden'
-      setTimeout(() => {
+      queueMicrotask(() => {
         setStatus('idle')
         setIsClosing(false)
-      }, 0)
+      })
     } else {
       document.body.style.overflow = 'unset'
-      setIsClosing(false)
+      queueMicrotask(() => setIsClosing(false))
     }
     return () => {
       document.body.style.overflow = 'unset'

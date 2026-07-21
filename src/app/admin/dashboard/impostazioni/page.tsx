@@ -6,6 +6,15 @@ import { Settings as SettingsIcon, Shield, ChevronDown, ChevronUp } from 'lucide
 import { AuditCardList } from '@/components/admin/audit-card-list'
 import { AuditLogTable } from '@/components/admin/audit-log-table'
 
+interface AuditLog {
+  id: string
+  created_at: string
+  event_type: string
+  fingerprint: string
+  ip_address: string
+  metadata: Record<string, unknown>
+}
+
 export default function ImpostazioniPage() {
   const [comingSoonEnabled, setComingSoonEnabled] = useState(false)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
@@ -15,7 +24,7 @@ export default function ImpostazioniPage() {
 
   // Audit log state
   const [auditExpanded, setAuditExpanded] = useState(false)
-  const [auditLogs, setAuditLogs] = useState<any[]>([])
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
   const [auditPagination, setAuditPagination] = useState({ page: 1, limit: 25, total: 0, pages: 0 })
   const [auditSearch, setAuditSearch] = useState('')
 

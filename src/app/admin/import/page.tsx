@@ -46,28 +46,6 @@ export default function ImportPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const batchSelectRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    if (!isBypassEnabled()) checkAuth()
-    fetchBatchInfo()
-  }, [])
-
-  useEffect(() => {
-    if (!batchSelectOpen) return
-    const handler = (e: MouseEvent) => {
-      if (batchSelectRef.current && !batchSelectRef.current.contains(e.target as Node)) {
-        setBatchSelectOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [batchSelectOpen])
-
-  useEffect(() => {
-    if (!notification) return
-    const t = setTimeout(() => setNotification(null), 4000)
-    return () => clearTimeout(t)
-  }, [notification])
-
   const isBypassEnabled = () => process.env.NEXT_PUBLIC_X7K2M9QS3P === 'hx7k2m9Qs3P'
 
   const checkAuth = async () => {
@@ -94,6 +72,47 @@ export default function ImportPage() {
     setBatchInfo(data)
     setBatchName(data.activeBatch)
   }
+
+  useEffect(() => {
+    const init = async () => {
+      if (!isBypassEnabled()) {
+        const session = localStorage.getItem('admin_session')
+        if (!session) {
+          router.push('/admin/login')
+          return
+        }
+        const res = await fetch('/api/admin/login', {
+          headers: { Authorization: `Bearer ${session}` }
+        })
+        if (!res.ok) {
+          localStorage.removeItem('admin_session')
+          router.push('/admin/login')
+        }
+      }
+      const res = await fetch('/api/admin/batch')
+      const data = await res.json()
+      setBatchInfo(data)
+      setBatchName(data.activeBatch)
+    }
+    init()
+  }, [])
+
+  useEffect(() => {
+    if (!batchSelectOpen) return
+    const handler = (e: MouseEvent) => {
+      if (batchSelectRef.current && !batchSelectRef.current.contains(e.target as Node)) {
+        setBatchSelectOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [batchSelectOpen])
+
+  useEffect(() => {
+    if (!notification) return
+    const t = setTimeout(() => setNotification(null), 4000)
+    return () => clearTimeout(t)
+  }, [notification])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
@@ -259,7 +278,7 @@ export default function ImportPage() {
                 Scarica Template
               </CardTitle>
               <CardDescription>
-                Il template Excel contiene le colonne necessarie per l'import
+                Il template Excel contiene le colonne necessarie per l&apos;import
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -646,7 +665,7 @@ export default function ImportPage() {
               {batchInfo.activeBatch === deleteTarget.name && (
                 <div className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-400 mb-4 bg-amber-50 dark:bg-amber-950/30 px-3 py-2.5 rounded-lg border border-amber-200 dark:border-amber-800/50">
                   <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                  <span>Questo batch è attualmente attivo. Dopo l'eliminazione verrà impostato <strong>"TEST"</strong> come batch attivo.</span>
+                  <span>Questo batch è attualmente attivo. Dopo l&apos;eliminazione verrà impostato <strong>&quot;TEST&quot;</strong> come batch attivo.</span>
                 </div>
               )}
 

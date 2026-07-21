@@ -63,13 +63,13 @@ export function MessageOverlay({
   useEffect(() => {
     if (isVisible) {
       document.body.style.overflow = 'hidden'
-      setTimeout(() => {
+      queueMicrotask(() => {
         setShowContent(true)
         setIsClosing(false)
-      }, 0)
+      })
     } else {
       document.body.style.overflow = 'unset'
-      setIsClosing(false)
+      queueMicrotask(() => setIsClosing(false))
     }
     return () => {
       document.body.style.overflow = 'unset'

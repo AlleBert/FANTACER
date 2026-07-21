@@ -10,7 +10,11 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "typecheck": "tsc --noEmit",
+    "analyze": "next build && next experimental-analyze -o",
+    "lighthouse": "lhci autorun",
+    "ui:health": "npm run lint && npm run typecheck && npm run test && npm run test:e2e"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.0",
@@ -37,7 +41,11 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
+    "@lhci/cli": "^0.15.1",
+    "@next/bundle-analyzer": "^16.2.10",
     "@playwright/test": "^1.59.1",
+    "@sentry/nextjs": "^10.67.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

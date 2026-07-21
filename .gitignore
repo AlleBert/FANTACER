@@ -69,5 +69,15 @@ node_modules/
 /playwright/.cache/
 /playwright/.auth/
 
+# Lighthouse CI reports
+lhci-reports/
+.lighthouseci/
+
+# Windows Chrome cache artifacts (WSL)
+C:*
+
+# Next.js Bundle Analyzer
+.next/diagnostics/
+
 # impeccable critique output
 .impeccable/

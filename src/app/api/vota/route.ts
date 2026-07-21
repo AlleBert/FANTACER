@@ -11,7 +11,7 @@ async function checkRateLimit(ip: string): Promise<boolean> {
     ip_param: ip,
     window_ms: 3600000,
     max_requests: 100,
-  } as any)
+  })
   if (error) {
     console.error('Rate limiter error:', error)
     return true

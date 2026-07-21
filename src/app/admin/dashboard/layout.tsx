@@ -10,13 +10,10 @@ const isBypassEnabled = () => process.env.NEXT_PUBLIC_X7K2M9QS3P === 'hx7k2m9Qs3
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-  const [authorized, setAuthorized] = useState(false)
+  const [authorized, setAuthorized] = useState(isBypassEnabled())
 
   useEffect(() => {
-    if (isBypassEnabled()) {
-      setAuthorized(true)
-      return
-    }
+    if (isBypassEnabled()) return
     const session = localStorage.getItem('admin_session')
     if (!session) {
       router.push('/admin/login')

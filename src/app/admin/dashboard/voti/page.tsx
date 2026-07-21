@@ -30,8 +30,8 @@ export default function VotiPage() {
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
 
-  const loadVotes = useCallback(async (page: number, searchTerm: string) => {
-    setLoading(true)
+  const loadVotes = useCallback(async (page: number, searchTerm: string, showLoading = false) => {
+    if (showLoading) setLoading(true)
     const params = new URLSearchParams({ page: page.toString(), limit: '25' })
     if (searchTerm) params.append('search', searchTerm)
     const res = await fetch(`/api/admin/votes?${params}`)
@@ -41,7 +41,15 @@ export default function VotiPage() {
     setLoading(false)
   }, [])
 
-  useEffect(() => { loadVotes(1, '') }, [loadVotes])
+  useEffect(() => {
+    fetch(`/api/admin/votes?${new URLSearchParams({ page: '1', limit: '25' })}`)
+      .then(res => res.json())
+      .then(data => {
+        setSessions(data.data || [])
+        setPagination(data.pagination || { page: 1, limit: 25, total: 0, pages: 0 })
+        setLoading(false)
+      })
+  }, [])
 
   return (
     <div className="w-full mx-auto p-4 md:p-6 space-y-6">
@@ -64,7 +72,7 @@ export default function VotiPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               placeholder="Cerca azienda..."
-              onChange={(e) => { setSearch(e.target.value); loadVotes(1, e.target.value) }}
+              onChange={(e) => { setSearch(e.target.value); loadVotes(1, e.target.value, true) }}
               className="w-full rounded-lg border border-border bg-background pl-9 pr-3 py-2 text-sm"
             />
           </div>
@@ -139,14 +147,14 @@ export default function VotiPage() {
                 </p>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => loadVotes(pagination.page - 1, search)}
+                    onClick={() => loadVotes(pagination.page - 1, search, true)}
                     disabled={pagination.page <= 1}
                     className="px-3 py-1 text-sm rounded-lg border border-border hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Precedente
                   </button>
                   <button
-                    onClick={() => loadVotes(pagination.page + 1, search)}
+                    onClick={() => loadVotes(pagination.page + 1, search, true)}
                     disabled={pagination.page >= pagination.pages}
                     className="px-3 py-1 text-sm rounded-lg border border-border hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed"
                   >
