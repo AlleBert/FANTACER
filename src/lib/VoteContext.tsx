@@ -11,7 +11,6 @@ export interface VoteState {
   selectedCompanies: SelectedCompany[];
   currentSection: 1 | 2;
   gameUnlock: {
-    submit: boolean;
     success: boolean;
   };
 }
@@ -27,7 +26,6 @@ const initialState: VoteState = {
   selectedCompanies: [],
   currentSection: 1,
   gameUnlock: {
-    submit: false,
     success: false,
   },
 };

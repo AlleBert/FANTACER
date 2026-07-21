@@ -21,7 +21,7 @@ export function PlayAgainSection({ onPlayClick }: PlayAgainSectionProps) {
       
       <div className="safe-shell h-full flex flex-col">
       <div className="relative z-10 w-full max-w-7xl mx-auto text-center flex flex-col items-center justify-center gap-8 md:gap-12 flex-1">
-        <p className="text-[clamp(1.5rem,4vw,2.875rem)] text-white font-medium leading-[1.3] md:leading-[1.4] max-w-[90%] md:max-w-none drop-shadow-[2px_2px_0_#000]">
+        <p className="text-[clamp(1.5rem,4vw,2.875rem)] text-white font-medium leading-[1.3] md:leading-[1.4] max-w-[90%] md:max-w-none">
           puoi giocare una sola volta al giorno
           <br className="hidden md:block" />
           <span className="md:hidden"> </span>

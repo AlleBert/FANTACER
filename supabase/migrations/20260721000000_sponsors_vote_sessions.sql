@@ -159,7 +159,7 @@ $$;
 
 -- ========== RANKING RPC ==========
 
-create or replace function get_company_ranking(limit_count int default 10)
+create or replace function get_company_ranking(limit_count int default null)
 returns table(
   id uuid,
   name text,
@@ -181,6 +181,7 @@ as $$
     count(vs.id)::bigint as vote_count
   from companies c
   left join vote_sessions vs on c.id in (vs.company1_id, vs.company2_id, vs.company3_id)
+  where c.batch = (select active_batch from batch_settings where id = 'default')
   group by c.id, c.name, c.image_url
   order by total_pallets desc
   limit limit_count;

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
 
@@ -9,6 +9,12 @@ export function ContactSection() {
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+
+  useEffect(() => {
+    if (status !== 'success') return;
+    const timer = setTimeout(() => setStatus('idle'), 5000);
+    return () => clearTimeout(timer);
+  }, [status]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -34,29 +40,28 @@ export function ContactSection() {
   return (
     <section
       id="contact-section"
-      className="snap-start relative w-full overflow-hidden bg-[linear-gradient(to_bottom,#4B00AB_0%,#a088db_40%,#efdeff_100%)]"
+      className="snap-start relative w-full h-[100dvh] bg-[linear-gradient(to_bottom,#FF2FB2_0%,#4B00AB_60%,#4B00AB_100%)] flex flex-col items-center justify-center overflow-hidden"
     >
-      {/* safe-shell gestisce min-height, safe area e padding laterale */}
-      <div className="safe-shell flex flex-col items-center justify-center gap-2 md:gap-4 lg:gap-8">
-        <div className="relative z-10 mx-auto flex w-full flex-col items-center justify-center gap-6 md:gap-8 lg:flex-row-reverse lg:gap-16">
+      <div className="safe-shell w-full max-w-7xl mx-auto flex flex-col items-center justify-center">
+        <div className="relative z-10 flex w-full flex-col items-center justify-center gap-8 lg:flex-row-reverse lg:gap-16">
 
           {/* Top mobile / Right desktop: info */}
-          <div className="flex w-full flex-col items-center gap-4 md:gap-6 text-center lg:w-1/2 lg:items-start lg:text-left">
-            <h2 className="text-[clamp(2rem,7vw,90px)] font-[900] text-white tracking-tighter uppercase leading-[0.9] drop-shadow-[2px_2px_0_#231f20]">
+          <div className="flex w-full flex-col items-center gap-4 text-center lg:w-1/2 lg:items-start lg:text-left">
+            <h2 className="text-[clamp(2rem,7vw,90px)] font-[900] text-white tracking-tighter uppercase leading-[0.9]">
               PARLA<br className="sm:hidden"/>
               <span className="hidden sm:inline"> </span>CON NOI
             </h2>
 
-            <div className="flex w-full flex-col items-center gap-2 md:gap-4 lg:gap-12 lg:items-start">
+            <div className="flex w-full flex-col items-center gap-3 lg:gap-6 lg:items-start">
               <div className="bg-white px-6 py-4 sm:py-5 md:py-6 lg:py-8 rounded-full border-2 border-[#231f20] shadow-[3px_3px_0_#000] -rotate-2 hover:rotate-0 transition-transform cursor-default">
                 <p className="text-[clamp(1.1rem,2.5vw,1.4rem)] font-black text-black lowercase">fantacer@fantacer.com</p>
               </div>
               <div className="bg-[#fccb27] px-6 py-4 sm:py-5 md:py-6 lg:py-8 rounded-full border-2 border-[#231f20] shadow-[3px_3px_0_#000] rotate-2 hover:rotate-0 transition-transform cursor-default">
                 <p className="text-[clamp(1.1rem,2.5vw,1.4rem)] font-black text-black tracking-wider">00 000 000</p>
               </div>
-              <div className="bg-white px-6 py-4 sm:py-5 md:py-6 lg:py-8 rounded-full border-2 border-[#231f20] shadow-[3px_3px_0_#000] -rotate-1 hover:rotate-0 transition-transform cursor-pointer hover:-translate-y-0.5">
+              <a href="https://www.fantacer.com" target="_blank" rel="noopener noreferrer" className="bg-white px-6 py-4 sm:py-5 md:py-6 lg:py-8 rounded-full border-2 border-[#231f20] shadow-[3px_3px_0_#000] -rotate-1 hover:rotate-0 transition-transform hover:-translate-y-0.5 block">
                 <p className="text-[clamp(1.1rem,2.5vw,1.4rem)] font-black text-[#8000ff] lowercase">www.fantacer.com</p>
-              </div>
+              </a>
             </div>
           </div>
 
@@ -67,18 +72,18 @@ export function ContactSection() {
             </h3>
 
             {status === 'success' && (
-              <div className="mb-4 md:mb-6 px-4 py-3 bg-green-100 text-green-900 font-bold text-sm rounded-2xl border-2 border-green-500 text-center">
+              <div role="alert" aria-live="polite" className="mb-4 md:mb-6 px-4 py-3 bg-green-100 text-green-900 font-bold text-sm rounded-2xl border-2 border-green-500 text-center">
                 Messaggio inviato con successo!
               </div>
             )}
 
             {status === 'error' && (
-              <div className="mb-4 md:mb-6 px-4 py-3 bg-red-100 text-red-900 font-bold text-sm rounded-2xl border-2 border-red-400 text-center">
+              <div role="alert" aria-live="polite" className="mb-4 md:mb-6 px-4 py-3 bg-red-100 text-red-900 font-bold text-sm rounded-2xl border-2 border-red-400 text-center">
                 Errore nell&apos;invio. Riprova pi&ugrave; tardi.
               </div>
             )}
 
-            <form className="flex flex-col gap-3 md:gap-4 lg:gap-6" onSubmit={handleSubmit}>
+            <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
               <input
                 type="text"
                 name="nome"
@@ -101,8 +106,8 @@ export function ContactSection() {
               />
               <textarea
                 name="messaggio"
-                placeholder="MESSAGGIO..."
-                rows={4}
+placeholder="MESSAGGIO"
+                 rows={4}
                 required
                 aria-label="Il tuo messaggio"
                 value={message}

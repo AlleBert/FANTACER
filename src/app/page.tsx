@@ -7,9 +7,9 @@ import { HowItWorksSection } from '@/components/sections/how-it-works-section'
 import { PlayAgainSection } from '@/components/sections/play-again-section'
 import { PrizeLocationSection } from '@/components/sections/prize-location-section'
 import { SearchSection } from '@/components/sections/search-section'
-import { SubmitSection } from '@/components/sections/submit-section'
 import { PublicRankingSection } from '@/components/sections/public-ranking-section'
 import { LiveRankingSection } from '@/components/sections/live-ranking-section'
+import { SuccessSection } from '@/components/sections/success-section'
 import { ContactSection } from '@/components/sections/contact-section'
 import { VoteProvider, useVote } from '@/lib/VoteContext'
 import { getOrCreateDeviceId } from '@/lib/fingerprint'
@@ -34,7 +34,7 @@ function PageContent() {
       <PlayAgainSection />
       <PrizeLocationSection />
       <SearchSection />
-      {gameUnlock.submit && <SubmitSection />}
+      {gameUnlock.success && <SuccessSection />}
       <PublicRankingSection />
       <LiveRankingSection />
       <ContactSection />

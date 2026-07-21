@@ -8,7 +8,6 @@ describe('VoteContext', () => {
       return (
         <>
           <span data-testid="companies">{selectedCompanies.length}</span>
-          <span data-testid="submit">{gameUnlock.submit ? 'yes' : 'no'}</span>
           <span data-testid="success">{gameUnlock.success ? 'yes' : 'no'}</span>
         </>
       );
@@ -19,7 +18,6 @@ describe('VoteContext', () => {
       </VoteProvider>
     );
     expect(screen.getByTestId('companies')).toHaveTextContent('0');
-    expect(screen.getByTestId('submit')).toHaveTextContent('no');
     expect(screen.getByTestId('success')).toHaveTextContent('no');
   });
 
@@ -120,14 +118,12 @@ describe('VoteContext', () => {
       const { selectedCompanies, gameUnlock, setCompany, unlockGameStep, resetVote } = useVote();
       return (
         <>
-          <button onClick={() => {
+           <button onClick={() => {
             setCompany({ id: '123', name: 'Test Co' }, 4);
-            unlockGameStep('submit');
             unlockGameStep('success');
           }}>Modify</button>
           <button onClick={resetVote}>Reset</button>
           <span data-testid="count">{selectedCompanies.length}</span>
-          <span data-testid="submit">{gameUnlock.submit ? 'yes' : 'no'}</span>
           <span data-testid="success">{gameUnlock.success ? 'yes' : 'no'}</span>
         </>
       );
@@ -139,11 +135,9 @@ describe('VoteContext', () => {
     );
     act(() => { screen.getByText('Modify').click(); });
     expect(screen.getByTestId('count')).toHaveTextContent('1');
-    expect(screen.getByTestId('submit')).toHaveTextContent('yes');
     expect(screen.getByTestId('success')).toHaveTextContent('yes');
     act(() => { screen.getByText('Reset').click(); });
     expect(screen.getByTestId('count')).toHaveTextContent('0');
-    expect(screen.getByTestId('submit')).toHaveTextContent('no');
     expect(screen.getByTestId('success')).toHaveTextContent('no');
   });
 
