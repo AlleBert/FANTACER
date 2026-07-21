@@ -120,7 +120,7 @@ export function LiveRankingSection() {
             <div className="w-full max-w-2xl mx-auto bg-white rounded-2xl border-[3px] border-black shadow-[4px_4px_0_#000] p-4 md:p-6 flex flex-col shrink min-h-0 h-[45dvh] md:h-[55dvh]">
               <div
                 ref={rankingRef}
-                className={`no-scrollbar flex flex-col flex-1 gap-y-2 md:gap-y-3 ${showAll ? 'overflow-y-auto' : 'overflow-hidden'}`}
+                className="no-scrollbar flex flex-col flex-1 gap-y-2 md:gap-y-3 overflow-y-auto"
               >
                 {displayedCompanies.map((company, index) => {
                   const leaderVotes = maxPallets;
