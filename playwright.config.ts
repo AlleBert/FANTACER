@@ -45,7 +45,48 @@ export default defineConfig({
       name: 'mobile-webkit',
       use: {
         ...devices['iPhone 13'],
-        viewport: { width: 375, height: 812 },
+      },
+    },
+    {
+      name: 'ios-se',
+      use: {
+        ...devices['iPhone SE (3rd gen)'],
+      },
+    },
+    {
+      name: 'ios-iphone',
+      use: {
+        ...devices['iPhone 13'],
+      },
+    },
+    {
+      name: 'ios-pro-max',
+      use: {
+        ...devices['iPhone 15 Pro Max'],
+      },
+    },
+    {
+      name: 'ios-ipad-portrait',
+      use: {
+        ...devices['iPad Mini'],
+      },
+    },
+    {
+      name: 'ios-ipad-landscape',
+      use: {
+        ...devices['iPad Mini landscape'],
+      },
+    },
+    {
+      name: 'ios-ipad-pro-portrait',
+      use: {
+        ...devices['iPad Pro 11'],
+      },
+    },
+    {
+      name: 'ios-ipad-pro-landscape',
+      use: {
+        ...devices['iPad Pro 11 landscape'],
       },
     },
   ],
