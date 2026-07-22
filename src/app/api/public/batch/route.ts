@@ -5,7 +5,7 @@ export async function GET() {
   try {
     const activeBatch = await getActiveBatch()
     return NextResponse.json({ activeBatch })
-  } catch (error) {
+  } catch {
     return NextResponse.json({ activeBatch: 'TEST' })
   }
 }

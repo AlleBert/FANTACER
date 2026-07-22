@@ -69,7 +69,7 @@ function IphoneStoryMockup({ companyName }: { companyName?: string }) {
 }
 
 export function SuccessSection() {
-  const { selectedCompanies, resetVote } = useVote();
+  const { selectedCompanies } = useVote();
 
   useEffect(() => {
     const colors = ['#fccb27', '#8000ff', '#ff803b', '#4B00AB', '#ffffff'];

@@ -27,6 +27,7 @@ Il progetto include una pipeline automatizzata per garantire:
 - **stabilità frontend** — test unitari (Jest), test E2E (Playwright), snapshot visivi;
 - **compatibilità responsive** — 6 viewport, 4 browser, verifiche di overflow e clipping;
 - **accessibilità** — scansioni WCAG 2.1 AA con `@axe-core/playwright` su tutte le route;
+- **qualità visuale** — visual audit con screenshot, metriche layout e analisi tipografia su 6 route × 6 viewport;
 - **prevenzione regressioni** — smoke test (6 route), scroll-blocking regression, voting flow E2E;
 - **controllo performance** — Lighthouse CI locale, bundle analysis;
 - **osservabilità produzione** — Sentry noop-ready (attivabile con DSN).
@@ -184,6 +185,39 @@ npx playwright test --update-snapshots
 ```
 
 **Nota**: le directory `screenshots/firefox/` e `screenshots/mobile-chrome/` contengono snapshot storici ma non vengono più aggiornati dal codice attuale (i test sono limitati a Chromium e Mobile WebKit). Possono essere rimossi.
+
+---
+
+## Visual audit
+
+Analisi visuale proattiva che produce screenshot e metriche per valutare la qualità UI/UX:
+
+```bash
+npm run visual:audit
+```
+
+### Cosa fa
+
+- **Screenshot** full-page e per sezione, su 6 viewport (320–1920px), per 6 route
+- **Metriche layout** — dimensioni, padding, offset per ogni sezione
+- **Analisi tipografia** — font-size, line-height, numero righe per heading e paragrafi
+- **Rilevamento automatico** di overflow, touch target insufficienti, wrapping anomalo
+
+### Output
+
+```
+tests/e2e/visual-audit/
+├── screenshots/{route}/{viewport}/{section}.png
+└── report.json
+```
+
+### Quando usarlo
+
+- prima di una revisione UX/UI
+- dopo modifiche globali di layout o stili
+- per identificare aree di miglioramento specifiche
+
+Dettagli in `docs/visual-audit.md`.
 
 ---
 
@@ -398,6 +432,7 @@ Il sistema funziona come rete di sicurezza contro:
 | `npm run ui:health` | Gate completo: lint → typecheck → test → E2E |
 | `npm run lighthouse` | Lighthouse CI locale (6 URL, 4 categorie) |
 | `npm run analyze` | Bundle analysis (Turbopack-native) |
+| `npm run visual:audit` | Visual Quality Audit — screenshot + metriche layout |
 
 ---
 
@@ -468,5 +503,6 @@ Ogni fase è stata costruita per risolvere un problema reale emerso durante lo s
 | `docs/frontend-quality.md` | Dettagli responsive, a11y, snapshot, viewport |
 | `tests/e2e/accessibility.spec.ts` | Violazioni WCAG permesse per route |
 | `tests/e2e/scroll-blocking-test-plan.md` | Test plan scroll blocking bug fix |
+| `docs/visual-audit.md` | Visual Quality Audit — workflow e formato report |
 | `lighthouserc.json` | Configurazione Lighthouse |
 | `.env.example` | Variabili d'ambiente richieste e opzionali |

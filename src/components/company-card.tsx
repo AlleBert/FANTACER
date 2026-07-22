@@ -30,7 +30,6 @@ export function CompanyCard({ company, onVote, disabled, loading }: CompanyCardP
     `}>
       <div className="aspect-square bg-gray-50 flex items-center justify-center relative overflow-hidden p-6">
         {company.image_url ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
           <img 
             src={company.image_url} 
             alt={company.name}

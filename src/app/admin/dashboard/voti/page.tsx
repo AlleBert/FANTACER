@@ -53,16 +53,16 @@ export default function VotiPage() {
 
   return (
     <div className="w-full mx-auto p-4 md:p-6 space-y-6">
-      <header className="flex items-center justify-between pl-10 md:pl-0">
+      <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Voti</h1>
-          <p className="text-sm text-muted-foreground">Registro votazioni (3 aziende per sessione)</p>
+          <h1 className="text-[clamp(1.25rem,4vw,2rem)] font-bold text-foreground tracking-tight">Voti</h1>
+          <p className="text-[clamp(0.75rem,2.5vw,1rem)] text-muted-foreground">Registro votazioni (3 aziende per sessione)</p>
         </div>
       </header>
 
       <Card className="border-border">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg flex items-center gap-2">
+          <CardTitle className="text-[clamp(1rem,3vw,1.25rem)] flex items-center gap-2">
             <FileText className="h-5 w-5" />
             Sessione Voti
           </CardTitle>
@@ -86,7 +86,7 @@ export default function VotiPage() {
           ) : (
             <>
               {/* Mobile view */}
-              <div className="md:hidden space-y-3">
+              <div className="lg:hidden space-y-3">
                 {sessions.map((s) => (
                   <div key={s.id} className="bg-card border border-border rounded-xl shadow-sm p-4">
                     <p className="text-xs text-muted-foreground">
@@ -106,7 +106,7 @@ export default function VotiPage() {
               </div>
 
               {/* Desktop table */}
-              <div className="hidden md:block overflow-x-auto">
+              <div className="hidden lg:block overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b-2 border-black/10 text-left">
@@ -149,14 +149,14 @@ export default function VotiPage() {
                   <button
                     onClick={() => loadVotes(pagination.page - 1, search, true)}
                     disabled={pagination.page <= 1}
-                    className="px-3 py-1 text-sm rounded-lg border border-border hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-2 text-sm rounded-lg border border-border hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Precedente
                   </button>
                   <button
                     onClick={() => loadVotes(pagination.page + 1, search, true)}
                     disabled={pagination.page >= pagination.pages}
-                    className="px-3 py-1 text-sm rounded-lg border border-border hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-2 text-sm rounded-lg border border-border hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Successiva
                   </button>

@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { getCombinedFingerprint } from '@/lib/fingerprint';
 import { TurnstileOverlay } from '@/components/voting/turnstile-overlay';
 import { MessageOverlay } from '@/components/voting/message-overlay';
-import confetti from 'canvas-confetti';
 
 const supabase = createClient();
 

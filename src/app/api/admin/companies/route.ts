@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
     result.forEach((r, i) => r.rank = i + 1)
 
     return NextResponse.json({ data: result })
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

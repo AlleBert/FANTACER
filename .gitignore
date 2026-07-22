@@ -81,3 +81,9 @@ C:*
 
 # impeccable critique output
 .impeccable/
+
+# visual audit reports
+docs/admin-audit-report.md
+docs/ui-audit-report.md
+docs/visual-audit.md
+tests/e2e/visual-audit/

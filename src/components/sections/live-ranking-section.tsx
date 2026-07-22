@@ -40,6 +40,8 @@ export function LiveRankingSection() {
         setCompanies(data.companies || []);
       } catch {
         setError('classifica non disponibile');
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchSilent();

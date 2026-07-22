@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit",
     "analyze": "next build && next experimental-analyze -o",
     "lighthouse": "lhci autorun",
-    "ui:health": "npm run lint && npm run typecheck && npm run test && npm run test:e2e"
+    "ui:health": "npm run lint && npm run typecheck && npm run test && npm run test:e2e",
+    "visual:audit": "playwright test tests/e2e/visual-audit.spec.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.0",

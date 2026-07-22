@@ -2,25 +2,21 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { 
-  LayoutDashboard, 
-  Upload, 
+import {
+  LayoutDashboard,
+  Upload,
   Settings,
   LogOut,
-  Menu,
-  X,
   ChevronLeft,
   ChevronRight,
   Image as ImageIcon,
 } from 'lucide-react'
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
 import { ThemeToggle } from './theme-toggle'
 
 const navItems = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/dashboard/sponsor', label: 'Sponsor', icon: ImageIcon },
-  { href: '/admin/import', label: 'Import Aziende', icon: Upload },
+  { href: '/admin/dashboard/import', label: 'Import Aziende', icon: Upload },
   { href: '/admin/dashboard/impostazioni', label: 'Impostazioni', icon: Settings },
 ]
 
@@ -31,7 +27,6 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
   const pathname = usePathname()
-  const [mobileOpen, setMobileOpen] = useState(false)
 
   const handleLogout = () => {
     localStorage.removeItem('admin_session')
@@ -40,27 +35,11 @@ export function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="md:hidden fixed top-4 left-4 z-50 text-foreground"
-        onClick={() => setMobileOpen(!mobileOpen)}
-      >
-        {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-      </Button>
-
-      {mobileOpen && (
-        <div 
-          className="md:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
-
       <aside className={`
         fixed top-0 left-0 h-full bg-sidebar border-r border-sidebar-border z-40
         flex flex-col transition-all duration-300 ease-out
         ${collapsed ? 'w-[80px]' : 'w-[260px]'}
-        ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        -translate-x-full md:translate-x-0
       `}>
         {/* Toggle Button */}
         <button
@@ -94,7 +73,6 @@ export function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => setMobileOpen(false)}
                 className={`
                   flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium
                   transition-all duration-200

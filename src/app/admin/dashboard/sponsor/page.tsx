@@ -90,13 +90,13 @@ export default function SponsorPage() {
 
   return (
     <div className="w-full mx-auto p-4 md:p-6 space-y-6">
-      <header className="flex items-center justify-between pl-10 md:pl-0">
+      <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Sponsor</h1>
-          <p className="text-sm text-muted-foreground">Gestione sponsor e partner</p>
+          <h1 className="text-[clamp(1.25rem,4vw,2rem)] font-bold text-foreground tracking-tight">Sponsor</h1>
+          <p className="text-[clamp(0.75rem,2.5vw,1rem)] text-muted-foreground">Gestione sponsor e partner</p>
         </div>
         <button onClick={openCreate}
-          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 transition-colors">
+          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 min-h-[36px] text-[clamp(0.75rem,2vw,0.875rem)] font-medium text-white hover:bg-primary/90 transition-colors">
           <Plus className="h-4 w-4" />
           Nuovo Sponsor
         </button>
@@ -104,7 +104,9 @@ export default function SponsorPage() {
 
       <Card className="border-border">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg flex items-center gap-2">
+          <CardTitle className="text-[clamp(1rem,3vw,1.25rem)] flex items-center gap-2">
+
+        
             <ImageIcon className="h-5 w-5" />
             Elenco Sponsor
           </CardTitle>
@@ -115,7 +117,7 @@ export default function SponsorPage() {
           ) : sponsors.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">Nessuno sponsor presente. Clicca &quot;Nuovo Sponsor&quot; per aggiungerne uno.</div>
           ) : (
-            <div className="md:hidden">
+            <div className="lg:hidden">
               {sponsors.map((s) => (
                 <div key={s.id} className="flex items-center justify-between p-3 border-b border-black/5">
                   <div className="flex items-center gap-3">
@@ -125,19 +127,19 @@ export default function SponsorPage() {
                       <div className="w-10 h-10 bg-gray-100 rounded flex items-center justify-center text-xs text-gray-400">No</div>
                     )}
                     <div>
-                      <p className="font-bold text-sm">{s.name}</p>
-                      <p className="text-xs text-muted-foreground">{s.is_active ? 'Attivo' : 'Disattivo'}</p>
+                      <p className="font-bold text-[clamp(0.8rem,2.5vw,1rem)]">{s.name}</p>
+                      <p className="text-[clamp(0.65rem,2vw,0.8rem)] text-muted-foreground">{s.is_active ? 'Attivo' : 'Disattivo'}</p>
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => openEdit(s)} className="text-xs text-[#8000ff] font-bold">MODIFICA</button>
-                    <button onClick={() => handleDelete(s.id)} className="text-xs text-red-500 font-bold">ELIMINA</button>
+                    <button onClick={() => openEdit(s)} className="px-3 py-2.5 text-[clamp(0.65rem,2vw,0.8rem)] text-[#8000ff] font-bold rounded-lg border border-[#8000ff]/20 hover:bg-[#8000ff]/5">MODIFICA</button>
+                    <button onClick={() => handleDelete(s.id)} className="px-3 py-2.5 text-[clamp(0.65rem,2vw,0.8rem)] text-red-500 font-bold rounded-lg border border-red-500/20 hover:bg-red-500/5">ELIMINA</button>
                   </div>
                 </div>
               ))}
             </div>
           )}
-          <div className="hidden md:block">
+          <div className="hidden lg:block">
             <SponsorTable sponsors={sponsors} onEdit={openEdit} onDelete={handleDelete} onToggleActive={handleToggleActive} />
           </div>
         </CardContent>

@@ -15,7 +15,7 @@ const navItems: NavItem[] = [
   { href: '/admin/dashboard/sponsor', label: 'Sponsor', icon: ImageIcon },
   { href: '/admin/dashboard/aziende', label: 'Aziende', icon: Building2 },
   { href: '/admin/dashboard/voti', label: 'Voti', icon: Vote },
-  { href: '/admin/import', label: 'Import', icon: Upload },
+  { href: '/admin/dashboard/import', label: 'Import', icon: Upload },
   { href: '/admin/dashboard/impostazioni', label: 'Impostazioni', icon: Settings },
 ]
 

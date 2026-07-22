@@ -56,17 +56,13 @@ export function MessageOverlay({
   onClose 
 }: MessageOverlayProps) {
   const [isClosing, setIsClosing] = useState(false)
-  const [showContent, setShowContent] = useState(false)
 
   const styles = typeStyles[type]
 
   useEffect(() => {
     if (isVisible) {
       document.body.style.overflow = 'hidden'
-      queueMicrotask(() => {
-        setShowContent(true)
-        setIsClosing(false)
-      })
+      queueMicrotask(() => setIsClosing(false))
     } else {
       document.body.style.overflow = 'unset'
       queueMicrotask(() => setIsClosing(false))
@@ -78,7 +74,6 @@ export function MessageOverlay({
 
   const handleClose = () => {
     setIsClosing(true)
-    setShowContent(false)
     setTimeout(onClose, 300)
   }
 

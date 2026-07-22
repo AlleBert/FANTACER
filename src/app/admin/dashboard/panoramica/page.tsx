@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { BarChart3, Users, TrendingUp, Vote, Wifi, Download, Upload, AlertCircle } from 'lucide-react'
+import { BarChart3, Users, TrendingUp, Vote, Wifi, Download, Upload, AlertCircle, RefreshCw } from 'lucide-react'
 import { LineChart as RechartLine, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
@@ -120,14 +120,15 @@ export default function PanoramicaPage() {
   return (
     <div className="w-full mx-auto p-4 md:p-6 space-y-6">
       {/* Header */}
-      <header className="flex items-center justify-between pl-10 md:pl-0">
+      <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Panoramica</h1>
-          <p className="text-sm text-muted-foreground">Monitoraggio votazioni e statistiche</p>
+          <h1 className="text-[clamp(1.25rem,4vw,2rem)] font-bold text-foreground tracking-tight">Panoramica</h1>
+          <p className="text-[clamp(0.75rem,2.5vw,1rem)] text-muted-foreground">Monitoraggio votazioni e statistiche</p>
         </div>
         <Button variant="outline" size="sm" onClick={() => loadData(true)}
           className="h-10 border-border text-foreground hover:bg-secondary">
-          Aggiorna
+          <RefreshCw className="h-4 w-4 sm:hidden" aria-hidden="true" />
+          <span className="hidden sm:inline">Aggiorna</span>
         </Button>
       </header>
 
@@ -135,12 +136,12 @@ export default function PanoramicaPage() {
       {batchInfo && batchInfo.batches.length > 0 && (
         <div className="flex gap-1 flex-wrap">
           <button onClick={() => setSelectedBatch('all')}
-            className={`px-3 py-1 text-sm rounded-full transition-colors ${
+            className={`px-3 py-2 text-[clamp(0.75rem,2vw,0.875rem)] rounded-full transition-colors ${
               selectedBatch === 'all' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
             }`}>Tutti</button>
           {batchInfo.batches.map(batch => (
             <button key={batch.name} onClick={() => setSelectedBatch(batch.name)}
-              className={`px-3 py-1 text-sm rounded-full transition-colors ${
+              className={`px-3 py-2 text-[clamp(0.75rem,2vw,0.875rem)] rounded-full transition-colors ${
                 selectedBatch === batch.name ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
               }`}>{batch.name}</button>
           ))}
@@ -155,8 +156,8 @@ export default function PanoramicaPage() {
         </div>
       )}
 
-      {/* Stats — mobile scrollable row, desktop 5-col grid */}
-      <div className="flex md:grid md:grid-cols-5 gap-3 overflow-x-auto snap-x snap-mandatory md:overflow-visible pb-2 md:pb-0 -mx-4 md:mx-0 px-4 md:px-0">
+      {/* Stats — responsive grid: 2 cols mobile/tablet, 5 cols desktop */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {statCards.map((s) => {
           const colorMap: Record<string, string> = {
             violet: 'from-violet-500/10 to-violet-500/5 border-violet-500/20 text-violet-600 dark:text-violet-400',
@@ -168,19 +169,19 @@ export default function PanoramicaPage() {
           const Icon = s.icon
           return (
             <Card key={s.label}
-              className={`snap-start shrink-0 w-[160px] md:w-full bg-gradient-to-br ${colorMap[s.color]}`}>
+              className={`w-full bg-gradient-to-br ${colorMap[s.color]}`}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-medium uppercase tracking-wide">{s.label}</p>
-                    <p className="text-2xl font-bold text-foreground mt-1">{s.value}</p>
+                    <p className="text-[clamp(0.65rem,2vw,0.8rem)] font-medium uppercase tracking-wide">{s.label}</p>
+                    <p className="text-[clamp(1.1rem,4vw,1.75rem)] font-bold text-foreground mt-1">{s.value}</p>
                   </div>
                   <div className="p-2 bg-background/40 rounded-lg">
                     <Icon className="h-5 w-5" />
                   </div>
                 </div>
                 {'diff' in s && s.diff !== undefined && (
-                  <p className="text-xs text-muted-foreground mt-2">
+                  <p className="text-[clamp(0.65rem,2vw,0.8rem)] text-muted-foreground mt-2">
                     {s.diff >= 0 ? '+' : ''}{s.diff} vs ieri
                   </p>
                 )}
@@ -194,7 +195,7 @@ export default function PanoramicaPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 bg-card border-border shadow-sm min-w-0">
           <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-foreground text-lg">
+            <CardTitle className="flex items-center gap-2 text-foreground text-[clamp(1rem,3vw,1.25rem)]">
               <BarChart3 className="h-5 w-5 text-primary" />
               Andamento Votazioni
             </CardTitle>
@@ -246,7 +247,7 @@ export default function PanoramicaPage() {
 
         <Card className="bg-card border-border shadow-sm self-start">
           <CardHeader>
-            <CardTitle className="text-lg">Strumenti</CardTitle>
+            <CardTitle className="text-[clamp(1rem,3vw,1.25rem)]">Strumenti</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-muted-foreground mb-2">

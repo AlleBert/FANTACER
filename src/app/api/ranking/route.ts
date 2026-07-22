@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
       .slice(0, limit)
 
     return NextResponse.json({ ranking })
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

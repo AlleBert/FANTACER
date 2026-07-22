@@ -67,6 +67,15 @@ export function HowItWorksSection() {
           </span>
         </h2>
 
+        <div className="flex flex-col items-center gap-1 mb-4 md:mb-6 text-center flex-shrink-0">
+          <p className="text-[clamp(1rem,3.5vw,1.5rem)] font-[700] whitespace-nowrap">
+            Puoi giocare una sola volta al giorno
+          </p>
+          <p className="text-[clamp(0.875rem,2.5vw,1.125rem)] font-[500] text-white/80">
+            Dal 21 al 25 settembre 2026
+          </p>
+        </div>
+
         {/* Mobile: vertical stack | Desktop: asymmetric 3-col grid */}
         <div className="flex flex-col items-center gap-8 lg:grid lg:grid-cols-[1fr_1fr_1fr] lg:gap-6 lg:items-center lg:w-full lg:max-w-6xl flex-shrink min-h-0">
           {steps.map((step, index) => (

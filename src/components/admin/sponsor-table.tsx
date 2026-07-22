@@ -52,21 +52,21 @@ export function SponsorTable({ sponsors, onEdit, onDelete, onToggleActive }: Spo
                 )}
               </td>
               <td className="p-3">
-                <button
-                  onClick={() => onToggleActive(sponsor)}
-                  className={`px-3 py-1 rounded-full text-xs font-bold border-2 border-black transition-colors ${
-                    sponsor.is_active ? 'bg-green-400 text-black' : 'bg-gray-200 text-gray-500'
-                  }`}
-                >
-                  {sponsor.is_active ? 'SÌ' : 'NO'}
-                </button>
+                  <button
+                    onClick={() => onToggleActive(sponsor)}
+                    className={`px-3 py-2.5 rounded-full text-xs font-bold border-2 border-black transition-colors ${
+                      sponsor.is_active ? 'bg-green-400 text-black' : 'bg-gray-200 text-gray-500'
+                    }`}
+                  >
+                    {sponsor.is_active ? 'SÌ' : 'NO'}
+                  </button>
               </td>
               <td className="p-3">
                 <div className="flex gap-2">
-                  <button onClick={() => onEdit(sponsor)} className="text-[#8000ff] font-bold hover:underline text-xs">
+                  <button onClick={() => onEdit(sponsor)} className="px-2 py-2.5 text-[#8000ff] font-bold text-xs rounded-md hover:bg-[#8000ff]/5">
                     MODIFICA
                   </button>
-                  <button onClick={() => onDelete(sponsor.id)} className="text-red-500 font-bold hover:underline text-xs">
+                  <button onClick={() => onDelete(sponsor.id)} className="px-2 py-2.5 text-red-500 font-bold text-xs rounded-md hover:bg-red-500/5">
                     ELIMINA
                   </button>
                 </div>
