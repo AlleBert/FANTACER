@@ -32,9 +32,9 @@ const steps: Step[] = [
 // Uniform card sizes — all 3 steps same size
 // dvh caps prevent overflow on short viewports
 const cardSizeClasses = [
-  'w-32 h-32 max-h-[18dvh] md:w-40 md:h-40 md:max-h-[22dvh] lg:w-52 lg:h-52 lg:max-h-[28dvh]',
-  'w-32 h-32 max-h-[18dvh] md:w-40 md:h-40 md:max-h-[22dvh] lg:w-52 lg:h-52 lg:max-h-[28dvh]',
-  'w-32 h-32 max-h-[18dvh] md:w-40 md:h-40 md:max-h-[22dvh] lg:w-52 lg:h-52 lg:max-h-[28dvh]',
+  'w-32 h-32 max-h-[13dvh] md:w-40 md:h-40 md:max-h-[22dvh] lg:w-52 lg:h-52 lg:max-h-[28dvh]',
+  'w-32 h-32 max-h-[13dvh] md:w-40 md:h-40 md:max-h-[22dvh] lg:w-52 lg:h-52 lg:max-h-[28dvh]',
+  'w-32 h-32 max-h-[13dvh] md:w-40 md:h-40 md:max-h-[22dvh] lg:w-52 lg:h-52 lg:max-h-[28dvh]',
 ]
 
 export function HowItWorksSection() {
