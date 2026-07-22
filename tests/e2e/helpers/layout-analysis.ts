@@ -296,7 +296,7 @@ export interface SubElementInteractive {
 export interface SubElementImage {
   tag: string;
   src: string;
-  alt: string;
+  alt: string | null;
   renderedBox: Box | null;
   naturalWidth: number;
   naturalHeight: number;
@@ -366,20 +366,23 @@ export function collectImages(page: Page, selector: string): Promise<SubElementI
       const r = img.getBoundingClientRect();
       const natW = img.naturalWidth || 0;
       const natH = img.naturalHeight || 0;
+      const objectFit = window.getComputedStyle(img).objectFit;
       let distortion: number | null = null;
       if (natW > 0 && natH > 0 && r.width > 0 && r.height > 0) {
         const natRatio = natW / natH;
         const renderedRatio = r.width / r.height;
-        distortion = Math.abs(renderedRatio - natRatio);
+        if (objectFit !== 'cover' && objectFit !== 'contain') {
+          distortion = Math.abs(renderedRatio - natRatio);
+        }
       }
       return {
         tag: 'img',
         src: img.src?.slice(0, 100) || '',
-        alt: img.alt || '',
+        alt: img.getAttribute('alt'),
         renderedBox: r.width > 0 ? { x: Math.round(r.x), y: Math.round(r.y), width: Math.round(r.width), height: Math.round(r.height) } : null,
         naturalWidth: natW,
         naturalHeight: natH,
-        objectFit: window.getComputedStyle(img).objectFit,
+        objectFit,
         loading: img.loading,
         distortion,
       };
@@ -494,7 +497,7 @@ export async function collectSubElementReport(page: Page, name: string, selector
         detail: `distortion ${img.distortion.toFixed(3)} (threshold 0.05)`,
       });
     }
-    if (!img.alt && img.src) {
+    if (img.alt === null && img.src) {
       issues.push({
         severity: 'info',
         message: `Image missing alt text: ${img.src.slice(0, 40)}`,

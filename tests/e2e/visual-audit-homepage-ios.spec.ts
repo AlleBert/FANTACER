@@ -40,11 +40,12 @@ test.describe('Homepage iOS Visual Audit', () => {
     const projectName = testInfo.project.name;
 
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    try {
-      await page.waitForLoadState('networkidle', { timeout: 45000 });
-    } catch {
-      // networkidle may never fire on some WebKit device emulations
-    }
+
+    await Promise.all([
+      page.waitForResponse('/api/public/sponsors', { timeout: 45000 }),
+      page.waitForResponse('/api/public/ranking', { timeout: 45000 }),
+    ]);
+    await page.waitForTimeout(300);
 
     const viewportSize = await page.evaluate(() => ({
       width: window.innerWidth,

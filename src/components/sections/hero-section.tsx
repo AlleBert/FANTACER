@@ -14,7 +14,7 @@ export function HeroSection({ onPlayClick }: HeroSectionProps) {
       <div className="absolute inset-0 z-0">
         <picture className="absolute inset-0">
           <source
-            media="(max-width: 767px)"
+            media="(orientation: portrait)"
             srcSet="/FANTACER_16_9.webp"
           />
           <Image
