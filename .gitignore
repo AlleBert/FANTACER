@@ -87,3 +87,4 @@ docs/admin-audit-report.md
 docs/ui-audit-report.md
 docs/visual-audit.md
 tests/e2e/visual-audit/
+tests/e2e/visual-audit-homepage/

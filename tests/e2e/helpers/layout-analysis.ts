@@ -454,79 +454,78 @@ export function collectLayoutAnomalies(page: Page, selector: string): Promise<Su
   }).catch(() => []);
 }
 
-export function collectSubElementReport(page: Page, name: string, selector: string): Promise<SubElementReport> {
-  return Promise.all([
+export async function collectSubElementReport(page: Page, name: string, selector: string): Promise<SubElementReport> {
+  const [interactive, images, headings, textBlocks, layoutAnomalies] = await Promise.all([
     collectInteractiveElements(page, selector),
     collectImages(page, selector),
     collectHeadings(page, selector),
     collectTextBlocks(page, selector),
     collectLayoutAnomalies(page, selector),
-  ]).then(([interactive, images, headings, textBlocks, layoutAnomalies]) => {
-    const issues: ResponsiveIssue[] = [];
+  ]);
 
-    for (const el of interactive) {
-      if (el.visible && el.touchWidth > 0 && el.touchWidth < 36) {
+  const vp = await page.evaluate(() => ({ width: window.innerWidth, height: window.innerHeight }));
+  const issues: ResponsiveIssue[] = [];
+
+  for (const el of interactive) {
+    if (el.visible && el.touchWidth > 0 && el.touchWidth < 36) {
+      issues.push({
+        severity: 'warning',
+        message: `Touch target too narrow: <${el.tag}> "${el.text}"`,
+        element: `<${el.tag}>`,
+        detail: `width ${el.touchWidth}px (minimum 36px)`,
+      });
+    }
+    if (el.visible && el.touchHeight > 0 && el.touchHeight < 36) {
+      issues.push({
+        severity: 'warning',
+        message: `Touch target too short: <${el.tag}> "${el.text}"`,
+        element: `<${el.tag}>`,
+        detail: `height ${el.touchHeight}px (minimum 36px)`,
+      });
+    }
+  }
+
+  for (const img of images) {
+    if (img.distortion !== null && img.distortion > 0.05) {
+      issues.push({
+        severity: 'warning',
+        message: `Image aspect ratio distorted: ${img.alt ? `"${img.alt}"` : img.src.slice(0, 40)}`,
+        element: '<img>',
+        detail: `distortion ${img.distortion.toFixed(3)} (threshold 0.05)`,
+      });
+    }
+    if (!img.alt && img.src) {
+      issues.push({
+        severity: 'info',
+        message: `Image missing alt text: ${img.src.slice(0, 40)}`,
+        element: '<img>',
+      });
+    }
+  }
+
+  for (const tb of textBlocks) {
+    if (tb.ratio < 0.4) {
+      issues.push({
+        severity: 'info',
+        message: `Text narrower than container: "${tb.text}"`,
+        element: '<p>',
+        detail: `${Math.round(tb.ratio * 100)}% of container width`,
+      });
+    }
+  }
+
+  for (const la of layoutAnomalies) {
+    if (la.position === 'fixed' || la.position === 'absolute') {
+      if (la.box && (la.box.x + la.box.width > vp.width + 2 || la.box.y + la.box.height > vp.height + 2)) {
         issues.push({
           severity: 'warning',
-          message: `Touch target too narrow: <${el.tag}> "${el.text}"`,
-          element: `<${el.tag}>`,
-          detail: `width ${el.touchWidth}px (minimum 36px)`,
-        });
-      }
-      if (el.visible && el.touchHeight > 0 && el.touchHeight < 36) {
-        issues.push({
-          severity: 'warning',
-          message: `Touch target too short: <${el.tag}> "${el.text}"`,
-          element: `<${el.tag}>`,
-          detail: `height ${el.touchHeight}px (minimum 36px)`,
+          message: `Positioned element overflows viewport: <${la.tag}>`,
+          element: `<${la.tag}>`,
+          detail: `${la.position} at (${la.box.x},${la.box.y}) size ${la.box.width}x${la.box.height}`,
         });
       }
     }
+  }
 
-    for (const img of images) {
-      if (img.distortion !== null && img.distortion > 0.05) {
-        issues.push({
-          severity: 'warning',
-          message: `Image aspect ratio distorted: ${img.alt ? `"${img.alt}"` : img.src.slice(0, 40)}`,
-          element: '<img>',
-          detail: `distortion ${img.distortion.toFixed(3)} (threshold 0.05)`,
-        });
-      }
-      if (!img.alt && img.src) {
-        issues.push({
-          severity: 'info',
-          message: `Image missing alt text: ${img.src.slice(0, 40)}`,
-          element: '<img>',
-        });
-      }
-    }
-
-    for (const tb of textBlocks) {
-      if (tb.ratio < 0.4) {
-        issues.push({
-          severity: 'info',
-          message: `Text narrower than container: "${tb.text}"`,
-          element: '<p>',
-          detail: `${Math.round(tb.ratio * 100)}% of container width`,
-        });
-      }
-    }
-
-    for (const la of layoutAnomalies) {
-      if (la.position === 'fixed' || la.position === 'absolute') {
-        const vpW = window.innerWidth;
-        const vpH = window.innerHeight;
-        if (la.box && (la.box.x + la.box.width > vpW + 2 || la.box.y + la.box.height > vpH + 2)) {
-          issues.push({
-            severity: 'warning',
-            message: `Positioned element overflows viewport: <${la.tag}>`,
-            element: `<${la.tag}>`,
-            detail: `${la.position} at (${la.box.x},${la.box.y}) size ${la.box.width}x${la.box.height}`,
-          });
-        }
-      }
-    }
-
-    return { interactive, images, headings, textBlocks, layoutAnomalies, issues };
-  });
+  return { interactive, images, headings, textBlocks, layoutAnomalies, issues };
 }
