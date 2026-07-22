@@ -281,3 +281,252 @@ export function getViewport(page: Page): Promise<{ width: number; height: number
     height: window.innerHeight,
   }));
 }
+
+// ─── Sub-element analysis types ───────────────────────────────────────────────
+
+export interface SubElementInteractive {
+  tag: string;
+  text: string;
+  box: Box | null;
+  visible: boolean;
+  touchWidth: number;
+  touchHeight: number;
+}
+
+export interface SubElementImage {
+  tag: string;
+  src: string;
+  alt: string;
+  renderedBox: Box | null;
+  naturalWidth: number;
+  naturalHeight: number;
+  objectFit: string;
+  loading: string;
+  distortion: number | null;
+}
+
+export interface SubElementHeading {
+  tag: string;
+  text: string;
+  fontSize: string;
+  lineHeight: string;
+  fontWeight: string;
+  box: Box | null;
+}
+
+export interface SubElementTextBlock {
+  text: string;
+  width: number;
+  containerWidth: number;
+  fontSize: number;
+  lineHeight: number;
+  ratio: number;
+}
+
+export interface SubElementLayoutIssue {
+  type: string;
+  tag: string;
+  position: string;
+  box: Box | null;
+  overflowHidden: boolean;
+}
+
+export interface SubElementReport {
+  interactive: SubElementInteractive[];
+  images: SubElementImage[];
+  headings: SubElementHeading[];
+  textBlocks: SubElementTextBlock[];
+  layoutAnomalies: SubElementLayoutIssue[];
+  issues: ResponsiveIssue[];
+}
+
+// ─── Sub-element collection helpers ───────────────────────────────────────────
+
+export function collectInteractiveElements(page: Page, selector: string): Promise<SubElementInteractive[]> {
+  return page.locator(selector).evaluate((container) => {
+    const items = Array.from(container.querySelectorAll<HTMLElement>('button, a[href], input, [role="button"]'));
+    return items.map((el) => {
+      const r = el.getBoundingClientRect();
+      return {
+        tag: el.tagName.toLowerCase(),
+        text: (el.textContent ?? '').trim().slice(0, 60),
+        box: r.width > 0 ? { x: Math.round(r.x), y: Math.round(r.y), width: Math.round(r.width), height: Math.round(r.height) } : null,
+        visible: r.width > 0 && r.height > 0,
+        touchWidth: Math.round(r.width),
+        touchHeight: Math.round(r.height),
+      };
+    });
+  }).catch(() => []);
+}
+
+export function collectImages(page: Page, selector: string): Promise<SubElementImage[]> {
+  return page.locator(selector).evaluate((container) => {
+    const imgs = Array.from(container.querySelectorAll<HTMLImageElement>('img'));
+    return imgs.map((img) => {
+      const r = img.getBoundingClientRect();
+      const natW = img.naturalWidth || 0;
+      const natH = img.naturalHeight || 0;
+      let distortion: number | null = null;
+      if (natW > 0 && natH > 0 && r.width > 0 && r.height > 0) {
+        const natRatio = natW / natH;
+        const renderedRatio = r.width / r.height;
+        distortion = Math.abs(renderedRatio - natRatio);
+      }
+      return {
+        tag: 'img',
+        src: img.src?.slice(0, 100) || '',
+        alt: img.alt || '',
+        renderedBox: r.width > 0 ? { x: Math.round(r.x), y: Math.round(r.y), width: Math.round(r.width), height: Math.round(r.height) } : null,
+        naturalWidth: natW,
+        naturalHeight: natH,
+        objectFit: window.getComputedStyle(img).objectFit,
+        loading: img.loading,
+        distortion,
+      };
+    });
+  }).catch(() => []);
+}
+
+export function collectHeadings(page: Page, selector: string): Promise<SubElementHeading[]> {
+  return page.locator(selector).evaluate((container) => {
+    const headings = Array.from(container.querySelectorAll<HTMLElement>('h1, h2, h3, h4'));
+    return headings.map((h) => {
+      const r = h.getBoundingClientRect();
+      const style = window.getComputedStyle(h);
+      return {
+        tag: h.tagName.toLowerCase(),
+        text: (h.textContent ?? '').trim().slice(0, 80),
+        fontSize: style.fontSize,
+        lineHeight: style.lineHeight,
+        fontWeight: style.fontWeight,
+        box: r.width > 0 ? { x: Math.round(r.x), y: Math.round(r.y), width: Math.round(r.width), height: Math.round(r.height) } : null,
+      };
+    });
+  }).catch(() => []);
+}
+
+export function collectTextBlocks(page: Page, selector: string): Promise<SubElementTextBlock[]> {
+  return page.locator(selector).evaluate((container) => {
+    const paras = Array.from(container.querySelectorAll<HTMLElement>('p'));
+    const cr = container.getBoundingClientRect();
+    return paras
+      .map((p) => {
+        const text = (p.textContent ?? '').trim();
+        if (text.length <= 30) return null;
+        const r = p.getBoundingClientRect();
+        const style = window.getComputedStyle(p);
+        const fontSize = parseFloat(style.fontSize) || 16;
+        const lineHeight = parseFloat(style.lineHeight) || fontSize * 1.4;
+        return {
+          text: text.slice(0, 80),
+          width: Math.round(r.width),
+          containerWidth: Math.round(cr.width),
+          fontSize,
+          lineHeight,
+          ratio: cr.width > 0 ? r.width / cr.width : 1,
+        };
+      })
+      .filter((p): p is SubElementTextBlock => p !== null);
+  }).catch(() => []);
+}
+
+export function collectLayoutAnomalies(page: Page, selector: string): Promise<SubElementLayoutIssue[]> {
+  return page.locator(selector).evaluate((container) => {
+    const items: SubElementLayoutIssue[] = [];
+    const all = Array.from(container.querySelectorAll<HTMLElement>('*'));
+    for (const el of all) {
+      const style = window.getComputedStyle(el);
+      const pos = style.position;
+      if (pos === 'absolute' || pos === 'fixed') {
+        const r = el.getBoundingClientRect();
+        if (r.width > 0 && r.height > 0) {
+          items.push({
+            type: 'positioned',
+            tag: el.tagName.toLowerCase(),
+            position: pos,
+            box: { x: Math.round(r.x), y: Math.round(r.y), width: Math.round(r.width), height: Math.round(r.height) },
+            overflowHidden: style.overflow === 'hidden',
+          });
+        }
+      }
+    }
+    return items;
+  }).catch(() => []);
+}
+
+export function collectSubElementReport(page: Page, name: string, selector: string): Promise<SubElementReport> {
+  return Promise.all([
+    collectInteractiveElements(page, selector),
+    collectImages(page, selector),
+    collectHeadings(page, selector),
+    collectTextBlocks(page, selector),
+    collectLayoutAnomalies(page, selector),
+  ]).then(([interactive, images, headings, textBlocks, layoutAnomalies]) => {
+    const issues: ResponsiveIssue[] = [];
+
+    for (const el of interactive) {
+      if (el.visible && el.touchWidth > 0 && el.touchWidth < 36) {
+        issues.push({
+          severity: 'warning',
+          message: `Touch target too narrow: <${el.tag}> "${el.text}"`,
+          element: `<${el.tag}>`,
+          detail: `width ${el.touchWidth}px (minimum 36px)`,
+        });
+      }
+      if (el.visible && el.touchHeight > 0 && el.touchHeight < 36) {
+        issues.push({
+          severity: 'warning',
+          message: `Touch target too short: <${el.tag}> "${el.text}"`,
+          element: `<${el.tag}>`,
+          detail: `height ${el.touchHeight}px (minimum 36px)`,
+        });
+      }
+    }
+
+    for (const img of images) {
+      if (img.distortion !== null && img.distortion > 0.05) {
+        issues.push({
+          severity: 'warning',
+          message: `Image aspect ratio distorted: ${img.alt ? `"${img.alt}"` : img.src.slice(0, 40)}`,
+          element: '<img>',
+          detail: `distortion ${img.distortion.toFixed(3)} (threshold 0.05)`,
+        });
+      }
+      if (!img.alt && img.src) {
+        issues.push({
+          severity: 'info',
+          message: `Image missing alt text: ${img.src.slice(0, 40)}`,
+          element: '<img>',
+        });
+      }
+    }
+
+    for (const tb of textBlocks) {
+      if (tb.ratio < 0.4) {
+        issues.push({
+          severity: 'info',
+          message: `Text narrower than container: "${tb.text}"`,
+          element: '<p>',
+          detail: `${Math.round(tb.ratio * 100)}% of container width`,
+        });
+      }
+    }
+
+    for (const la of layoutAnomalies) {
+      if (la.position === 'fixed' || la.position === 'absolute') {
+        const vpW = window.innerWidth;
+        const vpH = window.innerHeight;
+        if (la.box && (la.box.x + la.box.width > vpW + 2 || la.box.y + la.box.height > vpH + 2)) {
+          issues.push({
+            severity: 'warning',
+            message: `Positioned element overflows viewport: <${la.tag}>`,
+            element: `<${la.tag}>`,
+            detail: `${la.position} at (${la.box.x},${la.box.y}) size ${la.box.width}x${la.box.height}`,
+          });
+        }
+      }
+    }
+
+    return { interactive, images, headings, textBlocks, layoutAnomalies, issues };
+  });
+}
