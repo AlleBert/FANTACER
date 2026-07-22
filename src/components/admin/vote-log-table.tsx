@@ -12,7 +12,7 @@ import {
 } from '@tanstack/react-table'
 import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
-import { Search, Download, ArrowUpDown } from 'lucide-react'
+import { Search, ArrowUpDown } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 

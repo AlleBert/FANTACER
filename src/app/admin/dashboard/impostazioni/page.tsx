@@ -6,6 +6,15 @@ import { Settings as SettingsIcon, Shield, ChevronDown, ChevronUp } from 'lucide
 import { AuditCardList } from '@/components/admin/audit-card-list'
 import { AuditLogTable } from '@/components/admin/audit-log-table'
 
+interface AuditLog {
+  id: string
+  created_at: string
+  event_type: string
+  fingerprint: string
+  ip_address: string
+  metadata: Record<string, unknown>
+}
+
 export default function ImpostazioniPage() {
   const [comingSoonEnabled, setComingSoonEnabled] = useState(false)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
@@ -15,7 +24,7 @@ export default function ImpostazioniPage() {
 
   // Audit log state
   const [auditExpanded, setAuditExpanded] = useState(false)
-  const [auditLogs, setAuditLogs] = useState<any[]>([])
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
   const [auditPagination, setAuditPagination] = useState({ page: 1, limit: 25, total: 0, pages: 0 })
   const [auditSearch, setAuditSearch] = useState('')
 
@@ -59,17 +68,17 @@ export default function ImpostazioniPage() {
 
   return (
     <div className="w-full mx-auto p-4 md:p-6 space-y-6">
-      <header className="flex items-center justify-between pl-10 md:pl-0">
+      <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Impostazioni</h1>
-          <p className="text-sm text-muted-foreground">Gestione sito e sicurezza</p>
+          <h1 className="text-[clamp(1.25rem,4vw,2rem)] font-bold text-foreground tracking-tight">Impostazioni</h1>
+          <p className="text-[clamp(0.75rem,2.5vw,1rem)] text-muted-foreground">Gestione sito e sicurezza</p>
         </div>
       </header>
 
       {/* Coming Soon Toggle */}
       <Card className="border-border">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg flex items-center gap-2">
+          <CardTitle className="text-[clamp(1rem,3vw,1.25rem)] flex items-center gap-2">
             <SettingsIcon className="h-5 w-5" />
             Impostazioni Sito
           </CardTitle>
@@ -88,10 +97,10 @@ export default function ImpostazioniPage() {
               <div className="h-6 w-11 animate-pulse rounded-full bg-muted" />
             ) : (
               <button onClick={handleToggle} disabled={updating}
-                className={`relative h-6 w-11 rounded-full transition-colors disabled:opacity-50 ${
+                className={`relative h-9 w-14 rounded-full transition-colors disabled:opacity-50 ${
                   comingSoonEnabled ? 'bg-primary' : 'bg-muted'
                 }`}>
-                <span className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
+                <span className={`absolute left-0.5 top-0.5 h-8 w-8 rounded-full bg-white transition-transform ${
                   comingSoonEnabled ? 'translate-x-5' : ''
                 }`} />
               </button>
@@ -107,7 +116,7 @@ export default function ImpostazioniPage() {
             setAuditExpanded(!auditExpanded)
             if (!auditExpanded && auditLogs.length === 0) loadAuditLogs(1, '')
           }}>
-          <CardTitle className="text-lg flex items-center justify-between">
+          <CardTitle className="text-[clamp(1rem,3vw,1.25rem)] flex items-center justify-between">
             <span className="flex items-center gap-2">
               <Shield className="h-5 w-5" />
               Audit Log

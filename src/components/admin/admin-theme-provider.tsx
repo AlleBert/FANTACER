@@ -12,15 +12,16 @@ interface AdminThemeContextType {
 const AdminThemeContext = createContext<AdminThemeContextType | undefined>(undefined)
 
 export function AdminThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('light')
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('admin-theme') as Theme) || 'light'
+    }
+    return 'light'
+  })
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('admin-theme') as Theme
-    if (savedTheme) {
-      setTheme(savedTheme)
-    }
-    setMounted(true)
+    queueMicrotask(() => setMounted(true))
   }, [])
 
   const toggleTheme = () => {

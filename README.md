@@ -1,36 +1,508 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Fantacer
 
-## Getting Started
+[![CI](https://github.com/AlleBert/FANTACER/actions/workflows/ci.yml/badge.svg)](https://github.com/AlleBert/FANTACER/actions/workflows/ci.yml)
 
-First, run the development server:
+Voting platform for Fantacitorio.
+
+## Setup
+
+```bash
+npm install
+cp .env.example .env.local  # then fill in Supabase credentials
+```
+
+## Development
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+# Engineering Quality System
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Il progetto include una pipeline automatizzata per garantire:
 
-## Learn More
+- **qualità del codice** — TypeScript strict, ESLint, typecheck automatico;
+- **stabilità frontend** — test unitari (Jest), test E2E (Playwright), snapshot visivi;
+- **compatibilità responsive** — 6 viewport, 4 browser, verifiche di overflow e clipping;
+- **accessibilità** — scansioni WCAG 2.1 AA con `@axe-core/playwright` su tutte le route;
+- **qualità visuale** — visual audit con screenshot, metriche layout e analisi tipografia su 6 route × 6 viewport;
+- **prevenzione regressioni** — smoke test (6 route), scroll-blocking regression, voting flow E2E;
+- **controllo performance** — Lighthouse CI locale, bundle analysis;
+- **osservabilità produzione** — Sentry noop-ready (attivabile con DSN).
 
-To learn more about Next.js, take a look at the following resources:
+**Principio**: ogni modifica significativa deve passare attraverso una serie di controlli automatici prima di essere considerata pronta.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Architecture Overview
 
-## Deploy on Vercel
+```
+Developer / AI Agent
+        |
+        v
+Local Quality Check (npm run ui:health)
+        |
+        v
+GitHub Actions (CI)
+        |
+        v
+Build Validation (npm run build)
+        |
+        v
+E2E / Accessibility / Visual Checks (Playwright)
+        |
+        v
+Deployment (manuale)
+        |
+        v
+Monitoring (Sentry, opzionale)
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**Local Quality Check** — `npm run ui:health` esegue lint, typecheck, unit test ed E2E in sequenza. È il gate più rapido, eseguito localmente prima di ogni commit.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**GitHub Actions** — riproduce esattamente la stessa sequenza in ambiente pulito. Blocca PR e push su `main`/`develop` in caso di fallimento.
+
+**Build Validation** — `next build` verifica che il progetto compili e produca un bundle valido.
+
+**E2E / Accessibility / Visual Checks** — Playwright esegue 8 spec file su 4 progetti browser, inclusi snapshot, scansioni a11y e verifica flussi utente reali.
+
+**Deployment** — manuale, dopo approvazione CI.
+
+**Monitoring** — Sentry è configurato ma inerte senza DSN. Attivandolo cattura errori runtime senza influenzare lo sviluppo.
+
+---
+
+# Phase 1 — Continuous Integration Foundation
+
+## Cosa è stato introdotto
+
+- **GitHub Actions workflow** (`.github/workflows/ci.yml`) — attivato su push a `main`/`develop` e su tutte le PR;
+- `npm ci` per installazione deterministica;
+- **ESLint** (`npm run lint`) con configurazione Next.js;
+- **TypeScript strict** (`npm run typecheck`) — `tsc --noEmit`;
+- **Jest** (`npm test`) — 3 file test, 14 test, con `ts-jest` e jsdom;
+- **Next production build** (`npm run build`).
+
+## Perché
+
+- evitare codice non compilabile nel repository;
+- bloccare errori di tipo, lint e test logic prima del merge;
+- avere un processo automatizzato e ripetibile in ambiente CI pulito.
+
+## Comandi
+
+```bash
+npm run lint       # ESLint — zero-error policy
+npm run typecheck  # TypeScript strict, noEmit
+npm test           # Jest unit test
+```
+
+Nella pipeline CI questi tre comandi vengono eseguiti PRIMA della build, in modo da fallire velocemente sugli errori più economici da diagnosticare.
+
+---
+
+# Phase 2 — Responsive & Accessibility Validation System
+
+## Responsive testing
+
+### Browser (Playwright, 4 progetti)
+
+| Progetto | Browser | Viewport |
+|---|---|---|
+| `chromium` | Chromium (Desktop Chrome) | 1440×900 |
+| `firefox` | Firefox (Desktop) | 1440×900 |
+| `mobile-chrome` | Pixel 5 (Mobile Chrome) | 375×812 |
+| `mobile-webkit` | iPhone 13 (Mobile Safari) | 375×812 |
+
+### Viewport coperti
+
+I test responsive nei file `homepage.spec.ts`, `admin.spec.ts` e `voting-flow.spec.ts` iterano su 6 viewport definiti in `tests/e2e/helpers/viewports.ts`:
+
+| Viewport | Larghezza | Altezza |
+|---|---|---|
+| mobile-small | 320 | 640 |
+| mobile | 375 | 812 |
+| tablet-portrait | 768 | 1024 |
+| tablet-landscape | 1024 | 768 |
+| desktop | 1440 | 900 |
+| desktop-wide | 1920 | 1080 |
+
+### Cosa viene verificato
+
+- **overflow orizzontali** (`checkNoHorizontalOverflow`) — `document.body.scrollWidth <= clientWidth + 1`;
+- **clipping testo** (`checkNoTextClipping`) — elementi testo (p, span, h1-h4, button, a, label, li, td, th) che oltrepassano il bordo del genitore;
+- **elementi interattivi non raggiungibili** (`checkInteractiveElementsReachable`) — button, a[href], input, [role="button"], [tabindex] con `display:none`, `visibility:hidden`, `opacity:0` o dimensioni zero ma con `offsetParent !== null`.
+
+### Helper
+
+Tutti i check sono in `tests/e2e/helpers/responsive.ts`.
+
+---
+
+## Accessibility testing
+
+- **Strumento**: `@axe-core/playwright` con tag `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`;
+- **Standard**: WCAG 2.1 AA;
+- **Copertura**: 6 route (`/`, `/coming-soon`, `/admin/login`, `/admin/dashboard/panoramica`, `/admin/dashboard/aziende`, `/admin/dashboard/voti`).
+
+### Violazioni conosciute
+
+Le violazioni note sono documentate in `tests/e2e/accessibility.spec.ts` come `allowedViolations` per ogni route. Una nuova violazione non registrata blocca il test.
+
+| Route | Violazioni permesse | Motivo |
+|---|---|---|
+| `/` | nessuna | — |
+| `/coming-soon` | nessuna | — |
+| `/admin/login` | `button-name`, `color-contrast` | Sidebar AdminLayout, brand orange su sfondo bianco |
+| `/admin/dashboard/panoramica` | `button-name`, `color-contrast` | Sidebar, rosso/arancione palette brand |
+| `/admin/dashboard/aziende` | `button-name`, `color-contrast` | Sidebar, pulsanti arancione |
+| `/admin/dashboard/voti` | `button-name` | Sidebar |
+
+Ogni violazione permessa include una `reason` testuale che spiega perché è accettata e cosa serve per rimuoverla.
+Le violazioni sono tracciate anche in `docs/frontend-quality.md`.
+
+---
+
+## Visual regression
+
+### Screenshot testing
+
+- **Strumento**: Playwright `toHaveScreenshot`;
+- **Browser**: Chromium e Mobile WebKit (gli screenshot sono saltati su Firefox e Mobile Chrome);
+- **Elementi catturati**:
+  - Hero section (prima `section` della homepage);
+  - Search section (sezione contenente "Cerca" o "Azienda");
+- **Baseline**: immagini PNG in `tests/e2e/screenshots/{projectName}/{testFilePath}/`.
+
+### Perché esiste
+
+Evitare modifiche CSS accidentali che alterano l'aspetto visivo delle sezioni principali. Le baseline si aggiornano con:
+
+```bash
+npx playwright test --update-snapshots
+```
+
+**Nota**: le directory `screenshots/firefox/` e `screenshots/mobile-chrome/` contengono snapshot storici ma non vengono più aggiornati dal codice attuale (i test sono limitati a Chromium e Mobile WebKit). Possono essere rimossi.
+
+---
+
+## Visual audit
+
+Analisi visuale proattiva che produce screenshot e metriche per valutare la qualità UI/UX:
+
+```bash
+npm run visual:audit
+```
+
+### Cosa fa
+
+- **Screenshot** full-page e per sezione, su 6 viewport (320–1920px), per 6 route
+- **Metriche layout** — dimensioni, padding, offset per ogni sezione
+- **Analisi tipografia** — font-size, line-height, numero righe per heading e paragrafi
+- **Rilevamento automatico** di overflow, touch target insufficienti, wrapping anomalo
+
+### Output
+
+```
+tests/e2e/visual-audit/
+├── screenshots/{route}/{viewport}/{section}.png
+└── report.json
+```
+
+### Quando usarlo
+
+- prima di una revisione UX/UI
+- dopo modifiche globali di layout o stili
+- per identificare aree di miglioramento specifiche
+
+Dettagli in `docs/visual-audit.md`.
+
+---
+
+# Phase 2.5 — Test Reliability & Developer Experience
+
+## Database test isolation
+
+**Prima**: test dipendenti da dati manuali presenti in Supabase, senza garanzia di stato iniziale.
+
+**Dopo**:
+- seed automatico dei dati di test tramite `tests/e2e/global-setup.ts` che chiama `seedTestData()` in `tests/e2e/fixtures/test-data.ts`;
+- dati TEST isolati con prefisso batch `TEST` e pulizia prima del seed (`DELETE` + `INSERT`);
+- cleanup disponibile ma non eseguito automaticamente dopo i test (lo stato residuo è accettabile perché il seed è idempotente).
+
+**Beneficio**: ogni esecuzione parte da uno stato prevedibile — 3 aziende (Test Co, GreenEnergy, Third Co) con batch `TEST`.
+
+**Requisito**: la variabile `SUPABASE_SERVICE_ROLE_KEY` deve essere impostata. In locale va aggiunta a `.env.local`.
+
+## Screenshot reliability
+
+- `waitForLoadState('networkidle')` prima di ogni cattura;
+- screenshot limitati a Chromium e Mobile WebKit;
+- timeout generoso (`waitForTimeout(2000)` dopo network idle per render completo);
+- `screenshot: 'only-on-failure'` in `playwright.config.ts` per debugging.
+
+## UI health command
+
+```bash
+npm run ui:health
+```
+
+Esegue in sequenza:
+1. `npm run lint` — zero-error policy ESLint;
+2. `npm run typecheck` — TypeScript strict;
+3. `npm test` — Jest unit test (14 test);
+4. `npm run test:e2e` — Playwright (154+ test, 4 progetti).
+
+### Quando usarlo
+
+- prima di ogni commit;
+- prima di aprire o aggiornare una PR;
+- dopo modifiche importanti a componenti, stili, logica di voto o route;
+- come primo passo dopo aver clonato il repository.
+
+---
+
+# Phase 2.6 — Real User Flow Testing
+
+Il voting flow reale è testato E2E in `tests/e2e/voting-flow.spec.ts`.
+
+**Prima**: test basati su componenti isolati, non allineati al flusso UI reale.
+
+**Dopo**: test che riproducono il flusso completo:
+1. **ricerca aziende** — `searchAndSelectCompany()` in `voting.helper.ts`: digita il nome in `input[placeholder*="Cerca"]`, attende la lista `ul`, seleziona il `li` corrispondente;
+2. **selezione pallet** — `confirmPallet()`: click su `button:has-text("CONFERMA")`;
+3. **aggiunta 3 aziende** — il voto richiede esattamente 3 aziende; `selectThreeCompanies()` esegue il loop;
+4. **invio voto** — `submitVote()`: attende che `button:has-text("INVIA IL TUO VOTO")` sia abilitato, click, attende `[data-section="success"]`;
+5. **validazione successo** — verifica visibilità della sezione successo e del titolo "sei forte!".
+
+### Gestione concorrenza
+
+- **Serial mode**: `test.describe.configure({ mode: 'serial' })` in `voting-flow.spec.ts` e `scroll-blocking.spec.ts` — i test che dipendono dallo stato della sessione (voto già espresso) vengono eseguiti in serie per evitare conflitti;
+- **Fully parallel**: il resto dei test è parallelo (`fullyParallel: true` in `playwright.config.ts`);
+- **Global setup condiviso**: `global-setup.ts` viene eseguito una volta prima di tutti i test;
+- **Idempotenza**: `seedTestData()` cancella i dati esistenti prima di reinserirli.
+
+---
+
+# Phase 3 — Observability & Performance
+
+## Lighthouse
+
+```bash
+npm run lighthouse
+```
+
+Esegue `lhci autorun` con la configurazione in `lighthouserc.json`.
+
+### Cosa controlla (6 URL)
+
+| URL | Performance | Accessibility | Best Practices | SEO |
+|---|---|---|---|---|
+| `/` | ≥ 0.80 | ≥ 0.85 | ≥ 0.90 | ≥ 0.90 |
+| `/coming-soon` | ≥ 0.80 | ≥ 0.85 | ≥ 0.90 | ≥ 0.90 |
+| `/admin/login` | ≥ 0.80 | ≥ 0.85 | ≥ 0.90 | ≥ 0.90 |
+| `/admin/dashboard/panoramica` | ≥ 0.80 | ≥ 0.85 | ≥ 0.90 | ≥ 0.90 |
+| `/admin/dashboard/aziende` | ≥ 0.80 | ≥ 0.85 | ≥ 0.90 | ≥ 0.90 |
+| `/admin/dashboard/voti` | ≥ 0.80 | ≥ 0.85 | ≥ 0.90 | ≥ 0.90 |
+
+### Note
+
+- È un controllo **locale periodico**, non parte della CI (6 URL × 1 run ≈ 6 min, oltre il budget CI).
+- Richiede Chrome/Chromium in PATH o variabile `CHROME_PATH`.
+- I report HTML vengono salvati in `lhci-reports/`.
+- La soglia accessibility è 0.85 (non 0.90) per via delle violazioni note della sidebar admin.
+
+## Bundle analysis
+
+```bash
+npm run analyze
+```
+
+Esegue `next build && next experimental-analyze -o`. Il report viene scritto in `.next/diagnostics/analyze/`.
+
+### Quando usarlo
+
+- dopo aver aggiunto dipendenze pesanti;
+- se le performance degradano;
+- prima di cambiamenti a import/chunking.
+
+**Nota**: il pacchetto `@next/bundle-analyzer` è installato ma non compatibile con Turbopack (Next.js 16). Il comando `analyze` usa il tool nativo Turbopack `next experimental-analyze`.
+
+## Sentry
+
+### Configurazione
+
+- **Client**: `sentry.client.config.ts` — init con `NEXT_PUBLIC_SENTRY_DSN`, sampling rate 0, replay disabilitato;
+- **Server**: `sentry.server.config.ts` — init con `SENTRY_DSN`, sampling rate 0;
+- **Boot hook**: `instrumentation.ts` — importa il server config in fase `register()` solo in runtime Node.js;
+- **Error boundary**: `src/app/global-error.tsx` — cattura eccezioni con `Sentry.captureException()`, renderizza `<NextError statusCode={500} />`;
+
+### Comportamento
+
+- **Senza DSN**: Sentry è completamente inerte. L'app builda e funziona senza alcuna variabile d'ambiente Sentry;
+- **Con DSN**: cattura errori runtime dal client e dal server. Source maps disabilitate, nessun tracing, nessun replay;
+- **Non influenza lo sviluppo locale**: tutti i sampling rate sono 0. Abilitare solo in produzione.
+
+---
+
+# Daily Workflow
+
+## Nuova feature
+
+1. Modifica il codice.
+2. Esegui il gate completo:
+
+```bash
+npm run ui:health
+```
+
+3. Risolvi eventuali errori (lint, typecheck, test falliti).
+4. Committa.
+5. Pusha.
+6. GitHub Actions verifica nuovamente in ambiente CI pulito.
+
+## Modifica componenti UI
+
+1. Esegui `npm run dev` e verifica manualmente nei browser supportati.
+2. Esegui `npm run test:e2e` per i test responsive e screenshot.
+3. Se gli screenshot cambiano intenzionalmente:
+
+```bash
+npx playwright test --update-snapshots
+```
+
+4. Esegui `npm run ui:health` prima del commit.
+
+## Aggiunta dipendenze
+
+1. Installa la dipendenza.
+2. Esegui `npm run analyze` per verificare l'impatto sul bundle.
+3. Esegui `npm run ui:health` per verificare che tutto funzioni.
+
+## Controllo performance
+
+```bash
+npm run lighthouse     # audit Lighthouse locale
+npm run analyze        # analisi bundle
+```
+
+---
+
+# Workflow con AI Agent
+
+## Using OpenCode / AI Coding Agents
+
+Quando un agente AI (es. OpenCode) modifica il progetto, deve seguire questo processo:
+
+1. **Analizzare la struttura esistente** — leggere i file pertinenti (test, helper, configurazioni) per capire le convenzioni in uso;
+2. **Fare modifiche minimali** — rispettare lo stile del codice esistente, non introdurre pattern nuovi senza necessità;
+3. **Eseguire il gate**:
+
+```bash
+npm run ui:health
+```
+
+4. **Analizzare i fallimenti** — se un test fallisce, determinare se è un falso positivo (es. violazione accessibilità già nota) o una regressione reale;
+5. **Solo dopo** aver verificato che il gate passa, creare il commit.
+
+Il sistema funziona come rete di sicurezza contro:
+- regressioni UI (screenshot, responsive);
+- errori TypeScript (typecheck strict);
+- problemi responsive (overflow, clipping);
+- problemi accessibilità (scansione WCAG);
+- rotture dei flussi utente (voting flow E2E);
+- degradi performance (Lighthouse locale).
+
+---
+
+# Commands Reference
+
+| Comando | Utilizzo |
+|---|---|
+| `npm run dev` | Avvia il server di sviluppo Next.js |
+| `npm run lint` | ESLint — zero-error policy |
+| `npm run typecheck` | TypeScript strict check (`tsc --noEmit`) |
+| `npm test` | Unit test Jest (14 test) |
+| `npm run test:e2e` | Playwright E2E (8 spec, 4 progetti) |
+| `npm run test:e2e:ui` | Playwright UI mode per debugging interattivo |
+| `npm run test:watch` | Jest in watch mode |
+| `npm run build` | Next.js production build |
+| `npm run ui:health` | Gate completo: lint → typecheck → test → E2E |
+| `npm run lighthouse` | Lighthouse CI locale (6 URL, 4 categorie) |
+| `npm run analyze` | Bundle analysis (Turbopack-native) |
+| `npm run visual:audit` | Visual Quality Audit — screenshot + metriche layout |
+
+---
+
+# CI/CD Explanation
+
+## Workflow GitHub Actions (`.github/workflows/ci.yml`)
+
+**Trigger**: push su `main`/`develop`, tutte le pull request.
+
+**Ordine di esecuzione**:
+
+```
+1. npm ci               (installazione deterministica)
+2. npm run lint         (1-2 secondi — economico)
+3. npm run typecheck    (10-20 secondi — economico)
+4. npm test             (5-10 secondi — economico)
+5. npm run build        (1-2 minuti — costoso)
+6. npm run test:e2e     (3-5 minuti — costoso)
+7. ✓ success
+```
+
+### Perché questo ordine
+
+1. **Controlli economici prima** — lint, typecheck e unit test sono veloci e diagnosticano la maggior parte degli errori. Fallire presto evita di sprecare risorse su build ed E2E;
+2. **Build al centro** — la build Next.js verifica che il codice compili correttamente. È un prerequisito per i test E2E che usano il server di produzione (`npm run start`);
+3. **E2E per ultimo** — è lo step più costoso (avvia 4 progetti browser × test paralleli). Viene eseguito solo se tutto il resto è passato.
+
+### Playwright browser caching
+
+I binari Playwright sono cachati con `actions/cache@v4` (chiave basata su `package-lock.json`). L'installazione (`npx playwright install --with-deps`) avviene solo in caso di cache miss.
+
+### Variabili d'ambiente richieste nei Secrets
+
+| Secret | Usato per |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Client Supabase |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Client Supabase |
+| `SUPABASE_SERVICE_ROLE_KEY` | Seed dati test E2E |
+
+---
+
+# Philosophy
+
+Con questo sistema il progetto passa da:
+
+**"modifiche manuali senza controllo"**
+
+a:
+
+**"sviluppo assistito con validazione automatica continua"**.
+
+L'obiettivo non è avere più test possibile, ma avere **feedback rapido e affidabile** su ciò che conta:
+- il codice compila e rispetta le regole (lint + typecheck);
+- le funzionalità esistenti non si rompono (test unitari + E2E);
+- l'interfaccia rimane utilizzabile su tutti i dispositivi (responsive);
+- l'accessibilità non peggiora inosservata (WCAG scans);
+- le performance sono sotto controllo (Lighthouse + bundle analysis).
+
+Ogni fase è stata costruita per risolvere un problema reale emerso durante lo sviluppo, non per accumulare strumenti. Il risultato è una pipeline che dà confidenza a sviluppatori umani e agenti AI di poter modificare il codice senza paura dirompere qualcosa.
+
+---
+
+# Riferimenti
+
+| Documento | Contenuto |
+|---|---|
+| `docs/CI.md` | Dettagli CI, troubleshooting, secrets |
+| `docs/frontend-quality.md` | Dettagli responsive, a11y, snapshot, viewport |
+| `tests/e2e/accessibility.spec.ts` | Violazioni WCAG permesse per route |
+| `tests/e2e/scroll-blocking-test-plan.md` | Test plan scroll blocking bug fix |
+| `docs/visual-audit.md` | Visual Quality Audit — workflow e formato report |
+| `lighthouserc.json` | Configurazione Lighthouse |
+| `.env.example` | Variabili d'ambiente richieste e opzionali |

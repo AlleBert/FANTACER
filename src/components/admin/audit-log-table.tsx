@@ -27,7 +27,7 @@ interface AuditLog {
   event_type: string
   fingerprint: string
   ip_address: string
-  metadata: any
+  metadata: Record<string, unknown>
 }
 
 const columnHelper = createColumnHelper<AuditLog>()
@@ -99,7 +99,14 @@ const columns = [
   }),
 ]
 
-export function AuditLogTable({ data, pagination, onPageChange, onSearch }: any) {
+interface AuditLogTableProps {
+  data: AuditLog[]
+  pagination: { page: number; limit: number; total: number; pages: number }
+  onPageChange: (page: number) => void
+  onSearch: (search: string) => void
+}
+
+export function AuditLogTable({ data, pagination, onPageChange, onSearch }: AuditLogTableProps) {
   const [sorting, setSorting] = useState<SortingState>([])
 
   const table = useReactTable({

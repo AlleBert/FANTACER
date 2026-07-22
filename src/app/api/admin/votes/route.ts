@@ -11,98 +11,65 @@ export async function GET(request: NextRequest) {
 
     const offset = (page - 1) * limit
 
-    // Get companies for join
+    // Get companies for name resolution
     const { data: companies } = await supabase.from('companies').select('id, name')
     const companyMap = new Map((companies || []).map(c => [c.id, c.name]))
 
-    let query = supabase
-      .from('votes')
-      .select('id, company_id, fingerprint, country, user_agent, created_at, comment, adjective, slider_innovation, slider_sales, slider_wow')
+    const query = supabase
+      .from('vote_sessions')
+      .select('id, fingerprint, ip_hash, user_agent, country, company1_id, company2_id, company3_id, pallet1, pallet2, pallet3, created_at', { count: 'exact' })
+
+    // Search filtering is done in-memory after fetch for simplicity
+
+    const { data: sessions, error, count } = await query
       .order('created_at', { ascending: false })
-
-    if (search) {
-      // Filter by company name (requires join, so we fetch more and filter)
-      const matchingCompanyIds = (companies || [])
-        .filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
-        .map(c => c.id)
-      
-      if (matchingCompanyIds.length > 0) {
-        query = query.in('company_id', matchingCompanyIds)
-      }
-    }
-
-    const { data: votes, error } = await query.range(offset, offset + limit - 1)
+      .range(offset, offset + limit - 1)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    // Helper to parse user-agent into readable device info
     const parseDevice = (ua: string | null): string => {
       if (!ua) return '-'
       ua = ua.toLowerCase()
-      
-      // Detect device type and browser
-      if (ua.includes('iphone') || ua.includes('ipad') || ua.includes('ipod')) {
-        const device = ua.includes('iphone') ? 'iPhone' : ua.includes('ipad') ? 'iPad' : 'iPod'
-        const version = ua.match(/os (\d+)_(\d+)/)
-        const ver = version ? `${version[1]}.${version[2]}` : ''
-        const safari = ua.includes('version/') ? ua.match(/version\/(\d+\.\d+)/)?.[1] : ''
-        return safari ? `iOS ${ver} (Safari ${safari})` : `iOS ${ver}`
-      }
-      
-      if (ua.includes('android')) {
-        const version = ua.match(/android (\d+\.\d+)/)
-        const ver = version ? version[1] : ''
-        const mobile = ua.includes('mobile') ? ' Mobile' : ''
-        return `Android${ver}${mobile}`
-      }
-      
-      if (ua.includes('macintosh')) {
-        const safari = ua.includes('safari') ? ' (Safari)' : ''
-        return `macOS${safari}`
-      }
-      
-      if (ua.includes('windows')) {
-        return 'Windows'
-      }
-      
-      if (ua.includes('linux')) {
-        return 'Linux'
-      }
-      
-      // Fallback: first 2 parts
-      const parts = ua.split(' ').slice(0, 2).join(' ')
-      return parts.length > 30 ? parts.substring(0, 30) + '...' : parts
+      if (ua.includes('iphone') || ua.includes('ipad') || ua.includes('ipod')) return 'iOS'
+      if (ua.includes('android')) return 'Android'
+      if (ua.includes('macintosh')) return 'macOS'
+      if (ua.includes('windows')) return 'Windows'
+      if (ua.includes('linux')) return 'Linux'
+      return ua.substring(0, 20)
     }
 
-    const result = (votes || []).map(v => ({
+    let result = (sessions || []).map(v => ({
       id: v.id,
       timestamp: v.created_at,
-      company: companyMap.get(v.company_id) || 'Unknown',
       fingerprint: v.fingerprint ? v.fingerprint.slice(0, 8) + '...' : '-',
       country: v.country || '-',
       device: parseDevice(v.user_agent),
-      comment: v.comment || '-',
-      adjective: v.adjective || '-',
-      slider_innovation: v.slider_innovation,
-      slider_sales: v.slider_sales,
-      slider_wow: v.slider_wow,
+      pallets: [
+        { company: companyMap.get(v.company1_id) || v.company1_id.substring(0, 8), pallet: v.pallet1 },
+        { company: companyMap.get(v.company2_id) || v.company2_id.substring(0, 8), pallet: v.pallet2 },
+        { company: companyMap.get(v.company3_id) || v.company3_id.substring(0, 8), pallet: v.pallet3 },
+      ],
     }))
 
-    // Get total count
-    const { count } = await supabase
-      .from('votes')
-      .select('*', { count: 'exact', head: true })
+    if (search) {
+      const searchLower = search.toLowerCase()
+      result = result.filter(v =>
+        v.pallets.some(p => p.company.toLowerCase().includes(searchLower))
+      )
+    }
+
+    const total = search ? result.length : (count || 0)
 
     return NextResponse.json({
       data: result,
       pagination: {
         page,
         limit,
-        total: count || 0,
-        pages: Math.ceil((count || 0) / limit)
+        total,
+        pages: Math.ceil(total / limit)
       }
     })
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

@@ -12,17 +12,18 @@ interface GDPRBannerProps {
 }
 
 export function GDPRBanner({ onAccept }: GDPRBannerProps) {
-  const [showBanner, setShowBanner] = useState<boolean | null>(null)
+  const [showBanner, setShowBanner] = useState<boolean | null>(() => {
+    if (typeof window !== 'undefined' && hasConsented()) return false
+    return null
+  })
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    
     if (hasConsented()) {
       const analytics = getAnalyticsConsent()
       onAccept(analytics)
-      setShowBanner(false)
     } else {
-      setShowBanner(true)
+      queueMicrotask(() => setShowBanner(true))
     }
   }, [onAccept])
 

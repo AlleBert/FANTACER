@@ -29,16 +29,16 @@ export default function AziendePage() {
 
   return (
     <div className="w-full mx-auto p-4 md:p-6 space-y-6">
-      <header className="flex items-center justify-between pl-10 md:pl-0">
+      <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Aziende</h1>
-          <p className="text-sm text-muted-foreground">Classifica aziende e voti</p>
+          <h1 className="text-[clamp(1.25rem,4vw,2rem)] font-bold text-foreground tracking-tight">Aziende</h1>
+          <p className="text-[clamp(0.75rem,2.5vw,1rem)] text-muted-foreground">Classifica aziende e voti</p>
         </div>
       </header>
 
       <Card className="border-border">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg flex items-center gap-2">
+          <CardTitle className="text-[clamp(1rem,3vw,1.25rem)] flex items-center gap-2">
             <Users className="h-5 w-5" />
             Classifica Aziende
           </CardTitle>
@@ -51,11 +51,11 @@ export default function AziendePage() {
           ) : (
             <>
               {/* Mobile: card list */}
-              <div className="md:hidden">
+              <div className="lg:hidden">
                 <CompanyCardList data={companies} />
               </div>
               {/* Desktop: full table */}
-              <div className="hidden md:block">
+              <div className="hidden lg:block">
                 <CompanyTable data={companies} />
               </div>
             </>

@@ -133,7 +133,22 @@ La palette è volutamente satura e senza mezze misure. Ogni colore è usato in b
 
 **The Lowercase Rule.** Titoli sempre lowercase (salvo CTA e badge). Il lowercase è più informale, più veloce da leggere, più "gioco".
 
-## 4. Elevation
+## 4. Layout & Viewport Constraints
+
+**App-Like UI.** Ogni sezione è un viewport full-screen bloccato. L'utente non deve mai scrollare — né macro né micro — per vedere il contenuto. Tutto si adatta dinamicamente al viewport del dispositivo.
+
+### Named Rules
+
+**The Viewport Lock Rule.** Ogni contenitore di sezione usa:
+- `height: 100dvh` (o `h-[100dvh]`) per ancoraggio al dynamic viewport
+- Blocco overflow per disabilitare fisicamente lo scroll
+- Layout Flexbox per distribuire gli elementi nello spazio disponibile (header in alto, contenuto al centro, CTA in basso)
+
+**The Fluid Scale Rule.** Nessuna altezza fissa in pixel su immagini o componenti che potrebbe far esondare il contenitore. Tutto scala proporzionalmente con `max-h`, `object-contain`, `flex-shrink`. La tipografia usa unità fluide (`clamp()`) per restringersi su schermi piccoli senza allungare il contenitore.
+
+**The Bottom CTA Rule.** Pulsanti di navigazione ("avanti", "inizia", "gioca") sempre ancorati alla parte inferiore del viewport, visibili e cliccabili su ogni aspect ratio (da smartphone 19.5:9 a tablet 4:3).
+
+## 5. Elevation
 
 Ombre dure alla neo-brutalista. Zero ambienza. Le ombre sono strutturali: dicono "questo elemento è sopra quello" senza sfumature. Pensate come un timbro, non come un'illuminazione.
 
@@ -147,7 +162,7 @@ Ombre dure alla neo-brutalista. Zero ambienza. Le ombre sono strutturali: dicono
 
 **The Hard Shadow Rule.** Mai usare `blur`, `spread`, o `rgba(0,0,0,X)` per soft shadow. Le ombre sono esagonali nette con `#000` solido. Zero trasparenza.
 
-## 5. Components
+## 6. Components
 
 Tutti i componenti condividono la stessa grammatica: bordo nero marcato, ombra neo-brutalista, angoli arrotondati, padding generoso. Il risultato è tattile, giocoso, immediato.
 
@@ -192,7 +207,7 @@ Tutti i componenti condividono la stessa grammatica: bordo nero marcato, ombra n
 - **Stile:** Pill, border 2px black, padding 1rem 2rem. Selected: sfondo `#fccb27`. Unselected: sfondo bianco.
 - **Hover:** Sfondo `#c2e1ff`.
 
-## 6. Do's and Don'ts
+## 7. Do's and Don'ts
 
 ### Do:
 

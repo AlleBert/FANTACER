@@ -1,49 +1,33 @@
-import { createClient } from '@supabase/supabase-js';
+import { createAdminClient } from '@/lib/supabase/admin'
 
-let supabase: ReturnType<typeof createClient> | null = null;
-
-const getSupabase = () => {
-  if (!supabase) {
-    supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-  }
-  return supabase;
-};
-
-export interface VoteSubmission {
-  companyId: string;
-  fingerprint: string;
-  ip: string;
-  userAgent: string;
-  country?: string;
-  comment: string;
-  adjective: 'eccezionale' | 'migliore' | 'nella media' | 'peggiore';
-  sliders: {
-    innovation: number;
-    sales: number;
-    wow: number;
-  };
+interface SubmitVoteParams {
+  fingerprint: string
+  ip: string
+  userAgent: string
+  country: string
+  company1Id: string
+  company2Id: string
+  company3Id: string
 }
 
-export async function submitVote(vote: VoteSubmission): Promise<{ success: boolean; error?: string }> {
-  const client = getSupabase();
-  const { data, error } = await client.rpc('submit_vote', {
-    company_id_param: vote.companyId,
-    fingerprint_param: vote.fingerprint,
-    ip_param: vote.ip,
-    user_agent_param: vote.userAgent,
-    country_param: vote.country || 'IT',
-    comment_param: vote.comment,
-    adjective_param: vote.adjective,
-    slider_innovation_param: vote.sliders.innovation,
-    slider_sales_param: vote.sliders.sales,
-    slider_wow_param: vote.sliders.wow,
-  } as any);
+export async function submitVote(params: SubmitVoteParams): Promise<{ success: boolean; error?: string }> {
+  const supabase = createAdminClient()
+
+  const { data, error } = await supabase.rpc('submit_vote', {
+    fingerprint_param: params.fingerprint,
+    ip_param: params.ip,
+    user_agent_param: params.userAgent,
+    country_param: params.country,
+    company1_id_param: params.company1Id,
+    company2_id_param: params.company2Id,
+    company3_id_param: params.company3Id,
+  })
 
   if (error) {
-    return { success: false, error: error.message };
+    console.error('submit_vote RPC error:', error)
+    return { success: false, error: error.message }
   }
-  return data as { success: boolean; error?: string };
+
+  const result = data as { success: boolean; error?: string }
+  return result
 }

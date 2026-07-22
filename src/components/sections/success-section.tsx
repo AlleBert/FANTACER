@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import Image from 'next/image'
 import { useVote } from '@/lib/VoteContext'
 import confetti from 'canvas-confetti'
+import { SponsorCards } from '@/components/sponsor/sponsor-cards'
 
 function IphoneStoryMockup({ companyName }: { companyName?: string }) {
   return (
@@ -68,43 +69,35 @@ function IphoneStoryMockup({ companyName }: { companyName?: string }) {
 }
 
 export function SuccessSection() {
-  const { selectedCompany, resetVote } = useVote();
+  const { selectedCompanies } = useVote();
 
   useEffect(() => {
-    const duration = 4000;
-    const animationEnd = Date.now() + duration;
-    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
+    const colors = ['#fccb27', '#8000ff', '#ff803b', '#4B00AB', '#ffffff'];
 
-    const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
-
-    const interval: NodeJS.Timeout = setInterval(() => {
-      const timeLeft = animationEnd - Date.now();
-      if (timeLeft <= 0) {
-        clearInterval(interval);
-        // Confetti complete - user stays on this page
-        return;
-      }
-      const particleCount = 50 * (timeLeft / duration);
+    const timer = setTimeout(() => {
       confetti({
-        ...defaults,
-        particleCount,
-        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
-        colors: ['#fccb27', '#8000ff', '#ff803b', '#4B00AB', '#ffffff'],
+        particleCount: 150,
+        spread: 180,
+        origin: { y: 0.6 },
+        colors,
       });
-      confetti({
-        ...defaults,
-        particleCount,
-        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
-        colors: ['#fccb27', '#8000ff', '#ff803b', '#4B00AB', '#ffffff'],
-      });
-    }, 250);
 
-    return () => clearInterval(interval);
+      setTimeout(() => {
+        confetti({
+          particleCount: 100,
+          spread: 120,
+          origin: { y: 0.5 },
+          colors,
+        });
+      }, 1000);
+    }, 600);
+
+    return () => clearTimeout(timer);
   }, []);
 
   return (
-    <section data-section="success" className="snap-start relative w-full overflow-hidden bg-[linear-gradient(to_bottom,#ffffff_0%,#ffffff_20%,#4B00AB_100%)] min-h-[100dvh]">
-      <div className="safe-shell relative z-10 flex flex-col items-center justify-center max-w-[1200px] mx-auto gap-16 py-12 lg:flex-row lg:justify-between lg:gap-20 lg:py-20">
+    <section data-section="success" className="snap-start relative w-full h-[100dvh] bg-gradient-to-b from-[#FFFFFF] from-0% via-[#FF2FB2] via-45% to-[#FF8A26] to-75% flex flex-col justify-between overflow-hidden py-4">
+      <div className="safe-shell relative z-10 flex flex-col items-center justify-center max-w-[1200px] mx-auto gap-16 py-12 lg:flex-row lg:justify-between lg:gap-20 lg:py-20 flex-1 min-h-0">
         
           {/* Left Column: Text & Logos */}
           <div className="relative flex w-full flex-col items-center text-center lg:w-[55%] lg:items-start lg:text-left">
@@ -127,13 +120,7 @@ export function SuccessSection() {
             </p>
           </div>
         
-          {/* Main Logos */}
-          <div className="flex flex-row items-center justify-center gap-6 md:gap-10 lg:justify-start">
-            <div className="relative flex h-28 w-28 items-center justify-center rounded-2xl border-[3px] border-black bg-white shadow-[4px_4px_0_#000] rotate-[-3deg] transition-all hover:-translate-y-2 hover:rotate-[-6deg] sm:h-24 sm:w-24 md:h-32 md:w-32 md:shadow-[6px_6px_0_#000] lg:h-36 lg:w-36">
-            </div>
-            <div className="relative flex h-28 w-28 items-center justify-center rounded-2xl border-[3px] border-black bg-white shadow-[4px_4px_0_#000] rotate-[3deg] transition-all hover:-translate-y-2 hover:rotate-[6deg] sm:h-24 sm:w-24 md:h-32 md:w-32 md:shadow-[6px_6px_0_#000] lg:h-36 lg:w-36">
-            </div>
-          </div>
+          <SponsorCards />
         </div>
 
           {/* Right Column: Mobile Story Mockup */}
@@ -158,7 +145,7 @@ export function SuccessSection() {
               />
             </div>
             
-            <IphoneStoryMockup companyName={selectedCompany?.name} />
+            <IphoneStoryMockup companyName={selectedCompanies[0]?.company.name} />
           </div>
       </div>
     </section>

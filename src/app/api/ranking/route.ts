@@ -7,55 +7,43 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient()
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '10')
-    const includeTrend = searchParams.get('trend') === 'true'
     const activeBatch = await getActiveBatch()
 
-    // Get vote counts by company
-    const { data: votes, error } = await supabase
-      .from('votes')
-      .select('company_id, created_at')
-      .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+    const { data: sessions } = await supabase
+      .from('vote_sessions')
+      .select('company1_id, company2_id, company3_id, pallet1, pallet2, pallet3, created_at')
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+    const palletCounts = new Map<string, number>()
+
+    for (const s of sessions || []) {
+      const entries = [
+        { id: s.company1_id, pallet: s.pallet1 },
+        { id: s.company2_id, pallet: s.pallet2 },
+        { id: s.company3_id, pallet: s.pallet3 },
+      ]
+      for (const e of entries) {
+        palletCounts.set(e.id, (palletCounts.get(e.id) || 0) + e.pallet)
+      }
     }
 
-    // Count votes per company
-    const voteCounts = new Map<string, { current: number; previous: number }>()
-    
-    for (const vote of votes || []) {
-      const companyId = vote.company_id
-      const isRecent = new Date(vote.created_at) > new Date(Date.now() - 24 * 60 * 60 * 1000)
-      
-      const current = voteCounts.get(companyId) || { current: 0, previous: 0 }
-      current.current += isRecent ? 1 : 0
-      current.previous += isRecent ? 0 : 1
-      voteCounts.set(companyId, current)
-    }
-
-    // Get top companies (only from active batch)
     const { data: companies } = await supabase
       .from('companies')
       .select('id, name, category, image_url')
       .eq('batch', activeBatch)
 
-    // Merge with vote counts
     const ranking = (companies || [])
       .map(c => ({
         id: c.id,
         name: c.name,
         category: c.category,
         image_url: c.image_url,
-        votes: voteCounts.get(c.id)?.current || 0,
-        trend: includeTrend 
-          ? ((voteCounts.get(c.id)?.current || 0) - (voteCounts.get(c.id)?.previous || 0))
-          : undefined
+        votes: palletCounts.get(c.id) || 0,
       }))
       .sort((a, b) => b.votes - a.votes)
       .slice(0, limit)
 
     return NextResponse.json({ ranking })
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

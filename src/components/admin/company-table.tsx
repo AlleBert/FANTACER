@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import {
   useReactTable,
   getCoreRowModel,
@@ -59,7 +59,7 @@ const columns = [
         variant="ghost"
         size="sm"
         onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-        className="-ml-4 text-foreground hover:bg-secondary"
+        className="-ml-4 text-foreground hover:bg-secondary h-9"
       >
         Voti
         <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -106,13 +106,13 @@ export function CompanyTable({ data }: { data: Company[] }) {
             placeholder="Cerca azienda..."
             value={globalFilter}
             onChange={e => setGlobalFilter(e.target.value)}
-            className="pl-9 bg-background border-border text-foreground ring-offset-background"
+            className="pl-9 bg-background border-border text-foreground ring-offset-background h-10"
           />
         </div>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left">
+        <table className="w-full text-[clamp(0.75rem,2vw,0.875rem)] text-left">
           <thead>
             {table.getHeaderGroups().map(headerGroup => (
               <tr key={headerGroup.id} className="border-b border-border bg-secondary/20">
@@ -139,7 +139,7 @@ export function CompanyTable({ data }: { data: Company[] }) {
       </div>
 
       <div className="flex items-center justify-between px-6 py-4 bg-secondary/10 border-t border-border">
-        <div className="text-xs text-muted-foreground">
+        <div className="text-[clamp(0.65rem,2vw,0.8rem)] text-muted-foreground">
           Pagina {table.getState().pagination.pageIndex + 1} di {table.getPageCount()}
         </div>
         <div className="flex gap-2">
@@ -148,7 +148,7 @@ export function CompanyTable({ data }: { data: Company[] }) {
             size="sm"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
-            className="border-border text-foreground hover:bg-secondary h-8"
+            className="border-border text-foreground hover:bg-secondary h-9"
           >
             Precedente
           </Button>
@@ -157,7 +157,7 @@ export function CompanyTable({ data }: { data: Company[] }) {
             size="sm"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
-            className="border-border text-foreground hover:bg-secondary h-8"
+            className="border-border text-foreground hover:bg-secondary h-9"
           >
             Successivo
           </Button>

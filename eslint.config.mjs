@@ -12,7 +12,16 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "backup-src/**",
+    // Third-party tooling
+    ".opencode/**",
   ]),
+  {
+    rules: {
+      "react-hooks/incompatible-library": "off",
+      "@next/next/no-img-element": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

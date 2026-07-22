@@ -27,12 +27,16 @@ export async function GET() {
   const voteCountByCompany = new Map<string, number>()
 
   if (allCompanyIds.length > 0) {
-    const { data: voteCounts } = await supabase
-      .from('votes')
-      .select('company_id')
-      .in('company_id', allCompanyIds)
-    for (const v of voteCounts || []) {
-      voteCountByCompany.set(v.company_id, (voteCountByCompany.get(v.company_id) || 0) + 1)
+    const { data: sessions } = await supabase
+      .from('vote_sessions')
+      .select('company1_id, company2_id, company3_id')
+
+    for (const s of sessions || []) {
+      for (const cId of [s.company1_id, s.company2_id, s.company3_id]) {
+        if (allCompanyIds.includes(cId)) {
+          voteCountByCompany.set(cId, (voteCountByCompany.get(cId) || 0) + 1)
+        }
+      }
     }
   }
 
@@ -70,7 +74,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ message: 'Batch updated', activeBatch })
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

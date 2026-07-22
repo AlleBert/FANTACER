@@ -45,11 +45,11 @@ export async function GET(request: NextRequest) {
         .limit(30)
 
       const { count: totalVotes } = await supabase
-        .from('votes')
+        .from('vote_sessions')
         .select('*', { count: 'exact', head: true })
 
       const { data: voterData } = await supabase
-        .from('votes')
+        .from('vote_sessions')
         .select('fingerprint')
       
       const uniqueVoters = new Set((voterData || []).map(v => v.fingerprint)).size
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
 
       const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString()
       const { count: votantiOra } = await supabase
-        .from('votes')
+        .from('vote_sessions')
         .select('*', { count: 'exact', head: true })
         .gte('created_at', fifteenMinsAgo)
 
@@ -104,23 +104,27 @@ export async function GET(request: NextRequest) {
     }
 
     if (type === 'export') {
-      const { data } = await supabase
-        .from('votes')
-        .select('company_id, fingerprint, created_at, country, user_agent')
+      const { data: exportData } = await supabase
+        .from('vote_sessions')
+        .select('fingerprint, created_at, country, user_agent, company1_id, company2_id, company3_id, pallet1, pallet2, pallet3')
         .order('created_at', { ascending: false })
 
       const { data: companies } = await supabase.from('companies').select('id, name')
       const companyMap = new Map((companies || []).map(c => [c.id, c.name]))
 
       const csv = [
-        ['company_id', 'company_name', 'fingerprint', 'timestamp', 'country', 'user_agent'].join(','),
-        ...(data || []).map(v => [
-          v.company_id,
-          companyMap.get(v.company_id) || '',
+        ['fingerprint', 'timestamp', 'country', 'user_agent', 'company1', 'pallet1', 'company2', 'pallet2', 'company3', 'pallet3'].join(','),
+        ...(exportData || []).map(v => [
           v.fingerprint,
           v.created_at,
           v.country || '',
-          (v.user_agent || '').replace(/,/g, ';')
+          (v.user_agent || '').replace(/,/g, ';'),
+          companyMap.get(v.company1_id) || v.company1_id,
+          v.pallet1,
+          companyMap.get(v.company2_id) || v.company2_id,
+          v.pallet2,
+          companyMap.get(v.company3_id) || v.company3_id,
+          v.pallet3,
         ].join(','))
       ].join('\n')
 
