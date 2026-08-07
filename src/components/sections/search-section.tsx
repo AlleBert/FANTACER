@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useDebouncedCallback } from 'use-debounce';
 import { Search, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { getCombinedFingerprint } from '@/lib/fingerprint';
+import { getVoteSecurity } from '@/lib/vote-security';
 import { TurnstileOverlay } from '@/components/voting/turnstile-overlay';
 import { MessageOverlay } from '@/components/voting/message-overlay';
 
@@ -105,7 +105,7 @@ export function SearchSection() {
     setShowTurnstile(false);
     setLoading(true);
     try {
-      const fingerprint = await getCombinedFingerprint();
+      const security = await getVoteSecurity(token);
       const res = await fetch('/api/vota', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -113,8 +113,9 @@ export function SearchSection() {
           company1Id: selectedCompanies[0].company.id,
           company2Id: selectedCompanies[1].company.id,
           company3Id: selectedCompanies[2].company.id,
-          turnstile_token: token,
-          fingerprint,
+          turnstile_token: security.turnstile_token,
+          botd: security.botd,
+          visitorId: security.visitorId,
         }),
       });
       const data = await res.json();
