@@ -3,22 +3,6 @@ import { submitVote } from '@/lib/supabase/vote-api'
 import { getActiveBatch } from '@/lib/supabase/batch'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-const ALLOWED_COUNTRIES = ['IT', 'DE', 'FR', 'ES', 'PT', 'AT', 'BE', 'NL', 'SI', 'HR', 'MT', 'CY', 'GR', 'GB', 'IE', 'PL', 'CZ', 'HU', 'SK', 'RO', 'BG', 'SE', 'FI', 'DK', 'NO']
-
-async function checkRateLimit(ip: string): Promise<boolean> {
-  const supabase = createAdminClient()
-  const { data, error } = await supabase.rpc('check_rate_limit', {
-    ip_param: ip,
-    window_ms: 3600000,
-    max_requests: 100,
-  })
-  if (error) {
-    console.error('Rate limiter error:', error)
-    return true
-  }
-  return data as boolean
-}
-
 async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
   const secret = process.env.TURNSTILE_SECRET_KEY?.trim()
   if (!secret) return true
@@ -39,19 +23,10 @@ export async function POST(request: NextRequest) {
       || request.headers.get('x-real-ip')
       || 'unknown'
 
-    if (!await checkRateLimit(ip)) {
-      return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
-    }
-
-    const country = request.headers.get('cf-ipcountry') || 'IT'
-    if (!ALLOWED_COUNTRIES.includes(country)) {
-      return NextResponse.json({ error: 'Access denied from your region' }, { status: 403 })
-    }
-
     const body = await request.json()
-    const { company1Id, company2Id, company3Id, fingerprint, turnstile_token } = body
+    const { company1Id, company2Id, company3Id, turnstile_token, botd, visitorId } = body
 
-    if (!company1Id || !company2Id || !company3Id || !fingerprint) {
+    if (!company1Id || !company2Id || !company3Id || !visitorId) {
       return NextResponse.json({ error: 'Campi obbligatori mancanti' }, { status: 400 })
     }
 
@@ -86,9 +61,10 @@ export async function POST(request: NextRequest) {
     }
 
     const userAgent = request.headers.get('user-agent') || ''
+    const country = request.headers.get('cf-ipcountry') || 'IT'
 
     const { success, error: submitError } = await submitVote({
-      fingerprint,
+      fingerprint: visitorId,
       ip,
       userAgent,
       country,
