@@ -12,7 +12,7 @@ import { LiveRankingSection } from '@/components/sections/live-ranking-section'
 import { SuccessSection } from '@/components/sections/success-section'
 import { ContactSection } from '@/components/sections/contact-section'
 import { VoteProvider, useVote } from '@/lib/VoteContext'
-import { getOrCreateDeviceId } from '@/lib/fingerprint'
+import { getOrCreateDeviceId } from '@/lib/device'
 
 function PageContent() {
   const { gameUnlock } = useVote();
