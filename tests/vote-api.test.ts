@@ -17,6 +17,7 @@ describe('submitVote', () => {
       company1Id: 'c1',
       company2Id: 'c2',
       company3Id: 'c3',
+      botd: '{"bot":true}',
     });
     expect(mockRpc).toHaveBeenCalledWith('submit_vote', {
       fingerprint_param: 'fp123',
@@ -26,6 +27,7 @@ describe('submitVote', () => {
       company1_id_param: 'c1',
       company2_id_param: 'c2',
       company3_id_param: 'c3',
+      botd_param: '{"bot":true}',
     });
     expect(result).toEqual({ success: true });
   });
@@ -40,6 +42,7 @@ describe('submitVote', () => {
       company1Id: 'c1',
       company2Id: 'c2',
       company3Id: 'c3',
+      botd: '{"bot":true}',
     });
     expect(result).toEqual({ success: false, error: 'DB error' });
   });

@@ -8,6 +8,7 @@ interface SubmitVoteParams {
   company1Id: string
   company2Id: string
   company3Id: string
+  botd: string
 }
 
 export async function submitVote(params: SubmitVoteParams): Promise<{ success: boolean; error?: string }> {
@@ -21,6 +22,7 @@ export async function submitVote(params: SubmitVoteParams): Promise<{ success: b
     company1_id_param: params.company1Id,
     company2_id_param: params.company2Id,
     company3_id_param: params.company3Id,
+    botd_param: params.botd,
   })
 
   if (error) {
