@@ -10,14 +10,17 @@ export interface VoteSecurity {
 }
 
 export async function getVoteSecurity(token: string): Promise<VoteSecurity> {
-  const [botResult, fpResult] = await Promise.all([
-    loadBotd().then((botd) => botd.detect()),
+  const [botd, fpResult] = await Promise.all([
+    loadBotd()
+      .then((botd) => botd.detect())
+      .then((result) => JSON.stringify(result))
+      .catch(() => ''),
     loadFingerprintJS().then((fp) => fp.get()),
   ])
 
   return {
     turnstile_token: token,
-    botd: JSON.stringify(botResult),
+    botd,
     visitorId: fpResult.visitorId,
   }
 }

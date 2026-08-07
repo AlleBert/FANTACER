@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       || 'unknown'
 
     const body = await request.json()
-    const { company1Id, company2Id, company3Id, turnstile_token, botd, visitorId } = body
+    const { company1Id, company2Id, company3Id, turnstile_token, visitorId } = body
 
     if (!company1Id || !company2Id || !company3Id || !visitorId) {
       return NextResponse.json({ error: 'Campi obbligatori mancanti' }, { status: 400 })
