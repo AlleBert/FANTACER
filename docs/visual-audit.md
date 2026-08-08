@@ -17,10 +17,12 @@ Sono disponibili 4 audit complementari, ciascuno con il proprio focus:
 
 | Comando | Spec | Copertura | Report |
 |---|---|---|---|
-| `npm run visual:audit` | `tests/e2e/visual-audit.spec.ts` | 9 route × 3 viewport | `tests/e2e/visual-audit/report.json` |
-| `npm run visual:audit:admin` | `tests/e2e/visual-audit-admin-only.spec.ts` | 6 route admin × 3 viewport (+ bottom-nav) | `tests/e2e/visual-audit/report-admin.json` |
-| `npm run visual:audit:homepage` | `tests/e2e/visual-audit-homepage.spec.ts` | homepage × 6 viewport + sub-elementi + score | `tests/e2e/visual-audit-homepage/report.json` |
+| `npm run visual:audit` | `tests/e2e/visual-audit.spec.ts` | 9 route × 3 viewport (chromium) | `tests/e2e/visual-audit/report.json` |
+| `npm run visual:audit:admin` | `tests/e2e/visual-audit-admin-only.spec.ts` | 6 route admin × 3 viewport (chromium) | `tests/e2e/visual-audit/report-admin.json` |
+| `npm run visual:audit:homepage` | `tests/e2e/visual-audit-homepage.spec.ts` | homepage × 6 viewport + sub-elementi + score (chromium) | `tests/e2e/visual-audit-homepage/report.json` |
 | `npm run visual:audit:ios` | `tests/e2e/visual-audit-homepage-ios.spec.ts` | homepage × 7 dispositivi iOS (WebKit) | `tests/e2e/visual-audit-homepage-ios/report-{device}.json` |
+
+Ogni comando è già **scoped al progetto corretto** (vedi "Limitazioni"): i primi tre girano solo su `chromium`, l'ultimo solo sui 7 progetti WebKit iOS. Non eseguire questi spec senza filtro di progetto: verrebbero raccolti su tutti gli 11 progetti e gli output (non scoped per progetto) si sovrascriverebbero a vicenda in modo non deterministico.
 
 ---
 
@@ -204,6 +206,7 @@ Serve esclusivamente come **strumento decisionale** per identificare aree di mig
 - La pagina admin/login viene reindirizzata automaticamente in sviluppo (dev bypass). Se serve l'analisi della pagina di login in produzione, eseguire il comando senza bypass
 - Le metriche di tipografia e layout sono raccolte via `page.evaluate()` e dipendono dal rendering client-side
 - L'audit iOS richiede `--workers=1` per evitare disconnessioni WebKit (già impostato nello script npm)
+- **Scoping progetto**: `visual:audit`, `visual:audit:admin` e `visual:audit:homepage` ruotano su `chromium` (l'audit forza i viewport via `test.use`, quindi un singolo motore basta; girando su altri progetti i device context mobile/iOS resterebbero attivi su viewport forzati, e gli output senza scoping progetto si sovrascriverebbero). `visual:audit:ios` gira solo sui 7 progetti `ios-*` WebKit via `--project`. Non rimuovere i filtri `--project` dagli script npm
 - Gli artefatti generati (screenshot e report) sono gitignored; gli spec e la documentazione sono versionati
 
 ## Esempio di revisione tramite LLM
