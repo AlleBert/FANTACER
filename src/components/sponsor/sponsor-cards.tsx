@@ -55,50 +55,30 @@ export function SponsorCards({ className, compact }: { className?: string; compa
 
   if (!sponsors || sponsors.length === 0) return null;
 
-  if (compact) {
-    return (
-      <div className={className}>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 w-full max-w-4xl mx-auto pt-2 pb-4">
-          {sponsors.map((sponsor) => (
-            <a
-              key={sponsor.id}
-              href={sponsor.website_url || undefined}
-              target={sponsor.website_url ? '_blank' : undefined}
-              rel={sponsor.website_url ? 'noopener noreferrer' : undefined}
-              className="relative w-full h-24 md:h-28 bg-white rounded-2xl md:rounded-[2rem] shadow-[4px_4px_0px_0px_#000] border-[3px] md:border-[4px] border-black flex items-center justify-center overflow-hidden transition-transform hover:-translate-y-2 active:scale-95 focus-visible:ring-2 focus-visible:ring-[#8000ff] focus-visible:outline-none"
-            >
-              {sponsor.image_url ? (
-                <img
-                  src={sponsor.image_url}
-                  alt={sponsor.name}
-                  className="w-full h-full object-contain p-2"
-                />
-              ) : (
-                <span className="text-black/60 font-black text-sm text-center px-2">{sponsor.name}</span>
-              )}
-            </a>
-          ))}
-        </div>
-      </div>
-    );
-  }
+  const gridCols = compact
+    ? 'grid-cols-2 md:grid-cols-4'
+    : 'grid-cols-2 justify-items-center lg:flex lg:flex-nowrap lg:justify-center';
+  const cardWidth = compact
+    ? 'w-[clamp(64px,10dvh,100px)]'
+    : 'w-[clamp(72px,12dvh,140px)] lg:w-[180px] xl:w-[200px]';
+  const cardPadding = compact ? 'p-2' : 'p-3';
 
   return (
     <div className={className}>
-      <div className="grid grid-cols-2 justify-items-center lg:flex lg:flex-nowrap lg:justify-center gap-4 sm:gap-6 md:gap-8">
+      <div className={`${gridCols} gap-4 sm:gap-6 md:gap-8 w-full max-w-4xl mx-auto ${compact ? 'pt-2 pb-4' : ''}`}>
         {sponsors.map((sponsor) => (
           <a
             key={sponsor.id}
             href={sponsor.website_url || undefined}
             target={sponsor.website_url ? '_blank' : undefined}
             rel={sponsor.website_url ? 'noopener noreferrer' : undefined}
-            className="relative w-[clamp(72px,12dvh,140px)] lg:w-[180px] xl:w-[200px] aspect-square bg-white rounded-2xl md:rounded-[2rem] shadow-[4px_4px_0px_0px_#000] border-[3px] md:border-[4px] border-black flex items-center justify-center overflow-hidden transition-transform hover:-translate-y-2 active:scale-95 focus-visible:ring-2 focus-visible:ring-[#8000ff] focus-visible:outline-none"
+            className={`relative ${cardWidth} aspect-square bg-white rounded-2xl md:rounded-[2rem] shadow-[4px_4px_0px_0px_#000] border-[3px] md:border-[4px] border-black flex items-center justify-center overflow-hidden transition-transform hover:-translate-y-2 active:scale-95 focus-visible:ring-2 focus-visible:ring-[#8000ff] focus-visible:outline-none`}
           >
             {sponsor.image_url ? (
               <img
                 src={sponsor.image_url}
                 alt={sponsor.name}
-                className="w-full h-full object-contain p-3"
+                className={`w-full h-full object-contain ${cardPadding}`}
               />
             ) : (
               <span className="text-black/60 font-black text-sm text-center px-2">{sponsor.name}</span>

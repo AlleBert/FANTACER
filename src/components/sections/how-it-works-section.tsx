@@ -30,11 +30,11 @@ const steps: Step[] = [
 ]
 
 // Uniform card sizes — all 3 steps same size
-// dvh caps prevent overflow on short viewports
+// clamp keeps cards square and proportional on small viewports
 const cardSizeClasses = [
-  'w-32 h-32 max-h-[13dvh] md:w-40 md:h-40 md:max-h-[22dvh] lg:w-52 lg:h-52 lg:max-h-[28dvh]',
-  'w-32 h-32 max-h-[13dvh] md:w-40 md:h-40 md:max-h-[22dvh] lg:w-52 lg:h-52 lg:max-h-[28dvh]',
-  'w-32 h-32 max-h-[13dvh] md:w-40 md:h-40 md:max-h-[22dvh] lg:w-52 lg:h-52 lg:max-h-[28dvh]',
+  'w-[clamp(96px,14dvh,128px)] aspect-square md:w-40 md:h-40 lg:w-52 lg:h-52',
+  'w-[clamp(96px,14dvh,128px)] aspect-square md:w-40 md:h-40 lg:w-52 lg:h-52',
+  'w-[clamp(96px,14dvh,128px)] aspect-square md:w-40 md:h-40 lg:w-52 lg:h-52',
 ]
 
 export function HowItWorksSection() {
@@ -43,7 +43,7 @@ export function HowItWorksSection() {
       <div className="safe-shell h-full flex flex-col">
       <div className="relative z-10 w-full max-w-7xl mx-auto flex flex-col items-center justify-center flex-1 min-h-0 py-8 lg:py-12">
 
-        <h2 className="text-[clamp(1.75rem,6.2vw,4.5rem)] font-[900] text-center mb-8 lg:mb-12 tracking-tighter lowercase leading-[0.95] flex flex-wrap xl:flex-nowrap justify-center items-center gap-x-2 md:gap-x-4 w-full [text-wrap:balance] flex-shrink-0">
+        <h2 className="text-[clamp(1.75rem,6.2vw,4.5rem)] font-[900] text-center mb-4 md:mb-8 lg:mb-12 tracking-tighter lowercase leading-[0.95] flex flex-wrap xl:flex-nowrap justify-center items-center gap-x-2 md:gap-x-4 w-full [text-wrap:balance] flex-shrink-0">
           <span className="whitespace-nowrap">è semplice...</span>
           <span className="whitespace-nowrap flex items-center">
             e si vince sempre!
@@ -77,7 +77,7 @@ export function HowItWorksSection() {
         </div>
 
         {/* Mobile: vertical stack | Desktop: asymmetric 3-col grid */}
-        <div className="flex flex-col items-center gap-8 lg:grid lg:grid-cols-[1fr_1fr_1fr] lg:gap-6 lg:items-center lg:w-full lg:max-w-6xl flex-shrink min-h-0">
+        <div className="flex flex-col items-center gap-4 md:gap-8 lg:grid lg:grid-cols-[1fr_1fr_1fr] lg:gap-6 lg:items-center lg:w-full lg:max-w-6xl flex-shrink min-h-0">
           {steps.map((step, index) => (
             <div key={index} className="relative flex flex-col items-center w-full max-w-xs lg:max-w-none shrink">
 
