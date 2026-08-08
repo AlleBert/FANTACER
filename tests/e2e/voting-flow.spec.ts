@@ -23,6 +23,46 @@ test.describe('Voting Flow', () => {
     await expect(successSection).toBeVisible();
   });
 
+  test('sponsor cards stay within the success section bounds at mobile', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/');
+    await addCompany(page, 'Test Co');
+    await addCompany(page, 'GreenEnergy');
+    await addCompany(page, 'Third Co');
+
+    const inviaButton = page.locator('button:has-text("INVIA IL TUO VOTO")').first();
+    await expect(inviaButton).toBeEnabled();
+    await inviaButton.click();
+
+    await page.waitForSelector('[data-section="success"]', { timeout: 15000 });
+    await page.waitForSelector('[data-section="success"] .aspect-square', { timeout: 15000 });
+
+    const overflows = await page.locator('[data-section="success"]').evaluate((section) => {
+      const sr = section.getBoundingClientRect();
+      const offenders: { text: string; overflowBy: number; axis: string }[] = [];
+      for (const card of section.querySelectorAll<HTMLElement>('.aspect-square')) {
+        const cr = card.getBoundingClientRect();
+        if (cr.right > sr.right + 2) {
+          offenders.push({
+            text: (card.textContent ?? '').trim().slice(0, 40),
+            overflowBy: Math.round(cr.right - sr.right),
+            axis: 'right',
+          });
+        }
+        if (cr.bottom > sr.bottom + 2) {
+          offenders.push({
+            text: (card.textContent ?? '').trim().slice(0, 40),
+            overflowBy: Math.round(cr.bottom - sr.bottom),
+            axis: 'bottom',
+          });
+        }
+      }
+      return offenders;
+    });
+
+    expect(overflows, JSON.stringify(overflows, null, 2)).toEqual([]);
+  });
+
   test('submit button disabled when fewer than 3 companies selected', async ({ page }) => {
     await page.goto('/');
     const inviaButton = page.locator('button:has-text("INVIA IL TUO VOTO")').first();
