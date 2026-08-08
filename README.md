@@ -27,7 +27,7 @@ Il progetto include una pipeline automatizzata per garantire:
 - **stabilità frontend** — test unitari (Jest), test E2E (Playwright), snapshot visivi;
 - **compatibilità responsive** — 6 viewport, 4 browser, verifiche di overflow e clipping;
 - **accessibilità** — scansioni WCAG 2.1 AA con `@axe-core/playwright` su tutte le route;
-- **qualità visuale** — visual audit con screenshot, metriche layout e analisi tipografia su 6 route × 6 viewport;
+- **qualità visuale** — visual audit con screenshot, metriche layout e analisi tipografia: 9 route × 3 viewport (audit completo), 6 route admin, homepage × 6 viewport e homepage × 7 dispositivi iOS;
 - **prevenzione regressioni** — smoke test (6 route), scroll-blocking regression, voting flow E2E;
 - **controllo performance** — Lighthouse CI locale, bundle analysis;
 - **osservabilità produzione** — Sentry noop-ready (attivabile con DSN).
@@ -66,7 +66,7 @@ Monitoring (Sentry, opzionale)
 
 **Build Validation** — `next build` verifica che il progetto compili e produca un bundle valido.
 
-**E2E / Accessibility / Visual Checks** — Playwright esegue 8 spec file su 4 progetti browser, inclusi snapshot, scansioni a11y e verifica flussi utente reali.
+**E2E / Accessibility / Visual Checks** — Playwright esegue 10 spec file su 11 progetti browser (4 core + 7 iOS WebKit), inclusi snapshot, scansioni a11y, visual audit e verifica flussi utente reali.
 
 **Deployment** — manuale, dopo approvazione CI.
 
@@ -107,14 +107,23 @@ Nella pipeline CI questi tre comandi vengono eseguiti PRIMA della build, in modo
 
 ## Responsive testing
 
-### Browser (Playwright, 4 progetti)
+### Browser (Playwright, 11 progetti)
 
 | Progetto | Browser | Viewport |
 |---|---|---|
 | `chromium` | Chromium (Desktop Chrome) | 1440×900 |
 | `firefox` | Firefox (Desktop) | 1440×900 |
 | `mobile-chrome` | Pixel 5 (Mobile Chrome) | 375×812 |
-| `mobile-webkit` | iPhone 13 (Mobile Safari) | 375×812 |
+| `mobile-webkit` | iPhone 13 (Mobile Safari) | 390×664 (nativo) |
+| `ios-se` | iPhone SE (3rd gen) | nativo |
+| `ios-iphone` | iPhone 13 | nativo |
+| `ios-pro-max` | iPhone 15 Pro Max | nativo |
+| `ios-ipad-portrait` | iPad Mini (portrait) | nativo |
+| `ios-ipad-landscape` | iPad Mini (landscape) | nativo |
+| `ios-ipad-pro-portrait` | iPad Pro 11 (portrait) | nativo |
+| `ios-ipad-pro-landscape` | iPad Pro 11 (landscape) | nativo |
+
+I 7 progetti `ios-*` (WebKit) sono usati principalmente dal visual audit iOS in `tests/e2e/visual-audit-homepage-ios.spec.ts`.
 
 ### Viewport coperti
 
@@ -190,20 +199,27 @@ npx playwright test --update-snapshots
 
 ## Visual audit
 
-Analisi visuale proattiva che produce screenshot e metriche per valutare la qualità UI/UX:
+Analisi visuale proattiva che produce screenshot e metriche per valutare la qualità UI/UX. Comprende 4 audit complementari:
 
-```bash
-npm run visual:audit
-```
+| Comando | Copertura | Output |
+|---|---|---|
+| `npm run visual:audit` | 9 route × 3 viewport (sito completo + admin) | `tests/e2e/visual-audit/report.json` |
+| `npm run visual:audit:admin` | 6 route admin × 3 viewport (+ bottom-nav) | `tests/e2e/visual-audit/report-admin.json` |
+| `npm run visual:audit:homepage` | homepage × 6 viewport + sub-elementi + score | `tests/e2e/visual-audit-homepage/report.json` |
+| `npm run visual:audit:ios` | homepage × 7 dispositivi iOS (WebKit) | `tests/e2e/visual-audit-homepage-ios/report-{device}.json` |
 
-### Cosa fa
+### Cosa fanno
 
-- **Screenshot** full-page e per sezione, su 6 viewport (320–1920px), per 6 route
-- **Metriche layout** — dimensioni, padding, offset per ogni sezione
+- **Screenshot** full-page e per sezione (variabile per spec, vedi `docs/visual-audit.md`)
+- **Metriche layout** — dimensione, padding, offset per ogni sezione
 - **Analisi tipografia** — font-size, line-height, numero righe per heading e paragrafi
-- **Rilevamento automatico** di overflow, touch target insufficienti, wrapping anomalo
+- **Rilevamento automatico** di overflow, touch target insufficienti, wrapping anomalo, immagini deformate e layout broken
+- **Homepage** aggiunge l'analisi per sub-elementi (interactive, images, headings, text blocks, layout anomalies) e un `responsivenessSummary` con score
+- **iOS** valuta la homepage su dispositivi Apple reali (iPhone SE / 13 / 15 Pro Max, iPad Mini/Pro portrait e landscape) via progetti WebKit
 
 ### Output
+
+Per l'audit principale:
 
 ```
 tests/e2e/visual-audit/
@@ -211,9 +227,11 @@ tests/e2e/visual-audit/
 └── report.json
 ```
 
+Gli altri audit usano directory di output separate (`tests/e2e/visual-audit-homepage/`, `tests/e2e/visual-audit-homepage-ios/`).
+
 ### Quando usarlo
 
-- prima di una revisione UX/UI
+- prima di revisioni UX/UI
 - dopo modifiche globali di layout o stili
 - per identificare aree di miglioramento specifiche
 
@@ -253,7 +271,7 @@ Esegue in sequenza:
 1. `npm run lint` — zero-error policy ESLint;
 2. `npm run typecheck` — TypeScript strict;
 3. `npm test` — Jest unit test (14 test);
-4. `npm run test:e2e` — Playwright (154+ test, 4 progetti).
+4. `npm run test:e2e` — Playwright (10 spec, 11 progetti).
 
 ### Quando usarlo
 
@@ -425,14 +443,17 @@ Il sistema funziona come rete di sicurezza contro:
 | `npm run lint` | ESLint — zero-error policy |
 | `npm run typecheck` | TypeScript strict check (`tsc --noEmit`) |
 | `npm test` | Unit test Jest (14 test) |
-| `npm run test:e2e` | Playwright E2E (8 spec, 4 progetti) |
+| `npm run test:e2e` | Playwright E2E (10 spec, 11 progetti) |
 | `npm run test:e2e:ui` | Playwright UI mode per debugging interattivo |
 | `npm run test:watch` | Jest in watch mode |
 | `npm run build` | Next.js production build |
 | `npm run ui:health` | Gate completo: lint → typecheck → test → E2E |
 | `npm run lighthouse` | Lighthouse CI locale (6 URL, 4 categorie) |
 | `npm run analyze` | Bundle analysis (Turbopack-native) |
-| `npm run visual:audit` | Visual Quality Audit — screenshot + metriche layout |
+| `npm run visual:audit` | Visual Quality Audit — 9 route × 3 viewport (screenshot + metriche layout) |
+| `npm run visual:audit:admin` | Visual Quality Audit admin — 6 route admin × 3 viewport (+ bottom-nav) |
+| `npm run visual:audit:homepage` | Homepage Responsive Visual Audit — 6 viewport + sub-elementi + score |
+| `npm run visual:audit:ios` | iOS Safari Visual Audit — homepage su 7 dispositivi WebKit |
 
 ---
 
@@ -458,7 +479,7 @@ Il sistema funziona come rete di sicurezza contro:
 
 1. **Controlli economici prima** — lint, typecheck e unit test sono veloci e diagnosticano la maggior parte degli errori. Fallire presto evita di sprecare risorse su build ed E2E;
 2. **Build al centro** — la build Next.js verifica che il codice compili correttamente. È un prerequisito per i test E2E che usano il server di produzione (`npm run start`);
-3. **E2E per ultimo** — è lo step più costoso (avvia 4 progetti browser × test paralleli). Viene eseguito solo se tutto il resto è passato.
+3. **E2E per ultimo** — è lo step più costoso (avvia 11 progetti browser × test paralleli). Viene eseguito solo se tutto il resto è passato.
 
 ### Playwright browser caching
 
