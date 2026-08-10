@@ -1,5 +1,6 @@
 import { test } from '@playwright/test';
 import { checkAccessibility, type AllowedViolation } from './helpers/accessibility';
+import { hasAdminCredentials } from './helpers/auth';
 
 const ROUTES: { path: string; allowedViolations: AllowedViolation[] }[] = [
   { path: '/', allowedViolations: [] },
@@ -36,6 +37,8 @@ const ROUTES: { path: string; allowedViolations: AllowedViolation[] }[] = [
 test.describe('Cross-Route Accessibility Scan', () => {
   for (const route of ROUTES) {
     test(`WCAG AA scan: ${route.path}`, async ({ page }) => {
+      test.skip(route.path.startsWith('/admin/dashboard') && !hasAdminCredentials(),
+        'E2E admin credentials not configured');
       await page.goto(route.path);
       await page.waitForLoadState('networkidle');
       await page.waitForTimeout(2000);

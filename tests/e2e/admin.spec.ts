@@ -2,6 +2,9 @@ import { test } from '@playwright/test';
 import { checkNoHorizontalOverflow } from './helpers/responsive';
 import { VIEWPORTS } from './helpers/viewports';
 import { checkAccessibility } from './helpers/accessibility';
+import { setupAdminForTest, hasAdminCredentials } from './helpers/auth';
+
+const needsAdmin = () => test.skip(!hasAdminCredentials(), 'E2E admin credentials not configured');
 
 test.describe('Admin Login — Responsive', () => {
   for (const [name, viewport] of Object.entries(VIEWPORTS)) {
@@ -28,31 +31,34 @@ test.describe('Admin Login — Accessibility', () => {
 });
 
 test.describe('Admin Dashboard — Responsive', () => {
+  needsAdmin();
+
   test('panoramica page no horizontal overflow', async ({ page }) => {
-    await page.goto('/admin/dashboard/panoramica');
+    await setupAdminForTest(page, '/admin/dashboard/panoramica');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
     await checkNoHorizontalOverflow(page);
   });
 
   test('aziende page no horizontal overflow', async ({ page }) => {
-    await page.goto('/admin/dashboard/aziende');
+    await setupAdminForTest(page, '/admin/dashboard/aziende');
     await page.waitForLoadState('networkidle');
     await checkNoHorizontalOverflow(page);
   });
 
   test('voti page no horizontal overflow', async ({ page }) => {
-    await page.goto('/admin/dashboard/voti');
+    await setupAdminForTest(page, '/admin/dashboard/voti');
     await page.waitForLoadState('networkidle');
     await checkNoHorizontalOverflow(page);
   });
 });
 
 test.describe('Admin Dashboard — Accessibility', () => {
+  needsAdmin();
   test.use({ viewport: { width: 1440, height: 900 } });
 
   test('panoramica WCAG AA scan', async ({ page }) => {
-    await page.goto('/admin/dashboard/panoramica');
+    await setupAdminForTest(page, '/admin/dashboard/panoramica');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
     await checkAccessibility(page, {
