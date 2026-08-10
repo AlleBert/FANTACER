@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+import { writeAuditEvent } from '@/lib/audit'
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request)
+  const userAgent = request.headers.get('user-agent')
+
   try {
     // Rate limit per IP+email: brute force on the admin login.
     const body = await request.json()
@@ -13,9 +17,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Credenziali richieste' }, { status: 400 })
     }
 
-    const key = `admin:login:${getClientIp(request)}:${String(email).toLowerCase()}`
+    const key = `admin:login:${ip}:${String(email).toLowerCase()}`
     const allowed = await checkRateLimit(key, 15 * 60 * 1000, 10)
     if (!allowed) {
+      await writeAuditEvent({
+        eventType: 'admin_login_ratelimited',
+        ipAddress: ip,
+        userAgent,
+        metadata: { email },
+      })
       return NextResponse.json(
         { error: 'Troppi tentativi. Riprova più tardi.' },
         { status: 429 },
@@ -32,6 +42,12 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (!adminUser) {
+      await writeAuditEvent({
+        eventType: 'admin_login_failed',
+        ipAddress: ip,
+        userAgent,
+        metadata: { email },
+      })
       return NextResponse.json({ error: 'Credenziali non valide' }, { status: 401 })
     }
 
@@ -40,6 +56,12 @@ export async function POST(request: NextRequest) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error || !data.user) {
+      await writeAuditEvent({
+        eventType: 'admin_login_failed',
+        ipAddress: ip,
+        userAgent,
+        metadata: { email },
+      })
       return NextResponse.json({ error: 'Credenziali non valide' }, { status: 401 })
     }
 
@@ -57,12 +79,25 @@ export async function POST(request: NextRequest) {
     )
     if (verifiedFactors.length > 0) {
       const factorId = verifiedFactors[0].id
+      await writeAuditEvent({
+        eventType: 'admin_login_password',
+        ipAddress: ip,
+        userAgent,
+        metadata: { email, mfaRequired: true },
+      })
       return NextResponse.json({
         success: true,
         mfaRequired: true,
         factorId,
       })
     }
+
+    await writeAuditEvent({
+      eventType: 'admin_login_success',
+      ipAddress: ip,
+      userAgent,
+      metadata: { email },
+    })
 
     return NextResponse.json({
       success: true,
