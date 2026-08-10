@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -29,7 +28,6 @@ interface ParsedRow {
 type Notification = { type: 'success' | 'error' | 'info'; text: string }
 
 export default function ImportPage() {
-  const router = useRouter()
   const [batchInfo, setBatchInfo] = useState<BatchInfo>({ activeBatch: 'TEST', batches: [] })
   const [file, setFile] = useState<File | null>(null)
   const [batchName, setBatchName] = useState('')
@@ -44,8 +42,6 @@ export default function ImportPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const batchSelectRef = useRef<HTMLDivElement>(null)
 
-  const isBypassEnabled = () => process.env.NEXT_PUBLIC_X7K2M9QS3P === 'hx7k2m9Qs3P'
-
   const fetchBatchInfo = async () => {
     const res = await fetch('/api/admin/batch')
     const data = await res.json()
@@ -54,28 +50,11 @@ export default function ImportPage() {
   }
 
   useEffect(() => {
-    const init = async () => {
-      if (!isBypassEnabled()) {
-        const session = localStorage.getItem('admin_session')
-        if (!session) {
-          router.push('/admin/login')
-          return
-        }
-        const res = await fetch('/api/admin/login', {
-          headers: { Authorization: `Bearer ${session}` }
-        })
-        if (!res.ok) {
-          localStorage.removeItem('admin_session')
-          router.push('/admin/login')
-        }
-      }
-      const res = await fetch('/api/admin/batch')
-      const data = await res.json()
+    const res = fetch('/api/admin/batch').then(r => r.json())
+    res.then(data => {
       setBatchInfo(data)
       setBatchName(data.activeBatch)
-    }
-    init()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    })
   }, [])
 
   useEffect(() => {

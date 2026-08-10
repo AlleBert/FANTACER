@@ -5,15 +5,12 @@ import { useRouter } from 'next/navigation'
 import { AdminSidebar } from '@/components/admin/sidebar'
 import { BottomNav } from '@/components/admin/bottom-nav'
 
-const isBypassEnabled = () => process.env.NEXT_PUBLIC_X7K2M9QS3P === 'hx7k2m9Qs3P'
-
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-  const [authorized, setAuthorized] = useState(isBypassEnabled())
+  const [authorized, setAuthorized] = useState(false)
 
   useEffect(() => {
-    if (isBypassEnabled()) return
     const session = localStorage.getItem('admin_session')
     if (!session) {
       router.push('/admin/login')
@@ -28,7 +25,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       } else {
         setAuthorized(true)
       }
-    }).catch(() => setAuthorized(true))
+    }).catch(() => {
+      localStorage.removeItem('admin_session')
+      router.push('/admin/login')
+    })
   }, [router])
 
   if (!authorized) {

@@ -1,34 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireAdmin, toAdminError } from '@/lib/admin-auth'
 
 export async function GET(request: NextRequest) {
   try {
-    const adminSession = request.headers.get('authorization')?.replace('Bearer ', '')
-    if (!adminSession) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const isBypassEnabled = process.env.NEXT_PUBLIC_X7K2M9QS3P === 'hx7k2m9Qs3P'
-    if (isBypassEnabled && adminSession === 'dev-bypass-token') {
-      // dev bypass: skip auth check
-    } else {
-      const supabaseAuth = createAdminClient()
-      const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(adminSession)
-      if (authError || !user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-      }
-
-      const { data: adminUser } = await supabaseAuth
-        .from('admin_users')
-        .select('id')
-        .eq('auth_id', user.id)
-        .eq('is_active', true)
-        .single()
-
-      if (!adminUser) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-      }
-    }
+    await requireAdmin(request)
 
     const supabase = createAdminClient()
 
@@ -138,6 +114,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ error: 'Invalid type parameter' }, { status: 400 })
   } catch (error) {
+    const status = toAdminError(error)
+    if (status !== 500) {
+      return NextResponse.json({ error: status === 401 ? 'Unauthorized' : 'Forbidden' }, { status })
+    }
     console.error('Analytics API error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

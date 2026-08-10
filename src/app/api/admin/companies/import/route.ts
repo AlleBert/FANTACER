@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireAdmin, toAdminError } from '@/lib/admin-auth'
 import * as XLSX from 'xlsx'
 
 const HEADER_MAP: Record<string, string> = {
@@ -94,6 +95,7 @@ function parseXLSX(buffer: ArrayBuffer): { headers: string[]; rows: Record<strin
 
 export async function POST(request: NextRequest) {
   try {
+    await requireAdmin(request)
     const formData = await request.formData()
     const file = formData.get('file') as File
     const batchName = formData.get('batchName') as string
@@ -159,6 +161,10 @@ export async function POST(request: NextRequest) {
       batch: batchName
     })
   } catch (err) {
+    const status = toAdminError(err)
+    if (status !== 500) {
+      return NextResponse.json({ error: status === 401 ? 'Non autorizzato' : 'Accesso negato' }, { status })
+    }
     console.error('Import error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

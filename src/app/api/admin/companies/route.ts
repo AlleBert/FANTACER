@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireAdmin, toAdminError } from '@/lib/admin-auth'
 
 export async function GET(request: NextRequest) {
   try {
+    await requireAdmin(request)
     const supabase = createAdminClient()
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search') || ''
@@ -72,7 +74,11 @@ export async function GET(request: NextRequest) {
     result.forEach((r, i) => r.rank = i + 1)
 
     return NextResponse.json({ data: result })
-  } catch {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  } catch (e) {
+    const status = toAdminError(e)
+    return NextResponse.json(
+      { error: status === 401 ? 'Non autorizzato' : 'Accesso negato' },
+      { status },
+    )
   }
 }

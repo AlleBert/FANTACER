@@ -1,39 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireAdmin, toAdminError } from '@/lib/admin-auth'
+
+const ERROR = (status: number) =>
+  status === 401 ? 'Non autorizzato' : 'Accesso negato'
 
 export async function PUT(request: NextRequest) {
   try {
-    const bypass = process.env.NEXT_PUBLIC_X7K2M9QS3P === 'hx7k2m9Qs3P'
-
-    const supabase = createAdminClient()
-
-    if (!bypass) {
-      const authHeader = request.headers.get('authorization')
-      if (!authHeader) {
-        return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 })
-      }
-
-      const { data: { user }, error } = await supabase.auth.getUser(
-        authHeader.replace('Bearer ', '')
-      )
-      if (error || !user) {
-        return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 })
-      }
-
-      const { data: adminUser } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('auth_id', user.id)
-        .eq('is_active', true)
-        .single()
-      if (!adminUser) {
-        return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 })
-      }
-    }
+    await requireAdmin(request)
 
     const body = await request.json()
     const enabled = body.enabled === true
 
+    const supabase = createAdminClient()
     const { error: updateError } = await supabase
       .from('site_settings')
       .update({ value: enabled ? 'true' : 'false', updated_at: new Date().toISOString() })
@@ -42,6 +21,8 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (e) {
+    const status = toAdminError(e)
+    if (status !== 500) return NextResponse.json({ error: ERROR(status) }, { status })
     console.error('Errore aggiornamento coming_soon_enabled:', e)
     return NextResponse.json({ error: 'Errore interno' }, { status: 500 })
   }
@@ -49,34 +30,9 @@ export async function PUT(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const bypass = process.env.NEXT_PUBLIC_X7K2M9QS3P === 'hx7k2m9Qs3P'
+    await requireAdmin(request)
 
     const supabase = createAdminClient()
-
-    if (!bypass) {
-      const authHeader = request.headers.get('authorization')
-      if (!authHeader) {
-        return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 })
-      }
-
-      const { data: { user }, error } = await supabase.auth.getUser(
-        authHeader.replace('Bearer ', '')
-      )
-      if (error || !user) {
-        return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 })
-      }
-
-      const { data: adminUser } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('auth_id', user.id)
-        .eq('is_active', true)
-        .single()
-      if (!adminUser) {
-        return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 })
-      }
-    }
-
     const { data, error: readError } = await supabase
       .from('site_settings')
       .select('value')
@@ -86,6 +42,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ enabled: data.value === 'true' })
   } catch (e) {
+    const status = toAdminError(e)
+    if (status !== 500) return NextResponse.json({ error: ERROR(status) }, { status })
     console.error('Errore lettura coming_soon_enabled:', e)
     return NextResponse.json({ error: 'Errore interno' }, { status: 500 })
   }

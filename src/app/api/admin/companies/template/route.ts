@@ -1,8 +1,12 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import * as XLSX from 'xlsx'
+import { requireAdmin, toAdminError } from '@/lib/admin-auth'
 
-export async function GET() {
-  const wb = XLSX.utils.book_new()
+export async function GET(request: NextRequest) {
+  try {
+    await requireAdmin(request)
+
+    const wb = XLSX.utils.book_new()
 
   const data = [
     ['Nome', 'Categoria', 'URL Logo'],
@@ -26,4 +30,11 @@ export async function GET() {
       'Content-Disposition': 'attachment; filename=template_aziende.xlsx'
     }
   })
+  } catch (e) {
+    const status = toAdminError(e)
+    return NextResponse.json(
+      { error: status === 401 ? 'Non autorizzato' : 'Accesso negato' },
+      { status },
+    )
+  }
 }

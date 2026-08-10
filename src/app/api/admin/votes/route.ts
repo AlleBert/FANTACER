@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireAdmin, toAdminError } from '@/lib/admin-auth'
 
 export async function GET(request: NextRequest) {
   try {
+    await requireAdmin(request)
     const supabase = createAdminClient()
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
@@ -69,7 +71,11 @@ export async function GET(request: NextRequest) {
         pages: Math.ceil(total / limit)
       }
     })
-  } catch {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  } catch (e) {
+    const status = toAdminError(e)
+    return NextResponse.json(
+      { error: status === 401 ? 'Non autorizzato' : status === 403 ? 'Accesso negato' : 'Internal server error' },
+      { status },
+    )
   }
 }

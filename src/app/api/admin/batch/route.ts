@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireAdmin, toAdminError } from '@/lib/admin-auth'
 
-export async function GET() {
-  const supabase = createAdminClient()
+export async function GET(request: NextRequest) {
+  try {
+    await requireAdmin(request)
+    const supabase = createAdminClient()
 
   const { data: settings } = await supabase
     .from('batch_settings')
@@ -52,10 +55,15 @@ export async function GET() {
     activeBatch: settings?.active_batch || 'TEST',
     batches: uniqueBatches,
   })
+  } catch (e) {
+    const status = toAdminError(e)
+    return NextResponse.json({ error: status === 401 ? 'Non autorizzato' : 'Accesso negato' }, { status })
+  }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    await requireAdmin(request)
     const { activeBatch } = await request.json()
 
     if (!activeBatch) {
@@ -74,13 +82,15 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ message: 'Batch updated', activeBatch })
-  } catch {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  } catch (e) {
+    const status = toAdminError(e)
+    return NextResponse.json({ error: status === 401 ? 'Non autorizzato' : 'Accesso negato' }, { status })
   }
 }
 
 export async function DELETE(request: NextRequest) {
   try {
+    await requireAdmin(request)
     const { batchName } = await request.json()
 
     if (!batchName) {
@@ -145,6 +155,10 @@ export async function DELETE(request: NextRequest) {
       deletedCompanies: ids.length,
     })
   } catch (error) {
+    const status = toAdminError(error)
+    if (status !== 500) {
+      return NextResponse.json({ error: status === 401 ? 'Non autorizzato' : 'Accesso negato' }, { status })
+    }
     console.error('Delete batch error:', error)
     const message = error instanceof Error ? error.message : 'Internal server error'
     return NextResponse.json({ error: message }, { status: 500 })
