@@ -27,9 +27,15 @@ const RESERVED_TEST_FINGERPRINTS = ['test-fp-1', 'test-fp-2', 'test-fp-3', 'test
 export async function seedTestData() {
   const supabase = createTestAdminClient();
 
-  const { error: batchError } = await supabase
-    .from('batch_settings')
-    .upsert({ id: 'default', active_batch: TEST_BATCH }, { onConflict: 'id' });
+  let batchError: { message: string } | null = null;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const { error } = await supabase
+      .from('batch_settings')
+      .upsert({ id: 'default', active_batch: TEST_BATCH }, { onConflict: 'id' });
+    batchError = error ?? null;
+    if (!batchError) break;
+    await new Promise((r) => setTimeout(r, 1000 * attempt));
+  }
 
   if (batchError) {
     throw new Error(`Failed to seed batch_settings: ${batchError.message}`);

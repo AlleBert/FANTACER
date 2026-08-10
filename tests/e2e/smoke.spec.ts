@@ -21,7 +21,7 @@ for (const route of ROUTES) {
 
 for (const route of PROTECTED_ROUTES) {
   test(`smoke: ${route} redirects to login without session`, async ({ request }) => {
-    const res = await request.get(route);
+    const res = await request.get(route, { maxRedirects: 0 });
     expect(res.status()).toBe(307);
     const location = res.headers()['location'] || '';
     expect(location).toContain('/admin/login');
