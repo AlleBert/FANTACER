@@ -29,10 +29,7 @@ export default function ImpostazioniPage() {
   const [auditSearch, setAuditSearch] = useState('')
 
   useEffect(() => {
-    const session = localStorage.getItem('admin_session')
-    fetch('/api/admin/settings/coming-soon', {
-      headers: session ? { Authorization: `Bearer ${session}` } : {},
-    })
+    fetch('/api/admin/settings/coming-soon')
       .then(res => res.json())
       .then(data => setComingSoonEnabled(data.enabled))
       .finally(() => setLoadingFlag(false))
@@ -55,10 +52,9 @@ export default function ImpostazioniPage() {
   const confirmToggle = async () => {
     setUpdating(true)
     try {
-      const session = localStorage.getItem('admin_session')
       const res = await fetch('/api/admin/settings/coming-soon', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enabled: pendingValue }),
       })
       if (res.ok) setComingSoonEnabled(pendingValue)

@@ -19,30 +19,32 @@ export interface AdminContext {
 }
 
 /**
- * Server-side gate for all admin routes.
+ * Server-side gate for all admin routes — cookie-based session only.
  *
- * P0 transition: accepts a Bearer token from the Authorization header (legacy
- * localStorage session). Once P1 lands the cookie session, the Bearer branch is
- * removed and `createClient()` (HttpOnly cookie) is the only source of truth.
+ * 1. `getUser()` (never `getSession()`): validates the JWT against GoTrue
+ *    and refreshes the session cookie if possible.
+ * 2. `admin_users` authorization: `auth_id` must match the authenticated
+ *    user and `is_active` must be true.
+ * 3. AAL enforcement: when `minAal` is requested (default for admin data
+ *    routes) the session must already be at `aal2`; a session at `aal1`
+ *    (password-only) is rejected before any privileged access.
  *
- * The service role client (`createAdminClient`) is deliberately NOT exported
- * here: routes must instantiate it only AFTER this gate passes.
+ * The service role client must be instantiated by the caller only AFTER
+ * this gate passes.
  */
 export async function requireAdmin(
   request: NextRequest,
   opts?: { minAal: AuthenticatorAssuranceLevels },
 ): Promise<AdminContext> {
-  const adminSupabase = createAdminClient()
-  const token = request.headers.get('authorization')?.replace('Bearer ', '')
+  const supabase = await createClient()
 
-  const { data: { user }, error } = token
-    ? await adminSupabase.auth.getUser(token)
-    : { data: { user: null }, error: new Error('missing bearer token') }
+  const { data: { user }, error } = await supabase.auth.getUser()
 
   if (error || !user) {
     throw new AdminAuthError(401, 'Non autorizzato')
   }
 
+  const adminSupabase = createAdminClient()
   const { data: adminUser } = await adminSupabase
     .from('admin_users')
     .select('id')
@@ -54,15 +56,12 @@ export async function requireAdmin(
     throw new AdminAuthError(403, 'Accesso negato')
   }
 
-  let aal: AuthenticatorAssuranceLevels = 'aal1'
-  if (opts?.minAal) {
-    const client = await createClient()
-    const { data: level } = await client.auth.mfa.getAuthenticatorAssuranceLevel()
-    const currentLevel = level?.currentLevel ?? 'aal1'
-    aal = currentLevel
-    if (currentLevel < opts.minAal) {
-      throw new AdminAuthError(403, 'MFA richiesta')
-    }
+  const minAal = opts?.minAal ?? 'aal2'
+  const { data: level } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+  const aal: AuthenticatorAssuranceLevels = level?.currentLevel ?? 'aal1'
+
+  if (aal < minAal) {
+    throw new AdminAuthError(403, 'MFA richiesta')
   }
 
   return { user, aal }

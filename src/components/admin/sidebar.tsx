@@ -28,9 +28,12 @@ interface AdminSidebarProps {
 export function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
   const pathname = usePathname()
 
-  const handleLogout = () => {
-    localStorage.removeItem('admin_session')
-    window.location.href = '/admin/login'
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/logout', { method: 'POST' })
+    } finally {
+      window.location.href = '/admin/login'
+    }
   }
 
   return (

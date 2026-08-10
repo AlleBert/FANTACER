@@ -40,11 +40,7 @@ export default function PanoramicaPage() {
     if (showLoading) setLoading(true)
     setError(null)
     try {
-      const session = localStorage.getItem('admin_session')
-      const headers: Record<string, string> = {}
-      if (session) headers['Authorization'] = `Bearer ${session}`
-
-      const statsRes = await fetch('/api/analytics?type=summary', { headers })
+      const statsRes = await fetch('/api/analytics?type=summary')
       if (!statsRes.ok) {
         throw new Error(`Errore ${statsRes.status}: ${statsRes.statusText}`)
       }
@@ -73,11 +69,8 @@ export default function PanoramicaPage() {
 
   useEffect(() => {
     const doLoad = () => {
-      const session = localStorage.getItem('admin_session')
-      const headers: Record<string, string> = {}
-      if (session) headers['Authorization'] = `Bearer ${session}`
       return Promise.all([
-        fetch('/api/analytics?type=summary', { headers }).then(r => r.json()),
+        fetch('/api/analytics?type=summary').then(r => r.json()),
         fetch('/api/admin/batch').then(r => r.json()),
       ]).then(([statsData, batchData]) => {
         setStats({

@@ -1,14 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
-function getSupabaseAdmin() {
-  return createClient(supabaseUrl, supabaseServiceKey, {
-    auth: { autoRefreshToken: false, persistSession: false }
-  })
-}
+import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,75 +10,55 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Credenziali richieste' }, { status: 400 })
     }
 
-    const supabase = getSupabaseAdmin()
-
-    const { data: adminUser, error: adminError } = await supabase
+    // 1. Admin authorization (service role read — no session yet)
+    const adminSupabase = createAdminClient()
+    const { data: adminUser } = await adminSupabase
       .from('admin_users')
-      .select('*')
+      .select('id, auth_id')
       .eq('email', email)
       .eq('is_active', true)
       .single()
 
-    if (adminError || !adminUser) {
+    if (!adminUser) {
       return NextResponse.json({ error: 'Credenziali non valide' }, { status: 401 })
     }
 
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    })
+    // 2. Password authentication → AAL1 session (cookies set by @supabase/ssr)
+    const supabase = await createClient()
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
-    if (authError) {
+    if (error || !data.user) {
       return NextResponse.json({ error: 'Credenziali non valide' }, { status: 401 })
     }
 
-    if (!authData.user) {
-      return NextResponse.json({ error: 'Utente non trovato' }, { status: 401 })
-    }
-
+    // 3. Link auth_id if missing
     if (!adminUser.auth_id) {
-      await supabase
+      await adminSupabase
         .from('admin_users')
-        .update({ auth_id: authData.user.id })
-        .eq('id', adminUser.id)
+        .update({ auth_id: data.user.id })
+        .eq('email', email)
+    }
+
+    // 4. MFA: verified TOTP factors → challenge requires AAL2
+    const verifiedFactors = (data.user.factors || []).filter(
+      (f) => f.status === 'verified',
+    )
+    if (verifiedFactors.length > 0) {
+      const factorId = verifiedFactors[0].id
+      return NextResponse.json({
+        success: true,
+        mfaRequired: true,
+        factorId,
+      })
     }
 
     return NextResponse.json({
       success: true,
-      user: { id: authData.user.id, email: authData.user.email },
-      session: { access_token: authData.session.access_token }
+      mfaRequired: false,
+      user: { id: data.user.id, email: data.user.email },
     })
-  } catch (error) {
-    console.error('Login error:', error)
+  } catch (err) {
+    console.error('Login error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}
-
-export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get('authorization')
-  if (!authHeader) {
-    return NextResponse.json({ valid: false }, { status: 401 })
-  }
-
-  const supabase = getSupabaseAdmin()
-  const { data: { user }, error } = await supabase.auth.getUser(
-    authHeader.replace('Bearer ', '')
-  )
-
-  if (error || !user) {
-    return NextResponse.json({ valid: false }, { status: 401 })
-  }
-
-  const { data: adminUser } = await supabase
-    .from('admin_users')
-    .select('*')
-    .eq('auth_id', user.id)
-    .eq('is_active', true)
-    .single()
-
-  if (!adminUser) {
-    return NextResponse.json({ valid: false }, { status: 401 })
-  }
-
-  return NextResponse.json({ valid: true, email: user.email })
 }
