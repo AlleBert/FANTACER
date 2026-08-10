@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { createAdminClient } from '@/lib/supabase/admin';
+import crypto from 'crypto';
 
 const PROTECTED_PREFIXES = ['/admin/dashboard'];
 const PROTECTED_API = ['/api/admin', '/api/analytics'];
@@ -19,6 +20,38 @@ function isProtected(pathname: string): boolean {
     return !PUBLIC_AUTH_PATHS.some((prefix) => pathname.startsWith(prefix));
   }
   return PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
+
+function isAdminPage(pathname: string): boolean {
+  return pathname.startsWith('/admin') && !pathname.startsWith('/api/');
+}
+
+/**
+ * Nonce-based CSP for the admin section. Next.js App Router reads the nonce
+ * from this header and applies it to its own inline scripts/styles.
+ */
+function applyAdminSecurityHeaders(response: NextResponse): void {
+  const nonce = crypto.randomBytes(16).toString('base64');
+  const isDev = process.env.NODE_ENV !== 'production';
+
+  response.headers.set(
+    'Content-Security-Policy',
+    [
+      "default-src 'self'",
+      `script-src 'self' 'nonce-${nonce}'${isDev ? " 'unsafe-eval'" : ''}`,
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self' data:",
+      "connect-src 'self' https:",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
+    ].join('; '),
+  );
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
 }
 
 export async function proxy(request: NextRequest) {
@@ -57,7 +90,9 @@ export async function proxy(request: NextRequest) {
       }
       const loginUrl = new URL('/admin/login', request.url);
       loginUrl.searchParams.set('next', pathname);
-      return NextResponse.redirect(loginUrl);
+      const redirect = NextResponse.redirect(loginUrl);
+      applyAdminSecurityHeaders(redirect);
+      return redirect;
     }
 
     // Pages render only at AAL2; the MFA step happens inside /admin/login.
@@ -68,7 +103,9 @@ export async function proxy(request: NextRequest) {
         const loginUrl = new URL('/admin/login', request.url);
         loginUrl.searchParams.set('next', pathname);
         loginUrl.searchParams.set('mfa', '1');
-        return NextResponse.redirect(loginUrl);
+        const redirect = NextResponse.redirect(loginUrl);
+        applyAdminSecurityHeaders(redirect);
+        return redirect;
       }
     }
   }
@@ -94,6 +131,10 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL('/', request.url));
     }
     if (enabled) return NextResponse.redirect(new URL('/coming-soon', request.url));
+  }
+
+  if (isAdminPage(pathname)) {
+    applyAdminSecurityHeaders(response);
   }
 
   return response;

@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Lock, ShieldCheck } from 'lucide-react'
 
-export default function AdminLogin() {
+function AdminLoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const mfaHint = searchParams.get('mfa') === '1'
@@ -173,5 +173,13 @@ export default function AdminLogin() {
         </CardContent>
       </Card>
     </main>
+  )
+}
+
+export default function AdminLogin() {
+  return (
+    <Suspense fallback={null}>
+      <AdminLoginForm />
+    </Suspense>
   )
 }
