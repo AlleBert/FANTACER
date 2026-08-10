@@ -8,6 +8,7 @@ const config: Config = {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   testMatch: ['**/tests/**/*.test.ts', '**/tests/**/*.test.tsx'],
+  testPathIgnorePatterns: ['/node_modules/', '\\.worktrees/'],
 };
 
 export default config;
