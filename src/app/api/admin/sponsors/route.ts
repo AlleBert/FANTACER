@@ -38,13 +38,17 @@ async function uploadLogo(
 }
 
 async function removeStoredLogo(supabase: AdminClient, imageUrl: string | null) {
-  if (!imageUrl || !isBucketUrl(imageUrl)) return
-  const path = extractPathFromUrl(imageUrl)
-  if (path) {
-    const { error } = await supabase.storage.from(SPONSOR_LOGO_BUCKET).remove([path])
-    if (error) {
-      // best-effort: il record è già salvato, non bloccare la risposta
+  try {
+    if (!imageUrl || !isBucketUrl(imageUrl)) return
+    const path = extractPathFromUrl(imageUrl)
+    if (path) {
+      const { error } = await supabase.storage.from(SPONSOR_LOGO_BUCKET).remove([path])
+      if (error) {
+        console.error('Sponsor logo cleanup failed:', error.message)
+      }
     }
+  } catch {
+    console.error('Sponsor logo cleanup failed (unexpected)')
   }
 }
 
