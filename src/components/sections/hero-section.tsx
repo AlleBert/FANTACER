@@ -2,12 +2,14 @@
 
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
+import { useLocale } from '@/lib/LocaleContext'
 
 interface HeroSectionProps {
   onPlayClick?: () => void
 }
 
 export function HeroSection({ onPlayClick }: HeroSectionProps) {
+  const { t } = useLocale()
   return (
     <section className="snap-start relative w-full h-[100dvh] overflow-hidden">
       {/* Background Layer - Riempie tutto, notch incluso */}
@@ -35,7 +37,7 @@ export function HeroSection({ onPlayClick }: HeroSectionProps) {
             onClick={onPlayClick}
             className="bg-[#fccb27] hover:bg-[#c99900] text-black text-[clamp(1.5rem,5vw,2.5rem)] font-black px-16 py-8 md:px-24 md:py-12 rounded-full border-[3px] border-black shadow-[6px_6px_0_#000] uppercase tracking-tighter cursor-pointer active:scale-95 transition-transform"
           >
-            GIOCA
+            {t('hero.play')}
           </Button>
         </div>
       </div>

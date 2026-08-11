@@ -2,12 +2,14 @@
 
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
+import { useLocale } from '@/lib/LocaleContext'
 
 interface PlayAgainSectionProps {
   onPlayClick?: () => void
 }
 
 export function PlayAgainSection({ onPlayClick }: PlayAgainSectionProps) {
+  const { t } = useLocale()
   const handlePlayClick = () => {
     const main = document.querySelector('main');
     // HARDCODED: targets 5th child (SearchSection) in page.tsx — keep in sync with section order
@@ -22,10 +24,10 @@ export function PlayAgainSection({ onPlayClick }: PlayAgainSectionProps) {
       <div className="safe-shell h-full flex flex-col">
       <div className="relative z-10 w-full max-w-7xl mx-auto text-center flex flex-col items-center justify-center gap-8 md:gap-12 flex-1">
         <p className="text-[clamp(1.5rem,4vw,2.875rem)] text-white font-medium leading-[1.3] md:leading-[1.4] max-w-[90%] md:max-w-none">
-          puoi giocare una sola volta al giorno
+          {t('playAgain.text')}
           <br className="hidden md:block" />
           <span className="md:hidden"> </span>
-          <span className="font-[900] block mt-2 md:mt-4 md:inline">dal 21 al 25 settembre 2026</span>
+          <span className="font-[900] block mt-2 md:mt-4 md:inline">{t('playAgain.dates')}</span>
         </p>
 
         <div className="flex flex-col items-center justify-center gap-6 md:gap-8">
@@ -50,7 +52,7 @@ export function PlayAgainSection({ onPlayClick }: PlayAgainSectionProps) {
             onClick={handlePlayClick}
             className="bg-[#fccb27] hover:bg-[#c99900] text-[#000000] text-[clamp(2.25rem,7vw,5.5rem)] font-[900] px-[clamp(4.5rem,11vw,9rem)] py-[clamp(2.25rem,5.5vw,4.5rem)] rounded-full border-[3px] md:border-[4px] border-black transition-transform hover:scale-105 shadow-[6px_6px_0px_0px_#000] uppercase tracking-tight"
           >
-            GIOCA
+            {t('hero.play')}
           </Button>
         </div>
       </div>

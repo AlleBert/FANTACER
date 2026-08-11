@@ -1,16 +1,19 @@
+'use client'
+
 import Image from 'next/image'
 import type { ReactNode } from 'react'
 import { Heart, Smartphone, AtSign, Gift } from 'lucide-react'
+import { useLocale } from '@/lib/LocaleContext'
 
 interface Step {
   icon: ReactNode
-  label: string
+  labelKey: 'howItWorks.step.vote' | 'howItWorks.step.share' | 'howItWorks.step.collect'
 }
 
 const steps: Step[] = [
   {
     icon: <Heart className="w-14 h-14 md:w-[72px] md:h-[72px] lg:w-20 lg:h-20 stroke-black stroke-[1.5] animate-pulse hover:fill-black fill-transparent transition-colors duration-300 relative z-10" />,
-    label: 'vota la tua azienda preferita'
+    labelKey: 'howItWorks.step.vote'
   },
   {
     icon: (
@@ -19,13 +22,13 @@ const steps: Step[] = [
         <AtSign className="absolute inset-0 m-auto w-6 h-6 md:w-8 md:h-8 stroke-black stroke-[2] animate-[spin_4s_linear_infinite]" />
       </div>
     ),
-    label: 'condividi il tuo voto taggando @fantacer'
+    labelKey: 'howItWorks.step.share'
   },
   {
     icon: (
       <Gift className="w-14 h-14 md:w-[72px] md:h-[72px] lg:w-20 lg:h-20 stroke-black stroke-[1.5] hover:-translate-y-2 transition-transform duration-300 relative z-10" />
     ),
-    label: 'ritira il tuo premio'
+    labelKey: 'howItWorks.step.collect'
   },
 ]
 
@@ -38,15 +41,16 @@ const cardSizeClasses = [
 ]
 
 export function HowItWorksSection() {
+  const { t } = useLocale()
   return (
     <section className="snap-start relative w-full h-[100dvh] bg-[linear-gradient(to_bottom,#FF8A26_10%,#FF2FB2_100%)] text-white flex flex-col items-center justify-center overflow-hidden">
       <div className="safe-shell h-full flex flex-col">
       <div className="relative z-10 w-full max-w-7xl mx-auto flex flex-col items-center justify-center flex-1 min-h-0 py-8 lg:py-12">
 
         <h2 className="text-[clamp(1.75rem,6.2vw,4.5rem)] font-[900] text-center mb-4 md:mb-8 lg:mb-12 tracking-tighter lowercase leading-[0.95] flex flex-wrap xl:flex-nowrap justify-center items-center gap-x-2 md:gap-x-4 w-full [text-wrap:balance] flex-shrink-0">
-          <span className="whitespace-nowrap">è semplice...</span>
+          <span className="whitespace-nowrap">{t('howItWorks.title.simple')}</span>
           <span className="whitespace-nowrap flex items-center">
-            e si vince sempre!
+            {t('howItWorks.title.win')}
 
             <span className="flex items-center -space-x-3 md:-space-x-4 ml-2 md:ml-4 -mt-2">
               <Image
@@ -77,7 +81,7 @@ export function HowItWorksSection() {
               </div>
 
               <p className="text-[clamp(0.875rem,2.5vw,1.125rem)] font-[700] text-center max-w-[14rem] leading-tight mt-4 flex-shrink-0">
-                {step.label}
+                {t(step.labelKey)}
               </p>
             </div>
           ))}

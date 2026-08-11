@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { SponsorCards } from '@/components/sponsor/sponsor-cards';
+import { useLocale } from '@/lib/LocaleContext';
 
 interface RankedCompany {
   id: string;
@@ -12,6 +13,7 @@ interface RankedCompany {
 }
 
 export function LiveRankingSection() {
+  const { t } = useLocale();
   const [companies, setCompanies] = useState<RankedCompany[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +27,7 @@ export function LiveRankingSection() {
       const data = await res.json();
       setCompanies(data.companies || []);
     } catch {
-      setError('classifica non disponibile');
+      setError(t('liveRanking.error'));
     } finally {
       if (showLoader) setIsLoading(false);
     }
@@ -39,7 +41,7 @@ export function LiveRankingSection() {
         const data = await res.json();
         setCompanies(data.companies || []);
       } catch {
-        setError('classifica non disponibile');
+        setError(t('liveRanking.error'));
       } finally {
         setIsLoading(false);
       }
@@ -47,7 +49,7 @@ export function LiveRankingSection() {
     fetchSilent();
     const interval = setInterval(fetchSilent, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [t]);
 
   const [showAll, setShowAll] = useState(false);
   const rankingRef = useRef<HTMLDivElement>(null);
@@ -91,11 +93,11 @@ export function LiveRankingSection() {
         <div className="flex flex-col items-center justify-center flex-1 min-h-0 gap-4 md:gap-6">
 
         <h2 className="text-[clamp(2rem,7vw,70px)] font-[900] text-center tracking-tighter lowercase leading-[1.1] text-white">
-          classifica live
+          {t('liveRanking.title')}
         </h2>
 
         <p className="text-center text-lg font-bold text-white">
-          le aziende più votate del momento
+          {t('liveRanking.subtitle')}
         </p>
 
         <div className="w-full max-w-2xl mx-auto">
@@ -121,12 +123,12 @@ export function LiveRankingSection() {
                 onClick={() => fetchRanking(true)}
                 className="bg-[#fccb27] text-black font-black px-8 py-3 rounded-full border-[3px] border-black shadow-[4px_4px_0_#000] hover:shadow-[6px_6px_0_#000] hover:-translate-y-0.5 transition-all"
               >
-                riprova
+                {t('liveRanking.retry')}
               </button>
             </div>
           ) : companies.length === 0 ? (
             <p className="text-center text-white font-bold text-lg py-8">
-              nessun voto ancora — sii il primo!
+              {t('liveRanking.empty')}
             </p>
           ) : (
             <div className={`w-full max-w-2xl mx-auto bg-white rounded-2xl border-[3px] border-black shadow-[4px_4px_0_#000] p-4 md:p-6 flex flex-col shrink min-h-0 ${showAll ? 'h-[45dvh] md:h-[55dvh]' : 'max-h-[45dvh] md:max-h-[55dvh]'}`}>
@@ -149,7 +151,7 @@ export function LiveRankingSection() {
                           <div className="flex justify-between items-center mb-1">
                             <span className="font-bold text-sm md:text-base truncate text-black">{company.name}</span>
                             <span className="font-black text-sm bg-[#fccb27] px-2 py-0.5 rounded-full border-2 border-[#231f20] ml-2 whitespace-nowrap">
-                              {company.total_pallets} pallet
+                              {t('liveRanking.pallets', { count: company.total_pallets })}
                             </span>
                           </div>
                           <div className="w-full h-4 bg-white rounded-full border-2 border-[#231f20] overflow-hidden">
@@ -170,7 +172,7 @@ export function LiveRankingSection() {
                   onClick={toggleShowAll}
                   className="mt-2 w-full text-sm font-black text-[#8000ff] hover:text-black transition-colors py-2 cursor-pointer shrink-0"
                 >
-                  {showAll ? 'nascondi ↑' : 'mostra la classifica completa ↓'}
+                  {showAll ? t('liveRanking.hide') : t('liveRanking.showAll')}
                 </button>
               )}
             </div>

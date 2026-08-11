@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Star, X } from 'lucide-react'
+import { useLocale } from '@/lib/LocaleContext'
 
 type MessageType = 'success' | 'error' | 'warning' | 'info'
 
@@ -55,6 +56,7 @@ export function MessageOverlay({
   onConfirm, 
   onClose 
 }: MessageOverlayProps) {
+  const { t } = useLocale()
   const [isClosing, setIsClosing] = useState(false)
 
   const styles = typeStyles[type]
@@ -150,7 +152,7 @@ export function MessageOverlay({
 
           {/* Footer */}
           <p className="text-[10px] text-[#231f20]/40 pt-2">
-            Fantacer - Manifestazione Ceramica
+            {t('messageOverlay.footer')}
           </p>
         </div>
       </div>

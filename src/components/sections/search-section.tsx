@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { getVoteSecurity } from '@/lib/vote-security';
 import { TurnstileOverlay } from '@/components/voting/turnstile-overlay';
 import { MessageOverlay } from '@/components/voting/message-overlay';
+import { useLocale } from '@/lib/LocaleContext';
 
 const supabase = createClient();
 
@@ -20,6 +21,7 @@ interface CompanyResult {
 }
 
 export function SearchSection() {
+  const { t } = useLocale();
   const { selectedCompanies, setCompany, removeCompany, setPallet, usedPallets, unlockGameStep } = useVote();
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState<CompanyResult[]>([]);
@@ -120,7 +122,7 @@ export function SearchSection() {
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Errore durante la votazione');
+        throw new Error(data.error || t('search.errVote'));
       }
       unlockGameStep('success');
       setTimeout(() => {
@@ -131,7 +133,7 @@ export function SearchSection() {
         }
       }, 100);
     } catch (err) {
-      setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Errore sconosciuto' });
+      setMessage({ type: 'error', text: err instanceof Error ? err.message : t('search.errUnknown') });
     } finally {
       setLoading(false);
     }
@@ -147,7 +149,7 @@ export function SearchSection() {
 
           <div className="flex-none w-full text-center pt-[clamp(0.5rem,1.5dvh,1.5rem)]">
             <h2 className="text-[clamp(2.5rem,7.5vw,91px)] font-[900] text-center tracking-tighter leading-[1.2] text-[#4f03aa]">
-              VOTA LA TUA AZIENDA PREFERITA
+              {t('search.title')}
             </h2>
           </div>
 
@@ -159,7 +161,7 @@ export function SearchSection() {
                 type="text"
                 value={searchTerm}
                 onChange={handleSearchChange}
-                placeholder="Cerca azienda..."
+                placeholder={t('search.placeholder')}
                 className="w-full bg-[#c2e1ff] border-[3px] md:border-[4px] border-[#231f20] rounded-full pl-8 pr-16 md:pr-24 h-20 md:h-24 text-[clamp(1.5rem,4vw,32px)] md:text-[40px] font-[900] text-left shadow-[6px_6px_0_#000] placeholder:text-black/40 focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all duration-300 focus:bg-white focus:shadow-[8px_8px_0_#000] focus:-translate-y-1"
               />
               <div className="absolute right-6 md:right-8 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
@@ -186,7 +188,7 @@ export function SearchSection() {
                       }`}
                     >
                       {company.name}
-                      {alreadySelected && <span className="ml-2 text-sm">(già selezionata)</span>}
+                      {alreadySelected && <span className="ml-2 text-sm">{t('search.alreadySelected')}</span>}
                     </li>
                   );
                 })}
@@ -195,7 +197,7 @@ export function SearchSection() {
                     onClick={() => { setShowAll(true); fetchCompanies(searchTerm); }}
                     className="p-3 text-[#8000ff] cursor-pointer font-[700] text-center hover:bg-[#c2e1ff] transition-colors"
                   >
-                    View all
+                    {t('search.viewAll')}
                   </li>
                 )}
               </ul>
@@ -205,7 +207,7 @@ export function SearchSection() {
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => { setShowPalletPicker(false); setEditingIndex(null); }}>
                 <div className="bg-white rounded-3xl border-[3px] border-[#231f20] shadow-[6px_6px_0_#000] p-6 max-w-sm w-full mx-4" onClick={(e) => e.stopPropagation()}>
                   <h3 className="text-xl font-black text-center mb-4">
-                    {editingIndex !== null ? 'Cambia pallet' : 'Assegna pallet'}
+                    {editingIndex !== null ? t('search.changePallet') : t('search.assignPallet')}
                   </h3>
                   <p className="text-lg font-bold text-center text-[#8000ff] mb-6">{pendingCompany.name}</p>
                   <div className="flex justify-center gap-4">
@@ -229,7 +231,7 @@ export function SearchSection() {
                     disabled={!selectedPallet}
                     className="mt-6 w-full bg-[#8000ff] text-white font-black py-3 rounded-full border-[3px] border-[#231f20] shadow-[3px_3px_0_#000] hover:shadow-[5px_5px_0_#000] hover:-translate-y-0.5 transition-all disabled:opacity-50"
                   >
-                    CONFERMA
+                    {t('search.confirm')}
                   </button>
                 </div>
               </div>
@@ -252,7 +254,7 @@ export function SearchSection() {
                         onClick={() => handleEditPallet(index)}
                         className="bg-[#fccb27] px-3 py-1 rounded-full border-2 border-[#231f20] font-black text-sm whitespace-nowrap text-black hover:bg-[#ffe066] transition-colors"
                       >
-                        {item.pallet} pallet
+                        {t('search.palletBadge', { count: item.pallet })}
                       </button>
                       <button
                         onClick={() => removeCompany(index)}
@@ -274,10 +276,10 @@ export function SearchSection() {
             disabled={selectedCompanies.length < 3 || loading}
             className="bg-[#fccb27] hover:bg-[#ffe066] text-black text-2xl md:text-3xl font-[900] px-12 py-6 md:px-16 md:py-8 rounded-full border-[3px] md:border-[4px] border-[#231f20] shadow-[4px_4px_0_#000] hover:shadow-[6px_6px_0_#000] hover:-translate-y-1 transition-all duration-300 w-full max-w-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            INVIA IL TUO VOTO
+            {t('search.submit')}
           </Button>
           <p className="text-center text-base md:text-lg font-bold text-[#8000ff] mt-3 max-w-sm">
-            e controlla la classifica aggiornata
+            {t('search.subtitle')}
           </p>
         </div>
         </div>
@@ -296,7 +298,7 @@ export function SearchSection() {
         <MessageOverlay
           isVisible={true}
           type={message.type}
-          title={message.type === 'success' ? 'Voto Inviato!' : message.type === 'error' ? 'Errore' : 'Attenzione'}
+          title={message.type === 'success' ? t('search.msgSuccessTitle') : message.type === 'error' ? t('search.msgErrorTitle') : t('search.msgWarningTitle')}
           message={message.text}
           onClose={() => setMessage(null)}
         />

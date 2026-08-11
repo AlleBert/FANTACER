@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
+import { useLocale } from '@/lib/LocaleContext'
 
 export function ContactSection() {
+  const { t } = useLocale()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
@@ -48,8 +50,8 @@ export function ContactSection() {
           {/* Top mobile / Right desktop: info */}
           <div className="flex w-full flex-col items-center gap-4 text-center lg:w-1/2 lg:items-start lg:text-left">
             <h2 className="text-[clamp(2rem,7vw,90px)] font-[900] text-white tracking-tighter uppercase leading-[0.9]">
-              PARLA<br className="sm:hidden"/>
-              <span className="hidden sm:inline"> </span>CON NOI
+              {t('contact.title1')}<br className="sm:hidden"/>
+              <span className="hidden sm:inline"> </span>{t('contact.title2')}
             </h2>
 
             <div className="flex w-full flex-col items-center gap-3 lg:gap-6 lg:items-start">
@@ -68,18 +70,18 @@ export function ContactSection() {
           {/* Bottom mobile / Left desktop: form */}
           <div className="w-full lg:w-1/2 rounded-3xl border-[3px] border-[#231f20] bg-white p-4 md:p-6 lg:p-12 shadow-[6px_6px_0_#000]">
             <h3 className="text-[clamp(1rem,2.5vw,1.75rem)] font-black text-black uppercase tracking-tighter mb-2 md:mb-4 lg:mb-8 text-center leading-tight">
-              Inviaci un messaggio
+              {t('contact.sendMessage')}
             </h3>
 
             {status === 'success' && (
               <div role="alert" aria-live="polite" className="mb-4 md:mb-6 px-4 py-3 bg-green-100 text-green-900 font-bold text-sm rounded-2xl border-2 border-green-500 text-center">
-                Messaggio inviato con successo!
+                {t('contact.success')}
               </div>
             )}
 
             {status === 'error' && (
               <div role="alert" aria-live="polite" className="mb-4 md:mb-6 px-4 py-3 bg-red-100 text-red-900 font-bold text-sm rounded-2xl border-2 border-red-400 text-center">
-                Errore nell&apos;invio. Riprova pi&ugrave; tardi.
+                {t('contact.error')}
               </div>
             )}
 
@@ -87,9 +89,9 @@ export function ContactSection() {
               <input
                 type="text"
                 name="nome"
-                placeholder="NOME"
+                placeholder={t('contact.namePlaceholder')}
                 required
-                aria-label="Il tuo nome"
+                aria-label={t('contact.nameLabel')}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full px-5 py-2 md:py-3 lg:py-5 text-[clamp(0.8rem,1.5vw,1rem)] bg-white text-black font-bold uppercase rounded-full border-[3px] border-[#231f20] focus:outline-none focus:shadow-[4px_4px_0_#000] focus:-translate-y-0.5 shadow-[2px_2px_0_#000] transition-all"
@@ -97,19 +99,19 @@ export function ContactSection() {
               <input
                 type="email"
                 name="email"
-                placeholder="EMAIL"
+                placeholder={t('contact.emailPlaceholder')}
                 required
-                aria-label="La tua email"
+                aria-label={t('contact.emailLabel')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-5 py-2 md:py-3 lg:py-5 text-[clamp(0.8rem,1.5vw,1rem)] bg-white text-black font-bold uppercase rounded-full border-[3px] border-[#231f20] focus:outline-none focus:shadow-[4px_4px_0_#000] focus:-translate-y-0.5 shadow-[2px_2px_0_#000] transition-all"
               />
               <textarea
                 name="messaggio"
-placeholder="MESSAGGIO"
+                placeholder={t('contact.messagePlaceholder')}
                  rows={4}
                 required
-                aria-label="Il tuo messaggio"
+                aria-label={t('contact.messageLabel')}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 className="w-full px-5 md:px-6 py-4 md:py-5 lg:py-6 text-[clamp(0.8rem,1.5vw,1rem)] bg-white text-black font-bold uppercase rounded-[18px] border-[3px] border-[#231f20] focus:outline-none focus:shadow-[4px_4px_0_#000] focus:-translate-y-0.5 shadow-[2px_2px_0_#000] transition-all resize-none"
@@ -122,10 +124,10 @@ placeholder="MESSAGGIO"
                 {status === 'loading' ? (
                   <span className="flex items-center justify-center gap-2">
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    INVIO...
+                    {t('contact.sending')}
                   </span>
                 ) : (
-                  'INVIA'
+                  t('contact.submit')
                 )}
               </Button>
             </form>
