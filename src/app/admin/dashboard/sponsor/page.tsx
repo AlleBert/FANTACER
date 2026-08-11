@@ -1,9 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Image as ImageIcon, Plus, X } from 'lucide-react'
+import { Image as ImageIcon, Plus, X, Upload } from 'lucide-react'
 import { SponsorTable } from '@/components/admin/sponsor-table'
+import { useAdminRole } from '@/lib/use-admin-role'
+import { cn } from '@/lib/utils'
+
+const ALLOWED_LOGO_EXT = ['png', 'jpg', 'jpeg', 'webp', 'svg']
+const MAX_LOGO_BYTES = 5 * 1024 * 1024
+const LOGO_INPUT_ACCEPT = 'image/png,image/jpeg,image/webp,image/svg+xml'
 
 interface Sponsor {
   id: string;
@@ -15,11 +21,18 @@ interface Sponsor {
 }
 
 export default function SponsorPage() {
+  const role = useAdminRole()
+  const isViewer = role === 'viewer'
   const [sponsors, setSponsors] = useState<Sponsor[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<Sponsor | null>(null)
   const [form, setForm] = useState({ name: '', image_url: '', website_url: '', sort_order: 0 })
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null)
+  const [logoError, setLogoError] = useState<string | null>(null)
+  const [dragOver, setDragOver] = useState(false)
 
   const loadSponsors = async () => {
     const res = await fetch('/api/admin/sponsors')
@@ -40,6 +53,7 @@ export default function SponsorPage() {
   const openCreate = () => {
     setEditing(null)
     setForm({ name: '', image_url: '', website_url: '', sort_order: sponsors.length })
+    clearLogoFile()
     setShowModal(true)
   }
 
@@ -51,25 +65,75 @@ export default function SponsorPage() {
       website_url: sponsor.website_url || '',
       sort_order: sponsor.sort_order,
     })
+    clearLogoFile()
     setShowModal(true)
+  }
+
+  const revokeLogoPreview = () => {
+    if (logoPreviewUrl) {
+      URL.revokeObjectURL(logoPreviewUrl)
+      setLogoPreviewUrl(null)
+    }
+  }
+
+  const selectLogoFile = (file: File) => {
+    const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
+    if (!ALLOWED_LOGO_EXT.includes(ext)) {
+      setLogoError('Formato immagine non supportato. Usa PNG, JPG, JPEG, WEBP o SVG')
+      return
+    }
+    if (file.size > MAX_LOGO_BYTES) {
+      setLogoError('Immagine troppo grande (max 5MB)')
+      return
+    }
+    setLogoError(null)
+    revokeLogoPreview()
+    setLogoFile(file)
+    setLogoPreviewUrl(URL.createObjectURL(file))
+  }
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) selectLogoFile(file)
+    e.target.value = ''
+  }
+
+  const handleLogoDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setDragOver(false)
+    const file = e.dataTransfer.files?.[0]
+    if (file) selectLogoFile(file)
+  }
+
+  const clearLogoFile = () => {
+    revokeLogoPreview()
+    setLogoFile(null)
+    setLogoError(null)
   }
 
   const handleSave = async () => {
     if (!form.name) return
 
-    const body = editing
-      ? { ...form, id: editing.id }
-      : form
+    const formData = new FormData()
+    formData.append('name', form.name)
+    formData.append('website_url', form.website_url)
+    formData.append('sort_order', String(form.sort_order))
+    formData.append('is_active', String(editing ? editing.is_active : true))
+    if (editing) formData.append('id', editing.id)
+    if (logoFile) formData.append('file', logoFile)
 
     const res = await fetch('/api/admin/sponsors', {
       method: editing ? 'PUT' : 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      body: formData,
     })
 
     if (res.ok) {
       setShowModal(false)
+      clearLogoFile()
       loadSponsors()
+    } else {
+      const data = await res.json().catch(() => null)
+      setLogoError(data?.error || 'Errore durante il salvataggio')
     }
   }
 
@@ -95,11 +159,13 @@ export default function SponsorPage() {
           <h1 className="text-[clamp(1.25rem,4vw,2rem)] font-bold text-foreground tracking-tight">Sponsor</h1>
           <p className="text-[clamp(0.75rem,2.5vw,1rem)] text-muted-foreground">Gestione sponsor e partner</p>
         </div>
-        <button onClick={openCreate}
-          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 min-h-[36px] text-[clamp(0.75rem,2vw,0.875rem)] font-medium text-white hover:bg-primary/90 transition-colors">
-          <Plus className="h-4 w-4" />
-          Nuovo Sponsor
-        </button>
+        {!isViewer && (
+          <button onClick={openCreate}
+            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 min-h-[36px] text-[clamp(0.75rem,2vw,0.875rem)] font-medium text-white hover:bg-primary/90 transition-colors">
+            <Plus className="h-4 w-4" />
+            Nuovo Sponsor
+          </button>
+        )}
       </header>
 
       <Card className="border-border">
@@ -132,15 +198,19 @@ export default function SponsorPage() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => openEdit(s)} className="px-3 py-2.5 text-[clamp(0.65rem,2vw,0.8rem)] text-[#8000ff] font-bold rounded-lg border border-[#8000ff]/20 hover:bg-[#8000ff]/5">MODIFICA</button>
-                    <button onClick={() => handleDelete(s.id)} className="px-3 py-2.5 text-[clamp(0.65rem,2vw,0.8rem)] text-red-500 font-bold rounded-lg border border-red-500/20 hover:bg-red-500/5">ELIMINA</button>
+                    {!isViewer && (
+                      <>
+                        <button onClick={() => openEdit(s)} className="px-3 py-2.5 text-[clamp(0.65rem,2vw,0.8rem)] text-[#8000ff] font-bold rounded-lg border border-[#8000ff]/20 hover:bg-[#8000ff]/5">MODIFICA</button>
+                        <button onClick={() => handleDelete(s.id)} className="px-3 py-2.5 text-[clamp(0.65rem,2vw,0.8rem)] text-red-500 font-bold rounded-lg border border-red-500/20 hover:bg-red-500/5">ELIMINA</button>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
           )}
           <div className="hidden lg:block">
-            <SponsorTable sponsors={sponsors} onEdit={openEdit} onDelete={handleDelete} onToggleActive={handleToggleActive} />
+            <SponsorTable sponsors={sponsors} onEdit={openEdit} onDelete={handleDelete} onToggleActive={handleToggleActive} readOnly={isViewer} />
           </div>
         </CardContent>
       </Card>
@@ -159,9 +229,61 @@ export default function SponsorPage() {
                   className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
               </div>
               <div>
-                <label className="text-sm font-medium text-foreground">URL Logo</label>
-                <input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+                <label className="text-sm font-medium text-foreground">Logo</label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={LOGO_INPUT_ACCEPT}
+                  onChange={handleLogoChange}
+                  className="hidden"
+                />
+                <div
+                  onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={handleLogoDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={cn(
+                    "mt-1 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-6 text-center transition-all duration-200",
+                    dragOver
+                      ? "border-primary bg-primary/5 scale-[1.01]"
+                      : "border-border hover:border-muted-foreground hover:bg-muted/30"
+                  )}
+                >
+                  {logoPreviewUrl ? (
+                    <div className="flex flex-col items-center gap-3">
+                      <img src={logoPreviewUrl} alt="Anteprima logo" className="h-16 w-16 object-contain rounded border border-black/10" />
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">{logoFile?.name}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {(logoFile ? logoFile.size / 1024 : 0).toFixed(1)} KB
+                        </p>
+                      </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); clearLogoFile() }}
+                        className="text-xs text-muted-foreground hover:text-red-500 underline underline-offset-2 transition-colors"
+                      >
+                        Rimuovi file
+                      </button>
+                    </div>
+                  ) : form.image_url ? (
+                    <div className="flex flex-col items-center gap-3">
+                      <img src={form.image_url} alt="Logo attuale" className="h-16 w-16 object-contain rounded border border-black/10" />
+                      <p className="text-sm font-medium text-foreground">Logo attuale</p>
+                      <p className="text-xs text-muted-foreground">Clicca per sostituirlo</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="p-3 rounded-full bg-secondary/50">
+                        <Upload className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                      <p className="text-sm font-medium text-foreground">Trascina il logo qui o clicca per caricare</p>
+                      <p className="text-xs text-muted-foreground mt-1">PNG, JPG, JPEG, WEBP, SVG — Max 5MB</p>
+                    </div>
+                  )}
+                </div>
+                {logoError && (
+                  <p className="mt-1 text-xs text-red-500">{logoError}</p>
+                )}
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground">URL Sito Web</label>
