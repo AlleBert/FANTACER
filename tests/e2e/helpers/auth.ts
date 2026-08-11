@@ -3,9 +3,40 @@ import { createHmac } from 'crypto';
 
 const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL;
 const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD;
+const ADMIN_TOTP_SECRET = process.env.E2E_ADMIN_TOTP_SECRET;
+
+const VIEWER_EMAIL = process.env.E2E_VIEWER_EMAIL;
+const VIEWER_PASSWORD = process.env.E2E_VIEWER_PASSWORD;
 
 export function hasAdminCredentials(): boolean {
   return Boolean(ADMIN_EMAIL && ADMIN_PASSWORD);
+}
+
+export function hasAdminMfaCredentials(): boolean {
+  return Boolean(ADMIN_EMAIL && ADMIN_PASSWORD && ADMIN_TOTP_SECRET);
+}
+
+export function hasViewerCredentials(): boolean {
+  return Boolean(VIEWER_EMAIL && VIEWER_PASSWORD);
+}
+
+/**
+ * Viewers log in at AAL1 (no MFA) and are fully read-only. A dedicated viewer
+ * is provisioned with `npm run provision:e2e:admin -- --role=viewer`.
+ */
+export async function loginAsViewer(page: Page): Promise<void> {
+  if (!hasViewerCredentials()) {
+    throw new Error(
+      'E2E_VIEWER_EMAIL and E2E_VIEWER_PASSWORD env vars are required for viewer tests. ' +
+        'Provision with: npm run provision:e2e:admin -- --role=viewer',
+    );
+  }
+
+  await page.goto('/admin/login');
+  await page.getByPlaceholder('admin@fantacer.it').fill(VIEWER_EMAIL as string);
+  await page.getByPlaceholder('••••••••').fill(VIEWER_PASSWORD as string);
+  await page.getByRole('button', { name: 'Accedi' }).click();
+  await page.waitForLoadState('networkidle');
 }
 
 /**
@@ -68,7 +99,7 @@ export async function loginAsAdmin(page: Page): Promise<void> {
 export async function loginAsAdminWithMfa(page: Page): Promise<void> {
   await loginAsAdmin(page);
 
-  const totpSecret = process.env.E2E_ADMIN_TOTP_SECRET;
+  const totpSecret = ADMIN_TOTP_SECRET;
   if (!totpSecret) {
     throw new Error(
       'E2E_ADMIN_TOTP_SECRET env var is required to complete MFA login. Skippable with --grep-invert anyway.',
@@ -76,13 +107,38 @@ export async function loginAsAdminWithMfa(page: Page): Promise<void> {
   }
 
   const code = generateTotp(totpSecret);
+  await page.locator('input[placeholder="000000"]').waitFor({ state: 'visible' });
   await page.getByPlaceholder('000000').fill(code);
   await page.getByRole('button', { name: 'Verifica' }).click();
+  await page.waitForURL((url) => !url.pathname.startsWith('/admin/login'), {
+    timeout: 15_000,
+  });
   await page.waitForLoadState('networkidle');
 }
 
+/**
+ * Admin dashboard access requires MFA (role=admin → AAL2). Completes the full
+ * TOTP flow when the secret is available.
+ *
+ * La sessione AAL2 viene riusata a livello di modulo (per worker): il
+ * rate-limit MFA verify (default 5/15min per factorId) impedisce di
+ * ri-autenticarsi per ogni singolo test (es. visual-audit con 6 route × 3
+ * viewport). Il primo test esegue il login completo, gli altri riusano i
+ * cookie di sessione.
+ */
+let cachedAdminCookies: Awaited<ReturnType<ReturnType<Page['context']>['cookies']>> | null = null;
+
 export async function setupAdminForTest(page: Page, path?: string): Promise<void> {
-  await loginAsAdmin(page);
+  if (hasAdminMfaCredentials()) {
+    if (cachedAdminCookies) {
+      await page.context().addCookies(cachedAdminCookies);
+    } else {
+      await loginAsAdminWithMfa(page);
+      cachedAdminCookies = await page.context().cookies();
+    }
+  } else {
+    await loginAsAdmin(page);
+  }
   await page.goto(path || '/admin/dashboard/panoramica');
   await page.waitForLoadState('networkidle');
 }

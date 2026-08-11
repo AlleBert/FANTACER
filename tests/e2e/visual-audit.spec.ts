@@ -2,7 +2,7 @@ import { test } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { VIEWPORTS, type ViewportName } from './helpers/viewports';
-import { setupAdminForTest, hasAdminCredentials } from './helpers/auth';
+import { setupAdminForTest, hasAdminMfaCredentials } from './helpers/auth';
 import { collectSectionReport, type RouteReport, type SectionReport } from './helpers/layout-analysis';
 
 const SCREENSHOT_DIR = 'tests/e2e/visual-audit/screenshots';
@@ -130,8 +130,8 @@ test.describe('Visual Quality Audit', () => {
 
       for (const route of ROUTES) {
         test(`audit ${route.name}`, async ({ page }) => {
-          test.skip(Boolean(route.setup) && !hasAdminCredentials(),
-            'E2E admin credentials not configured');
+          test.skip(Boolean(route.setup) && !hasAdminMfaCredentials(),
+            'E2E admin MFA credentials not configured');
           const routeName = sanitizeRoute(route.name);
 
           const report: RouteReport = {

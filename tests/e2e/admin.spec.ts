@@ -2,9 +2,9 @@ import { test } from '@playwright/test';
 import { checkNoHorizontalOverflow } from './helpers/responsive';
 import { VIEWPORTS } from './helpers/viewports';
 import { checkAccessibility } from './helpers/accessibility';
-import { setupAdminForTest, hasAdminCredentials } from './helpers/auth';
+import { setupAdminForTest, hasAdminMfaCredentials } from './helpers/auth';
 
-const needsAdmin = () => test.skip(!hasAdminCredentials(), 'E2E admin credentials not configured');
+const needsAdmin = () => test.skip(!hasAdminMfaCredentials(), 'E2E admin MFA credentials not configured');
 
 test.describe('Admin Login — Responsive', () => {
   for (const [name, viewport] of Object.entries(VIEWPORTS)) {
