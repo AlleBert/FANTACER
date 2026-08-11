@@ -14,6 +14,10 @@ test.describe('Admin Sponsor — logo upload', () => {
   needsAdmin()
 
   test.beforeEach(async ({ page }) => {
+    const viewport = page.viewportSize()
+    if (viewport && viewport.width < 1024) {
+      test.skip(true, 'Desktop-only: table hidden on mobile viewports')
+    }
     await setupAdminForTest(page, '/admin/dashboard/sponsor')
   })
 
@@ -21,7 +25,7 @@ test.describe('Admin Sponsor — logo upload', () => {
     const name = createName()
 
     await page.getByRole('button', { name: 'Nuovo Sponsor' }).click()
-    await page.locator('input').first().fill(name)
+    await page.locator('label:has-text("Nome") + input').fill(name)
     await page.locator('input[type="file"]').setInputFiles({
       name: 'logo.png',
       mimeType: 'image/png',
