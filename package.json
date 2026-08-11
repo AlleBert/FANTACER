@@ -11,6 +11,7 @@
     "test:watch": "jest --watch",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "provision:e2e:admin": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/provision-e2e-admin.mjs",
     "typecheck": "tsc --noEmit",
     "analyze": "next build && next experimental-analyze -o",
     "lighthouse": "lhci autorun",

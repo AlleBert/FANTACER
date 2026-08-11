@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
-const siteUrl = "https://fantacer.it";
+const siteUrl = "https://www.fantacer.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

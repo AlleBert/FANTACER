@@ -19,6 +19,78 @@ npm run dev
 
 ---
 
+# Accesso Admin (sistema di login)
+
+L'area amministrativa è protetta da un **login** su `/admin/login` con due livelli di accesso:
+
+1. **Password** — email + password verificata tramite Supabase Auth;
+2. **Codice TOTP (MFA)** — obbligatorio per il ruolo `admin` (Google Authenticator, 1Password, ecc.), **non richiesto** per il ruolo `viewer`.
+
+### Ruoli
+
+| Ruolo | Livello sessione | MFA | Permessi |
+|---|---|---|---|
+| `admin` | AAL2 (password + TOTP verificato) | **Obbligatoria** | Completi: letture + tutte le scritture + export |
+| `viewer` | AAL1 (sola password) | No | **Read-only**: stesse sezioni e navigazione, nessuna scrittura, nessun export |
+
+Il server emette una **sessione sicura in cookie HttpOnly** (mai `localStorage`), valida solo se l'utente esiste nella tabella `admin_users` con `is_active = true`. Il ruolo è persistito nella colonna `role` di `admin_users` (`'admin' | 'viewer'`, default `'admin'`).
+
+- Le pagine `/admin/dashboard/*` senza sessione reindirizzano al login; senza il livello richiesto rispondono secondo il ruolo.
+- Gli **admin senza MFA configurata** vengono bloccati al login con l'errore `mfa_not_configured` (nessun auto-enroll, nessun loop): vanno ri-provisionati con `--force`.
+- Tutte le **scritture** (sponsors CRUD, batch attiva/reset/elimina, import aziende, coming-soon) e l'**export analytics** sono gate **admin-only** server-side (`requireRoleAdmin`): un viewer riceve `403` anche forzando la chiamata. La UI read-only per i viewer è comfort, non sicurezza.
+
+### Implementazione (file chiave)
+
+| Componente | File |
+|---|---|
+| Verifica lato server (`requireAdmin` / `requireRoleAdmin`) | `src/lib/admin-auth.ts` |
+| Protezione route (ex-middleware) + security headers | `src/proxy.ts` |
+| Pagina di login | `src/app/admin/login/page.tsx` |
+| API di login / challenge MFA / verify / logout / me | `src/app/api/admin/*` |
+| Tabella amministratori | `admin_users` (migrazione `supabase/migrations/20260811_add_admin_role_column.sql`) |
+
+### Protezioni incluse
+
+- **Rate limiting** su DB — login: 10 tentativi / 15 min, verifica MFA: 5 / 15 min (per IP + email/factor);
+- **Audit trail** — ogni evento (login, MFA, logout, rate-limit) viene scritto in `audit_logs`;
+- **Security headers** — CSP nonce-based, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff` applicati in `src/proxy.ts`.
+
+## Aggiungere un nuovo utente admin / viewer
+
+C'è un comando dedicato che crea l'utente completo (Auth + riga `admin_users` + codice TOTP):
+
+```bash
+npm run provision:e2e:admin -- --email=nuovo.utente@fantacer.it --password=una-password-lunga --yes
+```
+
+Cosa fa, in 3 passaggi:
+
+1. crea (o trova) l'utente in **Supabase Auth** con email confermata;
+2. garantisce la riga in **`admin_users`** con `is_active = true` e `role` (default `admin`);
+3. **enrolla e verifica un factor TOTP** e stampa secret base32 + **URI `otpauth://`** + **QR SVG scansionabile** (per configurare l'authenticator).
+
+Al termine scrive in `.env.local` le variabili `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD` ed `E2E_ADMIN_TOTP_SECRET`, mostrandole anche a schermo.
+
+**Requisiti**: nel file `.env` (o `.env.local`) servono `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY` — lo script li carica automaticamente.
+
+### Varianti utili
+
+| Comando | Effetto |
+|---|---|
+| `npm run provision:e2e:admin` | Sessione interattiva (chiede email, password, conferma) |
+| `... -- --email=a@b.it --password=P@ssw0rd --yes` | Non interattivo, scrittura automatica in `.env.local` |
+| `... -- --role=viewer` | Crea/aggiorna un utente **viewer** (read-only, AAL1, **senza TOTP**) |
+| `... -- --role=admin` | Default: ruolo admin con TOTP (equivalente a nessun flag) |
+| `... -- --force` | Rimuove il factor TOTP esistente e ne crea uno nuovo |
+| `... -- --verify` | Effettua un login completo (password + TOTP) per validare le env |
+| `... -- --help` | Mostra la guida completa |
+
+**Nota** sul codice TOTP: va aggiunto all'authenticator del nuovo utente (il secret base32 viene mostrato una sola volta). Se si perde, si rigenera con `--force`. Per gli utenti `admin` lo script genera anche un file **QR SVG** in `./.qr/` (gitignored): **apri il file e scansionalo con l'app authenticator** per caricare label + secret senza digitare.
+
+> **Google Authenticator — inserimento manuale**: GA rifiuta il secret in MAIUSCOLO con l'errore "carattere non valido nel valore del codice". Incollare il secret **in minuscolo** (es. `5o72hzwtz5bpcwf2ed36w7tfosttuuzp`). Il valore in `.env.local` è in maiuscolo: convertire prima dell'inserimento. **Suggerimento**: con il QR SVG il problema non si pone (nessuna digitazione).
+
+---
+
 # Engineering Quality System
 
 Il progetto include una pipeline automatizzata per garantire:
@@ -454,6 +526,7 @@ Il sistema funziona come rete di sicurezza contro:
 | `npm run visual:audit:admin` | Visual Quality Audit admin — 6 route admin × 3 viewport (+ bottom-nav) |
 | `npm run visual:audit:homepage` | Homepage Responsive Visual Audit — 6 viewport + sub-elementi + score |
 | `npm run visual:audit:ios` | iOS Safari Visual Audit — homepage su 7 dispositivi WebKit |
+| `npm run provision:e2e:admin` | Crea/aggiorna utente admin (Auth + `admin_users` + TOTP + QR SVG); `--role=viewer` per utenti read-only senza TOTP |
 
 ---
 
