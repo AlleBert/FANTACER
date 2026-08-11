@@ -14,9 +14,10 @@ interface SponsorTableProps {
   onEdit: (sponsor: Sponsor) => void;
   onDelete: (id: string) => void;
   onToggleActive: (sponsor: Sponsor) => void;
+  readOnly?: boolean;
 }
 
-export function SponsorTable({ sponsors, onEdit, onDelete, onToggleActive }: SponsorTableProps) {
+export function SponsorTable({ sponsors, onEdit, onDelete, onToggleActive, readOnly }: SponsorTableProps) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
@@ -27,7 +28,7 @@ export function SponsorTable({ sponsors, onEdit, onDelete, onToggleActive }: Spo
             <th className="p-3 font-black">Logo</th>
             <th className="p-3 font-black">Link</th>
             <th className="p-3 font-black">Attivo</th>
-            <th className="p-3 font-black">Azioni</th>
+            {!readOnly && <th className="p-3 font-black">Azioni</th>}
           </tr>
         </thead>
         <tbody>
@@ -52,6 +53,13 @@ export function SponsorTable({ sponsors, onEdit, onDelete, onToggleActive }: Spo
                 )}
               </td>
               <td className="p-3">
+                {readOnly ? (
+                  <span className={`px-3 py-2.5 rounded-full text-xs font-bold text-black ${
+                    sponsor.is_active ? 'bg-green-400' : 'bg-gray-200 text-gray-500'
+                  }`}>
+                    {sponsor.is_active ? 'SÌ' : 'NO'}
+                  </span>
+                ) : (
                   <button
                     onClick={() => onToggleActive(sponsor)}
                     className={`px-3 py-2.5 rounded-full text-xs font-bold border-2 border-black transition-colors ${
@@ -60,17 +68,20 @@ export function SponsorTable({ sponsors, onEdit, onDelete, onToggleActive }: Spo
                   >
                     {sponsor.is_active ? 'SÌ' : 'NO'}
                   </button>
+                )}
               </td>
-              <td className="p-3">
-                <div className="flex gap-2">
-                  <button onClick={() => onEdit(sponsor)} className="px-2 py-2.5 text-[#8000ff] font-bold text-xs rounded-md hover:bg-[#8000ff]/5">
-                    MODIFICA
-                  </button>
-                  <button onClick={() => onDelete(sponsor.id)} className="px-2 py-2.5 text-red-500 font-bold text-xs rounded-md hover:bg-red-500/5">
-                    ELIMINA
-                  </button>
-                </div>
-              </td>
+              {!readOnly && (
+                <td className="p-3">
+                  <div className="flex gap-2">
+                    <button onClick={() => onEdit(sponsor)} className="px-2 py-2.5 text-[#8000ff] font-bold text-xs rounded-md hover:bg-[#8000ff]/5">
+                      MODIFICA
+                    </button>
+                    <button onClick={() => onDelete(sponsor.id)} className="px-2 py-2.5 text-red-500 font-bold text-xs rounded-md hover:bg-red-500/5">
+                      ELIMINA
+                    </button>
+                  </div>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

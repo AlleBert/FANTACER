@@ -37,7 +37,14 @@ function AdminLoginForm() {
       const data = await res.json()
 
       if (!res.ok) {
-        setError(data.error || 'Login fallito')
+        if (data.code === 'mfa_not_configured') {
+          setError(
+            data.error ||
+              'MFA non configurato. Ripeti il provisioning: npm run provision:e2e:admin -- --force',
+          )
+        } else {
+          setError(data.error || 'Login fallito')
+        }
         return
       }
 

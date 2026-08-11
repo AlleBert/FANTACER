@@ -8,6 +8,7 @@ import { LineChart as RechartLine, Line, XAxis, YAxis, CartesianGrid, Tooltip, R
 import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { useRouter } from 'next/navigation'
+import { useAdminRole } from '@/lib/use-admin-role'
 
 interface Stats {
   totalVotes: number
@@ -26,6 +27,8 @@ interface DailyStats {
 
 export default function PanoramicaPage() {
   const router = useRouter()
+  const role = useAdminRole()
+  const isViewer = role === 'viewer'
   const [stats, setStats] = useState<Stats>({
     totalVotes: 0, uniqueVoters: 0, todayVotes: 0, yesterdayVotes: 0, activeNow: 0, onlineUsers: 0,
   })
@@ -243,21 +246,31 @@ export default function PanoramicaPage() {
             <CardTitle className="text-[clamp(1rem,3vw,1.25rem)]">Strumenti</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <p className="text-sm text-muted-foreground mb-2">
-              Esporta dati o importa aziende.
-            </p>
-            <Button onClick={() => handleExport('csv')}
-              className="w-full bg-primary hover:bg-primary/90 text-white">
-              <Download className="h-4 w-4 mr-2" /> Export CSV
-            </Button>
-            <Button variant="outline" onClick={() => handleExport('excel')}
-              className="w-full border-border text-foreground hover:bg-secondary">
-              <Download className="h-4 w-4 mr-2" /> Export Excel
-            </Button>
-            <Button variant="outline" onClick={() => router.push('/admin/import')}
-              className="w-full border-border text-foreground hover:bg-secondary">
-              <Upload className="h-4 w-4 mr-2" /> Import Aziende
-            </Button>
+            {isViewer ? (
+              <>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Modalità sola lettura: esportazione e import riservati agli amministratori.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Esporta dati o importa aziende.
+                </p>
+                <Button onClick={() => handleExport('csv')}
+                  className="w-full bg-primary hover:bg-primary/90 text-white">
+                  <Download className="h-4 w-4 mr-2" /> Export CSV
+                </Button>
+                <Button variant="outline" onClick={() => handleExport('excel')}
+                  className="w-full border-border text-foreground hover:bg-secondary">
+                  <Download className="h-4 w-4 mr-2" /> Export Excel
+                </Button>
+                <Button variant="outline" onClick={() => router.push('/admin/import')}
+                  className="w-full border-border text-foreground hover:bg-secondary">
+                  <Upload className="h-4 w-4 mr-2" /> Import Aziende
+                </Button>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

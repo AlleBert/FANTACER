@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Settings as SettingsIcon, Shield, ChevronDown, ChevronUp } from 'lucide-react'
 import { AuditCardList } from '@/components/admin/audit-card-list'
 import { AuditLogTable } from '@/components/admin/audit-log-table'
+import { useAdminRole } from '@/lib/use-admin-role'
 
 interface AuditLog {
   id: string
@@ -16,6 +17,8 @@ interface AuditLog {
 }
 
 export default function ImpostazioniPage() {
+  const role = useAdminRole()
+  const isViewer = role === 'viewer'
   const [comingSoonEnabled, setComingSoonEnabled] = useState(false)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [pendingValue, setPendingValue] = useState(false)
@@ -91,6 +94,12 @@ export default function ImpostazioniPage() {
             </div>
             {loadingFlag ? (
               <div className="h-6 w-11 animate-pulse rounded-full bg-muted" />
+            ) : isViewer ? (
+              <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${
+                comingSoonEnabled ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+              }`}>
+                {comingSoonEnabled ? 'Attivo' : 'Disattivo'}
+              </span>
             ) : (
               <button onClick={handleToggle} disabled={updating}
                 className={`relative h-9 w-14 rounded-full transition-colors disabled:opacity-50 ${

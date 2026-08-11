@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Upload, Download, Check, Trash2, Building2, Vote, AlertTriangle, X, CheckCircle, AlertCircle, FileSpreadsheet, FileText, ChevronDown } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { useAdminRole } from '@/lib/use-admin-role'
 
 interface BatchItem {
   name: string
@@ -28,6 +29,8 @@ interface ParsedRow {
 type Notification = { type: 'success' | 'error' | 'info'; text: string }
 
 export default function ImportPage() {
+  const role = useAdminRole()
+  const isViewer = role === 'viewer'
   const [batchInfo, setBatchInfo] = useState<BatchInfo>({ activeBatch: 'TEST', batches: [] })
   const [file, setFile] = useState<File | null>(null)
   const [batchName, setBatchName] = useState('')
@@ -352,14 +355,16 @@ export default function ImportPage() {
                 </div>
               ))}
             </div>
-            <Button 
-              variant="outline" 
-              onClick={() => window.open('/api/admin/companies/template', '_blank')}
-              className="border-border text-foreground hover:bg-secondary"
-            >
-              <Download className="h-4 w-4 mr-1.5" />
-              Scarica Template Excel
-            </Button>
+            {!isViewer && (
+              <Button 
+                variant="outline" 
+                onClick={() => window.open('/api/admin/companies/template', '_blank')}
+                className="border-border text-foreground hover:bg-secondary"
+              >
+                <Download className="h-4 w-4 mr-1.5" />
+                Scarica Template Excel
+              </Button>
+            )}
           </CardContent>
         </Card>
 
@@ -374,6 +379,16 @@ export default function ImportPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
+            {isViewer ? (
+              <div className="rounded-xl border border-border bg-secondary/30 p-6 text-center">
+                <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                <p className="text-sm font-medium text-foreground">Modalità sola lettura</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  L&apos;import aziende è riservato agli amministratori.
+                </p>
+              </div>
+            ) : (
+            <>
             {/* Batch name */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">Batch di destinazione</label>
@@ -567,6 +582,9 @@ export default function ImportPage() {
               </Button>
             )}
 
+          </>
+            )}
+
           </CardContent>
         </Card>
 
@@ -611,7 +629,7 @@ export default function ImportPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0">
-                          {!isActive && (
+                          {!isViewer && !isActive && (
                             <Button
                               variant="outline"
                               size="sm"
@@ -621,14 +639,16 @@ export default function ImportPage() {
                               Attiva
                             </Button>
                           )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setDeleteTarget(batch)}
-                            className="h-8 text-xs text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30">
-                            <Trash2 className="h-3.5 w-3.5 mr-1" />
-                            Elimina
-                          </Button>
+                          {!isViewer && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setDeleteTarget(batch)}
+                              className="h-8 text-xs text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30">
+                              <Trash2 className="h-3.5 w-3.5 mr-1" />
+                              Elimina
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>
