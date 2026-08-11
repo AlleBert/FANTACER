@@ -216,11 +216,11 @@ export default function SponsorPage() {
       </Card>
 
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowModal(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => { clearLogoFile(); setShowModal(false) }}>
           <div className="mx-4 w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lg" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-foreground">{editing ? 'Modifica Sponsor' : 'Nuovo Sponsor'}</h3>
-              <button onClick={() => setShowModal(false)}><X className="h-5 w-5 text-muted-foreground" /></button>
+              <button onClick={() => { clearLogoFile(); setShowModal(false) }}><X className="h-5 w-5 text-muted-foreground" /></button>
             </div>
             <div className="space-y-4">
               <div>
@@ -238,12 +238,27 @@ export default function SponsorPage() {
                   className="hidden"
                 />
                 <div
+                  role="button"
+                  tabIndex={0}
+                  aria-label={
+                    logoPreviewUrl
+                      ? `Logo selezionato: ${logoFile?.name ?? ''}`
+                      : form.image_url
+                        ? 'Logo attuale: clicca per sostituirlo'
+                        : 'Carica logo (trascina il file o clicca)'
+                  }
                   onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
                   onDragLeave={() => setDragOver(false)}
                   onDrop={handleLogoDrop}
                   onClick={() => fileInputRef.current?.click()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      fileInputRef.current?.click()
+                    }
+                  }}
                   className={cn(
-                    "mt-1 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-6 text-center transition-all duration-200",
+                    "mt-1 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-6 text-center transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary",
                     dragOver
                       ? "border-primary bg-primary/5 scale-[1.01]"
                       : "border-border hover:border-muted-foreground hover:bg-muted/30"
@@ -296,7 +311,7 @@ export default function SponsorPage() {
                   className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
               </div>
               <div className="flex justify-end gap-3 pt-2">
-                <button onClick={() => setShowModal(false)}
+                <button onClick={() => { clearLogoFile(); setShowModal(false) }}
                   className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-secondary">
                   Annulla
                 </button>
