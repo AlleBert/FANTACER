@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { requireAdmin, toAdminError } from '@/lib/admin-auth'
+import { requireAdmin, requireRoleAdmin, toAdminError } from '@/lib/admin-auth'
 
 export async function GET(request: NextRequest) {
   try {
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireAdmin(request)
+    await requireRoleAdmin(request)
     const { activeBatch } = await request.json()
 
     if (!activeBatch) {
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    await requireAdmin(request)
+    await requireRoleAdmin(request)
     const { batchName } = await request.json()
 
     if (!batchName) {

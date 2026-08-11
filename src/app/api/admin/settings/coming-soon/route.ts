@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { requireAdmin, toAdminError } from '@/lib/admin-auth'
+import { requireAdmin, requireRoleAdmin, toAdminError } from '@/lib/admin-auth'
 
 const ERROR = (status: number) =>
   status === 401 ? 'Non autorizzato' : 'Accesso negato'
 
 export async function PUT(request: NextRequest) {
   try {
-    await requireAdmin(request)
+    await requireRoleAdmin(request)
 
     const body = await request.json()
     const enabled = body.enabled === true

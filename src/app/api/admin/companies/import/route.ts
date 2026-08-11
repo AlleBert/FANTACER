@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { requireAdmin, toAdminError } from '@/lib/admin-auth'
+import { requireRoleAdmin, toAdminError } from '@/lib/admin-auth'
 import * as XLSX from 'xlsx'
 
 const HEADER_MAP: Record<string, string> = {
@@ -95,7 +95,7 @@ function parseXLSX(buffer: ArrayBuffer): { headers: string[]; rows: Record<strin
 
 export async function POST(request: NextRequest) {
   try {
-    await requireAdmin(request)
+    await requireRoleAdmin(request)
     const formData = await request.formData()
     const file = formData.get('file') as File
     const batchName = formData.get('batchName') as string

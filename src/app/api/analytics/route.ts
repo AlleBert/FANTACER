@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { requireAdmin, toAdminError } from '@/lib/admin-auth'
+import { requireAdmin, requireRoleAdmin, toAdminError } from '@/lib/admin-auth'
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,6 +10,11 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type') || 'summary'
+
+    // Export (estrazione massiva CSV) è privilegiato: solo admin (MFA aal2).
+    if (type === 'export') {
+      await requireRoleAdmin(request)
+    }
     const dateFrom = searchParams.get('from')
     const dateTo = searchParams.get('to')
 

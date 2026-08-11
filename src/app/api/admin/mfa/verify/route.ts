@@ -15,11 +15,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Rate limit TOTP attempts to block code brute force.
+    // Default: 5 attempts / 15min per factorId. Overridable per env for E2E
+    // suites that must complete several MFA logins in sequence.
     const ip = getClientIp(request)
     const allowed = await checkRateLimit(
       `admin:mfa:${ip}:${String(factorId)}`,
       15 * 60 * 1000,
-      5,
+      Number(process.env.ADMIN_MFA_VERIFY_RATE_MAX ?? 5),
     )
     if (!allowed) {
       await writeAuditEvent({
@@ -35,7 +37,7 @@ export async function POST(request: NextRequest) {
     }
 
     // AAL1 allowed at entry; verify() promotes the session to AAL2.
-    const { user } = await requireAdmin(request, { minAal: 'aal1' })
+    const { user, role } = await requireAdmin(request, { minAal: 'aal1' })
 
     const supabase = await createClient()
     const { data, error } = await supabase.auth.mfa.verify({ factorId, challengeId, code })
@@ -58,7 +60,7 @@ export async function POST(request: NextRequest) {
       metadata: { factorId, email: user.email },
     })
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, role })
   } catch (e) {
     const status = toAdminError(e)
     return NextResponse.json(
