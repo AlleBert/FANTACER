@@ -42,7 +42,7 @@ Funzioni pure di supporto:
 - `BUCKET = 'sponsor-logos'`
 - `ALLOWED_EXT = ['png', 'jpg', 'jpeg', 'webp', 'svg']`
 - `MAX_FILE_BYTES = 5 * 1024 * 1024`
-- `buildLogoPath(seed: string, ext: string): string` → `sponsors/{seed}.{ext}` dove `seed` è un uuid: su PUT si usa l'id dello sponsor esistente; su POST (sponsor non ancora inserito) si usa `crypto.randomUUID()`.
+- `buildLogoPath(seed: string, ext: string): string` → `sponsors/{seed}.{ext}` dove `seed` è un uuid generato con `crypto.randomUUID()` ad ogni upload (POST e PUT). Seed univoco ad ogni caricamento evita collisioni di path quando un logo viene sostituito con un file della stessa estensione (`upsert: false` non sovrascrive).
 - `getExtFromFilename(name: string): string | null` → estensione in minuscolo se ammessa, altrimenti null.
 - `getPublicLogoUrl(bucketUrl: string, path: string): string` → concatena `NEXT_PUBLIC_SUPABASE_URL` + `/storage/v1/object/public/{bucket}/{path}`.
 - `isBucketUrl(url: string): boolean` → vero se `url` contiene `/storage/v1/object/public/sponsor-logos/`.
@@ -67,7 +67,7 @@ Rilevamento: `request.headers.get('content-type')?.includes('multipart/form-data
 1. `requireRoleAdmin(request)`; richiede `id` → 400 se assente.
 2. Legge campi + `file` opzionale.
 3. Fetch dello sponsor esistente (per recuperare il vecchio `image_url`).
-4. Se `file` presente: valida come sopra, carica con `buildLogoPath(id, ext)`, nuova `image_url`; se il vecchio `image_url` è nel bucket (`isBucketUrl`), elimina il vecchio oggetto (`storage.from(BUCKET).remove([path])`).
+4. Se `file` presente: valida come sopra, carica con `buildLogoPath(crypto.randomUUID(), ext)`, nuova `image_url`; se il vecchio `image_url` è nel bucket (`isBucketUrl`), elimina il vecchio oggetto (`storage.from(BUCKET).remove([path])`).
 5. Se `file` assente: `image_url` resta quello del corpo (se fornito) oppure quello esistente.
 6. Update con `.select().single()`.
 
