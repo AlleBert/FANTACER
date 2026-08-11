@@ -2,7 +2,8 @@
  * @jest-environment node
  */
 import type { NextRequest } from 'next/server'
-import { PUT } from '../src/app/api/admin/sponsors/route'
+import { POST, PUT, DELETE } from '../src/app/api/admin/sponsors/route'
+import { SPONSOR_LOGO_BUCKET, SPONSOR_LOGO_MAX_BYTES } from '../src/lib/sponsor-logo'
 
 jest.mock('@/lib/supabase/admin', () => ({ createAdminClient: jest.fn() }))
 jest.mock('@/lib/admin-auth', () => ({
@@ -36,6 +37,13 @@ function formRequest(
   return {
     headers: { get: (name: string) => (name === 'content-type' ? 'multipart/form-data; boundary=test' : null) },
     formData: async () => ({ has, get }),
+  } as unknown as NextRequest
+}
+
+function deleteRequest(url: string): NextRequest {
+  return {
+    url,
+    headers: { get: () => null },
   } as unknown as NextRequest
 }
 
@@ -159,5 +167,136 @@ describe('PUT /api/admin/sponsors', () => {
     const removed = remove.mock.calls[0][0] as string[]
     expect(removed).toHaveLength(1)
     expect(removed[0]).toMatch(/^sponsors\/[0-9a-f-]+\.png$/)
+  })
+})
+
+describe('POST /api/admin/sponsors', () => {
+  const ORIGINAL_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
+
+  let upload: jest.Mock
+  let remove: jest.Mock
+  let insertSingle: jest.Mock
+  let supabase: ReturnType<typeof buildSupabase>
+
+  afterAll(() => {
+    if (ORIGINAL_URL === undefined) {
+      delete process.env.NEXT_PUBLIC_SUPABASE_URL
+    } else {
+      process.env.NEXT_PUBLIC_SUPABASE_URL = ORIGINAL_URL
+    }
+  })
+
+  function buildSupabase() {
+    upload = jest.fn()
+    remove = jest.fn(async () => ({ error: null }))
+    insertSingle = jest.fn()
+    const chain = {
+      insert: jest.fn(() => ({ select: jest.fn(() => ({ single: insertSingle })) })),
+    }
+    return {
+      storage: { from: jest.fn().mockReturnValue({ upload, remove }) },
+      from: jest.fn().mockReturnValue(chain),
+    }
+  }
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockRequireRoleAdmin.mockResolvedValue(undefined)
+    process.env.NEXT_PUBLIC_SUPABASE_URL = BASE
+    supabase = buildSupabase()
+    mockCreateAdminClient.mockReturnValue(supabase)
+  })
+
+  it('multipart POST rejects an unsupported extension server-side', async () => {
+    const res = await POST(formRequest({ name: 'logo.gif', size: 10, type: 'image/gif' }, { name: 'Acme' }))
+
+    expect(res.status).toBe(400)
+    expect(await res.json()).toEqual({ error: 'Formato immagine non supportato. Usa PNG, JPG, JPEG, WEBP o SVG' })
+    expect(upload).not.toHaveBeenCalled()
+  })
+
+  it('multipart POST rejects a file larger than 5MB server-side', async () => {
+    const res = await POST(
+      formRequest({ name: 'logo.png', size: SPONSOR_LOGO_MAX_BYTES + 1, type: 'image/png' }, { name: 'Acme' }),
+    )
+
+    expect(res.status).toBe(400)
+    expect(await res.json()).toEqual({ error: 'Immagine troppo grande (max 5MB)' })
+    expect(upload).not.toHaveBeenCalled()
+  })
+
+  it('multipart POST removes the uploaded logo when the insert fails', async () => {
+    upload.mockResolvedValue({ data: { path: 'sponsors/uploaded.png' }, error: null })
+    insertSingle.mockResolvedValue({ data: null, error: { message: 'DB fail' } })
+
+    const res = await POST(formRequest({ name: 'logo.png', size: 10, type: 'image/png' }, { name: 'Acme' }))
+
+    expect(res.status).toBe(500)
+    expect(remove).toHaveBeenCalledTimes(1)
+    const removed = remove.mock.calls[0][0] as string[]
+    expect(removed).toHaveLength(1)
+    expect(removed[0]).toMatch(/^sponsors\/[0-9a-f-]+\.png$/)
+    expect(supabase.storage.from).toHaveBeenCalledWith(SPONSOR_LOGO_BUCKET)
+  })
+})
+
+describe('DELETE /api/admin/sponsors', () => {
+  const ORIGINAL_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
+
+  let singleSelect: jest.Mock
+  let remove: jest.Mock
+  let supabase: ReturnType<typeof buildSupabase>
+
+  afterAll(() => {
+    if (ORIGINAL_URL === undefined) {
+      delete process.env.NEXT_PUBLIC_SUPABASE_URL
+    } else {
+      process.env.NEXT_PUBLIC_SUPABASE_URL = ORIGINAL_URL
+    }
+  })
+
+  function buildSupabase() {
+    singleSelect = jest.fn()
+    remove = jest.fn(async () => ({ error: null }))
+    const chain = {
+      select: jest.fn(() => ({ eq: jest.fn(() => ({ single: singleSelect })) })),
+      delete: jest.fn(() => ({ eq: jest.fn(async () => ({ error: null })) })),
+    }
+    return {
+      storage: { from: jest.fn().mockReturnValue({ remove }) },
+      from: jest.fn().mockReturnValue(chain),
+    }
+  }
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockRequireRoleAdmin.mockResolvedValue(undefined)
+    process.env.NEXT_PUBLIC_SUPABASE_URL = BASE
+    supabase = buildSupabase()
+    mockCreateAdminClient.mockReturnValue(supabase)
+  })
+
+  const STORED_URL = `${BASE}/storage/v1/object/public/sponsor-logos/sponsors/stored.png`
+
+  it('DELETE removes the stored logo', async () => {
+    singleSelect.mockResolvedValue({ data: { image_url: STORED_URL }, error: null })
+
+    const res = await DELETE(deleteRequest('https://example.com/api/admin/sponsors?id=s1'))
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ success: true })
+    expect(remove).toHaveBeenCalledTimes(1)
+    expect(remove.mock.calls[0][0]).toEqual(['sponsors/stored.png'])
+    expect(supabase.storage.from).toHaveBeenCalledWith(SPONSOR_LOGO_BUCKET)
+  })
+
+  it('DELETE leaves external URLs untouched', async () => {
+    singleSelect.mockResolvedValue({ data: { image_url: 'https://example.com/logo.png' }, error: null })
+
+    const res = await DELETE(deleteRequest('https://example.com/api/admin/sponsors?id=s1'))
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ success: true })
+    expect(remove).not.toHaveBeenCalled()
   })
 })
