@@ -26,32 +26,62 @@ function isAdminPage(pathname: string): boolean {
   return pathname.startsWith('/admin') && !pathname.startsWith('/api/');
 }
 
-/**
- * Nonce-based CSP for the admin section. Next.js App Router reads the nonce
- * from this header and applies it to its own inline scripts/styles.
- */
-function applyAdminSecurityHeaders(response: NextResponse): void {
-  const nonce = crypto.randomBytes(16).toString('base64');
-  const isDev = process.env.NODE_ENV !== 'production';
+function buildAdminCsp(nonce: string, isDev: boolean): string {
+  return [
+    "default-src 'self'",
+    `script-src 'self' 'nonce-${nonce}'${isDev ? " 'unsafe-eval'" : ''}`,
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data:",
+    "connect-src 'self' https:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+  ].join('; ');
+}
 
-  response.headers.set(
-    'Content-Security-Policy',
-    [
-      "default-src 'self'",
-      `script-src 'self' 'nonce-${nonce}'${isDev ? " 'unsafe-eval'" : ''}`,
-      "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https:",
-      "font-src 'self' data:",
-      "connect-src 'self' https:",
-      "object-src 'none'",
-      "base-uri 'self'",
-      "form-action 'self'",
-      "frame-ancestors 'none'",
-    ].join('; '),
-  );
+function setSecurityHeaders(response: NextResponse, csp: string): void {
+  response.headers.set('Content-Security-Policy', csp);
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+}
+
+/**
+ * Nonce-based CSP for admin page responses. Next.js App Router extracts the
+ * nonce from the CSP header on the REQUEST (not the response) and applies it
+ * to its own inline scripts/styles during SSR. The request headers must be
+ * propagated via `NextResponse.next({ request })` for the nonce to reach the
+ * renderer; without this every inline script is blocked and the page renders
+ * white. Cookies already set on the original response are preserved.
+ */
+function applyAdminPageHeaders(request: NextRequest, response: NextResponse): NextResponse {
+  const nonce = crypto.randomBytes(16).toString('base64');
+  const isDev = process.env.NODE_ENV !== 'production';
+  const csp = buildAdminCsp(nonce, isDev);
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+  requestHeaders.set('Content-Security-Policy', csp);
+
+  const nextResponse = NextResponse.next({ request: { headers: requestHeaders } });
+  for (const cookie of response.cookies.getAll()) {
+    const { name, value, ...options } = cookie;
+    nextResponse.cookies.set(name, value, options);
+  }
+  setSecurityHeaders(nextResponse, csp);
+  return nextResponse;
+}
+
+/**
+ * Response-only security headers for redirects: no SSR happens on a 3xx, so
+ * the nonce does not need to reach the renderer.
+ */
+function applyAdminResponseHeaders(response: NextResponse): void {
+  const nonce = crypto.randomBytes(16).toString('base64');
+  const isDev = process.env.NODE_ENV !== 'production';
+  setSecurityHeaders(response, buildAdminCsp(nonce, isDev));
 }
 
 export async function proxy(request: NextRequest) {
@@ -91,7 +121,7 @@ export async function proxy(request: NextRequest) {
       const loginUrl = new URL('/admin/login', request.url);
       loginUrl.searchParams.set('next', pathname);
       const redirect = NextResponse.redirect(loginUrl);
-      applyAdminSecurityHeaders(redirect);
+      applyAdminResponseHeaders(redirect);
       return redirect;
     }
 
@@ -118,7 +148,7 @@ export async function proxy(request: NextRequest) {
       const loginUrl = new URL('/admin/login', request.url);
       loginUrl.searchParams.set('next', pathname);
       const redirect = NextResponse.redirect(loginUrl);
-      applyAdminSecurityHeaders(redirect);
+      applyAdminResponseHeaders(redirect);
       return redirect;
     }
 
@@ -132,7 +162,7 @@ export async function proxy(request: NextRequest) {
         loginUrl.searchParams.set('next', pathname);
         loginUrl.searchParams.set('mfa', '1');
         const redirect = NextResponse.redirect(loginUrl);
-        applyAdminSecurityHeaders(redirect);
+        applyAdminResponseHeaders(redirect);
         return redirect;
       }
     }
@@ -162,7 +192,7 @@ export async function proxy(request: NextRequest) {
   }
 
   if (isAdminPage(pathname)) {
-    applyAdminSecurityHeaders(response);
+    return applyAdminPageHeaders(request, response);
   }
 
   return response;
