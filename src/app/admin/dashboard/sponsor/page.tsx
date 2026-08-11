@@ -5,10 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Image as ImageIcon, Plus, X, Upload } from 'lucide-react'
 import { SponsorTable } from '@/components/admin/sponsor-table'
 import { useAdminRole } from '@/lib/use-admin-role'
+import { SPONSOR_LOGO_MAX_BYTES, getExtFromFilename } from '@/lib/sponsor-logo'
 import { cn } from '@/lib/utils'
 
-const ALLOWED_LOGO_EXT = ['png', 'jpg', 'jpeg', 'webp', 'svg']
-const MAX_LOGO_BYTES = 5 * 1024 * 1024
 const LOGO_INPUT_ACCEPT = 'image/png,image/jpeg,image/webp,image/svg+xml'
 
 interface Sponsor {
@@ -77,12 +76,11 @@ export default function SponsorPage() {
   }
 
   const selectLogoFile = (file: File) => {
-    const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
-    if (!ALLOWED_LOGO_EXT.includes(ext)) {
+    if (!getExtFromFilename(file.name)) {
       setLogoError('Formato immagine non supportato. Usa PNG, JPG, JPEG, WEBP o SVG')
       return
     }
-    if (file.size > MAX_LOGO_BYTES) {
+    if (file.size > SPONSOR_LOGO_MAX_BYTES) {
       setLogoError('Immagine troppo grande (max 5MB)')
       return
     }
