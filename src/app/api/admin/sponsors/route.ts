@@ -41,9 +41,8 @@ async function removeStoredLogo(supabase: AdminClient, imageUrl: string | null) 
   if (!imageUrl || !isBucketUrl(imageUrl)) return
   const path = extractPathFromUrl(imageUrl)
   if (path) {
-    try {
-      await supabase.storage.from(SPONSOR_LOGO_BUCKET).remove([path])
-    } catch {
+    const { error } = await supabase.storage.from(SPONSOR_LOGO_BUCKET).remove([path])
+    if (error) {
       // best-effort: il record è già salvato, non bloccare la risposta
     }
   }
@@ -153,6 +152,7 @@ export async function PUT(request: NextRequest) {
     let is_active = true
     let sort_order = 0
     let newImageUrl: string | null = null
+    let isJsonRequest = false
 
     if (isMultipart(request)) {
       const { fields, file } = await parseForm(request)
@@ -168,6 +168,7 @@ export async function PUT(request: NextRequest) {
         newImageUrl = result.url
       }
     } else {
+      isJsonRequest = true
       const body = await request.json()
       id = body.id ?? null
       name = body.name ?? null
@@ -187,7 +188,11 @@ export async function PUT(request: NextRequest) {
       .eq('id', id)
       .single()
 
-    const finalImageUrl = newImageUrl ?? image_url ?? existing?.image_url ?? null
+    const finalImageUrl = newImageUrl
+      ? newImageUrl
+      : isJsonRequest
+        ? image_url
+        : existing?.image_url ?? null
 
     const { data, error } = await supabase
       .from('sponsors')
@@ -197,6 +202,9 @@ export async function PUT(request: NextRequest) {
       .single()
 
     if (error) {
+      if (newImageUrl) {
+        await removeStoredLogo(supabase, newImageUrl)
+      }
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
