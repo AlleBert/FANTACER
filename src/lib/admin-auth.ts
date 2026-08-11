@@ -13,9 +13,12 @@ export class AdminAuthError extends Error {
   }
 }
 
+export type AdminRole = 'admin' | 'viewer'
+
 export interface AdminContext {
   user: User
   aal: AuthenticatorAssuranceLevels
+  role: AdminRole
 }
 
 /**
@@ -25,16 +28,15 @@ export interface AdminContext {
  *    and refreshes the session cookie if possible.
  * 2. `admin_users` authorization: `auth_id` must match the authenticated
  *    user and `is_active` must be true.
- * 3. AAL enforcement: when `minAal` is requested (default for admin data
- *    routes) the session must already be at `aal2`; a session at `aal1`
- *    (password-only) is rejected before any privileged access.
+ * 3. AAL enforcement depending on role: `admin` must be at `aal2` (MFA
+ *    TOTP obbligatoria); `viewer` is allowed at `aal1` (nessuna MFA).
  *
  * The service role client must be instantiated by the caller only AFTER
  * this gate passes.
  */
 export async function requireAdmin(
   request: NextRequest,
-  opts?: { minAal: AuthenticatorAssuranceLevels },
+  opts?: { minAal?: AuthenticatorAssuranceLevels },
 ): Promise<AdminContext> {
   const supabase = await createClient()
 
@@ -47,7 +49,7 @@ export async function requireAdmin(
   const adminSupabase = createAdminClient()
   const { data: adminUser } = await adminSupabase
     .from('admin_users')
-    .select('id')
+    .select('id, role')
     .eq('auth_id', user.id)
     .eq('is_active', true)
     .single()
@@ -56,7 +58,8 @@ export async function requireAdmin(
     throw new AdminAuthError(403, 'Accesso negato')
   }
 
-  const minAal = opts?.minAal ?? 'aal2'
+  const role: AdminRole = adminUser.role === 'viewer' ? 'viewer' : 'admin'
+  const minAal = opts?.minAal ?? (role === 'admin' ? 'aal2' : 'aal1')
   const { data: level } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
   const aal: AuthenticatorAssuranceLevels = level?.currentLevel ?? 'aal1'
 
@@ -64,7 +67,22 @@ export async function requireAdmin(
     throw new AdminAuthError(403, 'MFA richiesta')
   }
 
-  return { user, aal }
+  return { user, aal, role }
+}
+
+/**
+ * Role-aware gate for admin-only operations (writes, privileged export).
+ * Requires a valid `admin` role AND its MFA level (`aal2`); `viewer` is
+ * rejected before any privileged access.
+ */
+export async function requireRoleAdmin(
+  request: NextRequest,
+): Promise<AdminContext> {
+  const ctx = await requireAdmin(request)
+  if (ctx.role !== 'admin') {
+    throw new AdminAuthError(403, 'Operazione consentita solo agli admin')
+  }
+  return ctx
 }
 
 export function toAdminError(e: unknown): number {

@@ -95,9 +95,37 @@ export async function proxy(request: NextRequest) {
       return redirect;
     }
 
-    // Pages render only at AAL2; the MFA step happens inside /admin/login.
-    // API handlers re-validate AAL inside requireAdmin() (defense in depth).
-    if (!isApi) {
+    // Risolve il ruolo degli admin_users (service role). Fail-closed:
+    // lookup con errore o riga assente/inattiva ⇒ nessun accesso.
+    let role: string | null = null;
+    try {
+      const adminClient = createAdminClient();
+      const { data } = await adminClient
+        .from('admin_users')
+        .select('role')
+        .eq('auth_id', user.id)
+        .eq('is_active', true)
+        .maybeSingle();
+      role = data?.role ?? null;
+    } catch {
+      role = null;
+    }
+
+    if (role !== 'admin' && role !== 'viewer') {
+      if (isApi) {
+        return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
+      }
+      const loginUrl = new URL('/admin/login', request.url);
+      loginUrl.searchParams.set('next', pathname);
+      const redirect = NextResponse.redirect(loginUrl);
+      applyAdminSecurityHeaders(redirect);
+      return redirect;
+    }
+
+    // Pages: admin renderizza solo a AAL2 (MFA obbligatoria); il passo MFA
+    // avviene dentro /admin/login. I viewer sono ammessi a AAL1.
+    // API handlers re-validano AAL/ruolo dentro requireAdmin() (defense in depth).
+    if (!isApi && role === 'admin') {
       const { data: level } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
       if ((level?.currentLevel ?? 'aal1') < 'aal2') {
         const loginUrl = new URL('/admin/login', request.url);
