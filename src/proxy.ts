@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { createAdminClient } from '@/lib/supabase/admin';
 import crypto from 'crypto';
+import { LOCALE_COOKIE, LOCALE_COOKIE_MAX_AGE, resolveLocale } from '@/lib/locale';
 
 const PROTECTED_PREFIXES = ['/admin/dashboard'];
 const PROTECTED_API = ['/api/admin', '/api/analytics'];
@@ -108,6 +109,19 @@ export async function proxy(request: NextRequest) {
       },
     },
   );
+
+  // Lingua: cookie sticky con precedenza; se assente la risolve da
+  // Accept-Language e la persiste. Fallback finale 'it'.
+  const existingLocale = request.cookies.get(LOCALE_COOKIE)?.value;
+  const locale = resolveLocale(request.headers.get('accept-language'), existingLocale);
+  if (!existingLocale) {
+    response.cookies.set(LOCALE_COOKIE, locale, {
+      path: '/',
+      maxAge: LOCALE_COOKIE_MAX_AGE,
+      httpOnly: false,
+      sameSite: 'lax',
+    });
+  }
 
   if (isProtected(pathname)) {
     const {

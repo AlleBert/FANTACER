@@ -5,8 +5,10 @@ import Image from 'next/image'
 import { useVote } from '@/lib/VoteContext'
 import confetti from 'canvas-confetti'
 import { SponsorCards } from '@/components/sponsor/sponsor-cards'
+import { useLocale } from '@/lib/LocaleContext'
 
 function IphoneStoryMockup({ companyName }: { companyName?: string }) {
+  const { t } = useLocale()
   return (
     <div 
       className="relative w-[140px] xs:w-[160px] sm:w-[200px] md:w-[250px] lg:w-[300px] xl:w-[340px] mx-auto lg:mx-0 shrink-0 transform md:rotate-1"
@@ -33,13 +35,13 @@ function IphoneStoryMockup({ companyName }: { companyName?: string }) {
         <div className="flex flex-col items-center justify-center space-y-2.5 text-center mt-2 md:mt-4">
           <div className="bg-black/85 px-3.5 py-1.5 rounded-xl backdrop-blur-sm inline-block">
             <h3 className="text-sm md:text-base font-bold text-white leading-tight">
-              Hai votato ceramica <br/> <span className="text-[#fccb27]">{companyName || 'Nessuna azienda'}</span>
+              {t('success.voted')} <br/> <span className="text-[#fccb27]">{companyName || t('success.noCompany')}</span>
             </h3>
           </div>
           
           <div className="bg-white px-2.5 py-1 rounded-lg inline-block transform -rotate-1">
             <p className="text-[10px] md:text-xs font-bold text-black uppercase tracking-wide">
-              miglior stand 2026
+              {t('success.bestStand')}
             </p>
           </div>
         </div>
@@ -49,9 +51,9 @@ function IphoneStoryMockup({ companyName }: { companyName?: string }) {
           
           <div className="bg-gradient-to-r from-[#8000ff] to-[#ff803b] p-[1.5px] rounded-2xl w-[85%] transform rotate-1">
              <div className="bg-white w-full rounded-[14px] py-1.5 px-0.5 text-center">
-               <p className="text-[10px] md:text-xs font-bold text-black leading-tight">
-                 Gioca anche tu,<br/>si vince sempre!
-               </p>
+                <p className="text-[10px] md:text-xs font-bold text-black leading-tight">
+                  {t('success.playToo1')}<br/>{t('success.playToo2')}
+                </p>
              </div>
           </div>
           
@@ -70,6 +72,7 @@ function IphoneStoryMockup({ companyName }: { companyName?: string }) {
 
 export function SuccessSection() {
   const { selectedCompanies } = useVote();
+  const { t } = useLocale();
 
   useEffect(() => {
     const colors = ['#fccb27', '#8000ff', '#ff803b', '#4B00AB', '#ffffff'];
@@ -103,20 +106,20 @@ export function SuccessSection() {
           <div className="relative flex w-full flex-col items-center text-center lg:w-[55%] lg:items-start lg:text-left">
           {/* Title */}
           <h2 className="text-[clamp(2.5rem,10vw,80px)] leading-[0.85] font-black mb-4 lg:mb-10 text-[#8000ff] uppercase tracking-tighter">
-            sei forte!
+            {t('success.youRock')}
           </h2>
           
         
           <div className="space-y-8 mb-12 lg:mb-12 w-full max-w-xl">
             <p className="text-2xl sm:text-xl md:text-3xl lg:text-4xl font-[900] text-[#231f20] leading-tight uppercase tracking-tight">
-              condividi sui social <br/> taggando <span className="bg-[#fccb27] px-2 border-2 border-black rounded-lg inline-block rotate-1 shadow-[2px_2px_0_#000]">@fantacer</span>
+              {t('success.shareSocial')} <br/> {t('success.shareTagging')} <span className="bg-[#fccb27] px-2 border-2 border-black rounded-lg inline-block rotate-1 shadow-[2px_2px_0_#000]">@fantacer</span>
             </p>
             <div className="flex justify-center lg:justify-start pt-2 gap-6">
               <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-instagram w-11 h-11 md:w-14 md:h-14 lg:w-16 lg:h-16 text-black transition-transform hover:scale-110"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
               <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-facebook w-11 h-11 md:w-14 md:h-14 lg:w-16 lg:h-16 text-black transition-transform hover:scale-110"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
             </div>
             <p className="text-2xl sm:text-xl md:text-3xl lg:text-4xl font-[900] text-white lg:text-[#231f20] leading-[1.2] uppercase tracking-tight mt-8 lg:mt-12">
-              e ritira il tuo premio qui
+              {t('success.collectPrize')}
             </p>
           </div>
         

@@ -1,11 +1,16 @@
+'use client'
+
+import { useLocale } from '@/lib/LocaleContext'
+
 export function PrizeLocationSection() {
+  const { t } = useLocale()
   return (
     <section className="snap-start relative w-full h-[100dvh] bg-[linear-gradient(to_bottom,#4B00AB_0%,#4B00AB_30%,#8A2BE2_60%,#E0B0FF_85%,#FFFFFF_100%)] text-white flex flex-col items-center justify-center overflow-hidden">
       <div className="safe-shell w-full max-w-7xl mx-auto flex flex-col items-center justify-center h-full py-8 md:py-12 gap-6 md:gap-8">
 
         {/* Main Title */}
         <h2 className="text-[clamp(2rem,6vw,4.5rem)] font-[900] text-[#ff8a26] tracking-tighter lowercase leading-[1.1] text-center md:whitespace-nowrap w-full">
-          e ritira il tuo premio qui
+          {t('prize.title')}
         </h2>
 
         {/* Logo Cards — side by side, big on mobile */}
@@ -20,9 +25,9 @@ export function PrizeLocationSection() {
 
         {/* Subtitle */}
         <p className="text-[clamp(1.15rem,3.5vw,2.625rem)] text-center text-white font-medium leading-[1.35] max-w-[92%] w-full">
-          all&apos;interno di <strong className="font-[900]">Cersaie, a Bologna Fiere</strong>
+          {t('prize.inside')} <strong className="font-[900]">{t('prize.venue')}</strong>
           <br />
-          <span className="block mt-2 md:mt-4 font-[900]">dal 21 al 25 settembre 2026</span>
+          <span className="block mt-2 md:mt-4 font-[900]">{t('prize.dates')}</span>
         </p>
 
       </div>

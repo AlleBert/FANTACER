@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Turnstile } from '@marsidev/react-turnstile'
 import { Star, X, Loader2 } from 'lucide-react'
+import { useLocale } from '@/lib/LocaleContext'
 
 interface TurnstileOverlayProps {
   isVisible: boolean
@@ -12,6 +13,7 @@ interface TurnstileOverlayProps {
 }
 
 export function TurnstileOverlay({ isVisible, onClose, onSuccess, onError }: TurnstileOverlayProps) {
+  const { t } = useLocale()
   const [status, setStatus] = useState<'idle' | 'verifying' | 'success'>('idle')
   const [isClosing, setIsClosing] = useState(false)
 
@@ -88,13 +90,13 @@ export function TurnstileOverlay({ isVisible, onClose, onSuccess, onError }: Tur
           {/* Text */}
           <div className="space-y-1">
             <h2 className="text-lg font-black text-[#8000ff] uppercase tracking-tight">
-              {status === 'success' ? 'Tutto pronto!' : 'Verifica'}
+              {status === 'success' ? t('turnstile.ready') : t('turnstile.verify')}
             </h2>
             <p className="text-sm text-[#231f20]/70 max-w-[260px]">
               {status === 'success' ? (
-                'Il tuo voto è in arrivo!'
+                t('turnstile.voteOnItsWay')
               ) : (
-                'Conferma di essere una persona reale'
+                t('turnstile.confirmHuman')
               )}
             </p>
           </div>
@@ -106,7 +108,7 @@ export function TurnstileOverlay({ isVisible, onClose, onSuccess, onError }: Tur
                 siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''} 
                 onSuccess={handleSuccess}
                 onExpire={() => setStatus('idle')}
-                onError={() => onError('Errore di verifica. Riprova.')}
+                onError={() => onError(t('turnstile.error'))}
                 options={{ theme: 'light' }}
               />
             )}
@@ -115,7 +117,7 @@ export function TurnstileOverlay({ isVisible, onClose, onSuccess, onError }: Tur
               <div className="flex items-center gap-2 text-[#8000ff]">
                 <Loader2 className="h-5 w-5 animate-spin" />
                 <span className="text-sm font-bold uppercase tracking-wide">
-                  {status === 'success' ? 'OK!' : 'Verifica...'}
+                  {status === 'success' ? t('turnstile.ok') : t('turnstile.verifying')}
                 </span>
               </div>
             )}
@@ -123,7 +125,7 @@ export function TurnstileOverlay({ isVisible, onClose, onSuccess, onError }: Tur
 
           {/* Footer */}
           <p className="text-[10px] text-[#231f20]/40 pt-2">
-            Nessun dato personale memorizzato
+            {t('turnstile.noPersonalData')}
           </p>
         </div>
       </div>

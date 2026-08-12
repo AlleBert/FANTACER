@@ -299,3 +299,12 @@ textarea::-webkit-scrollbar {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* ===== react-cookie-manager: UI sostituita da componenti custom ===== */
+/* La UI della libreria (banner e manage modal) viene nascosta: la resa grafica
+   è affidata a <CookieConsentUI/> (src/components/cookie-consent.tsx), che usa
+   icone lucide-react e il design system del sito (overlay scuro condiviso,
+   card bianca con bordo nero e ombra hard, bottoni pill con shadow). */
+.cookie-manager {
+  display: none !important;
+}
