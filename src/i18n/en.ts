@@ -92,13 +92,13 @@ export const en: Dictionary = {
 
   'cookie.title': 'Cookie & Privacy',
   'cookie.message':
-    'This site uses cookies necessary for its operation. With your consent, we also use analytics cookies to improve your experience. Data is processed in accordance with Italian regulations (D.Lgs. 196/2003 and GDPR).',
+    'This site uses only essential cookies for its proper operation. Data is processed in accordance with Italian regulations (D.Lgs. 196/2003 and GDPR).',
   'cookie.buttonText': 'Accept all',
   'cookie.declineButtonText': 'Only necessary',
   'cookie.manageButtonText': 'Manage cookies',
   'cookie.manageTitle': 'Cookie preferences',
   'cookie.manageMessage':
-    'Manage your cookie preferences below. Essential cookies are always enabled as they are necessary for the website to function properly.',
+    'Below you can see the cookies used by this site. Essential cookies are always enabled as they are required for the website to function properly.',
   'cookie.essentialTitle': 'Essential',
   'cookie.essentialSubtitle': 'Required for the website to function properly',
   'cookie.essentialStatus': 'Always enabled',
@@ -108,8 +108,15 @@ export const en: Dictionary = {
   'cookie.socialSubtitle': 'Enable social media features and sharing',
   'cookie.advertTitle': 'Advertising',
   'cookie.advertSubtitle': 'Personalize advertisements and measure their performance',
-  'cookie.saveButtonText': 'Save preferences',
-  'cookie.cancelButtonText': 'Cancel',
+  'cookie.saveButtonText': 'Confirm',
+  'cookie.cancelButtonText': 'Back',
+
+  'footer.cookieConsent': 'Cookie preferences',
+  'footer.cookiePolicy': 'Cookie Policy',
+  'footer.privacyPolicy': 'Privacy Policy',
+  'footer.terms': 'Terms & conditions',
+  'footer.legalNotices': 'Legal notices',
+  'footer.madeBy': 'FANTACER — Ceramics Experience',
 
   'voteError.missingFields': 'Missing required fields',
   'voteError.duplicateCompanies': 'Companies must be different',

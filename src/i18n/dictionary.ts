@@ -122,6 +122,14 @@ export interface Dictionary {
   'cookie.saveButtonText': string
   'cookie.cancelButtonText': string
 
+  // Footer / legal
+  'footer.cookieConsent': string
+  'footer.cookiePolicy': string
+  'footer.privacyPolicy': string
+  'footer.terms': string
+  'footer.legalNotices': string
+  'footer.madeBy': string
+
   // Vote API errors
   'voteError.missingFields': string
   'voteError.duplicateCompanies': string

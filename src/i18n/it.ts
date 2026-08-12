@@ -92,13 +92,13 @@ export const it: Dictionary = {
 
   'cookie.title': 'Cookie & Privacy',
   'cookie.message':
-    "Questo sito utilizza cookie necessari per il funzionamento. Previo tuo consenso, utilizziamo anche cookie analitici per migliorare l'esperienza. I dati raccolti sono trattati secondo la normativa italiana (D.Lgs. 196/2003 e GDPR).",
+    "Questo sito utilizza solo cookie essenziali per il corretto funzionamento. I dati raccolti sono trattati secondo la normativa italiana (D.Lgs. 196/2003 e GDPR).",
   'cookie.buttonText': 'Accetta tutto',
   'cookie.declineButtonText': 'Solo necessari',
   'cookie.manageButtonText': 'Gestisci cookie',
   'cookie.manageTitle': 'Preferenze cookie',
   'cookie.manageMessage':
-    'Gestisci le tue preferenze sui cookie qui sotto. I cookie essenziali sono sempre attivi in quanto necessari per il corretto funzionamento del sito.',
+    'Qui sotto trovi i cookie utilizzati dal sito. I cookie essenziali sono sempre attivi in quanto necessari per il corretto funzionamento.',
   'cookie.essentialTitle': 'Essenziali',
   'cookie.essentialSubtitle': 'Necessari per il corretto funzionamento del sito',
   'cookie.essentialStatus': 'Sempre attivi',
@@ -108,8 +108,15 @@ export const it: Dictionary = {
   'cookie.socialSubtitle': 'Abilitano funzionalità e condivisione social',
   'cookie.advertTitle': 'Pubblicità',
   'cookie.advertSubtitle': 'Personalizzano gli annunci e ne misurano le prestazioni',
-  'cookie.saveButtonText': 'Salva preferenze',
-  'cookie.cancelButtonText': 'Annulla',
+  'cookie.saveButtonText': 'Conferma',
+  'cookie.cancelButtonText': 'Indietro',
+
+  'footer.cookieConsent': 'Preferenze cookie',
+  'footer.cookiePolicy': 'Cookie Policy',
+  'footer.privacyPolicy': 'Privacy Policy',
+  'footer.terms': 'Termini e condizioni',
+  'footer.legalNotices': 'Note legali',
+  'footer.madeBy': 'FANTACER — Ceramica Experience',
 
   'voteError.missingFields': 'Campi obbligatori mancanti',
   'voteError.duplicateCompanies': 'Le aziende devono essere diverse',

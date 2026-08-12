@@ -4,6 +4,14 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
 import { useLocale } from '@/lib/LocaleContext'
+import { OPEN_COOKIE_PREFERENCES_EVENT } from '@/components/cookie-consent'
+
+const FOOTER_LINKS = {
+  cookiePolicy: 'https://www.fantacer.com/cookie-policy',
+  privacy: 'https://www.fantacer.com/privacy-policy',
+  terms: 'https://www.fantacer.com/terms-and-conditions',
+  legalNotices: 'https://www.fantacer.com/legal-notices',
+} as const
 
 export function ContactSection() {
   const { t } = useLocale()
@@ -45,7 +53,7 @@ export function ContactSection() {
       className="snap-start relative w-full h-[100dvh] bg-[linear-gradient(to_bottom,#FF2FB2_0%,#4B00AB_60%,#4B00AB_100%)] flex flex-col items-center justify-center overflow-hidden"
     >
       <div className="safe-shell w-full max-w-7xl mx-auto flex flex-col items-center justify-center">
-        <div className="relative z-10 flex w-full flex-col items-center justify-center gap-8 lg:flex-row-reverse lg:gap-16">
+        <div className="relative z-10 flex w-full flex-col items-center justify-center gap-8 lg:flex-row-reverse lg:gap-16 pb-16">
 
           {/* Top mobile / Right desktop: info */}
           <div className="flex w-full flex-col items-center gap-4 text-center lg:w-1/2 lg:items-start lg:text-left">
@@ -135,6 +143,55 @@ export function ContactSection() {
 
         </div>
       </div>
+
+      {/* Footer legale */}
+      <footer className="absolute bottom-0 inset-x-0 pb-[max(0.75rem,var(--safe-bottom))] pt-8">
+        <div className="safe-px mx-auto flex w-full max-w-7xl flex-wrap items-center justify-center gap-x-4 gap-y-2 text-center">
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent(OPEN_COOKIE_PREFERENCES_EVENT))}
+            className="text-xs font-bold uppercase tracking-wider text-white/85 underline decoration-2 underline-offset-4 hover:text-white transition-colors"
+          >
+            {t('footer.cookieConsent')}
+          </button>
+          <span className="text-white/40" aria-hidden="true">•</span>
+          <a
+            href={FOOTER_LINKS.cookiePolicy}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs font-bold uppercase tracking-wider text-white/85 underline decoration-2 underline-offset-4 hover:text-white transition-colors"
+          >
+            {t('footer.cookiePolicy')}
+          </a>
+          <span className="text-white/40" aria-hidden="true">•</span>
+          <a
+            href={FOOTER_LINKS.privacy}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs font-bold uppercase tracking-wider text-white/85 underline decoration-2 underline-offset-4 hover:text-white transition-colors"
+          >
+            {t('footer.privacyPolicy')}
+          </a>
+          <span className="text-white/40" aria-hidden="true">•</span>
+          <a
+            href={FOOTER_LINKS.terms}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs font-bold uppercase tracking-wider text-white/85 underline decoration-2 underline-offset-4 hover:text-white transition-colors"
+          >
+            {t('footer.terms')}
+          </a>
+          <span className="text-white/40" aria-hidden="true">•</span>
+          <a
+            href={FOOTER_LINKS.legalNotices}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs font-bold uppercase tracking-wider text-white/85 underline decoration-2 underline-offset-4 hover:text-white transition-colors"
+          >
+            {t('footer.legalNotices')}
+          </a>
+        </div>
+      </footer>
     </section>
   )
 }
