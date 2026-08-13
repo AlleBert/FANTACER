@@ -5,7 +5,7 @@ import { useVote } from '@/lib/VoteContext';
 import { createClient } from '@/lib/supabase/client';
 import { useDebouncedCallback } from 'use-debounce';
 import { Search, Loader2, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { LiquidFillButton } from '@/components/voting/liquid-fill-button';
 import { getVoteSecurity } from '@/lib/vote-security';
 import { TurnstileOverlay } from '@/components/voting/turnstile-overlay';
 import { MessageOverlay } from '@/components/voting/message-overlay';
@@ -271,13 +271,13 @@ export function SearchSection() {
         </div>
 
         <div className="flex-none flex flex-col items-center justify-center w-full pb-[var(--safe-bottom-offset)] pt-[clamp(0.75rem,1.5dvh,1.5rem)]">
-          <Button
+          <LiquidFillButton
+            step={selectedCompanies.length}
+            steps={3}
+            loading={loading}
+            label={t('search.submit')}
             onClick={handleSubmit}
-            disabled={selectedCompanies.length < 3 || loading}
-            className="bg-[#fccb27] hover:bg-[#ffe066] text-black text-2xl md:text-3xl font-[900] px-12 py-6 md:px-16 md:py-8 rounded-full border-[3px] md:border-[4px] border-[#231f20] shadow-[4px_4px_0_#000] hover:shadow-[6px_6px_0_#000] hover:-translate-y-1 transition-all duration-300 w-full max-w-sm disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {t('search.submit')}
-          </Button>
+          />
           <p className="text-center text-base md:text-lg font-bold text-[#8000ff] mt-3 max-w-sm">
             {t('search.subtitle')}
           </p>
