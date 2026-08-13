@@ -20,7 +20,7 @@ Sono disponibili 4 audit complementari, ciascuno con il proprio focus:
 | `npm run visual:audit` | `tests/e2e/visual-audit.spec.ts` | 9 route × 3 viewport (chromium) | `tests/e2e/visual-audit/report.json` |
 | `npm run visual:audit:admin` | `tests/e2e/visual-audit-admin-only.spec.ts` | 6 route admin × 3 viewport (chromium) | `tests/e2e/visual-audit/report-admin.json` |
 | `npm run visual:audit:homepage` | `tests/e2e/visual-audit-homepage.spec.ts` | homepage × 6 viewport + sub-elementi + score (chromium) | `tests/e2e/visual-audit-homepage/report.json` |
-| `npm run visual:audit:ios` | `tests/e2e/visual-audit-homepage-ios.spec.ts` | homepage × 7 dispositivi iOS (WebKit) | `tests/e2e/visual-audit-homepage-ios/report-{device}.json` |
+| `npm run visual:audit:ios` | `tests/e2e/visual-audit-homepage-ios.spec.ts` | homepage × 7 dispositivi iOS (WebKit) | `tests/e2e/visual-audit-homepage-ios/standard/report-{device}.json` |
 | `npm run visual:audit:ios:safearea` | `tests/e2e/visual-audit-homepage-ios-safearea.spec.ts` | homepage × 7 dispositivi iOS (WebKit), safe-area simulata | `tests/e2e/visual-audit-homepage-ios/safe-area/report-{device}.json` |
 | `npm run visual:audit:ios:chrome` | `tests/e2e/visual-audit-homepage-ios-chrome.spec.ts` | homepage × 7 dispositivi iOS (WebKit), viewport/chrome stress | `tests/e2e/visual-audit-homepage-ios/chrome-stress/report-{device}.json` |
 | `npm run visual:audit:summary` | `scripts/generate-audit-summary.mjs` | aggregazione offline di tutti i report sopra | `tests/e2e/audit-summary/summary.json` + `summary.md` |
@@ -168,13 +168,26 @@ npm run visual:audit:ios
 
 ```
 tests/e2e/visual-audit-homepage-ios/
-├── screenshots/{device}/
-│   ├── fullpage.png
-│   └── {section}.png
-└── report-{device}.json
+├── report.json                      ← aggregato generale (vedi sotto)
+├── standard/
+│   ├── screenshots/{device}/
+│   │   ├── fullpage.png
+│   │   └── {section}.png
+│   └── report-{device}.json
+├── safe-area/
+│   └── ...
+└── chrome-stress/
+    └── ...
 ```
 
 Ogni report per dispositivo include `device`, `userAgent`, `viewport`, `issueCount` e la stessa struttura per sezione/sub-elemento dell'audit homepage.
+
+### Report generale `report.json`
+
+`npm run visual:audit:summary` aggrega anche un `report.json` nella radice di `visual-audit-homepage-ios/`, speculare a `tests/e2e/visual-audit-homepage/report.json` (stesse 4 chiavi top-level: `generatedAt`, `spec`, `responsivenessSummary`, `routes`):
+
+- **`responsivenessSummary`** — stessa identica logica dell'audit homepage (touch target ≥ 36px + distorsione immagini ≤ 0.05) applicata ai 7 device della suite standard;
+- **`routes`** — array con **tutti** i report raw delle tre cartelle (`standard`, `safe-area`, `chrome-stress`), ciascuno taggato `mode`. Le suite non ancora eseguite risultano semplicemente assenti (il tracking `missing` resta in `audit-summary/`).
 
 ---
 
@@ -265,6 +278,7 @@ npm run visual:audit:summary
 
 - **`tests/e2e/audit-summary/summary.json`** — per ogni suite: comando, stato (`generated`/`missing`), report path, viewport/device analizzati con dimensioni, issue per severità, score homepage, gate strutturale, footer issue (safe-area) e failure strutturali (chrome). Contiene anche la sezione `overall.viewportsAnalyzed` con l'elenco preciso di ogni (suite, viewport, width×height, device).
 - **`tests/e2e/audit-summary/summary.md`** — versione leggibile.
+- **`tests/e2e/visual-audit-homepage-ios/report.json`** — report generale iOS (aggrega standard + safe-area + chrome-stress), speculare al report della homepage: vedi sezione 4.
 
 È un post-processing offline (nessun browser): **non incide sui tempi degli audit**. Le suite non ancora eseguite vengono segnalate come `missing`. Rigenerare il riepilogo dopo ogni run per aggiornare i dati.
 

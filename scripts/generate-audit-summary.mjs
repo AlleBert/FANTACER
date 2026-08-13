@@ -171,6 +171,87 @@ function normalizeStructuralReport(report) {
   return { entries, totals: report.totals };
 }
 
+// ─── Report generale iOS ─────────────────────────────────────────────────────
+// Speculare a tests/e2e/visual-audit-homepage/report.json: stesse 4 chiavi
+// top-level, con `routes` che include TUTTI i report raw delle tre cartelle di
+// visual-audit-homepage-ios (standard, safe-area, chrome-stress), taggati `mode`.
+
+const IOS_ROOT = join(ROOT, 'tests/e2e/visual-audit-homepage-ios');
+
+function readIosReports(suiteId) {
+  const suite = suitesResult[suiteId];
+  if (!suite || suite.status !== 'generated') return [];
+  return suite.reportPaths.map((p) => readJson(join(ROOT, p)));
+}
+
+/**
+ * Stessa identica logica del `responsivenessSummary` dell'audit homepage:
+ * conteggio su `interactive` (touch target >= 36px) e `images` (distorsione
+ * aspect ratio <= 0.05) dei `subElementReports`, qui applicata ai 7 device
+ * della suite standard.
+ */
+function buildResponsivenessSummary(standardReports) {
+  const elementCounts = new Map();
+
+  for (const report of standardReports) {
+    const route = report.routes?.[0] ?? report;
+    const sections = route.sections ?? [];
+    const subs = route.subElementReports ?? [];
+
+    for (let i = 0; i < subs.length; i++) {
+      const sr = subs[i];
+      const sectionName = sections[i]?.name ?? `section-${i}`;
+
+      for (const el of sr.interactive || []) {
+        const key = `${sectionName}:interactive:${el.text}`;
+        const entry = elementCounts.get(key) || { pass: 0, total: 0 };
+        entry.total++;
+        if (el.visible && el.touchWidth >= 36 && el.touchHeight >= 36) entry.pass++;
+        elementCounts.set(key, entry);
+      }
+
+      for (const el of sr.images || []) {
+        const key = `${sectionName}:img:${(el.src || '').slice(0, 60)}`;
+        const entry = elementCounts.get(key) || { pass: 0, total: 0 };
+        entry.total++;
+        if (el.distortion === null || el.distortion === undefined || el.distortion <= 0.05) entry.pass++;
+        elementCounts.set(key, entry);
+      }
+    }
+  }
+
+  const totalElements = elementCounts.size;
+  let fullyResponsive = 0;
+  let partiallyResponsive = 0;
+  let broken = 0;
+  for (const { pass, total } of Array.from(elementCounts.values())) {
+    if (pass === total) fullyResponsive++;
+    else if (pass > 0) partiallyResponsive++;
+    else broken++;
+  }
+
+  return {
+    totalElements,
+    fullyResponsive,
+    partiallyResponsive,
+    broken,
+    score: totalElements > 0 ? `${Math.round((fullyResponsive / totalElements) * 100)}%` : 'N/A',
+  };
+}
+
+function buildIosGeneralReport() {
+  const standard = readIosReports('visual-audit-ios').map((r) => ({ ...r, mode: 'standard' }));
+  const safeArea = readIosReports('visual-audit-ios-safearea').map((r) => ({ ...r, mode: 'safe-area' }));
+  const chrome = readIosReports('visual-audit-ios-chrome').map((r) => ({ ...r, mode: 'chrome-stress' }));
+
+  return {
+    generatedAt: new Date().toISOString(),
+    spec: 'visual-audit-homepage-ios (standard + safe-area + chrome-stress)',
+    responsivenessSummary: buildResponsivenessSummary(standard),
+    routes: [...standard, ...safeArea, ...chrome],
+  };
+}
+
 // ─── Definizione suite ──────────────────────────────────────────────────────
 
 const SUITES = [
@@ -203,7 +284,7 @@ const SUITES = [
     id: 'visual-audit-ios',
     label: 'Audit iOS (7 device WebKit)',
     command: 'npm run visual:audit:ios',
-    pattern: 'tests/e2e/visual-audit-homepage-ios/report-*.json',
+    pattern: 'tests/e2e/visual-audit-homepage-ios/standard/report-*.json',
     normalize: (report) => ({ entries: normalizeRoutesReport(report, true) }),
   },
   {
@@ -319,6 +400,10 @@ const summaryJson = {
 
 mkdirSync(OUT_DIR, { recursive: true });
 writeFileSync(join(OUT_DIR, 'summary.json'), JSON.stringify(summaryJson, null, 2));
+
+// Report generale iOS: speculare a visual-audit-homepage/report.json.
+mkdirSync(IOS_ROOT, { recursive: true });
+writeFileSync(join(IOS_ROOT, 'report.json'), JSON.stringify(buildIosGeneralReport(), null, 2));
 
 // Markdown leggibile
 const line = (s = '') => s;

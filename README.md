@@ -278,7 +278,7 @@ Analisi visuale proattiva che produce screenshot e metriche per valutare la qual
 | `npm run visual:audit` | 9 route × 3 viewport (sito completo + admin) | `tests/e2e/visual-audit/report.json` |
 | `npm run visual:audit:admin` | 6 route admin × 3 viewport (+ bottom-nav) | `tests/e2e/visual-audit/report-admin.json` |
 | `npm run visual:audit:homepage` | homepage × 6 viewport + sub-elementi + score | `tests/e2e/visual-audit-homepage/report.json` |
-| `npm run visual:audit:ios` | homepage × 7 dispositivi iOS (WebKit) | `tests/e2e/visual-audit-homepage-ios/report-{device}.json` |
+| `npm run visual:audit:ios` | homepage × 7 dispositivi iOS (WebKit) | `tests/e2e/visual-audit-homepage-ios/standard/report-{device}.json` |
 
 ### Cosa fanno
 
@@ -299,7 +299,7 @@ tests/e2e/visual-audit/
 └── report.json
 ```
 
-Gli altri audit usano directory di output separate (`tests/e2e/visual-audit-homepage/`, `tests/e2e/visual-audit-homepage-ios/`).
+Gli altri audit usano directory di output separate (`tests/e2e/visual-audit-homepage/`, `tests/e2e/visual-audit-homepage-ios/`, con sotto-cartelle `standard/`, `safe-area/`, `chrome-stress/` e un `report.json` aggregato in radice).
 
 ### Quando usarlo
 

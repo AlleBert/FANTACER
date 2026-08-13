@@ -11,8 +11,8 @@ import {
   type SubElementReport,
 } from './helpers/layout-analysis';
 
-const SCREENSHOT_DIR = 'tests/e2e/visual-audit-homepage-ios/screenshots';
-const REPORT_DIR = 'tests/e2e/visual-audit-homepage-ios';
+const SCREENSHOT_DIR = 'tests/e2e/visual-audit-homepage-ios/standard/screenshots';
+const REPORT_DIR = 'tests/e2e/visual-audit-homepage-ios/standard';
 
 const SECTIONS = [
   { name: 'hero', selector: 'main > section:nth-child(1)' },
