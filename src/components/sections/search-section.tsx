@@ -148,7 +148,7 @@ export function SearchSection() {
         <div className="mx-auto flex flex-1 w-full max-w-[1200px] flex-col px-4 md:px-8">
 
           <div className="flex-none w-full text-center pt-[clamp(0.5rem,1.5dvh,1.5rem)]">
-            <h2 className="text-[clamp(2.5rem,7.5vw,91px)] font-[900] text-center tracking-tighter leading-[1.2] text-[#4f03aa]">
+            <h2 className="text-[clamp(1.75rem,5dvh,91px)] font-[900] text-center tracking-tighter leading-[1.2] text-[#4f03aa]">
               {t('search.title')}
             </h2>
           </div>
@@ -162,19 +162,19 @@ export function SearchSection() {
                 value={searchTerm}
                 onChange={handleSearchChange}
                 placeholder={t('search.placeholder')}
-                className="w-full bg-[#c2e1ff] border-[3px] md:border-[4px] border-[#231f20] rounded-full pl-8 pr-16 md:pr-24 h-20 md:h-24 text-[clamp(1.5rem,4vw,32px)] md:text-[40px] font-[900] text-left shadow-[6px_6px_0_#000] placeholder:text-black/40 focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all duration-300 focus:bg-white focus:shadow-[8px_8px_0_#000] focus:-translate-y-1"
+                className="w-full bg-[#c2e1ff] border-[3px] md:border-[4px] border-[#231f20] rounded-full pl-8 pr-16 md:pr-24 h-[clamp(2.75rem,12dvh,5rem)] md:h-[clamp(3rem,12dvh,6rem)] text-[clamp(1rem,3.5dvh,2rem)] md:text-[40px] font-[900] text-left shadow-[6px_6px_0_#000] placeholder:text-black/40 focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all duration-300 focus:bg-white focus:shadow-[8px_8px_0_#000] focus:-translate-y-1"
               />
               <div className="absolute right-6 md:right-8 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
                 {searchLoading ? (
-                  <Loader2 className="w-8 h-8 md:w-12 md:h-12 stroke-[#231f20] stroke-[3px] animate-spin" />
+                  <Loader2 className="w-[clamp(1.5rem,4dvh,3rem)] h-[clamp(1.5rem,4dvh,3rem)] md:w-12 md:h-12 stroke-[#231f20] stroke-[3px] animate-spin" />
                 ) : (
-                  <Search className="w-8 h-8 md:w-12 md:h-12 stroke-[#231f20] stroke-[3px]" />
+                  <Search className="w-[clamp(1.5rem,4dvh,3rem)] h-[clamp(1.5rem,4dvh,3rem)] md:w-12 md:h-12 stroke-[#231f20] stroke-[3px]" />
                 )}
               </div>
             </div>
 
             {results.length > 0 && (
-              <ul className="mt-2 w-full max-w-2xl bg-white border-2 border-[#231f20] rounded-2xl shadow-[4px_4px_0_#000] max-h-64 overflow-y-auto">
+              <ul className="mt-2 w-full max-w-2xl bg-white border-2 border-[#231f20] rounded-2xl shadow-[4px_4px_0_#000] max-h-[clamp(8rem,30dvh,16rem)] overflow-y-auto">
                 {results.map((company) => {
                   const alreadySelected = selectedCompanies.some((c) => c.company.id === company.id);
                   return (
@@ -278,7 +278,7 @@ export function SearchSection() {
             label={t('search.submit')}
             onClick={handleSubmit}
           />
-          <p className="text-center text-base md:text-lg font-bold text-[#8000ff] mt-3 max-w-sm">
+          <p className="text-center text-[clamp(0.875rem,2.5dvh,1.125rem)] font-bold text-[#8000ff] mt-[clamp(0.5rem,1.5dvh,0.75rem)] max-w-sm">
             {t('search.subtitle')}
           </p>
         </div>

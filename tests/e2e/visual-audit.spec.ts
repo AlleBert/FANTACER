@@ -3,6 +3,8 @@ import { mkdirSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { VIEWPORTS, type ViewportName } from './helpers/viewports';
 import { setupAdminForTest, hasAdminMfaCredentials } from './helpers/auth';
+import { seedConsentCookie } from './helpers/cookie-consent';
+import { setNavigationFailFast } from './helpers/navigation';
 import { collectSectionReport, type RouteReport, type SectionReport } from './helpers/layout-analysis';
 
 const SCREENSHOT_DIR = 'tests/e2e/visual-audit/screenshots';
@@ -133,6 +135,9 @@ test.describe('Visual Quality Audit', () => {
           test.skip(Boolean(route.setup) && !hasAdminMfaCredentials(),
             'E2E admin MFA credentials not configured');
           const routeName = sanitizeRoute(route.name);
+
+          setNavigationFailFast(page);
+          await seedConsentCookie(page);
 
           const report: RouteReport = {
             route: route.path,

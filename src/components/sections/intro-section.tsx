@@ -13,17 +13,17 @@ export function IntroSection() {
 
       <div className="safe-shell h-full flex flex-col">
         <div className="flex-1 flex flex-col items-center justify-center text-center w-full max-w-7xl mx-auto">
-          <h1 className="text-[clamp(2.5rem,7.5vw,4.5rem)] font-open-sauce font-black text-white tracking-[-0.05em] leading-[1.1] md:leading-[0.9] lowercase max-w-[14ch]">
+          <h1 className="text-[clamp(1.5rem,5dvh,4.5rem)] font-open-sauce font-black text-white tracking-[-0.05em] leading-[1.05] md:leading-[0.9] lowercase max-w-[14ch]">
             {t('intro.title.line1')}<br />
             {t('intro.title.line2')}<br />
             {t('intro.title.line3')}
           </h1>
 
-          <p className="mt-4 lg:mt-6 text-[clamp(1.25rem,2.5vw,2.25rem)] font-open-sauce font-medium text-white leading-[1.2] [text-wrap:balance] max-w-[20ch]">
+          <p className="mt-[clamp(0.5rem,1.5dvh,1.5rem)] lg:mt-6 text-[clamp(1rem,3.25dvh,2.25rem)] font-open-sauce font-medium text-white leading-[1.2] [text-wrap:balance] max-w-[20ch]">
             {t('intro.subtitle')}
           </p>
 
-          <SponsorCards className="mt-8 md:mt-12" />
+          <SponsorCards className="mt-[clamp(1rem,3.5dvh,3rem)] md:mt-12" />
         </div>
 
         <div className="flex flex-col items-center gap-2 pb-4 md:pb-6 animate-bounce">

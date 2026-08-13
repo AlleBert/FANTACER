@@ -2,6 +2,8 @@ import { test } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { VIEWPORTS, type ViewportName } from './helpers/viewports';
+import { seedConsentCookie } from './helpers/cookie-consent';
+import { setNavigationFailFast } from './helpers/navigation';
 import {
   collectSectionReport,
   collectSubElementReport,
@@ -67,6 +69,8 @@ test.describe('Homepage Responsive Visual Audit', () => {
       test.use({ viewport: { width: vp.width, height: vp.height } });
 
       test(`audit homepage at ${vpName}`, async ({ page }) => {
+        setNavigationFailFast(page);
+        await seedConsentCookie(page);
         await page.goto('/');
         await page.waitForLoadState('networkidle');
 

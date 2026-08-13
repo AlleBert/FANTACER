@@ -4,6 +4,7 @@ import { join, dirname } from 'path';
 import { VIEWPORTS, type ViewportName } from './helpers/viewports';
 import { setupAdminForTest, hasAdminMfaCredentials } from './helpers/auth';
 import { collectSectionReport, type RouteReport, type SectionReport } from './helpers/layout-analysis';
+import { setNavigationFailFast } from './helpers/navigation';
 
 const SCREENSHOT_DIR = 'tests/e2e/visual-audit/screenshots';
 const REPORT_PATH = 'tests/e2e/visual-audit/report-admin.json';
@@ -104,6 +105,7 @@ test.describe('Admin Visual Quality Audit', () => {
         test(`audit ${route.name}`, async ({ page }) => {
           test.skip(Boolean(route.setup) && !hasAdminMfaCredentials(),
             'E2E admin MFA credentials not configured');
+          setNavigationFailFast(page);
           const report: RouteReport = {
             route: route.path,
             viewportName: vpName,

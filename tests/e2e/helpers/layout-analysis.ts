@@ -282,6 +282,92 @@ export function getViewport(page: Page): Promise<{ width: number; height: number
   }));
 }
 
+// ─── Structural section checks (P0) ───────────────────────────────────────────
+
+/**
+ * Zero micro-scroll / clipping per sezione:
+ * `scrollHeight <= clientHeight + 1` e `scrollWidth <= clientWidth + 1`.
+ * Rileva sia lo scroll involontario di pochi pixel sia il clipping dovuto a
+ * `overflow: hidden` che nasconde contenuto realmente necessario.
+ */
+export async function checkSectionMicroScroll(page: Page, selector: string): Promise<ResponsiveIssue[]> {
+  return page.locator(selector).evaluate((el, sel) => {
+    const issues: ResponsiveIssue[] = [];
+    const sw = el.scrollHeight;
+    const ch = el.clientHeight;
+    if (sw > ch + 1) {
+      issues.push({
+        severity: 'error',
+        message: 'Section vertical overflow (micro-scroll/clipping)',
+        element: sel,
+        detail: `scrollHeight ${sw}px > clientHeight ${ch}px (+${sw - ch}px)`,
+      });
+    }
+    const swX = el.scrollWidth;
+    const cwX = el.clientWidth;
+    if (swX > cwX + 1) {
+      issues.push({
+        severity: 'error',
+        message: 'Section horizontal overflow',
+        element: sel,
+        detail: `scrollWidth ${swX}px > clientWidth ${cwX}px (+${swX - cwX}px)`,
+      });
+    }
+    return issues;
+  }, selector);
+}
+
+/**
+ * La sezione non deve essere più alta dello spazio disponibile
+ * (sezioni full-page: `height <= viewportHeight + tol`).
+ */
+export async function checkSectionHeightVsViewport(page: Page, selector: string, vpHeight: number): Promise<ResponsiveIssue[]> {
+  return page.locator(selector).evaluate((el, { vh, sel }) => {
+    const issues: ResponsiveIssue[] = [];
+    const r = el.getBoundingClientRect();
+    if (r.height > 0 && r.height > vh + 2) {
+      issues.push({
+        severity: 'error',
+        message: 'Section taller than viewport',
+        element: sel,
+        detail: `height ${Math.round(r.height)}px vs viewport ${vh}px`,
+      });
+    }
+    return issues;
+  }, { vh: vpHeight, sel: selector });
+}
+
+/**
+ * La bounding box della sezione deve stare dentro la viewport (con tolleranza).
+ * Da chiamare dopo aver scrollato la sezione in vista.
+ */
+export async function checkSectionWithinViewport(page: Page, selector: string): Promise<ResponsiveIssue[]> {
+  return page.locator(selector).evaluate((el, sel) => {
+    const issues: ResponsiveIssue[] = [];
+    const r = el.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    if (r.width === 0 && r.height === 0) return issues;
+    if (r.x < -2 || r.x + r.width > vw + 2) {
+      issues.push({
+        severity: 'error',
+        message: 'Section outside horizontal viewport',
+        element: sel,
+        detail: `x ${Math.round(r.x)}..${Math.round(r.x + r.width)} vs viewport width ${vw}`,
+      });
+    }
+    if (r.y < -2 || r.y + r.height > vh + 2) {
+      issues.push({
+        severity: 'error',
+        message: 'Section outside vertical viewport',
+        element: sel,
+        detail: `y ${Math.round(r.y)}..${Math.round(r.y + r.height)} vs viewport height ${vh}`,
+      });
+    }
+    return issues;
+  }, selector);
+}
+
 // ─── Sub-element analysis types ───────────────────────────────────────────────
 
 export interface SubElementInteractive {

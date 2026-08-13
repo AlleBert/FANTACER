@@ -2,6 +2,8 @@ import { test, expect } from '@playwright/test';
 import { checkNoHorizontalOverflow, checkNoTextClipping, checkInteractiveElementsReachable } from './helpers/responsive';
 import { VIEWPORTS } from './helpers/viewports';
 import { checkAccessibility } from './helpers/accessibility';
+import { seedConsentCookie } from './helpers/cookie-consent';
+import { setNavigationFailFast } from './helpers/navigation';
 
 test.describe('Homepage — Responsive', () => {
   for (const [name, viewport] of Object.entries(VIEWPORTS)) {
@@ -29,11 +31,13 @@ test.describe('Homepage — Responsive', () => {
 test.describe('Homepage — Screenshots', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test.beforeEach(({}, testInfo) => {
+  test.beforeEach(async ({ page }, testInfo) => {
     test.skip(
       !['chromium', 'mobile-webkit'].includes(testInfo.project.name),
       'Visual regression on Chromium + Mobile WebKit only',
     );
+    setNavigationFailFast(page);
+    await seedConsentCookie(page);
   });
 
   test('hero section', async ({ page }) => {
