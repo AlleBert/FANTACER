@@ -16,12 +16,6 @@ function createTestAdminClient() {
 
 const TEST_BATCH = 'TEST';
 const TEST_COMPANIES = [{ name: 'Test Co' }, { name: 'GreenEnergy' }, { name: 'Third Co' }];
-const TEST_SPONSORS = [
-  { name: 'Test Sponsor A' },
-  { name: 'Test Sponsor B' },
-  { name: 'Test Sponsor C' },
-  { name: 'Test Sponsor D' },
-];
 const RESERVED_TEST_FINGERPRINTS = ['test-fp-1', 'test-fp-2', 'test-fp-3', 'test-fp-4'];
 
 /**
@@ -117,12 +111,6 @@ export async function seedTestData() {
     ], { onConflict: 'fingerprint' });
     if (deviceError) throw new Error(`Failed to seed device_sessions: ${deviceError.message}`);
   }
-
-  await supabase.from('sponsors').delete().in('name', TEST_SPONSORS.map(s => s.name));
-  const { error: sponsorError } = await supabase.from('sponsors').insert(
-    TEST_SPONSORS.map((s, i) => ({ name: s.name, is_active: true, sort_order: i }))
-  );
-  if (sponsorError) throw new Error(`Failed to seed sponsors: ${sponsorError.message}`);
 }
 
 export async function cleanupTestData() {
@@ -150,6 +138,4 @@ export async function cleanupTestData() {
   if (error) {
     throw new Error(`Failed to cleanup test companies: ${error.message}`);
   }
-
-  await supabase.from('sponsors').delete().in('name', TEST_SPONSORS.map(s => s.name));
 }

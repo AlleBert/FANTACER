@@ -8,6 +8,7 @@ import { useAdminRole } from '@/lib/use-admin-role'
 import { SPONSOR_LOGO_MAX_BYTES, getExtFromFilename } from '@/lib/sponsor-logo'
 import { cn } from '@/lib/utils'
 import { ModalShell } from '@/components/ui/modal-shell'
+import { createClient } from '@/lib/supabase/client'
 
 const LOGO_INPUT_ACCEPT = 'image/png,image/jpeg,image/webp,image/svg+xml'
 
@@ -42,12 +43,25 @@ export default function SponsorPage() {
   }
 
   useEffect(() => {
-    fetch('/api/admin/sponsors')
-      .then(res => res.json())
-      .then(json => {
-        setSponsors(json.data || [])
-        setLoading(false)
+    const loadInitial = async () => {
+      const res = await fetch('/api/admin/sponsors')
+      const json = await res.json()
+      setSponsors(json.data || [])
+      setLoading(false)
+    }
+    loadInitial()
+
+    const supabase = createClient()
+    const channel = supabase
+      .channel('sponsors-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sponsors' }, () => {
+        loadSponsors()
       })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [])
 
   const openCreate = () => {

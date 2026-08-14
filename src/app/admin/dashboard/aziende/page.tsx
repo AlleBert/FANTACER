@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Users } from 'lucide-react'
 import { CompanyCardList } from '@/components/admin/company-card-list'
 import { CompanyTable } from '@/components/admin/company-table'
+import { createClient } from '@/lib/supabase/client'
 
 interface Company {
   rank: number
@@ -20,11 +21,36 @@ export default function AziendePage() {
   const [companies, setCompanies] = useState<Company[]>([])
   const [loading, setLoading] = useState(true)
 
+  const loadCompanies = async () => {
+    const res = await fetch('/api/admin/companies')
+    const data = await res.json()
+    setCompanies(data.data || [])
+    setLoading(false)
+  }
+
   useEffect(() => {
-    fetch('/api/admin/companies')
-      .then(res => res.json())
-      .then(data => { setCompanies(data.data || []); setLoading(false) })
-      .catch(() => setLoading(false))
+    const loadInitial = async () => {
+      const res = await fetch('/api/admin/companies')
+      const data = await res.json()
+      setCompanies(data.data || [])
+      setLoading(false)
+    }
+    loadInitial()
+
+    const supabase = createClient()
+    const channel = supabase
+      .channel('companies-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'companies' }, () => {
+        loadCompanies()
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'vote_sessions' }, () => {
+        loadCompanies()
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [])
 
   return (

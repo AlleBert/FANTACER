@@ -7,6 +7,7 @@ import { AuditCardList } from '@/components/admin/audit-card-list'
 import { AuditLogTable } from '@/components/admin/audit-log-table'
 import { useAdminRole } from '@/lib/use-admin-role'
 import { ModalShell } from '@/components/ui/modal-shell'
+import { createClient } from '@/lib/supabase/client'
 
 interface AuditLog {
   id: string
@@ -37,6 +38,20 @@ export default function ImpostazioniPage() {
       .then(res => res.json())
       .then(data => setComingSoonEnabled(data.enabled))
       .finally(() => setLoadingFlag(false))
+
+    const supabase = createClient()
+    const channel = supabase
+      .channel('settings-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'site_settings' }, () => {
+        fetch('/api/admin/settings/coming-soon')
+          .then(res => res.json())
+          .then(data => setComingSoonEnabled(data.enabled))
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [])
 
   const loadAuditLogs = async (page: number, search: string) => {

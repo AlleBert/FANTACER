@@ -10,33 +10,21 @@ interface Sponsor {
   website_url: string | null;
 }
 
-let cachedSponsors: Sponsor[] | null = null;
-let fetchPromise: Promise<Sponsor[]> | null = null;
-
 export function SponsorCards({ className, compact }: { className?: string; compact?: boolean }) {
-  const [sponsors, setSponsors] = useState<Sponsor[] | null>(cachedSponsors);
-  const [isLoading, setIsLoading] = useState(!cachedSponsors);
+  const [sponsors, setSponsors] = useState<Sponsor[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (cachedSponsors) return;
-
-    if (!fetchPromise) {
-      fetchPromise = fetch('/api/public/sponsors')
-        .then((res) => res.json())
-        .then((data) => {
-          cachedSponsors = data.sponsors;
-          return data.sponsors;
-        })
-        .catch(() => {
-          cachedSponsors = [];
-          return [];
-        });
-    }
-
-    fetchPromise.then((data) => {
-      setSponsors(data);
-      setIsLoading(false);
-    });
+    fetch('/api/public/sponsors')
+      .then((res) => res.json())
+      .then((data) => {
+        setSponsors(data.sponsors);
+        setIsLoading(false);
+      })
+      .catch(() => {
+        setSponsors([]);
+        setIsLoading(false);
+      });
   }, []);
 
   if (isLoading) {
