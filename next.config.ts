@@ -8,8 +8,15 @@ const nextConfig: NextConfig = {
   images: {
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 768, 1024, 1280, 1536],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'zdfverdwdsigizxktilz.supabase.co',
+        pathname: '/storage/**',
+      },
+    ],
   },
-  allowedDevOrigins: ['192.168.1.14'],
+  allowedDevOrigins: ['192.168.1.14', '*.trycloudflare.com'],
 };
 
 export default withSentryConfig(nextConfig, {

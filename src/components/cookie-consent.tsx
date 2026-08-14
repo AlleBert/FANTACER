@@ -6,8 +6,11 @@ import { useCookieConsent, type CookieCategories, type DetailedCookieConsent } f
 
 import { useLocale } from '@/lib/LocaleContext'
 import { cn } from '@/lib/utils'
+import { ModalShell } from '@/components/ui/modal-shell'
 
 export const OPEN_COOKIE_PREFERENCES_EVENT = 'fantacer:open-cookie-preferences'
+
+const noop = () => {}
 
 export const COOKIE_CONSENT_KEY = 'fantacer_cookie_consent'
 
@@ -92,29 +95,28 @@ function useStoredConsent(): StoredConsent {
 }
 
 const btnBase =
-  'inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border-[3px] border-[#231f20] px-5 py-2.5 text-sm font-black text-black transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff8a26] focus-visible:ring-offset-2 active:scale-[0.98]'
+  'inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border-[3px] border-ink px-5 py-2.5 text-sm font-black text-black transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange focus-visible:ring-offset-2 active:scale-[0.98]'
 
 const btnPrimary = cn(
   btnBase,
-  'bg-[#fccb27] shadow-[3px_3px_0_#000] hover:-translate-y-0.5 hover:bg-[#c99900] hover:shadow-[5px_5px_0_#000]'
+  'bg-bright shadow-[3px_3px_0_#000] hover:-translate-y-0.5 hover:bg-[#c99900] hover:shadow-[5px_5px_0_#000]'
 )
 
 const btnSecondary = cn(
   btnBase,
-  'bg-white shadow-[3px_3px_0_#000] hover:-translate-y-0.5 hover:bg-[#c2e1ff] hover:shadow-[5px_5px_0_#000]'
+  'bg-white shadow-[3px_3px_0_#000] hover:-translate-y-0.5 hover:bg-question-blue hover:shadow-[5px_5px_0_#000]'
 )
 
 const btnTertiary = cn(
   btnBase,
-  'bg-[#c2e1ff] shadow-[3px_3px_0_#000] hover:-translate-y-0.5 hover:bg-[#a8c7e6] hover:shadow-[5px_5px_0_#000]'
+  'bg-question-blue shadow-[3px_3px_0_#000] hover:-translate-y-0.5 hover:bg-[#a8c7e6] hover:shadow-[5px_5px_0_#000]'
 )
 
-const cardCls =
-  'relative w-full max-w-md rounded-3xl border-[3px] border-[#231f20] bg-white p-5 shadow-[6px_6px_0_#000] sm:p-7'
+const cardCls = 'relative w-full p-5 sm:p-7'
 
-const titleCls = 'text-lg font-black uppercase tracking-tighter text-[#231f20] sm:text-xl'
+const titleCls = 'text-lg font-black uppercase tracking-tighter text-ink sm:text-xl'
 
-const bodyCls = 'mt-2 text-sm font-medium text-[#231f20]/80'
+const bodyCls = 'mt-2 text-sm font-medium text-ink/80'
 
 function buildInitialDraft(detailedConsent: DetailedCookieConsent | null): CookieCategories {
   const source = readStoredConsent() ?? detailedConsent
@@ -142,8 +144,8 @@ function CookieToggle({
       aria-label={label}
       onClick={() => onChange(!checked)}
       className={cn(
-        'relative h-7 w-12 flex-none cursor-pointer rounded-full border-2 border-[#231f20] shadow-[2px_2px_0_#000] transition-colors duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff8a26] focus-visible:ring-offset-2',
-        checked ? 'bg-[#8000ff]' : 'bg-[#e5e7eb]'
+        'relative h-7 w-12 flex-none cursor-pointer rounded-full border-2 border-ink shadow-[2px_2px_0_#000] transition-colors duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange focus-visible:ring-offset-2',
+        checked ? 'bg-purple' : 'bg-[#e5e7eb]'
       )}
     >
       <span
@@ -202,19 +204,16 @@ export function CookieConsentUI() {
   const showBanner = view === 'banner' || (view === null && !hasConsent)
   const showManage = view === 'manage'
 
-  if (!showBanner && !showManage) return null
-
   return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center overflow-y-auto p-4 sm:p-6">
-      <div aria-hidden="true" className="absolute inset-0 bg-black/55" />
-
+    <ModalShell
+      open={showBanner || showManage}
+      onClose={noop}
+      dismissible={false}
+      labelledBy={showBanner ? 'fantacer-cookie-title' : 'fantacer-cookie-manage-title'}
+      className="max-w-md rounded-3xl border-[3px] border-ink bg-white shadow-[6px_6px_0_#000]"
+    >
       {showBanner ? (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="fantacer-cookie-title"
-          className={cardCls}
-        >
+        <div className={cardCls}>
           <h2 id="fantacer-cookie-title" className={titleCls}>
             {t('cookie.title')}
           </h2>
@@ -239,24 +238,19 @@ export function CookieConsentUI() {
           </div>
         </div>
       ) : (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="fantacer-cookie-manage-title"
-          className={cn(cardCls, 'max-h-[85dvh] overflow-y-auto')}
-        >
+        <div className={cn(cardCls, 'max-h-[85dvh] overflow-y-auto')}>
           <h2 id="fantacer-cookie-manage-title" className={titleCls}>
             {t('cookie.manageTitle')}
           </h2>
           <p className={bodyCls}>{t('cookie.manageMessage')}</p>
 
           <div className="mt-4">
-            <div className="flex items-start justify-between gap-3 border-b-2 border-[#231f20]/10 py-3">
+            <div className="flex items-start justify-between gap-3 border-b-2 border-ink/10 py-3">
               <div>
-                <h3 className="text-sm font-bold text-[#231f20]">{t('cookie.essentialTitle')}</h3>
-                <p className="mt-0.5 text-xs text-[#231f20]/70">{t('cookie.essentialSubtitle')}</p>
+                <h3 className="text-sm font-bold text-ink">{t('cookie.essentialTitle')}</h3>
+                <p className="mt-0.5 text-xs text-ink/70">{t('cookie.essentialSubtitle')}</p>
               </div>
-              <span className="rounded-full border-2 border-[#231f20]/30 bg-[#e5e7eb] px-3 py-1 text-xs font-bold text-[#231f20]/60">
+              <span className="rounded-full border-2 border-ink/30 bg-[#e5e7eb] px-3 py-1 text-xs font-bold text-ink/60">
                 {t('cookie.essentialStatus')}
               </span>
             </div>
@@ -264,11 +258,11 @@ export function CookieConsentUI() {
             {OPTIONAL_CATEGORIES.map((cat) => (
               <div
                 key={cat.id}
-                className="flex items-start justify-between gap-3 border-b-2 border-[#231f20]/10 py-3"
+                className="flex items-start justify-between gap-3 border-b-2 border-ink/10 py-3"
               >
                 <div>
-                  <h3 className="text-sm font-bold text-[#231f20]">{t(cat.titleKey)}</h3>
-                  <p className="mt-0.5 text-xs text-[#231f20]/70">{t(cat.subtitleKey)}</p>
+                  <h3 className="text-sm font-bold text-ink">{t(cat.titleKey)}</h3>
+                  <p className="mt-0.5 text-xs text-ink/70">{t(cat.subtitleKey)}</p>
                 </div>
                 <CookieToggle
                   checked={draft[cat.id] ?? false}
@@ -291,6 +285,6 @@ export function CookieConsentUI() {
           </div>
         </div>
       )}
-    </div>
+    </ModalShell>
   )
 }

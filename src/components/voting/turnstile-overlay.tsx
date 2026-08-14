@@ -56,20 +56,21 @@ export function TurnstileOverlay({ isVisible, onClose, onSuccess, onError }: Tur
     >
       {/* Backdrop - only this gets pointer-events when visible */}
       <div 
-        className={`absolute inset-0 bg-[#8000ff]/10 backdrop-blur-sm ${isVisible && !isClosing ? 'cursor-pointer' : ''}`}
+        className={`absolute inset-0 bg-purple/10 backdrop-blur-sm ${isVisible && !isClosing ? 'cursor-pointer' : ''}`}
         onClick={isVisible && !isClosing ? handleClose : undefined}
       />
 
       {/* Card */}
       <div 
-        className={`relative w-full max-w-sm bg-white border-2 border-[#8000ff] rounded-3xl shadow-[0_8px_0_#231f20] p-6 transform transition-all duration-300 ${
+        className={`relative w-full max-w-sm bg-white border-2 border-purple rounded-3xl shadow-[0_8px_0_var(--color-ink)] p-6 transform transition-all duration-300 ${
           isClosing ? 'scale-95 opacity-0' : 'scale-100 opacity-100'
         }`}
       >
         {/* Close Button */}
         <button 
           onClick={handleClose}
-          className="absolute top-3 right-3 p-1.5 text-[#8000ff] hover:bg-[#8000ff]/10 rounded-full transition-colors"
+          aria-label="Chiudi"
+          className="absolute top-3 right-3 p-1.5 text-purple hover:bg-purple/10 rounded-full transition-colors"
         >
           <X className="h-4 w-4" />
         </button>
@@ -78,21 +79,21 @@ export function TurnstileOverlay({ isVisible, onClose, onSuccess, onError }: Tur
           {/* Icon */}
           <div className={`
             relative p-3 rounded-full transition-all duration-500
-            ${status === 'success' ? 'bg-[#fccb27]' : 'bg-[#8000ff]/10'}
+            ${status === 'success' ? 'bg-bright' : 'bg-purple/10'}
           `}>
             {status === 'success' ? (
-              <Star className="h-8 w-8 fill-[#231f20] stroke-[#231f20] stroke-2" />
+              <Star className="h-8 w-8 fill-ink stroke-ink stroke-2" />
             ) : (
-              <Star className="h-8 w-8 fill-[#8000ff] stroke-[#8000ff] stroke-2" />
+              <Star className="h-8 w-8 fill-purple stroke-purple stroke-2" />
             )}
           </div>
 
           {/* Text */}
-          <div className="space-y-1">
-            <h2 className="text-lg font-black text-[#8000ff] uppercase tracking-tight">
+          <div className="space-y-1" aria-live="polite">
+            <h2 className="text-lg font-black text-purple uppercase tracking-tight">
               {status === 'success' ? t('turnstile.ready') : t('turnstile.verify')}
             </h2>
-            <p className="text-sm text-[#231f20]/70 max-w-[260px]">
+            <p className="text-sm text-ink/70 max-w-[260px]">
               {status === 'success' ? (
                 t('turnstile.voteOnItsWay')
               ) : (
@@ -114,7 +115,7 @@ export function TurnstileOverlay({ isVisible, onClose, onSuccess, onError }: Tur
             )}
             
             {(status === 'verifying' || status === 'success') && (
-              <div className="flex items-center gap-2 text-[#8000ff]">
+              <div className="flex items-center gap-2 text-purple">
                 <Loader2 className="h-5 w-5 animate-spin" />
                 <span className="text-sm font-bold uppercase tracking-wide">
                   {status === 'success' ? t('turnstile.ok') : t('turnstile.verifying')}
@@ -124,7 +125,7 @@ export function TurnstileOverlay({ isVisible, onClose, onSuccess, onError }: Tur
           </div>
 
           {/* Footer */}
-          <p className="text-[10px] text-[#231f20]/40 pt-2">
+          <p className="text-[10px] text-ink/40 pt-2">
             {t('turnstile.noPersonalData')}
           </p>
         </div>

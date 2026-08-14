@@ -236,10 +236,10 @@ Le violazioni note sono documentate in `tests/e2e/accessibility.spec.ts` come `a
 |---|---|---|
 | `/` | nessuna | — |
 | `/coming-soon` | nessuna | — |
-| `/admin/login` | `button-name`, `color-contrast` | Sidebar AdminLayout, brand orange su sfondo bianco |
-| `/admin/dashboard/panoramica` | `button-name`, `color-contrast` | Sidebar, rosso/arancione palette brand |
-| `/admin/dashboard/aziende` | `button-name`, `color-contrast` | Sidebar, pulsanti arancione |
-| `/admin/dashboard/voti` | `button-name` | Sidebar |
+| `/admin/login` | `color-contrast` | brand orange su sfondo bianco |
+| `/admin/dashboard/panoramica` | `color-contrast` | rosso/arancione palette brand |
+| `/admin/dashboard/aziende` | `color-contrast` | pulsanti arancione |
+| `/admin/dashboard/voti` | nessuna | — |
 
 Ogni violazione permessa include una `reason` testuale che spiega perché è accettata e cosa serve per rimuoverla.
 Le violazioni sono tracciate anche in `docs/frontend-quality.md`.
@@ -512,6 +512,8 @@ Il sistema funziona come rete di sicurezza contro:
 | Comando | Utilizzo |
 |---|---|
 | `npm run dev` | Avvia il server di sviluppo Next.js |
+| `npm run dev:tunnel` | Avvia `next dev` + quick tunnel Cloudflare e mostra in terminale l'URL pubblico e un QR scansionabile (per test da cellulare). Richiede cloudflared: `npm run setup:tunnel`. URL effimero e pubblico, muore con il server |
+| `npm run setup:tunnel` | Installa `cloudflared` (Linux x86_64 / WSL2) in `~/.local/bin` |
 | `npm run lint` | ESLint — zero-error policy |
 | `npm run typecheck` | TypeScript strict check (`tsc --noEmit`) |
 | `npm test` | Unit test Jest (14 test) |

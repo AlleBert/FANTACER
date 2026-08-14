@@ -7,6 +7,7 @@ import { SponsorTable } from '@/components/admin/sponsor-table'
 import { useAdminRole } from '@/lib/use-admin-role'
 import { SPONSOR_LOGO_MAX_BYTES, getExtFromFilename } from '@/lib/sponsor-logo'
 import { cn } from '@/lib/utils'
+import { ModalShell } from '@/components/ui/modal-shell'
 
 const LOGO_INPUT_ACCEPT = 'image/png,image/jpeg,image/webp,image/svg+xml'
 
@@ -198,7 +199,7 @@ export default function SponsorPage() {
                   <div className="flex gap-2">
                     {!isViewer && (
                       <>
-                        <button onClick={() => openEdit(s)} className="px-3 py-2.5 text-[clamp(0.65rem,2vw,0.8rem)] text-[#8000ff] font-bold rounded-lg border border-[#8000ff]/20 hover:bg-[#8000ff]/5">MODIFICA</button>
+                        <button onClick={() => openEdit(s)} className="px-3 py-2.5 text-[clamp(0.65rem,2vw,0.8rem)] text-purple font-bold rounded-lg border border-purple/20 hover:bg-purple/5">MODIFICA</button>
                         <button onClick={() => handleDelete(s.id)} className="px-3 py-2.5 text-[clamp(0.65rem,2vw,0.8rem)] text-red-500 font-bold rounded-lg border border-red-500/20 hover:bg-red-500/5">ELIMINA</button>
                       </>
                     )}
@@ -213,115 +214,116 @@ export default function SponsorPage() {
         </CardContent>
       </Card>
 
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => { clearLogoFile(); setShowModal(false) }}>
-          <div className="mx-4 w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lg" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-foreground">{editing ? 'Modifica Sponsor' : 'Nuovo Sponsor'}</h3>
-              <button onClick={() => { clearLogoFile(); setShowModal(false) }}><X className="h-5 w-5 text-muted-foreground" /></button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-foreground">Nome *</label>
-                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground">Logo</label>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept={LOGO_INPUT_ACCEPT}
-                  onChange={handleLogoChange}
-                  className="hidden"
-                />
-                <div
-                  role="button"
-                  tabIndex={0}
-                  aria-label={
-                    logoPreviewUrl
-                      ? `Logo selezionato: ${logoFile?.name ?? ''}`
-                      : form.image_url
-                        ? 'Logo attuale: clicca per sostituirlo'
-                        : 'Carica logo (trascina il file o clicca)'
-                  }
-                  onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
-                  onDragLeave={() => setDragOver(false)}
-                  onDrop={handleLogoDrop}
-                  onClick={() => fileInputRef.current?.click()}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault()
-                      fileInputRef.current?.click()
-                    }
-                  }}
-                  className={cn(
-                    "mt-1 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-6 text-center transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary",
-                    dragOver
-                      ? "border-primary bg-primary/5 scale-[1.01]"
-                      : "border-border hover:border-muted-foreground hover:bg-muted/30"
-                  )}
-                >
-                  {logoPreviewUrl ? (
-                    <div className="flex flex-col items-center gap-3">
-                      <img src={logoPreviewUrl} alt="Anteprima logo" className="h-16 w-16 object-contain rounded border border-black/10" />
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">{logoFile?.name}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {(logoFile ? logoFile.size / 1024 : 0).toFixed(1)} KB
-                        </p>
-                      </div>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); clearLogoFile() }}
-                        className="text-xs text-muted-foreground hover:text-red-500 underline underline-offset-2 transition-colors"
-                      >
-                        Rimuovi file
-                      </button>
-                    </div>
-                  ) : form.image_url ? (
-                    <div className="flex flex-col items-center gap-3">
-                      <img src={form.image_url} alt="Logo attuale" className="h-16 w-16 object-contain rounded border border-black/10" />
-                      <p className="text-sm font-medium text-foreground">Logo attuale</p>
-                      <p className="text-xs text-muted-foreground">Clicca per sostituirlo</p>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="p-3 rounded-full bg-secondary/50">
-                        <Upload className="h-6 w-6 text-muted-foreground" />
-                      </div>
-                      <p className="text-sm font-medium text-foreground">Trascina il logo qui o clicca per caricare</p>
-                      <p className="text-xs text-muted-foreground mt-1">PNG, JPG, JPEG, WEBP, SVG — Max 5MB</p>
-                    </div>
-                  )}
+      <ModalShell
+        open={showModal}
+        onClose={() => { clearLogoFile(); setShowModal(false) }}
+        labelledBy="sponsor-modal-title"
+        className="bg-card border border-border rounded-xl shadow-lg p-6 max-w-md"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 id="sponsor-modal-title" className="text-lg font-semibold text-foreground">{editing ? 'Modifica Sponsor' : 'Nuovo Sponsor'}</h3>
+          <button onClick={() => { clearLogoFile(); setShowModal(false) }}><X className="h-5 w-5 text-muted-foreground" /></button>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-medium text-foreground">Nome *</label>
+            <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-foreground">Logo</label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept={LOGO_INPUT_ACCEPT}
+              onChange={handleLogoChange}
+              className="hidden"
+            />
+            <div
+              role="button"
+              tabIndex={0}
+              aria-label={
+                logoPreviewUrl
+                  ? `Logo selezionato: ${logoFile?.name ?? ''}`
+                  : form.image_url
+                    ? 'Logo attuale: clicca per sostituirlo'
+                    : 'Carica logo (trascina il file o clicca)'
+              }
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={handleLogoDrop}
+              onClick={() => fileInputRef.current?.click()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  fileInputRef.current?.click()
+                }
+              }}
+              className={cn(
+                "mt-1 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-6 text-center transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary",
+                dragOver
+                  ? "border-primary bg-primary/5 scale-[1.01]"
+                  : "border-border hover:border-muted-foreground hover:bg-muted/30"
+              )}
+            >
+              {logoPreviewUrl ? (
+                <div className="flex flex-col items-center gap-3">
+                  <img src={logoPreviewUrl} alt="Anteprima logo" className="h-16 w-16 object-contain rounded border border-black/10" />
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{logoFile?.name}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {(logoFile ? logoFile.size / 1024 : 0).toFixed(1)} KB
+                    </p>
+                  </div>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); clearLogoFile() }}
+                    className="text-xs text-muted-foreground hover:text-red-500 underline underline-offset-2 transition-colors"
+                  >
+                    Rimuovi file
+                  </button>
                 </div>
-                {logoError && (
-                  <p className="mt-1 text-xs text-red-500">{logoError}</p>
-                )}
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground">URL Sito Web</label>
-                <input value={form.website_url} onChange={(e) => setForm({ ...form, website_url: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground">Ordine</label>
-                <input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: parseInt(e.target.value) || 0 })}
-                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <button onClick={() => { clearLogoFile(); setShowModal(false) }}
-                  className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-secondary">
-                  Annulla
-                </button>
-                <button onClick={handleSave} disabled={!form.name}
-                  className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50">
-                  {editing ? 'Salva' : 'Crea'}
-                </button>
-              </div>
+              ) : form.image_url ? (
+                <div className="flex flex-col items-center gap-3">
+                  <img src={form.image_url} alt="Logo attuale" className="h-16 w-16 object-contain rounded border border-black/10" />
+                  <p className="text-sm font-medium text-foreground">Logo attuale</p>
+                  <p className="text-xs text-muted-foreground">Clicca per sostituirlo</p>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="p-3 rounded-full bg-secondary/50">
+                    <Upload className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm font-medium text-foreground">Trascina il logo qui o clicca per caricare</p>
+                  <p className="text-xs text-muted-foreground mt-1">PNG, JPG, JPEG, WEBP, SVG — Max 5MB</p>
+                </div>
+              )}
             </div>
+            {logoError && (
+              <p className="mt-1 text-xs text-red-500">{logoError}</p>
+            )}
+          </div>
+          <div>
+            <label className="text-sm font-medium text-foreground">URL Sito Web</label>
+            <input value={form.website_url} onChange={(e) => setForm({ ...form, website_url: e.target.value })}
+              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-foreground">Ordine</label>
+            <input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: parseInt(e.target.value) || 0 })}
+              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <button onClick={() => { clearLogoFile(); setShowModal(false) }}
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-secondary">
+              Annulla
+            </button>
+            <button onClick={handleSave} disabled={!form.name}
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50">
+              {editing ? 'Salva' : 'Crea'}
+            </button>
           </div>
         </div>
-      )}
+      </ModalShell>
     </div>
   )
 }

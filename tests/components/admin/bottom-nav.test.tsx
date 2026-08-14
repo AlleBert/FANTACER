@@ -11,7 +11,7 @@ describe('BottomNav', () => {
     mockUsePathname.mockReturnValue('/admin/dashboard/panoramica')
   })
 
-  it('renders all 5 nav items', () => {
+  it('renders all 6 nav items', () => {
     render(<BottomNav />)
     expect(screen.getByText('Panoramica')).toBeInTheDocument()
     expect(screen.getByText('Aziende')).toBeInTheDocument()
@@ -42,7 +42,7 @@ describe('BottomNav', () => {
   it('shows all items inactive for unknown routes', () => {
     mockUsePathname.mockReturnValue('/some/unknown/page')
     render(<BottomNav />)
-    const links = screen.getAllByRole('tab')
+    const links = screen.getAllByRole('link')
     links.forEach(link => {
       expect(link).not.toHaveAttribute('aria-current')
     })

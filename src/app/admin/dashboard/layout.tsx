@@ -8,14 +8,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
 
   return (
-    <div className="min-h-screen bg-background transition-colors duration-300">
+    <div className="min-h-dvh bg-background transition-colors duration-300">
       <AdminSidebar
         collapsed={isSidebarCollapsed}
         onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
       <main
-        className={`transition-all duration-300 min-h-screen pb-16 md:pb-0 overflow-x-hidden ${
-          isSidebarCollapsed ? 'md:ml-[80px]' : 'md:ml-[260px]'
+        className={`transition-all duration-300 min-h-dvh pb-16 md:pb-0 overflow-x-hidden ${
+          isSidebarCollapsed ? 'md:ml-[var(--admin-sidebar-width-collapsed)]' : 'md:ml-[var(--admin-sidebar-width)]'
         }`}
       >
         {children}

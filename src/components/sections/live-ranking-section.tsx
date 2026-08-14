@@ -87,16 +87,16 @@ export function LiveRankingSection() {
   };
 
   return (
-    <section className="snap-start relative w-full h-[100dvh] bg-gradient-to-b from-[#FF8A26] via-[#FF8A26] to-[#FF2FB2] flex flex-col justify-between overflow-hidden pt-4 md:pt-6 pb-2 md:pb-3">
+    <section className="snap-screen relative w-full bg-gradient-to-b from-orange via-orange to-[#FF2FB2] flex flex-col justify-between overflow-hidden pt-4 md:pt-6 pb-2 md:pb-3">
       <div className="safe-shell w-full max-w-7xl mx-auto flex flex-col h-full min-h-0">
 
-        <div className="flex flex-col items-center justify-center flex-1 min-h-0 gap-[clamp(0.5rem,2dvh,1.5rem)] md:gap-6">
+        <div className="flex flex-col items-center justify-center flex-1 min-h-0 gap-[clamp(0.5rem,2svh,1.5rem)] md:gap-6">
 
-        <h2 className="text-[clamp(1.5rem,5dvh,70px)] font-[900] text-center tracking-tighter lowercase leading-[1.1] text-white">
+        <h2 className="text-[clamp(1.5rem,5vw,4.375rem)] font-[900] text-center tracking-tighter lowercase leading-[1.1] text-white">
           {t('liveRanking.title')}
         </h2>
 
-        <p className="text-center text-[clamp(0.875rem,2.5dvh,1.125rem)] font-bold text-white">
+        <p className="text-center text-[clamp(0.875rem,2.5vw,1.125rem)] font-bold text-white">
           {t('liveRanking.subtitle')}
         </p>
 
@@ -121,7 +121,7 @@ export function LiveRankingSection() {
               <p className="text-white font-bold text-lg mb-4">{error}</p>
               <button
                 onClick={() => fetchRanking(true)}
-                className="bg-[#fccb27] text-black font-black px-8 py-3 rounded-full border-[3px] border-black shadow-[4px_4px_0_#000] hover:shadow-[6px_6px_0_#000] hover:-translate-y-0.5 transition-all"
+                className="bg-bright text-black font-black px-8 py-3 rounded-full border-[3px] border-black shadow-[4px_4px_0_#000] hover:shadow-[6px_6px_0_#000] hover:-translate-y-0.5 transition-all"
               >
                 {t('liveRanking.retry')}
               </button>
@@ -131,7 +131,7 @@ export function LiveRankingSection() {
               {t('liveRanking.empty')}
             </p>
           ) : (
-            <div className={`w-full max-w-2xl mx-auto bg-white rounded-2xl border-[3px] border-black shadow-[4px_4px_0_#000] p-3 md:p-6 flex flex-col shrink min-h-0 ${showAll ? 'h-[45dvh] md:h-[55dvh]' : 'max-h-[45dvh] md:max-h-[55dvh]'}`}>
+            <div className={`w-full max-w-2xl mx-auto bg-white rounded-2xl border-[3px] border-black shadow-[4px_4px_0_#000] p-3 md:p-6 flex flex-col shrink min-h-0 ${showAll ? 'h-[45svh] md:h-[55svh]' : 'max-h-[45svh] md:max-h-[55svh]'}`}>
               <div
                 ref={rankingRef}
                 className="no-scrollbar flex flex-col flex-1 overflow-y-auto gap-y-2 md:gap-y-3"
@@ -150,11 +150,11 @@ export function LiveRankingSection() {
                         <div className="flex-1">
                           <div className="flex justify-between items-center mb-1">
                             <span className="font-bold text-sm md:text-base truncate text-black">{company.name}</span>
-                            <span className="font-black text-sm bg-[#fccb27] px-2 py-0.5 rounded-full border-2 border-[#231f20] ml-2 whitespace-nowrap">
+                            <span className="font-black text-sm bg-bright px-2 py-0.5 rounded-full border-2 border-ink ml-2 whitespace-nowrap">
                               {t('liveRanking.pallets', { count: company.total_pallets })}
                             </span>
                           </div>
-                          <div className="w-full h-4 bg-white rounded-full border-2 border-[#231f20] overflow-hidden">
+                          <div className="w-full h-4 bg-white rounded-full border-2 border-ink overflow-hidden">
                             <div
                               className="h-full rounded-full transition-all duration-500"
                               style={{ width: `${barWidth}%`, ...getBarStyle(company.total_pallets, leaderVotes, index) }}
@@ -170,7 +170,7 @@ export function LiveRankingSection() {
               {companies.length > 5 && (
                 <button
                   onClick={toggleShowAll}
-                  className="mt-2 w-full text-sm font-black text-[#8000ff] hover:text-black transition-colors py-2 cursor-pointer shrink-0"
+                  className="mt-2 w-full text-sm font-black text-purple hover:text-black transition-colors py-3 min-h-11 cursor-pointer shrink-0"
                 >
                   {showAll ? t('liveRanking.hide') : t('liveRanking.showAll')}
                 </button>

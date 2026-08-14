@@ -14,6 +14,7 @@ export default defineConfig({
   snapshotPathTemplate: '{testDir}/screenshots/{projectName}/{testFilePath}/{arg}{ext}',
   use: {
     baseURL: 'http://localhost:3000',
+    locale: 'it-IT',
     headless: true,
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',

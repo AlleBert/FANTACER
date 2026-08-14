@@ -6,6 +6,7 @@ import { Settings as SettingsIcon, Shield, ChevronDown, ChevronUp } from 'lucide
 import { AuditCardList } from '@/components/admin/audit-card-list'
 import { AuditLogTable } from '@/components/admin/audit-log-table'
 import { useAdminRole } from '@/lib/use-admin-role'
+import { ModalShell } from '@/components/ui/modal-shell'
 
 interface AuditLog {
   id: string
@@ -132,12 +133,12 @@ export default function ImpostazioniPage() {
         </CardHeader>
         {auditExpanded && (
           <CardContent className="p-4 md:p-6 border-t border-border">
-            <div className="md:hidden">
+            <div className="lg:hidden">
               <AuditCardList data={auditLogs} pagination={auditPagination}
                 onPageChange={(p: number) => loadAuditLogs(p, auditSearch)}
                 onSearch={(s: string) => { setAuditSearch(s); loadAuditLogs(1, s) }} />
             </div>
-            <div className="hidden md:block">
+            <div className="hidden lg:block">
               <AuditLogTable data={auditLogs} pagination={auditPagination}
                 onPageChange={(p: number) => loadAuditLogs(p, auditSearch)}
                 onSearch={(s: string) => { setAuditSearch(s); loadAuditLogs(1, s) }} />
@@ -147,31 +148,32 @@ export default function ImpostazioniPage() {
       </Card>
 
       {/* Confirm modal */}
-      {showConfirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="mx-4 w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lg">
-            <h3 className="text-lg font-semibold text-foreground">
-              {pendingValue ? 'Attivare coming-soon?' : 'Disattivare coming-soon?'}
-            </h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {pendingValue
-                ? 'Tutti gli utenti verranno reindirizzati alla pagina coming-soon. Le API rimarranno accessibili.'
-                : 'Il sito tornerà accessibile a tutti gli utenti.'}
-            </p>
-            <div className="mt-6 flex justify-end gap-3">
-              <button onClick={() => setShowConfirmModal(false)}
-                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-secondary"
-                disabled={updating}>Annulla</button>
-              <button onClick={confirmToggle} disabled={updating}
-                className={`rounded-lg px-4 py-2 text-sm font-medium text-white ${
-                  pendingValue ? 'bg-destructive hover:bg-destructive/90' : 'bg-primary hover:bg-primary/90'
-                }`}>
-                {updating ? 'Aggiornamento...' : 'Conferma'}
-              </button>
-            </div>
-          </div>
+      <ModalShell
+        open={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        labelledBy="impostazioni-confirm-title"
+        className="bg-card border border-border rounded-xl p-6 shadow-lg max-w-md"
+      >
+        <h3 id="impostazioni-confirm-title" className="text-lg font-semibold text-foreground">
+          {pendingValue ? 'Attivare coming-soon?' : 'Disattivare coming-soon?'}
+        </h3>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {pendingValue
+            ? 'Tutti gli utenti verranno reindirizzati alla pagina coming-soon. Le API rimarranno accessibili.'
+            : 'Il sito tornerà accessibile a tutti gli utenti.'}
+        </p>
+        <div className="mt-6 flex justify-end gap-3">
+          <button onClick={() => setShowConfirmModal(false)}
+            className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-secondary"
+            disabled={updating}>Annulla</button>
+          <button onClick={confirmToggle} disabled={updating}
+            className={`rounded-lg px-4 py-2 text-sm font-medium text-white ${
+              pendingValue ? 'bg-destructive hover:bg-destructive/90' : 'bg-primary hover:bg-primary/90'
+            }`}>
+            {updating ? 'Aggiornamento...' : 'Conferma'}
+          </button>
         </div>
-      )}
+      </ModalShell>
     </div>
   )
 }

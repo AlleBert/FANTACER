@@ -18,30 +18,30 @@ interface MessageOverlayProps {
 
 const typeStyles = {
   success: {
-    bg: 'bg-[#fccb27]',
-    border: 'border-[#fccb27]',
-    iconBg: 'bg-[#fccb27]',
-    text: 'text-[#231f20]',
-    iconColor: 'stroke-[#231f20]',
+    bg: 'bg-bright',
+    border: 'border-bright',
+    iconBg: 'bg-bright',
+    text: 'text-ink',
+    iconColor: 'stroke-ink',
   },
   error: {
-    bg: 'bg-[#ff803b]',
-    border: 'border-[#ff803b]',
-    iconBg: 'bg-[#ff803b]',
+    bg: 'bg-coral',
+    border: 'border-coral',
+    iconBg: 'bg-coral',
     text: 'text-white',
     iconColor: 'stroke-white',
   },
   warning: {
-    bg: 'bg-[#ff803b]',
-    border: 'border-[#ff803b]',
-    iconBg: 'bg-[#ff803b]',
+    bg: 'bg-coral',
+    border: 'border-coral',
+    iconBg: 'bg-coral',
     text: 'text-white',
     iconColor: 'stroke-white',
   },
   info: {
-    bg: 'bg-[#8000ff]',
-    border: 'border-[#8000ff]',
-    iconBg: 'bg-[#8000ff]',
+    bg: 'bg-purple',
+    border: 'border-purple',
+    iconBg: 'bg-purple',
     text: 'text-white',
     iconColor: 'stroke-white',
   },
@@ -96,20 +96,21 @@ export function MessageOverlay({
     >
       {/* Backdrop - only this gets click handler when visible */}
       <div 
-        className={`absolute inset-0 bg-[#8000ff]/10 backdrop-blur-sm ${isVisible && !isClosing ? 'cursor-pointer' : ''}`}
+        className={`absolute inset-0 bg-purple/10 backdrop-blur-sm ${isVisible && !isClosing ? 'cursor-pointer' : ''}`}
         onClick={isVisible && !isClosing ? handleClose : undefined}
       />
 
       {/* Card */}
       <div 
-        className={`relative w-full max-w-sm bg-white border-2 ${styles.border} rounded-3xl shadow-[0_8px_0_#231f20] p-6 transform transition-all duration-300 ${
+        className={`relative w-full max-w-sm bg-white border-2 ${styles.border} rounded-3xl shadow-[0_8px_0_var(--color-ink)] p-6 transform transition-all duration-300 ${
           isClosing ? 'scale-95 opacity-0' : 'scale-100 opacity-100'
         }`}
       >
         {/* Close Button */}
         <button 
           onClick={handleClose}
-          className="absolute top-3 right-3 p-1.5 text-[#231f20]/50 hover:bg-[#231f20]/10 rounded-full transition-colors"
+          aria-label="Chiudi"
+          className="absolute top-3 right-3 p-1.5 text-ink/50 hover:bg-ink/10 rounded-full transition-colors"
         >
           <X className="h-4 w-4" />
         </button>
@@ -124,11 +125,11 @@ export function MessageOverlay({
           </div>
 
           {/* Text */}
-          <div className="space-y-2">
+          <div className="space-y-2" aria-live="polite">
             <h2 className={`text-xl font-black uppercase tracking-tight ${styles.text}`}>
               {title}
             </h2>
-            <p className="text-sm text-[#231f20]/70 max-w-[260px] leading-relaxed">
+            <p className="text-sm text-ink/70 max-w-[260px] leading-relaxed">
               {message}
             </p>
           </div>
@@ -139,11 +140,11 @@ export function MessageOverlay({
               onClick={handleConfirm}
               className={`
                 mt-2 px-8 py-3 rounded-full font-[900] text-lg uppercase tracking-tight
-                border-2 border-[#231f20] shadow-[4px_4px_0_#231f20]
-                hover:shadow-[6px_6px_0_#231f20] hover:-translate-y-1
+                border-2 border-ink shadow-[4px_4px_0_var(--color-ink)]
+                hover:shadow-[6px_6px_0_var(--color-ink)] hover:-translate-y-1
                 transition-all duration-300
-                ${type === 'warning' || type === 'error' ? 'bg-white' : 'bg-[#8000ff]'}
-                ${type === 'warning' || type === 'error' ? 'text-[#ff803b]' : 'text-white'}
+                ${type === 'warning' || type === 'error' ? 'bg-white' : 'bg-purple'}
+                ${type === 'warning' || type === 'error' ? 'text-coral' : 'text-white'}
               `}
             >
               {confirmText}
@@ -151,7 +152,7 @@ export function MessageOverlay({
           )}
 
           {/* Footer */}
-          <p className="text-[10px] text-[#231f20]/40 pt-2">
+          <p className="text-[10px] text-ink/40 pt-2">
             {t('messageOverlay.footer')}
           </p>
         </div>

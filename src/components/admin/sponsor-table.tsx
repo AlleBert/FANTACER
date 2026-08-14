@@ -45,7 +45,7 @@ export function SponsorTable({ sponsors, onEdit, onDelete, onToggleActive, readO
               </td>
               <td className="p-3 max-w-[200px] truncate">
                 {sponsor.website_url ? (
-                  <a href={sponsor.website_url} target="_blank" rel="noopener noreferrer" className="text-[#8000ff] hover:underline">
+                  <a href={sponsor.website_url} target="_blank" rel="noopener noreferrer" className="text-purple hover:underline">
                     {sponsor.website_url}
                   </a>
                 ) : (
@@ -73,7 +73,7 @@ export function SponsorTable({ sponsors, onEdit, onDelete, onToggleActive, readO
               {!readOnly && (
                 <td className="p-3">
                   <div className="flex gap-2">
-                    <button onClick={() => onEdit(sponsor)} className="px-2 py-2.5 text-[#8000ff] font-bold text-xs rounded-md hover:bg-[#8000ff]/5">
+                    <button onClick={() => onEdit(sponsor)} className="px-2 py-2.5 text-purple font-bold text-xs rounded-md hover:bg-purple/5">
                       MODIFICA
                     </button>
                     <button onClick={() => onDelete(sponsor.id)} className="px-2 py-2.5 text-red-500 font-bold text-xs rounded-md hover:bg-red-500/5">

@@ -19,7 +19,7 @@ function PageContent() {
 
   return (
     <main
-      className="overflow-y-auto scroll-smooth no-scrollbar safe-pb snap-y snap-mandatory"
+      className="overflow-y-auto scroll-smooth no-scrollbar snap-y snap-mandatory"
       style={{ height: 'var(--app-height)' }}
     >
       <HeroSection

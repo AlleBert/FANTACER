@@ -44,13 +44,9 @@ These are documented violations that pass without failing the build. Any new vio
 
 | Route | Violation ID | Impact | Reason |
 |---|---|---|---|
-| `/admin/login` | `button-name` | critical | Sidebar collapse/expand toggle button in AdminLayout — icon-only button, no accessible text |
 | `/admin/login` | `color-contrast` | serious | Dashboard header text `#ff8a26` on `#ffffff` (2.35:1, needs 4.5:1) — brand color |
-| `/admin/dashboard/panoramica` | `button-name` | critical | Sidebar collapse/expand toggle button in AdminLayout |
 | `/admin/dashboard/panoramica` | `color-contrast` | serious | Red negative values (`text-red-500`) and orange primary buttons — brand palette |
-| `/admin/dashboard/aziende` | `button-name` | critical | Sidebar collapse/expand toggle button in AdminLayout |
 | `/admin/dashboard/aziende` | `color-contrast` | serious | Orange primary buttons in batch selector — brand palette |
-| `/admin/dashboard/voti` | `button-name` | critical | Sidebar collapse/expand toggle button in AdminLayout |
 
 ### How to Update Violation Baselines
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useReducer, useMemo, ReactNode } from 'react';
+import { createContext, useContext, useReducer, useMemo, type ReactNode } from 'react';
 
 export interface SelectedCompany {
   company: { id: string; name: string };

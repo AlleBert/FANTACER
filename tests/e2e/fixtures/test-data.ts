@@ -24,6 +24,34 @@ const TEST_SPONSORS = [
 ];
 const RESERVED_TEST_FINGERPRINTS = ['test-fp-1', 'test-fp-2', 'test-fp-3', 'test-fp-4'];
 
+/**
+ * Rimuove i voti di oggi generati dalle suite E2E (non i fixture `test-fp-*`).
+ *
+ * Il fingerprint di voto (`FingerprintJS.visitorId`) è stabile per browser
+ * instance: due test paralleli che votano nello stesso worker condividono lo
+ * stesso fingerprint e la RPC `submit_vote` rifiuta il secondo voto con
+ * "Hai già votato oggi" (409). Azzerare i vote_sessions di oggi subito prima
+ * di ogni voto evita la collisione mantenendo intatti i dati seedati.
+ */
+export async function clearRuntimeVotes() {
+  const supabase = createTestAdminClient();
+
+  const today = new Date();
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const startOfTomorrow = new Date(startOfToday);
+  startOfTomorrow.setDate(startOfToday.getDate() + 1);
+  const { error } = await supabase
+    .from('vote_sessions')
+    .delete()
+    .gte('created_at', startOfToday.toISOString())
+    .lt('created_at', startOfTomorrow.toISOString())
+    .not('fingerprint', 'in', `(${RESERVED_TEST_FINGERPRINTS.join(',')})`);
+
+  if (error) {
+    throw new Error(`Failed to clear runtime votes: ${error.message}`);
+  }
+}
+
 export async function seedTestData() {
   const supabase = createTestAdminClient();
 
@@ -41,20 +69,7 @@ export async function seedTestData() {
     throw new Error(`Failed to seed batch_settings: ${batchError.message}`);
   }
 
-  const today = new Date();
-  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const startOfTomorrow = new Date(startOfToday);
-  startOfTomorrow.setDate(startOfToday.getDate() + 1);
-  const { error: runtimeVotesError } = await supabase
-    .from('vote_sessions')
-    .delete()
-    .gte('created_at', startOfToday.toISOString())
-    .lt('created_at', startOfTomorrow.toISOString())
-    .not('fingerprint', 'in', `(${RESERVED_TEST_FINGERPRINTS.join(',')})`);
-
-  if (runtimeVotesError) {
-    throw new Error(`Failed to clear runtime votes: ${runtimeVotesError.message}`);
-  }
+  await clearRuntimeVotes();
 
   const { error: deleteError } = await supabase
     .from('companies')

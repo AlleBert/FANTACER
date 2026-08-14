@@ -35,7 +35,7 @@ export interface AdminContext {
  * this gate passes.
  */
 export async function requireAdmin(
-  request: NextRequest,
+  _request: NextRequest,
   opts?: { minAal?: AuthenticatorAssuranceLevels },
 ): Promise<AdminContext> {
   const supabase = await createClient()

@@ -2,23 +2,9 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import {
-  LayoutDashboard,
-  Upload,
-  Settings,
-  LogOut,
-  ChevronLeft,
-  ChevronRight,
-  Image as ImageIcon,
-} from 'lucide-react'
+import { LogOut, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ADMIN_NAV_ITEMS, isPathActive } from '@/lib/admin-navigation'
 import { ThemeToggle } from './theme-toggle'
-
-const navItems = [
-  { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/admin/dashboard/sponsor', label: 'Sponsor', icon: ImageIcon },
-  { href: '/admin/dashboard/import', label: 'Import Aziende', icon: Upload },
-  { href: '/admin/dashboard/impostazioni', label: 'Impostazioni', icon: Settings },
-]
 
 interface AdminSidebarProps {
   collapsed: boolean
@@ -41,12 +27,14 @@ export function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
       <aside className={`
         fixed top-0 left-0 h-full bg-sidebar border-r border-sidebar-border z-40
         flex flex-col transition-all duration-300 ease-out
-        ${collapsed ? 'w-[80px]' : 'w-[260px]'}
+        ${collapsed ? 'w-[var(--admin-sidebar-width-collapsed)]' : 'w-[var(--admin-sidebar-width)]'}
         -translate-x-full md:translate-x-0
       `}>
         {/* Toggle Button */}
         <button
           onClick={onToggle}
+          aria-label={collapsed ? 'Espandi sidebar' : 'Comprimi sidebar'}
+          title={collapsed ? 'Espandi sidebar' : 'Comprimi sidebar'}
           className="hidden md:flex absolute -right-3 top-10 h-6 w-6 bg-primary border-2 border-sidebar items-center justify-center rounded-full text-white z-50 hover:scale-110 transition-transform shadow-sm"
         >
           {collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
@@ -69,9 +57,9 @@ export function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
           </div>
         )}
 
-        <nav className="flex-1 px-3 space-y-1">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href
+        <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
+          {ADMIN_NAV_ITEMS.map((item) => {
+            const isActive = isPathActive(pathname, item.href)
             return (
               <Link
                 key={item.href}

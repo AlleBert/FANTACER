@@ -128,7 +128,7 @@ export function LiquidFillButton({
       type="button"
       disabled={!ready || loading}
       onClick={ready ? onClick : undefined}
-      className="relative w-full max-w-sm h-[clamp(3rem,12dvh,5rem)] md:h-[clamp(3.5rem,13dvh,6rem)] rounded-full border-[3px] md:border-[4px] border-[#231f20] bg-[#fccb27]/50 shadow-[4px_4px_0_#000] hover:shadow-[6px_6px_0_#000] hover:-translate-y-1 transition-all duration-300 text-[clamp(1.125rem,3.5dvh,1.875rem)] md:text-3xl font-[900] disabled:cursor-not-allowed disabled:pointer-events-none select-none"
+      className="relative w-full max-w-sm h-[clamp(3rem,12svh,5rem)] md:h-[clamp(3.5rem,13svh,6rem)] rounded-full border-[3px] md:border-[4px] border-ink bg-bright/50 shadow-[4px_4px_0_#000] hover:shadow-[6px_6px_0_#000] hover:-translate-y-1 transition-all duration-300 text-[clamp(1.125rem,3.5vw,1.875rem)] md:text-3xl font-[900] disabled:cursor-not-allowed disabled:pointer-events-none select-none"
     >
       <svg
         width={box.w}

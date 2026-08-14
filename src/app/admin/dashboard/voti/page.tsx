@@ -95,7 +95,7 @@ export default function VotiPage() {
                     {s.pallets.map((p, i) => (
                       <div key={i} className="flex items-center justify-between py-1 border-b border-black/5 last:border-b-0">
                         <span className="text-sm font-medium">{p.company}</span>
-                        <span className="text-xs font-bold bg-[#fccb27] px-2 py-0.5 rounded-full">{p.pallet}</span>
+                        <span className="text-xs font-bold bg-bright px-2 py-0.5 rounded-full">{p.pallet}</span>
                       </div>
                     ))}
                     <p className="text-[10px] text-muted-foreground mt-1">
@@ -128,7 +128,7 @@ export default function VotiPage() {
                         {s.pallets.map((p, i) => (
                           <td key={i} className="p-3">
                             <span className="font-medium">{p.company}</span>
-                            <span className="ml-2 text-xs font-bold bg-[#fccb27] px-1.5 py-0.5 rounded-full">{p.pallet}</span>
+                            <span className="ml-2 text-xs font-bold bg-bright px-1.5 py-0.5 rounded-full">{p.pallet}</span>
                           </td>
                         ))}
                         <td className="p-3 text-xs font-mono text-muted-foreground">{s.fingerprint}</td>

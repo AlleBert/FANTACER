@@ -543,7 +543,7 @@ export function collectLayoutAnomalies(page: Page, selector: string): Promise<Su
   }).catch(() => []);
 }
 
-export async function collectSubElementReport(page: Page, name: string, selector: string): Promise<SubElementReport> {
+export async function collectSubElementReport(page: Page, _name: string, selector: string): Promise<SubElementReport> {
   const [interactive, images, headings, textBlocks, layoutAnomalies] = await Promise.all([
     collectInteractiveElements(page, selector),
     collectImages(page, selector),

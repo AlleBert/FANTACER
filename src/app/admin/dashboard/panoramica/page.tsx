@@ -265,7 +265,7 @@ export default function PanoramicaPage() {
                   className="w-full border-border text-foreground hover:bg-secondary">
                   <Download className="h-4 w-4 mr-2" /> Export Excel
                 </Button>
-                <Button variant="outline" onClick={() => router.push('/admin/import')}
+                <Button variant="outline" onClick={() => router.push('/admin/dashboard/import')}
                   className="w-full border-border text-foreground hover:bg-secondary">
                   <Upload className="h-4 w-4 mr-2" /> Import Aziende
                 </Button>
