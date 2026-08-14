@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { SponsorCards } from '@/components/sponsor/sponsor-cards';
 import { SectionFrame } from '@/components/layout/section-frame';
 import { useLocale } from '@/lib/LocaleContext';
+import { createClient } from '@/lib/supabase/client';
 
 interface RankedCompany {
   id: string;
@@ -18,6 +19,7 @@ export function LiveRankingSection() {
   const [companies, setCompanies] = useState<RankedCompany[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [votingEnabled, setVotingEnabled] = useState(true);
 
   const fetchRanking = async (showLoader = true) => {
     if (showLoader) setIsLoading(true);
@@ -51,6 +53,27 @@ export function LiveRankingSection() {
     const interval = setInterval(fetchSilent, 30000);
     return () => clearInterval(interval);
   }, [t]);
+
+  useEffect(() => {
+    fetch('/api/public/flag/voting')
+      .then(res => res.json())
+      .then(data => setVotingEnabled(data.enabled))
+      .catch(() => setVotingEnabled(true));
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel('live-ranking-voting-flag')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'site_settings', filter: 'key=eq.voting_enabled' }, () => {
+        fetch('/api/public/flag/voting')
+          .then(res => res.json())
+          .then(data => setVotingEnabled(data.enabled));
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const [showAll, setShowAll] = useState(false);
   const rankingRef = useRef<HTMLDivElement>(null);
@@ -102,7 +125,31 @@ export function LiveRankingSection() {
         </p>
 
         <div className="w-full max-w-2xl mx-auto">
-          {isLoading ? (
+          {!votingEnabled ? (
+            <div className="w-full max-w-2xl mx-auto bg-white rounded-2xl border-[3px] border-black shadow-[4px_4px_0_#000] p-3 md:p-6">
+              <div className="flex flex-col gap-y-2 md:gap-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="mb-3 animate-pulse">
+                    <div className="flex items-center gap-3 mb-1">
+                      <div className="w-8 h-8 bg-gray-300 rounded-full" />
+                      <div className="flex-1">
+                        <div className="flex justify-between items-center mb-1">
+                          <div className="h-4 bg-gray-300 rounded w-3/5" />
+                          <div className="h-5 bg-gray-300 rounded-full w-16 ml-2" />
+                        </div>
+                        <div className="w-full h-4 bg-gray-300 rounded-full" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 text-center">
+                <p className="text-lg font-black text-gray-500">
+                  🏆 Classifica disponibile durante il Cersaie!
+                </p>
+              </div>
+            </div>
+          ) : isLoading ? (
             Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="mb-3 animate-pulse">
                 <div className="flex items-center gap-3 mb-1">

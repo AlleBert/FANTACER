@@ -22,10 +22,15 @@ export default function ImpostazioniPage() {
   const role = useAdminRole()
   const isViewer = role === 'viewer'
   const [comingSoonEnabled, setComingSoonEnabled] = useState(false)
+  const [votingEnabled, setVotingEnabled] = useState(false)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [pendingValue, setPendingValue] = useState(false)
   const [updating, setUpdating] = useState(false)
   const [loadingFlag, setLoadingFlag] = useState(true)
+  const [loadingVoting, setLoadingVoting] = useState(true)
+  const [showVotingConfirmModal, setShowVotingConfirmModal] = useState(false)
+  const [pendingVotingValue, setPendingVotingValue] = useState(false)
+  const [updatingVoting, setUpdatingVoting] = useState(false)
 
   // Audit log state
   const [auditExpanded, setAuditExpanded] = useState(false)
@@ -39,6 +44,11 @@ export default function ImpostazioniPage() {
       .then(data => setComingSoonEnabled(data.enabled))
       .finally(() => setLoadingFlag(false))
 
+    fetch('/api/admin/settings/voting')
+      .then(res => res.json())
+      .then(data => setVotingEnabled(data.enabled))
+      .finally(() => setLoadingVoting(false))
+
     const supabase = createClient()
     const channel = supabase
       .channel('settings-changes')
@@ -46,6 +56,9 @@ export default function ImpostazioniPage() {
         fetch('/api/admin/settings/coming-soon')
           .then(res => res.json())
           .then(data => setComingSoonEnabled(data.enabled))
+        fetch('/api/admin/settings/voting')
+          .then(res => res.json())
+          .then(data => setVotingEnabled(data.enabled))
       })
       .subscribe()
 
@@ -79,6 +92,24 @@ export default function ImpostazioniPage() {
       if (res.ok) setComingSoonEnabled(pendingValue)
     } catch (e) { console.error(e) }
     finally { setUpdating(false); setShowConfirmModal(false) }
+  }
+
+  const handleVotingToggle = () => {
+    setPendingVotingValue(!votingEnabled)
+    setShowVotingConfirmModal(true)
+  }
+
+  const confirmVotingToggle = async () => {
+    setUpdatingVoting(true)
+    try {
+      const res = await fetch('/api/admin/settings/voting', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: pendingVotingValue }),
+      })
+      if (res.ok) setVotingEnabled(pendingVotingValue)
+    } catch (e) { console.error(e) }
+    finally { setUpdatingVoting(false); setShowVotingConfirmModal(false) }
   }
 
   return (
@@ -123,6 +154,35 @@ export default function ImpostazioniPage() {
                 }`}>
                 <span className={`absolute left-0.5 top-0.5 h-8 w-8 rounded-full bg-white transition-transform ${
                   comingSoonEnabled ? 'translate-x-5' : ''
+                }`} />
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg border border-border p-4 mt-4">
+            <div>
+              <p className="font-medium text-foreground">Votazioni</p>
+              <p className="text-sm text-muted-foreground">
+                {votingEnabled
+                  ? 'Attivo — gli utenti possono votare le aziende'
+                  : 'Disattivo — mostra messaggio "Ci vediamo al Cersaie"'}
+              </p>
+            </div>
+            {loadingVoting ? (
+              <div className="h-6 w-11 animate-pulse rounded-full bg-muted" />
+            ) : isViewer ? (
+              <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${
+                votingEnabled ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+              }`}>
+                {votingEnabled ? 'Attivo' : 'Disattivo'}
+              </span>
+            ) : (
+              <button onClick={handleVotingToggle} disabled={updatingVoting}
+                className={`relative h-9 w-14 rounded-full transition-colors disabled:opacity-50 ${
+                  votingEnabled ? 'bg-primary' : 'bg-muted'
+                }`}>
+                <span className={`absolute left-0.5 top-0.5 h-8 w-8 rounded-full bg-white transition-transform ${
+                  votingEnabled ? 'translate-x-5' : ''
                 }`} />
               </button>
             )}
@@ -186,6 +246,34 @@ export default function ImpostazioniPage() {
               pendingValue ? 'bg-destructive hover:bg-destructive/90' : 'bg-primary hover:bg-primary/90'
             }`}>
             {updating ? 'Aggiornamento...' : 'Conferma'}
+          </button>
+        </div>
+      </ModalShell>
+
+      {/* Voting confirm modal */}
+      <ModalShell
+        open={showVotingConfirmModal}
+        onClose={() => setShowVotingConfirmModal(false)}
+        labelledBy="voting-confirm-title"
+        className="bg-card border border-border rounded-xl p-6 shadow-lg max-w-md"
+      >
+        <h3 id="voting-confirm-title" className="text-lg font-semibold text-foreground">
+          {pendingVotingValue ? 'Attivare votazioni?' : 'Disattivare votazioni?'}
+        </h3>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {pendingVotingValue
+            ? 'Gli utenti potranno votare le aziende e vedere la classifica live.'
+            : 'Votazioni e classifica verranno sostituite dal messaggio "Ci vediamo al Cersaie".'}
+        </p>
+        <div className="mt-6 flex justify-end gap-3">
+          <button onClick={() => setShowVotingConfirmModal(false)}
+            className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-secondary"
+            disabled={updatingVoting}>Annulla</button>
+          <button onClick={confirmVotingToggle} disabled={updatingVoting}
+            className={`rounded-lg px-4 py-2 text-sm font-medium text-white ${
+              pendingVotingValue ? 'bg-primary hover:bg-primary/90' : 'bg-destructive hover:bg-destructive/90'
+            }`}>
+            {updatingVoting ? 'Aggiornamento...' : 'Conferma'}
           </button>
         </div>
       </ModalShell>
