@@ -6,6 +6,7 @@ loadEnvConfig(process.cwd());
 export default defineConfig({
   testDir: './tests/e2e',
   globalSetup: './tests/e2e/global-setup.ts',
+  globalTeardown: './tests/e2e/global-teardown.ts',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -14,6 +15,7 @@ export default defineConfig({
   snapshotPathTemplate: '{testDir}/screenshots/{projectName}/{testFilePath}/{arg}{ext}',
   use: {
     baseURL: 'http://localhost:3000',
+    locale: 'it-IT',
     headless: true,
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',

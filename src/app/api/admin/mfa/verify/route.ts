@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin, toAdminError } from '@/lib/admin-auth'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 import { writeAuditEvent } from '@/lib/audit'
@@ -52,6 +53,13 @@ export async function POST(request: NextRequest) {
       console.error('MFA verify error:', error)
       return NextResponse.json({ error: 'Codice non valido' }, { status: 400 })
     }
+
+    // Update mfa_verified_at timestamp for 24h session tracking
+    const adminSupabase = createAdminClient()
+    await adminSupabase
+      .from('admin_users')
+      .update({ mfa_verified_at: new Date().toISOString() })
+      .eq('auth_id', user.id)
 
     await writeAuditEvent({
       eventType: 'admin_mfa_success',

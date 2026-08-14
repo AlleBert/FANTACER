@@ -7,6 +7,7 @@ export class AdminAuthError extends Error {
   constructor(
     public status: number,
     message: string,
+    public code?: string,
   ) {
     super(message)
     this.name = 'AdminAuthError'
@@ -21,6 +22,9 @@ export interface AdminContext {
   role: AdminRole
 }
 
+// MFA validity duration: 24 hours
+const MFA_VALIDITY_MS = 24 * 60 * 60 * 1000
+
 /**
  * Server-side gate for all admin routes — cookie-based session only.
  *
@@ -30,12 +34,13 @@ export interface AdminContext {
  *    user and `is_active` must be true.
  * 3. AAL enforcement depending on role: `admin` must be at `aal2` (MFA
  *    TOTP obbligatoria); `viewer` is allowed at `aal1` (nessuna MFA).
+ * 4. MFA expiry: for `admin` role, MFA verification must be within 24h.
  *
  * The service role client must be instantiated by the caller only AFTER
  * this gate passes.
  */
 export async function requireAdmin(
-  request: NextRequest,
+  _request: NextRequest,
   opts?: { minAal?: AuthenticatorAssuranceLevels },
 ): Promise<AdminContext> {
   const supabase = await createClient()
@@ -49,7 +54,7 @@ export async function requireAdmin(
   const adminSupabase = createAdminClient()
   const { data: adminUser } = await adminSupabase
     .from('admin_users')
-    .select('id, role')
+    .select('id, role, mfa_verified_at')
     .eq('auth_id', user.id)
     .eq('is_active', true)
     .single()
@@ -65,6 +70,23 @@ export async function requireAdmin(
 
   if (aal < minAal) {
     throw new AdminAuthError(403, 'MFA richiesta')
+  }
+
+  // Check MFA expiry for admin role requiring AAL2
+  if (role === 'admin' && minAal === 'aal2' && aal >= 'aal2') {
+    const mfaVerifiedAt = adminUser.mfa_verified_at
+    if (!mfaVerifiedAt) {
+      // MFA never verified or timestamp missing - require re-verification
+      throw new AdminAuthError(403, 'MFA scaduta', 'mfa_expired')
+    }
+    
+    const verifiedTime = new Date(mfaVerifiedAt).getTime()
+    const now = Date.now()
+    
+    if (now - verifiedTime > MFA_VALIDITY_MS) {
+      // MFA expired - require re-verification
+      throw new AdminAuthError(403, 'MFA scaduta', 'mfa_expired')
+    }
   }
 
   return { user, aal, role }
@@ -88,4 +110,9 @@ export async function requireRoleAdmin(
 export function toAdminError(e: unknown): number {
   if (e instanceof AdminAuthError) return e.status
   return 500
+}
+
+export function getAdminErrorCode(e: unknown): string | undefined {
+  if (e instanceof AdminAuthError) return e.code
+  return undefined
 }

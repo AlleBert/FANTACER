@@ -16,13 +16,35 @@ function createTestAdminClient() {
 
 const TEST_BATCH = 'TEST';
 const TEST_COMPANIES = [{ name: 'Test Co' }, { name: 'GreenEnergy' }, { name: 'Third Co' }];
-const TEST_SPONSORS = [
-  { name: 'Test Sponsor A' },
-  { name: 'Test Sponsor B' },
-  { name: 'Test Sponsor C' },
-  { name: 'Test Sponsor D' },
-];
 const RESERVED_TEST_FINGERPRINTS = ['test-fp-1', 'test-fp-2', 'test-fp-3', 'test-fp-4'];
+
+/**
+ * Rimuove i voti di oggi generati dalle suite E2E (non i fixture `test-fp-*`).
+ *
+ * Il fingerprint di voto (`FingerprintJS.visitorId`) è stabile per browser
+ * instance: due test paralleli che votano nello stesso worker condividono lo
+ * stesso fingerprint e la RPC `submit_vote` rifiuta il secondo voto con
+ * "Hai già votato oggi" (409). Azzerare i vote_sessions di oggi subito prima
+ * di ogni voto evita la collisione mantenendo intatti i dati seedati.
+ */
+export async function clearRuntimeVotes() {
+  const supabase = createTestAdminClient();
+
+  const today = new Date();
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const startOfTomorrow = new Date(startOfToday);
+  startOfTomorrow.setDate(startOfToday.getDate() + 1);
+  const { error } = await supabase
+    .from('vote_sessions')
+    .delete()
+    .gte('created_at', startOfToday.toISOString())
+    .lt('created_at', startOfTomorrow.toISOString())
+    .not('fingerprint', 'in', `(${RESERVED_TEST_FINGERPRINTS.join(',')})`);
+
+  if (error) {
+    throw new Error(`Failed to clear runtime votes: ${error.message}`);
+  }
+}
 
 export async function seedTestData() {
   const supabase = createTestAdminClient();
@@ -41,20 +63,7 @@ export async function seedTestData() {
     throw new Error(`Failed to seed batch_settings: ${batchError.message}`);
   }
 
-  const today = new Date();
-  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const startOfTomorrow = new Date(startOfToday);
-  startOfTomorrow.setDate(startOfToday.getDate() + 1);
-  const { error: runtimeVotesError } = await supabase
-    .from('vote_sessions')
-    .delete()
-    .gte('created_at', startOfToday.toISOString())
-    .lt('created_at', startOfTomorrow.toISOString())
-    .not('fingerprint', 'in', `(${RESERVED_TEST_FINGERPRINTS.join(',')})`);
-
-  if (runtimeVotesError) {
-    throw new Error(`Failed to clear runtime votes: ${runtimeVotesError.message}`);
-  }
+  await clearRuntimeVotes();
 
   const { error: deleteError } = await supabase
     .from('companies')
@@ -102,12 +111,6 @@ export async function seedTestData() {
     ], { onConflict: 'fingerprint' });
     if (deviceError) throw new Error(`Failed to seed device_sessions: ${deviceError.message}`);
   }
-
-  await supabase.from('sponsors').delete().in('name', TEST_SPONSORS.map(s => s.name));
-  const { error: sponsorError } = await supabase.from('sponsors').insert(
-    TEST_SPONSORS.map((s, i) => ({ name: s.name, is_active: true, sort_order: i }))
-  );
-  if (sponsorError) throw new Error(`Failed to seed sponsors: ${sponsorError.message}`);
 }
 
 export async function cleanupTestData() {
@@ -135,6 +138,4 @@ export async function cleanupTestData() {
   if (error) {
     throw new Error(`Failed to cleanup test companies: ${error.message}`);
   }
-
-  await supabase.from('sponsors').delete().in('name', TEST_SPONSORS.map(s => s.name));
 }

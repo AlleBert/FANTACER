@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useVote } from '@/lib/VoteContext'
 import confetti from 'canvas-confetti'
 import { SponsorCards } from '@/components/sponsor/sponsor-cards'
+import { SectionFrame } from '@/components/layout/section-frame'
 import { useLocale } from '@/lib/LocaleContext'
 
 function IphoneStoryMockup({ companyName }: { companyName?: string }) {
@@ -35,7 +36,7 @@ function IphoneStoryMockup({ companyName }: { companyName?: string }) {
         <div className="flex flex-col items-center justify-center space-y-2.5 text-center mt-2 md:mt-4">
           <div className="bg-black/85 px-3.5 py-1.5 rounded-xl backdrop-blur-sm inline-block">
             <h3 className="text-sm md:text-base font-bold text-white leading-tight">
-              {t('success.voted')} <br/> <span className="text-[#fccb27]">{companyName || t('success.noCompany')}</span>
+              {t('success.voted')} <br/> <span className="text-bright">{companyName || t('success.noCompany')}</span>
             </h3>
           </div>
           
@@ -49,7 +50,7 @@ function IphoneStoryMockup({ companyName }: { companyName?: string }) {
         {/* Footer Content */}
         <div className="flex flex-col items-center space-y-6 pb-2">
           
-          <div className="bg-gradient-to-r from-[#8000ff] to-[#ff803b] p-[1.5px] rounded-2xl w-[85%] transform rotate-1">
+          <div className="bg-gradient-to-r from-purple to-coral p-[1.5px] rounded-2xl w-[85%] transform rotate-1">
              <div className="bg-white w-full rounded-[14px] py-1.5 px-0.5 text-center">
                 <p className="text-[10px] md:text-xs font-bold text-black leading-tight">
                   {t('success.playToo1')}<br/>{t('success.playToo2')}
@@ -99,26 +100,26 @@ export function SuccessSection() {
   }, []);
 
   return (
-    <section data-section="success" className="snap-start relative w-full h-[100dvh] bg-gradient-to-b from-[#FFFFFF] from-0% via-[#FF2FB2] via-45% to-[#FF8A26] to-75% flex flex-col justify-between overflow-hidden py-4">
+    <SectionFrame theme="success" className="flex flex-col justify-between py-4">
       <div className="safe-shell relative z-10 flex flex-col items-center justify-center max-w-[1200px] mx-auto gap-16 py-12 lg:flex-row lg:justify-between lg:gap-20 lg:py-20 flex-1 min-h-0">
         
           {/* Left Column: Text & Logos */}
           <div className="relative flex w-full flex-col items-center text-center lg:w-[55%] lg:items-start lg:text-left">
           {/* Title */}
-          <h2 className="text-[clamp(2.5rem,10vw,80px)] leading-[0.85] font-black mb-4 lg:mb-10 text-[#8000ff] uppercase tracking-tighter">
+          <h2 className="text-[clamp(2.5rem,10vw,80px)] leading-[0.85] font-black mb-4 lg:mb-10 text-purple uppercase tracking-tighter">
             {t('success.youRock')}
           </h2>
           
         
           <div className="space-y-8 mb-12 lg:mb-12 w-full max-w-xl">
-            <p className="text-2xl sm:text-xl md:text-3xl lg:text-4xl font-[900] text-[#231f20] leading-tight uppercase tracking-tight">
-              {t('success.shareSocial')} <br/> {t('success.shareTagging')} <span className="bg-[#fccb27] px-2 border-2 border-black rounded-lg inline-block rotate-1 shadow-[2px_2px_0_#000]">@fantacer</span>
+            <p className="text-2xl sm:text-xl md:text-3xl lg:text-4xl font-[900] text-ink leading-tight uppercase tracking-tight">
+              {t('success.shareSocial')} <br/> {t('success.shareTagging')} <span className="bg-bright px-2 border-2 border-black rounded-lg inline-block rotate-1 shadow-[2px_2px_0_#000]">@fantacer</span>
             </p>
             <div className="flex justify-center lg:justify-start pt-2 gap-6">
               <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-instagram w-11 h-11 md:w-14 md:h-14 lg:w-16 lg:h-16 text-black transition-transform hover:scale-110"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
               <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-facebook w-11 h-11 md:w-14 md:h-14 lg:w-16 lg:h-16 text-black transition-transform hover:scale-110"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
             </div>
-            <p className="text-2xl sm:text-xl md:text-3xl lg:text-4xl font-[900] text-white lg:text-[#231f20] leading-[1.2] uppercase tracking-tight mt-8 lg:mt-12">
+            <p className="text-2xl sm:text-xl md:text-3xl lg:text-4xl font-[900] text-white lg:text-ink leading-[1.2] uppercase tracking-tight mt-8 lg:mt-12">
               {t('success.collectPrize')}
             </p>
           </div>
@@ -151,6 +152,6 @@ export function SuccessSection() {
             <IphoneStoryMockup companyName={selectedCompanies[0]?.company.name} />
           </div>
       </div>
-    </section>
+    </SectionFrame>
   )
 }

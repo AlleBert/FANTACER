@@ -34,7 +34,7 @@ export function AdminThemeProvider({ children }: { children: React.ReactNode }) 
     <AdminThemeContext.Provider value={{ theme, toggleTheme }}>
       <div className={theme === 'dark' ? 'dark' : ''}>
         <div 
-          className={`min-h-screen bg-background text-foreground transition-colors duration-300 ${!mounted ? 'opacity-0' : 'opacity-100'}`}
+          className={`min-h-dvh bg-background text-foreground transition-colors duration-300 ${!mounted ? 'opacity-0' : 'opacity-100'}`}
         >
           {children}
         </div>

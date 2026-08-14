@@ -13,15 +13,13 @@ import { SuccessSection } from '@/components/sections/success-section'
 import { ContactSection } from '@/components/sections/contact-section'
 import { VoteProvider, useVote } from '@/lib/VoteContext'
 import { getOrCreateDeviceId } from '@/lib/device'
+import { AppShell } from '@/components/layout/app-shell'
 
 function PageContent() {
   const { gameUnlock } = useVote();
 
   return (
-    <main
-      className="overflow-y-auto scroll-smooth no-scrollbar safe-pb snap-y snap-mandatory"
-      style={{ height: 'var(--app-height)' }}
-    >
+    <AppShell>
       <HeroSection
         onPlayClick={() => {
           const main = document.querySelector('main');
@@ -38,7 +36,7 @@ function PageContent() {
       <PublicRankingSection />
       <LiveRankingSection />
       <ContactSection />
-    </main>
+    </AppShell>
   )
 }
 

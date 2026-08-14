@@ -127,7 +127,6 @@ export interface Dictionary {
   'footer.cookiePolicy': string
   'footer.privacyPolicy': string
   'footer.terms': string
-  'footer.legalNotices': string
   'footer.madeBy': string
 
   // Vote API errors

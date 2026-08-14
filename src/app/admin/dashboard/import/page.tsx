@@ -8,6 +8,7 @@ import { Upload, Download, Check, Trash2, Building2, Vote, AlertTriangle, X, Che
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { useAdminRole } from '@/lib/use-admin-role'
+import { ModalShell } from '@/components/ui/modal-shell'
 
 interface BatchItem {
   name: string
@@ -247,80 +248,72 @@ export default function ImportPage() {
       </AnimatePresence>
 
       {/* Delete confirmation modal */}
-      <AnimatePresence>
+      <ModalShell
+        open={!!deleteTarget}
+        onClose={() => { if (!deleting) setDeleteTarget(null) }}
+        labelledBy="import-delete-title"
+        className="bg-card border border-border rounded-xl shadow-xl p-6 max-w-sm"
+      >
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 rounded-full bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400">
+            <Trash2 className="h-5 w-5" />
+          </div>
+          <div>
+            <h3 id="import-delete-title" className="text-lg font-bold text-foreground">
+              Eliminare batch?
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Questa azione è irreversibile
+            </p>
+          </div>
+        </div>
+
         {deleteTarget && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-            onClick={() => !deleting && setDeleteTarget(null)}>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ type: 'spring', duration: 0.3 }}
-              className="bg-card border border-border rounded-xl shadow-xl p-6 max-w-sm w-full"
-              onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 rounded-full bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400">
-                  <Trash2 className="h-5 w-5" />
+          <>
+            <div className="bg-muted/50 rounded-lg px-4 py-3 mb-4">
+              <p className="font-semibold text-foreground text-sm">{deleteTarget.name}</p>
+            </div>
+
+            <div className="space-y-2 mb-5">
+              <p className="text-sm text-muted-foreground font-medium">Verranno eliminati definitivamente:</p>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="bg-muted/30 rounded-lg p-2.5 text-center">
+                  <p className="text-lg font-bold text-foreground">{deleteTarget.companyCount}</p>
+                  <p className="text-xs text-muted-foreground">Aziende</p>
                 </div>
-                <div>
-                  <h3 className="text-lg font-bold text-foreground">
-                    Eliminare batch?
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Questa azione è irreversibile
-                  </p>
+                <div className="bg-muted/30 rounded-lg p-2.5 text-center">
+                  <p className="text-lg font-bold text-foreground">{deleteTarget.voteCount}</p>
+                  <p className="text-xs text-muted-foreground">Voti</p>
                 </div>
               </div>
+              <p className="text-xs text-muted-foreground">Più statistiche giornaliere e dati analytics associati</p>
+            </div>
 
-              <div className="bg-muted/50 rounded-lg px-4 py-3 mb-4">
-                <p className="font-semibold text-foreground text-sm">{deleteTarget.name}</p>
+            {batchInfo.activeBatch === deleteTarget.name && (
+              <div className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-400 mb-4 bg-amber-50 dark:bg-amber-950/30 px-3 py-2.5 rounded-lg border border-amber-200 dark:border-amber-800/50">
+                <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>Questo batch è attualmente attivo. Dopo l&apos;eliminazione verrà impostato <strong>&quot;TEST&quot;</strong> come batch attivo.</span>
               </div>
+            )}
 
-              <div className="space-y-2 mb-5">
-                <p className="text-sm text-muted-foreground font-medium">Verranno eliminati definitivamente:</p>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="bg-muted/30 rounded-lg p-2.5 text-center">
-                    <p className="text-lg font-bold text-foreground">{deleteTarget.companyCount}</p>
-                    <p className="text-xs text-muted-foreground">Aziende</p>
-                  </div>
-                  <div className="bg-muted/30 rounded-lg p-2.5 text-center">
-                    <p className="text-lg font-bold text-foreground">{deleteTarget.voteCount}</p>
-                    <p className="text-xs text-muted-foreground">Voti</p>
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground">Più statistiche giornaliere e dati analytics associati</p>
-              </div>
-
-              {batchInfo.activeBatch === deleteTarget.name && (
-                <div className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-400 mb-4 bg-amber-50 dark:bg-amber-950/30 px-3 py-2.5 rounded-lg border border-amber-200 dark:border-amber-800/50">
-                  <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                  <span>Questo batch è attualmente attivo. Dopo l&apos;eliminazione verrà impostato <strong>&quot;TEST&quot;</strong> come batch attivo.</span>
-                </div>
-              )}
-
-              <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}
-                  className="border-border text-foreground hover:bg-secondary flex-1">
-                  Annulla
-                </Button>
-                <Button onClick={handleConfirmDelete} disabled={deleting}
-                  className="bg-red-600 hover:bg-red-700 text-white flex-1">
-                  {deleting ? (
-                    <span className="flex items-center gap-2">
-                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Eliminazione...
-                    </span>
-                  ) : 'Elimina'}
-                </Button>
-              </div>
-            </motion.div>
-          </motion.div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}
+                className="border-border text-foreground hover:bg-secondary flex-1">
+                Annulla
+              </Button>
+              <Button onClick={handleConfirmDelete} disabled={deleting}
+                className="bg-red-600 hover:bg-red-700 text-white flex-1">
+                {deleting ? (
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Eliminazione...
+                  </span>
+                ) : 'Elimina'}
+              </Button>
+            </div>
+          </>
         )}
-      </AnimatePresence>
+      </ModalShell>
 
       <div className="max-w-[800px] mx-auto p-6 md:p-8 space-y-6">
         <div className="pt-12 md:pt-0">

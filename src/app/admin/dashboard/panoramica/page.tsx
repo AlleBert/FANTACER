@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { BarChart3, Users, TrendingUp, Vote, Wifi, Download, Upload, AlertCircle, RefreshCw } from 'lucide-react'
@@ -9,6 +9,7 @@ import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { useRouter } from 'next/navigation'
 import { useAdminRole } from '@/lib/use-admin-role'
+import { createClient } from '@/lib/supabase/client'
 
 interface Stats {
   totalVotes: number
@@ -37,7 +38,6 @@ export default function PanoramicaPage() {
   const [selectedBatch, setSelectedBatch] = useState('all')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const loadData = useCallback(async (showLoading = false) => {
     if (showLoading) setLoading(true)
@@ -71,11 +71,15 @@ export default function PanoramicaPage() {
   }, [])
 
   useEffect(() => {
-    const doLoad = () => {
-      return Promise.all([
-        fetch('/api/analytics?type=summary').then(r => r.json()),
-        fetch('/api/admin/batch').then(r => r.json()),
-      ]).then(([statsData, batchData]) => {
+    const loadInitial = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const statsRes = await fetch('/api/analytics?type=summary')
+        if (!statsRes.ok) {
+          throw new Error(`Errore ${statsRes.status}: ${statsRes.statusText}`)
+        }
+        const statsData = await statsRes.json()
         setStats({
           totalVotes: statsData.totalVotes || 0,
           uniqueVoters: statsData.uniqueVoters || 0,
@@ -85,21 +89,38 @@ export default function PanoramicaPage() {
           onlineUsers: statsData.onlineUsers || 0,
         })
         setDailyStats(statsData.dailyStats || [])
+
+        const batchRes = await fetch('/api/admin/batch')
+        const batchData = await batchRes.json()
         setBatchInfo(batchData)
         setSelectedBatch(batchData.activeBatch)
-        setLoading(false)
-      }).catch(e => {
+      } catch (e) {
         console.error(e)
         setError(e instanceof Error ? e.message : 'Errore di caricamento')
+      } finally {
         setLoading(false)
+      }
+    }
+    loadInitial()
+
+    const supabase = createClient()
+    const channel = supabase
+      .channel('panoramica-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'vote_sessions' }, () => {
+        loadData()
       })
-    }
-    doLoad()
-    intervalRef.current = setInterval(doLoad, 30000)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'companies' }, () => {
+        loadData()
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'batch_settings' }, () => {
+        loadData()
+      })
+      .subscribe()
+
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
+      supabase.removeChannel(channel)
     }
-  }, [])
+  }, [loadData])
 
   const handleExport = (format: 'csv' | 'excel') => {
     window.open(`/api/analytics?type=export&format=${format}`, '_blank')
@@ -265,7 +286,7 @@ export default function PanoramicaPage() {
                   className="w-full border-border text-foreground hover:bg-secondary">
                   <Download className="h-4 w-4 mr-2" /> Export Excel
                 </Button>
-                <Button variant="outline" onClick={() => router.push('/admin/import')}
+                <Button variant="outline" onClick={() => router.push('/admin/dashboard/import')}
                   className="w-full border-border text-foreground hover:bg-secondary">
                   <Upload className="h-4 w-4 mr-2" /> Import Aziende
                 </Button>

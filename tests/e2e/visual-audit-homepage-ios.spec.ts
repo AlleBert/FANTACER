@@ -1,6 +1,8 @@
 import { test } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
+import { seedConsentCookie } from './helpers/cookie-consent';
+import { setNavigationFailFast } from './helpers/navigation';
 import {
   collectSectionReport,
   collectSubElementReport,
@@ -9,8 +11,8 @@ import {
   type SubElementReport,
 } from './helpers/layout-analysis';
 
-const SCREENSHOT_DIR = 'tests/e2e/visual-audit-homepage-ios/screenshots';
-const REPORT_DIR = 'tests/e2e/visual-audit-homepage-ios';
+const SCREENSHOT_DIR = 'tests/e2e/visual-audit-homepage-ios/standard/screenshots';
+const REPORT_DIR = 'tests/e2e/visual-audit-homepage-ios/standard';
 
 const SECTIONS = [
   { name: 'hero', selector: 'main > section:nth-child(1)' },
@@ -39,11 +41,13 @@ test.describe('Homepage iOS Visual Audit', () => {
   test('audit homepage on iOS device', async ({ page }, testInfo) => {
     const projectName = testInfo.project.name;
 
+    setNavigationFailFast(page);
+    await seedConsentCookie(page);
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 
     await Promise.all([
-      page.waitForResponse('/api/public/sponsors', { timeout: 45000 }),
-      page.waitForResponse('/api/public/ranking', { timeout: 45000 }),
+      page.waitForResponse('/api/public/sponsors', { timeout: 20000 }),
+      page.waitForResponse('/api/public/ranking', { timeout: 20000 }),
     ]);
     await page.waitForTimeout(300);
 

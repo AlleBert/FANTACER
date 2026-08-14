@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 
 interface Sponsor {
   id: string;
@@ -9,33 +10,21 @@ interface Sponsor {
   website_url: string | null;
 }
 
-let cachedSponsors: Sponsor[] | null = null;
-let fetchPromise: Promise<Sponsor[]> | null = null;
-
 export function SponsorCards({ className, compact }: { className?: string; compact?: boolean }) {
-  const [sponsors, setSponsors] = useState<Sponsor[] | null>(cachedSponsors);
-  const [isLoading, setIsLoading] = useState(!cachedSponsors);
+  const [sponsors, setSponsors] = useState<Sponsor[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (cachedSponsors) return;
-
-    if (!fetchPromise) {
-      fetchPromise = fetch('/api/public/sponsors')
-        .then((res) => res.json())
-        .then((data) => {
-          cachedSponsors = data.sponsors;
-          return data.sponsors;
-        })
-        .catch(() => {
-          cachedSponsors = [];
-          return [];
-        });
-    }
-
-    fetchPromise.then((data) => {
-      setSponsors(data);
-      setIsLoading(false);
-    });
+    fetch('/api/public/sponsors')
+      .then((res) => res.json())
+      .then((data) => {
+        setSponsors(data.sponsors);
+        setIsLoading(false);
+      })
+      .catch(() => {
+        setSponsors([]);
+        setIsLoading(false);
+      });
   }, []);
 
   if (isLoading) {
@@ -67,12 +56,14 @@ export function SponsorCards({ className, compact }: { className?: string; compa
     <div className={className}>
       <div className={`${cardWrapper} ${compact ? 'pt-2 pb-4' : ''}`}>
         {sponsors.map((sponsor) => {
-          const classes = `relative ${cardWidth} aspect-square bg-white rounded-2xl md:rounded-[2rem] shadow-[4px_4px_0px_0px_#000] border-[3px] md:border-[4px] border-black flex items-center justify-center overflow-hidden transition-transform hover:-translate-y-2 active:scale-95 focus-visible:ring-2 focus-visible:ring-[#8000ff] focus-visible:outline-none`;
+          const classes = `relative ${cardWidth} aspect-square bg-white rounded-2xl md:rounded-[2rem] shadow-[4px_4px_0px_0px_#000] border-[3px] md:border-[4px] border-black flex items-center justify-center overflow-hidden transition-transform hover:-translate-y-2 active:scale-95 focus-visible:ring-2 focus-visible:ring-purple focus-visible:outline-none`;
           const content = sponsor.image_url ? (
-            <img
+            <Image
               src={sponsor.image_url}
               alt={sponsor.name}
-              className={`w-full h-full object-contain ${cardPadding}`}
+              fill
+              sizes="(max-width: 480px) 58px, (max-width: 768px) 88px, 120px"
+              className={`object-contain ${cardPadding}`}
             />
           ) : (
             <span className="text-black/60 font-black text-sm text-center px-2">{sponsor.name}</span>

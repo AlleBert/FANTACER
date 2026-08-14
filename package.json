@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:tunnel": "node scripts/dev-with-tunnel.mjs",
+    "setup:tunnel": "node scripts/install-cloudflared.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -19,7 +21,10 @@
     "visual:audit": "playwright test tests/e2e/visual-audit.spec.ts --project=chromium",
     "visual:audit:admin": "playwright test tests/e2e/visual-audit-admin-only.spec.ts --project=chromium",
     "visual:audit:homepage": "playwright test tests/e2e/visual-audit-homepage.spec.ts --project=chromium",
-    "visual:audit:ios": "playwright test tests/e2e/visual-audit-homepage-ios.spec.ts --project=ios-se --project=ios-iphone --project=ios-pro-max --project=ios-ipad-portrait --project=ios-ipad-landscape --project=ios-ipad-pro-portrait --project=ios-ipad-pro-landscape --workers=1"
+    "visual:audit:ios": "playwright test tests/e2e/visual-audit-homepage-ios.spec.ts --project=ios-se --project=ios-iphone --project=ios-pro-max --project=ios-ipad-portrait --project=ios-ipad-landscape --project=ios-ipad-pro-portrait --project=ios-ipad-pro-landscape --workers=1",
+    "visual:audit:ios:safearea": "VISUAL_IOS_MODAL=1 playwright test tests/e2e/visual-audit-homepage-ios-safearea.spec.ts --project=ios-se --project=ios-iphone --project=ios-pro-max --project=ios-ipad-portrait --project=ios-ipad-landscape --project=ios-ipad-pro-portrait --project=ios-ipad-pro-landscape --workers=1",
+    "visual:audit:ios:chrome": "VISUAL_IOS_MODAL=1 playwright test tests/e2e/visual-audit-homepage-ios-chrome.spec.ts --project=ios-se --project=ios-iphone --project=ios-pro-max --project=ios-ipad-portrait --project=ios-ipad-landscape --project=ios-ipad-pro-portrait --project=ios-ipad-pro-landscape --workers=1",
+    "visual:audit:summary": "node scripts/generate-audit-summary.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.0",
@@ -35,8 +40,6 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.38.0",
-    "lightningcss": "^1.32.0",
-    "lightningcss-linux-x64-gnu": "^1.33.0",
     "lucide-react": "^1.16.0",
     "next": "16.2.4",
     "react": "19.2.4",
@@ -67,7 +70,7 @@
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "jsdom": "^29.1.1",
-    "node-fetch": "^3.3.2",
+    "qrcode-terminal": "^0.12.0",
     "shadcn": "^4.3.0",
     "supabase": "^2.111.0",
     "tailwindcss": "^4",

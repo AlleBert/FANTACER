@@ -1,8 +1,33 @@
 import { type Page, expect } from '@playwright/test';
+import { randomUUID } from 'node:crypto';
+
+import { seedConsentCookie } from './helpers/cookie-consent';
 
 const DEFAULT_COMPANIES = ['Test Co', 'GreenEnergy', 'Third Co'];
 
+/**
+ * Il fingerprint di voto (`FingerprintJS.visitorId`) è stabile per browser
+ * instance: test paralleli/sequenziali nello stesso worker condividono lo stesso
+ * visitorId e la RPC `submit_vote` rifiuta il secondo voto ("Hai già votato oggi"
+ * → 409). Qui il `visitorId` del payload `/api/vota` viene riscritto con un UUID
+ * unico per test: ogni voto E2E simula un visitatore distinto, senza toccare il
+ * percorso reale (Turnstile, BotD, RPC) e senza pulizie DB a runtime.
+ */
+const voteRouteStubbed = new WeakSet<Page>();
+
+export async function stubUniqueVoteFingerprint(page: Page) {
+  if (voteRouteStubbed.has(page)) return;
+  await page.route('**/api/vota', async (route) => {
+    const body = JSON.parse(route.request().postData() || '{}');
+    body.visitorId = `e2e-voter-${randomUUID()}`;
+    await route.continue({ postData: JSON.stringify(body) });
+  });
+  voteRouteStubbed.add(page);
+}
+
 export async function searchAndSelectCompany(page: Page, companyName: string) {
+  await seedConsentCookie(page);
+  await stubUniqueVoteFingerprint(page);
   const searchInput = page.locator('input[placeholder*="Cerca"]').first();
   await searchInput.waitFor({ state: 'visible', timeout: 10000 });
   await searchInput.click();
@@ -44,6 +69,7 @@ export async function submitVote(page: Page) {
 }
 
 export async function completeVotingFlow(page: Page, companies?: string[]) {
+  await seedConsentCookie(page);
   await page.goto('/');
   await selectThreeCompanies(page, companies);
   await submitVote(page);

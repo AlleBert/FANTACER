@@ -88,6 +88,8 @@ docs/ui-audit-report.md
 tests/e2e/visual-audit/
 tests/e2e/visual-audit-homepage/
 tests/e2e/visual-audit-homepage-ios/
+tests/e2e/audit-summary/
+tests/e2e/responsive-structural/
 
 # TOTP QR provisioning output
 .qr/

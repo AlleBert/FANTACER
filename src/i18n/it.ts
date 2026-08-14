@@ -115,7 +115,6 @@ export const it: Dictionary = {
   'footer.cookiePolicy': 'Cookie Policy',
   'footer.privacyPolicy': 'Privacy Policy',
   'footer.terms': 'Termini e condizioni',
-  'footer.legalNotices': 'Note legali',
   'footer.madeBy': 'FANTACER — Ceramica Experience',
 
   'voteError.missingFields': 'Campi obbligatori mancanti',

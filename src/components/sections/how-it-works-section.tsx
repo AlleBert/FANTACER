@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import type { ReactNode } from 'react'
 import { Heart, Smartphone, AtSign, Gift } from 'lucide-react'
+import { SectionFrame } from '@/components/layout/section-frame'
 import { useLocale } from '@/lib/LocaleContext'
 
 interface Step {
@@ -10,44 +11,50 @@ interface Step {
   labelKey: 'howItWorks.step.vote' | 'howItWorks.step.share' | 'howItWorks.step.collect'
 }
 
+// Uniform card sizes — all 3 steps same size
+// clamp keeps cards square and proportional on small viewports (svh-based → comprimono con l'altezza)
+const cardSizeClasses = [
+  'w-[clamp(56px,17svh,128px)] aspect-square md:w-40 md:h-40 lg:w-52 lg:h-52',
+  'w-[clamp(56px,17svh,128px)] aspect-square md:w-40 md:h-40 lg:w-52 lg:h-52',
+  'w-[clamp(56px,17svh,128px)] aspect-square md:w-40 md:h-40 lg:w-52 lg:h-52',
+]
+
+const iconSizeClasses = [
+  'w-[clamp(1.75rem,9svh,2.5rem)] h-[clamp(1.75rem,9svh,2.5rem)] md:w-[72px] md:h-[72px] lg:w-20 lg:h-20',
+  'w-[clamp(1.75rem,9svh,2.5rem)] h-[clamp(1.75rem,9svh,2.5rem)] md:w-[72px] md:h-[72px] lg:w-20 lg:h-20',
+  'w-[clamp(1.75rem,9svh,2.5rem)] h-[clamp(1.75rem,9svh,2.5rem)] md:w-[72px] md:h-[72px] lg:w-20 lg:h-20',
+]
+
 const steps: Step[] = [
   {
-    icon: <Heart className="w-14 h-14 md:w-[72px] md:h-[72px] lg:w-20 lg:h-20 stroke-black stroke-[1.5] animate-pulse hover:fill-black fill-transparent transition-colors duration-300 relative z-10" />,
+    icon: <Heart className={`${iconSizeClasses[0]} stroke-black stroke-[1.5] animate-pulse hover:fill-black fill-transparent transition-colors duration-300 relative z-10`} />,
     labelKey: 'howItWorks.step.vote'
   },
   {
     icon: (
-      <div className="relative flex items-center justify-center w-14 h-14 md:w-[72px] md:h-[72px] lg:w-20 lg:h-20 z-10">
+      <div className={`relative flex items-center justify-center ${iconSizeClasses[1]} z-10`}>
         <Smartphone className="absolute inset-0 w-full h-full stroke-black stroke-[1.5]" />
-        <AtSign className="absolute inset-0 m-auto w-6 h-6 md:w-8 md:h-8 stroke-black stroke-[2] animate-[spin_4s_linear_infinite]" />
+        <AtSign className="absolute inset-0 m-auto w-[55%] h-[55%] md:w-[60%] md:h-[60%] stroke-black stroke-[2] animate-[spin_4s_linear_infinite]" />
       </div>
     ),
     labelKey: 'howItWorks.step.share'
   },
   {
     icon: (
-      <Gift className="w-14 h-14 md:w-[72px] md:h-[72px] lg:w-20 lg:h-20 stroke-black stroke-[1.5] hover:-translate-y-2 transition-transform duration-300 relative z-10" />
+      <Gift className={`${iconSizeClasses[2]} stroke-black stroke-[1.5] hover:-translate-y-2 transition-transform duration-300 relative z-10`} />
     ),
     labelKey: 'howItWorks.step.collect'
   },
 ]
 
-// Uniform card sizes — all 3 steps same size
-// clamp keeps cards square and proportional on small viewports
-const cardSizeClasses = [
-  'w-[clamp(96px,14dvh,128px)] aspect-square md:w-40 md:h-40 lg:w-52 lg:h-52',
-  'w-[clamp(96px,14dvh,128px)] aspect-square md:w-40 md:h-40 lg:w-52 lg:h-52',
-  'w-[clamp(96px,14dvh,128px)] aspect-square md:w-40 md:h-40 lg:w-52 lg:h-52',
-]
-
 export function HowItWorksSection() {
   const { t } = useLocale()
   return (
-    <section className="snap-start relative w-full h-[100dvh] bg-[linear-gradient(to_bottom,#FF8A26_10%,#FF2FB2_100%)] text-white flex flex-col items-center justify-center overflow-hidden">
+    <SectionFrame theme="how-it-works" className="text-white flex flex-col items-center justify-center">
       <div className="safe-shell h-full flex flex-col">
-      <div className="relative z-10 w-full max-w-7xl mx-auto flex flex-col items-center justify-center flex-1 min-h-0 py-8 lg:py-12">
+      <div className="relative z-10 w-full max-w-7xl mx-auto flex flex-col items-center justify-center flex-1 min-h-0 py-[clamp(0.75rem,3svh,3rem)] lg:py-12">
 
-        <h2 className="text-[clamp(1.75rem,6.2vw,4.5rem)] font-[900] text-center mb-4 md:mb-8 lg:mb-12 tracking-tighter lowercase leading-[0.95] flex flex-wrap xl:flex-nowrap justify-center items-center gap-x-2 md:gap-x-4 w-full [text-wrap:balance] flex-shrink-0">
+        <h2 className="text-[clamp(1.25rem,min(4.5vw,7vw),4.5rem)] font-[900] text-center mb-[clamp(0.5rem,1.5vw,3rem)] tracking-tighter lowercase leading-[1.08] flex flex-wrap xl:flex-nowrap justify-center items-center gap-x-2 md:gap-x-4 w-full [text-wrap:balance] flex-shrink-0">
           <span className="whitespace-nowrap">{t('howItWorks.title.simple')}</span>
           <span className="whitespace-nowrap flex items-center">
             {t('howItWorks.title.win')}
@@ -72,7 +79,7 @@ export function HowItWorksSection() {
         </h2>
 
         {/* Mobile: vertical stack | Desktop: asymmetric 3-col grid */}
-        <div className="flex flex-col items-center gap-4 md:gap-8 lg:grid lg:grid-cols-[1fr_1fr_1fr] lg:gap-6 lg:items-center lg:w-full lg:max-w-6xl flex-shrink min-h-0">
+        <div className="flex flex-col items-center gap-[clamp(0.75rem,2.5svh,2rem)] sm:grid sm:grid-cols-3 sm:gap-6 sm:items-center sm:w-full sm:max-w-6xl flex-shrink min-h-0">
           {steps.map((step, index) => (
             <div key={index} className="relative flex flex-col items-center w-full max-w-xs lg:max-w-none shrink">
 
@@ -80,7 +87,7 @@ export function HowItWorksSection() {
                 {step.icon}
               </div>
 
-              <p className="text-[clamp(0.875rem,2.5vw,1.125rem)] font-[700] text-center max-w-[14rem] leading-tight mt-4 flex-shrink-0">
+              <p className="text-[clamp(0.625rem,2vw,1.125rem)] font-[700] text-center max-w-[min(30ch,100%)] leading-tight mt-[clamp(0.375rem,1.5vw,1rem)] flex-shrink-0">
                 {t(step.labelKey)}
               </p>
             </div>
@@ -88,6 +95,6 @@ export function HowItWorksSection() {
         </div>
       </div>
       </div>
-    </section>
+    </SectionFrame>
   )
 }
