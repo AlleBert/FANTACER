@@ -9,9 +9,6 @@ export function IntroSection() {
   const { t } = useLocale()
   return (
     <SectionFrame theme="intro">
-      {/* Seamless transition overlay to Section 3 */}
-      <div className="absolute inset-x-0 bottom-0 h-[30vh] bg-gradient-to-b from-transparent to-orange pointer-events-none" />
-
       <div className="safe-shell h-full flex flex-col">
         <div className="flex-1 flex flex-col items-center justify-center text-center w-full max-w-7xl mx-auto">
           <h1 className="text-[clamp(1.25rem,min(5vw,7.5svh),4.5rem)] font-open-sauce font-black text-white tracking-[-0.05em] leading-[1.08] lowercase w-full max-w-[min(90vw,42rem)] [text-wrap:balance]">

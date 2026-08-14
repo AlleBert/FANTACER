@@ -18,7 +18,6 @@ export function PublicRankingSection() {
         <SponsorCards />
 
       </div>
-      <div className="absolute bottom-0 left-0 right-0 h-[15vh] bg-gradient-to-b from-transparent to-orange pointer-events-none z-0" />
     </SectionFrame>
   );
 }
