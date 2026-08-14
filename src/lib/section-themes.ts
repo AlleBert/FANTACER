@@ -22,7 +22,7 @@ export const sectionThemes = {
     themeColor: '#FF8C23',
   },
   intro: {
-    background: 'radial-gradient(circle at top left, #FF8C23 0%, #FF2FB2 50%, #4B00AB 100%)',
+    background: 'linear-gradient(to bottom, #FF8C23 0%, #FF8C23 12%, #FF2FB2 50%, #4B00AB 100%)',
     themeColor: '#FF8C23',
   },
   'how-it-works': {
@@ -38,7 +38,7 @@ export const sectionThemes = {
     themeColor: '#4B00AB',
   },
   search: {
-    background: 'radial-gradient(circle at center, rgba(194,225,255,0.2) 0%, rgba(255,255,255,1) 100%)',
+    background: '#FFFFFF',
     themeColor: '#FFFFFF',
   },
   'public-ranking': {

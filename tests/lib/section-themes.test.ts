@@ -2,11 +2,11 @@ import { sectionThemes } from '@/lib/section-themes'
 
 const originalBackgrounds = {
   hero: 'linear-gradient(180deg, #FF8C23 0%, #4B00AB 100%)',
-  intro: 'radial-gradient(circle at top left, #FF8C23 0%, #FF2FB2 50%, #4B00AB 100%)',
+  intro: 'linear-gradient(to bottom, #FF8C23 0%, #FF8C23 12%, #FF2FB2 50%, #4B00AB 100%)',
   'how-it-works': 'linear-gradient(to bottom, #ff8a26 10%, #FF2FB2 100%)',
   'play-again': 'linear-gradient(to bottom, #FF2FB2 0%, #4B00AB 60%, #4B00AB 100%)',
   'prize-location': 'linear-gradient(to bottom, #4B00AB 0%, #4B00AB 30%, #8A2BE2 60%, #E0B0FF 85%, #FFFFFF 100%)',
-  search: 'radial-gradient(circle at center, rgba(194,225,255,0.2) 0%, rgba(255,255,255,1) 100%)',
+  search: '#FFFFFF',
   'public-ranking': 'linear-gradient(to bottom, #ff8a26 0%, #FF2FB2 25%, #FF2FB2 100%)',
   'live-ranking': 'linear-gradient(to bottom, #ff8a26 0%, #ff8a26 50%, #FF2FB2 100%)',
   success: 'linear-gradient(to bottom, #FFFFFF 0%, #FF2FB2 45%, #ff8a26 75%)',
@@ -34,7 +34,11 @@ describe('sectionThemes', () => {
   it.each(expectedKeys)('defines a non-empty CSS background for "%s"', (key) => {
     const background = sectionThemes[key as keyof typeof sectionThemes].background
     expect(background.length).toBeGreaterThan(0)
-    expect(background).toContain('gradient')
+    if (key === 'search') {
+      expect(background).toBe('#FFFFFF')
+    } else {
+      expect(background).toContain('gradient')
+    }
   })
 
   it.each(expectedKeys)('defines a valid solid themeColor for "%s"', (key) => {
@@ -60,6 +64,19 @@ describe('sectionThemes', () => {
     expect(map.get('live-ranking')).toBe('#ff8a26')
     expect(map.get('success')).toBe('#FFFFFF')
     expect(map.get('contact')).toBe('#FF2FB2')
+  })
+
+  it('starts intro with a flat monochromatic top band matching its themeColor', () => {
+    const intro = sectionThemes.intro
+    expect(intro.background.startsWith('linear-gradient(to bottom, #FF8C23 0%, #FF8C23 ')).toBe(true)
+    expect(intro.themeColor).toBe('#FF8C23')
+  })
+
+  it('keeps search (voting section) a solid pure white background', () => {
+    const search = sectionThemes.search
+    expect(search.background).toBe('#FFFFFF')
+    expect(search.themeColor).toBe('#FFFFFF')
+    expect(search.background).not.toContain('gradient')
   })
 
   it('keeps play-again and contact visually identical (as today)', () => {
