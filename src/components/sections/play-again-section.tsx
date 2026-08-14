@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
+import { SectionFrame } from '@/components/layout/section-frame'
 import { useLocale } from '@/lib/LocaleContext'
 
 interface PlayAgainSectionProps {
@@ -19,7 +20,7 @@ export function PlayAgainSection({ onPlayClick }: PlayAgainSectionProps) {
   }
 
   return (
-    <section className="snap-screen relative w-full bg-[linear-gradient(to_bottom,#FF2FB2_0%,#4B00AB_60%,#4B00AB_100%)] flex items-center justify-center overflow-hidden">
+    <SectionFrame theme="play-again" className="flex items-center justify-center">
       
       <div className="safe-shell h-full flex flex-col">
       <div className="relative z-10 w-full max-w-7xl mx-auto text-center flex flex-col items-center justify-center gap-[clamp(0.75rem,2.5svh,3rem)] md:gap-12 flex-1">
@@ -57,6 +58,6 @@ export function PlayAgainSection({ onPlayClick }: PlayAgainSectionProps) {
         </div>
       </div>
       </div>
-    </section>
+    </SectionFrame>
   )
 }

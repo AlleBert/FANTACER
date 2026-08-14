@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { SponsorCards } from '@/components/sponsor/sponsor-cards';
+import { SectionFrame } from '@/components/layout/section-frame';
 import { useLocale } from '@/lib/LocaleContext';
 
 interface RankedCompany {
@@ -87,7 +88,7 @@ export function LiveRankingSection() {
   };
 
   return (
-    <section className="snap-screen relative w-full bg-gradient-to-b from-orange via-orange to-[#FF2FB2] flex flex-col justify-between overflow-hidden pt-4 md:pt-6 pb-2 md:pb-3">
+    <SectionFrame theme="live-ranking" className="flex flex-col justify-between pt-4 md:pt-6 pb-2 md:pb-3">
       <div className="safe-shell w-full max-w-7xl mx-auto flex flex-col h-full min-h-0">
 
         <div className="flex flex-col items-center justify-center flex-1 min-h-0 gap-[clamp(0.5rem,2svh,1.5rem)] md:gap-6">
@@ -185,6 +186,6 @@ export function LiveRankingSection() {
           <SponsorCards compact />
         </div>
       </div>
-    </section>
+    </SectionFrame>
   );
 }

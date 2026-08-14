@@ -10,6 +10,7 @@ import { getVoteSecurity } from '@/lib/vote-security';
 import { TurnstileOverlay } from '@/components/voting/turnstile-overlay';
 import { MessageOverlay } from '@/components/voting/message-overlay';
 import { ModalShell } from '@/components/ui/modal-shell';
+import { SectionFrame } from '@/components/layout/section-frame';
 import { useLocale } from '@/lib/LocaleContext';
 
 const supabase = createClient();
@@ -144,7 +145,7 @@ export function SearchSection() {
   const availablePallets = PALLET_OPTIONS.filter((p) => !used.includes(p) || editingIndex !== null);
 
   return (
-    <section className="snap-start relative app-screen w-full overflow-hidden bg-[radial-gradient(circle_at_center,rgba(194,225,255,0.2)_0%,rgba(255,255,255,1)_100%)] text-purple">
+    <SectionFrame theme="search" grow className="text-purple">
       <div className="safe-shell flex flex-col">
         <div className="mx-auto flex flex-1 w-full max-w-[1200px] flex-col px-4 md:px-8">
 
@@ -310,6 +311,6 @@ export function SearchSection() {
           onClose={() => setMessage(null)}
         />
       )}
-    </section>
+    </SectionFrame>
   );
 }

@@ -2,12 +2,13 @@
 
 import { ChevronDown } from 'lucide-react'
 import { SponsorCards } from '@/components/sponsor/sponsor-cards'
+import { SectionFrame } from '@/components/layout/section-frame'
 import { useLocale } from '@/lib/LocaleContext'
 
 export function IntroSection() {
   const { t } = useLocale()
   return (
-    <section className="snap-screen relative w-full overflow-hidden bg-[radial-gradient(circle_at_top_left,#FF8C23_0%,#FF2FB2_50%,#4B00AB_100%)]">
+    <SectionFrame theme="intro">
       {/* Seamless transition overlay to Section 3 */}
       <div className="absolute inset-x-0 bottom-0 h-[30vh] bg-gradient-to-b from-transparent to-orange pointer-events-none" />
 
@@ -31,6 +32,6 @@ export function IntroSection() {
           <ChevronDown className="w-4 h-4 md:w-5 md:h-5 text-white/50" />
         </div>
       </div>
-    </section>
+    </SectionFrame>
   )
 }

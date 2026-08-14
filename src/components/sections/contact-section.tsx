@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
+import { SectionFrame } from '@/components/layout/section-frame'
 import { useLocale } from '@/lib/LocaleContext'
 import { OPEN_COOKIE_PREFERENCES_EVENT } from '@/components/cookie-consent'
 
@@ -47,9 +48,10 @@ export function ContactSection() {
   }
 
   return (
-    <section
+    <SectionFrame
+      theme="contact"
       id="contact-section"
-      className="snap-screen relative w-full bg-[linear-gradient(to_bottom,#FF2FB2_0%,#4B00AB_60%,#4B00AB_100%)] flex flex-col overflow-hidden"
+      className="flex flex-col"
     >
       <div className="safe-shell w-full max-w-7xl mx-auto flex flex-1 flex-col min-h-0">
         <div className="flex-1 flex w-full flex-col items-center justify-center gap-[clamp(0.5rem,min(2vw,3svh),1.5rem)] lg:flex-row-reverse lg:gap-10 min-h-0">
@@ -182,6 +184,6 @@ export function ContactSection() {
           </a>
         </div>
       </footer>
-    </section>
+    </SectionFrame>
   )
 }

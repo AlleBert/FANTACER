@@ -1,11 +1,12 @@
 'use client'
 
+import { SectionFrame } from '@/components/layout/section-frame'
 import { useLocale } from '@/lib/LocaleContext'
 
 export function PrizeLocationSection() {
   const { t } = useLocale()
   return (
-    <section className="snap-screen relative w-full bg-[linear-gradient(to_bottom,#4B00AB_0%,#4B00AB_30%,#8A2BE2_60%,#E0B0FF_85%,#FFFFFF_100%)] text-white flex flex-col items-center justify-center overflow-hidden">
+    <SectionFrame theme="prize-location" className="text-white flex flex-col items-center justify-center">
       <div className="safe-shell w-full max-w-7xl mx-auto flex flex-col items-center justify-center h-full py-8 md:py-12 gap-6 md:gap-8">
 
         {/* Main Title */}
@@ -31,6 +32,6 @@ export function PrizeLocationSection() {
         </p>
 
       </div>
-    </section>
+    </SectionFrame>
   )
 }

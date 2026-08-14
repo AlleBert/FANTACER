@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
+import { SectionFrame } from '@/components/layout/section-frame'
 import { useLocale } from '@/lib/LocaleContext'
 
 interface HeroSectionProps {
@@ -11,7 +12,7 @@ interface HeroSectionProps {
 export function HeroSection({ onPlayClick }: HeroSectionProps) {
   const { t } = useLocale()
   return (
-    <section className="snap-screen relative w-full overflow-hidden">
+    <SectionFrame theme="hero">
       {/* Background Layer - Riempie tutto, notch incluso */}
       <div className="absolute inset-0 z-0">
         <picture className="absolute inset-0">
@@ -41,6 +42,6 @@ export function HeroSection({ onPlayClick }: HeroSectionProps) {
           </Button>
         </div>
       </div>
-    </section>
+    </SectionFrame>
   )
 }

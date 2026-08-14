@@ -50,7 +50,7 @@ export function TurnstileOverlay({ isVisible, onClose, onSuccess, onError }: Tur
 
   return (
     <div 
-      className={`fixed inset-0 z-[100] flex items-center justify-center p-4 transition-all duration-300 ${
+      className={`fixed inset-0 z-[100] flex items-center justify-center px-[var(--safe-x)] pt-[var(--safe-top)] pb-[var(--safe-bottom)] transition-all duration-300 ${
         isClosing ? 'opacity-0' : 'opacity-100'
       }`}
     >

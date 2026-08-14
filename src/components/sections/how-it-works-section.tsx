@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import type { ReactNode } from 'react'
 import { Heart, Smartphone, AtSign, Gift } from 'lucide-react'
+import { SectionFrame } from '@/components/layout/section-frame'
 import { useLocale } from '@/lib/LocaleContext'
 
 interface Step {
@@ -49,7 +50,7 @@ const steps: Step[] = [
 export function HowItWorksSection() {
   const { t } = useLocale()
   return (
-    <section className="snap-screen relative w-full bg-[linear-gradient(to_bottom,var(--color-orange)_10%,#FF2FB2_100%)] text-white flex flex-col items-center justify-center overflow-hidden">
+    <SectionFrame theme="how-it-works" className="text-white flex flex-col items-center justify-center">
       <div className="safe-shell h-full flex flex-col">
       <div className="relative z-10 w-full max-w-7xl mx-auto flex flex-col items-center justify-center flex-1 min-h-0 py-[clamp(0.75rem,3svh,3rem)] lg:py-12">
 
@@ -94,6 +95,6 @@ export function HowItWorksSection() {
         </div>
       </div>
       </div>
-    </section>
+    </SectionFrame>
   )
 }

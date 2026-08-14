@@ -162,7 +162,7 @@ input, textarea {
 
   body {
     @apply text-foreground;
-    background-color: transparent !important;
+    background-color: #4f03aa !important;
     font-family: var(--font-open-sauce);
     min-height: 100dvh !important;
   }
@@ -171,7 +171,7 @@ input, textarea {
     @apply font-sans scroll-smooth;
     min-height: 100dvh;
     width: 100%;
-    background: transparent;
+    background-color: #4f03aa;
   }
 }
 

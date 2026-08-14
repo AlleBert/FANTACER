@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useVote } from '@/lib/VoteContext'
 import confetti from 'canvas-confetti'
 import { SponsorCards } from '@/components/sponsor/sponsor-cards'
+import { SectionFrame } from '@/components/layout/section-frame'
 import { useLocale } from '@/lib/LocaleContext'
 
 function IphoneStoryMockup({ companyName }: { companyName?: string }) {
@@ -99,7 +100,7 @@ export function SuccessSection() {
   }, []);
 
   return (
-    <section data-section="success" className="snap-screen relative w-full bg-gradient-to-b from-[#FFFFFF] from-0% via-[#FF2FB2] via-45% to-orange to-75% flex flex-col justify-between overflow-hidden py-4">
+    <SectionFrame theme="success" className="flex flex-col justify-between py-4">
       <div className="safe-shell relative z-10 flex flex-col items-center justify-center max-w-[1200px] mx-auto gap-16 py-12 lg:flex-row lg:justify-between lg:gap-20 lg:py-20 flex-1 min-h-0">
         
           {/* Left Column: Text & Logos */}
@@ -151,6 +152,6 @@ export function SuccessSection() {
             <IphoneStoryMockup companyName={selectedCompanies[0]?.company.name} />
           </div>
       </div>
-    </section>
+    </SectionFrame>
   )
 }
