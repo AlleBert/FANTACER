@@ -10,7 +10,6 @@ import { mkdirSync, chmodSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { execFileSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
 
 const DOWNLOAD_URL =
   'https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64';

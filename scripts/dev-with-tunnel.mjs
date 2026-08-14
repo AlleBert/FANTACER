@@ -123,7 +123,7 @@ function main() {
     killAll(code ?? 0);
   });
 
-  tunnel.on('exit', (code) => {
+  tunnel.on('exit', () => {
     if (shuttingDown) return;
     if (urlPrinted) {
       console.error('\n⚠ Il tunnel Cloudflare è terminato. Il server resta attivo su localhost.');
