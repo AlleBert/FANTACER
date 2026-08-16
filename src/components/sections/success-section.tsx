@@ -106,7 +106,7 @@ export function SuccessSection() {
           {/* Left Column: Text & Logos */}
           <div className="relative flex w-full flex-col items-center text-center lg:w-[55%] lg:items-start lg:text-left">
           {/* Title */}
-          <h2 className="text-[clamp(2.5rem,10vw,80px)] leading-[0.85] font-black mb-4 lg:mb-10 text-purple uppercase tracking-tighter">
+          <h2 className="text-(length:--fs-headline) leading-(--lh-display) font-black mb-4 lg:mb-10 text-purple uppercase tracking-tighter">
             {t('success.youRock')}
           </h2>
           
