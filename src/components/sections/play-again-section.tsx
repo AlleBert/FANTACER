@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { Button } from '@/components/ui/button'
+import { CtaButton } from '@/components/ui/cta-button'
 import { SectionFrame } from '@/components/layout/section-frame'
 import { useLocale } from '@/lib/LocaleContext'
 
@@ -23,8 +23,8 @@ export function PlayAgainSection({ onPlayClick }: PlayAgainSectionProps) {
     <SectionFrame theme="play-again" className="flex items-center justify-center">
       
       <div className="safe-shell h-full flex flex-col">
-      <div className="relative z-10 w-full max-w-7xl mx-auto text-center flex flex-col items-center justify-center gap-[clamp(0.75rem,2.5svh,3rem)] md:gap-12 flex-1">
-        <p className="text-[clamp(1.125rem,3.5vw,2.875rem)] text-white font-medium leading-[1.4] max-w-[90%] md:max-w-none">
+      <div className="relative z-10 w-full content-max text-center flex flex-col items-center justify-center gap-(--rythm-sec) flex-1">
+        <p className="text-[clamp(1.125rem,3.5vw,2.875rem)] text-white font-medium leading-(--lh-body) max-w-(--measure-body)">
           {t('playAgain.text')}
           <br className="hidden md:block" />
           <span className="md:hidden"> </span>
@@ -49,12 +49,7 @@ export function PlayAgainSection({ onPlayClick }: PlayAgainSectionProps) {
             />
           </div>
 
-          <Button
-            onClick={handlePlayClick}
-            className="bg-bright hover:bg-[#c99900] text-[#000000] text-[clamp(1.25rem,min(5.5vw,8vw),5.5rem)] font-[900] px-[clamp(2rem,min(11vw,9vw),9rem)] py-[clamp(1.25rem,4.5vw,4.5rem)] rounded-full border-[3px] md:border-[4px] border-black transition-transform hover:scale-105 shadow-[6px_6px_0px_0px_#000] uppercase tracking-tight"
-          >
-            {t('hero.play')}
-          </Button>
+          <CtaButton onClick={handlePlayClick} scale={1.15}>{t('hero.play')}</CtaButton>
         </div>
       </div>
       </div>

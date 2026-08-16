@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { Button } from '@/components/ui/button'
+import { CtaButton } from '@/components/ui/cta-button'
 import { SectionFrame } from '@/components/layout/section-frame'
 import { useLocale } from '@/lib/LocaleContext'
 
@@ -34,12 +34,7 @@ export function HeroSection({ onPlayClick }: HeroSectionProps) {
       {/* Content Layer - Gestito dalla tua classe safe-shell */}
       <div className="relative z-10 flex flex-col justify-end safe-shell">
         <div className="flex justify-center">
-          <Button
-            onClick={onPlayClick}
-            className="bg-bright hover:bg-[#c99900] text-black text-[clamp(1.5rem,5vw,2.5rem)] font-black px-16 py-8 md:px-24 md:py-12 rounded-full border-[3px] border-black shadow-[6px_6px_0_#000] uppercase tracking-tighter cursor-pointer active:scale-95 transition-transform"
-          >
-            {t('hero.play')}
-          </Button>
+          <CtaButton onClick={onPlayClick}>{t('hero.play')}</CtaButton>
         </div>
       </div>
     </SectionFrame>
