@@ -53,17 +53,17 @@ export function ContactSection() {
       id="contact-section"
       className="flex flex-col"
     >
-      <div className="safe-shell w-full max-w-7xl mx-auto flex flex-1 flex-col min-h-0">
-        <div className="flex-1 flex w-full flex-col items-center justify-center gap-[clamp(0.5rem,min(2vw,3svh),1.5rem)] lg:flex-row-reverse lg:gap-10 min-h-0">
+      <div className="safe-shell content-max flex flex-1 flex-col min-h-0">
+        <div className="flex-1 flex w-full flex-col items-center justify-center gap-(--rythm-sec) lg:flex-row-reverse lg:gap-10 min-h-0">
 
           {/* Info section */}
-          <div className="flex w-full flex-col items-center gap-[clamp(0.5rem,min(1.5vw,2.5svh),1.5rem)] text-center lg:w-1/2 lg:items-start lg:text-left shrink-0">
-            <h2 className="text-[clamp(1.1rem,min(4vw,6svh),3.5rem)] font-[900] text-white tracking-tighter uppercase leading-[1.08]">
+          <div className="flex w-full flex-col items-center gap-(--rythm-sec) text-center lg:w-1/2 lg:items-start lg:text-left shrink-0">
+            <h2 className="text-(length:--fs-headline) font-[900] text-white tracking-tighter uppercase leading-(--lh-headline)">
               {t('contact.title1')}<br className="sm:hidden"/>
               <span className="hidden sm:inline"> </span>{t('contact.title2')}
             </h2>
 
-            <div className="flex w-full flex-col items-center gap-[clamp(0.375rem,1vw,1rem)] sm:flex-row sm:flex-wrap sm:justify-center lg:gap-4 lg:items-start">
+            <div className="flex w-full flex-col items-center gap-(--rythm-blk) sm:flex-row sm:flex-wrap sm:justify-center lg:gap-4 lg:items-start">
               <div className="bg-white px-[clamp(1rem,min(3vw,5svh),1.5rem)] py-[clamp(0.375rem,1vw,0.75rem)] lg:py-4 rounded-full border-2 border-ink shadow-[3px_3px_0_#000] -rotate-2 hover:rotate-0 transition-transform cursor-default">
                 <p className="text-[clamp(0.75rem,min(2vw,3svh),1.25rem)] font-black text-black lowercase">team@fantacer.com</p>
               </div>
@@ -94,7 +94,7 @@ export function ContactSection() {
               </div>
             )}
 
-            <form className="grid grid-cols-1 sm:grid-cols-2 gap-[clamp(0.375rem,min(1vw,2svh),0.75rem)] flex-1 min-h-0 w-full box-border content-start items-stretch" onSubmit={handleSubmit}>
+            <form className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,13rem),1fr))] gap-(--rythm-blk) flex-1 min-h-0 w-full box-border content-start items-stretch" onSubmit={handleSubmit}>
               <input
                 type="text"
                 name="nome"
@@ -123,12 +123,12 @@ export function ContactSection() {
                 aria-label={t('contact.messageLabel')}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                className="w-full px-4 md:px-5 py-[clamp(0.375rem,1vw,0.5rem)] xl:py-4 text-[clamp(0.75rem,1.5vw,1rem)] bg-white text-black font-bold uppercase rounded-2xl border-[3px] border-ink focus:outline-none focus:shadow-[4px_4px_0_#000] focus:-translate-y-0.5 shadow-[2px_2px_0_#000] transition-all resize-none flex-1 min-h-[3rem] box-border sm:col-span-2"
+                className="w-full px-4 md:px-5 py-[clamp(0.375rem,1vw,0.5rem)] xl:py-4 text-[clamp(0.75rem,1.5vw,1rem)] bg-white text-black font-bold uppercase rounded-2xl border-[3px] border-ink focus:outline-none focus:shadow-[4px_4px_0_#000] focus:-translate-y-0.5 shadow-[2px_2px_0_#000] transition-all resize-none flex-1 min-h-[3rem] box-border"
               />
               <Button
                 type="submit"
                 disabled={status === 'loading' || !name || !email || !message}
-                className="w-full bg-purple hover:bg-[#6b00d6] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-[3px_3px_0_#000] disabled:hover:translate-y-0 text-[clamp(0.875rem,1.5vw,1.125rem)] font-black px-[clamp(1rem,3vw,1.5rem)] py-[clamp(0.5rem,1.5vw,0.75rem)] xl:py-4 min-h-11 rounded-full border-[3px] border-ink shadow-[3px_3px_0_#000] hover:shadow-[5px_5px_0_#000] hover:-translate-y-0.5 transition-all shrink-0 box-border sm:col-span-2"
+                className="w-full bg-purple hover:bg-[#6b00d6] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-[3px_3px_0_#000] disabled:hover:translate-y-0 text-[clamp(0.875rem,1.5vw,1.125rem)] font-black px-[clamp(1rem,3vw,1.5rem)] py-[clamp(0.5rem,1.5vw,0.75rem)] xl:py-4 min-h-11 rounded-full border-[3px] border-ink shadow-[3px_3px_0_#000] hover:shadow-[5px_5px_0_#000] hover:-translate-y-0.5 transition-all shrink-0 box-border"
               >
                 {status === 'loading' ? (
                   <span className="flex items-center justify-center gap-2">
