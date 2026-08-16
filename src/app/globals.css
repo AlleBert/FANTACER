@@ -132,6 +132,39 @@ input, textarea {
 
   --admin-sidebar-width: 260px;
   --admin-sidebar-width-collapsed: 80px;
+
+  /* ---- Design tokens: spacing & rhythm (audit 2026-08-16) ---- */
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: clamp(2rem, 6svh, 3rem);
+  --space-3xl: clamp(2.5rem, 8svh, 4rem);
+
+  --rythm-sec: clamp(1.25rem, 3.5svh, 3rem);
+  --rythm-blk: clamp(0.5rem, 2svh, 1.5rem);
+  --section-pad: clamp(0.5rem, 2svh, 1.5rem);
+  --card-size: clamp(3.5rem, 17svh, 13rem);
+
+  /* ---- Design tokens: typography ---- */
+  --fs-display: clamp(2rem, 6vw, 5.625rem);
+  --fs-headline: clamp(1.5rem, 6vw, 4.5rem);
+  --fs-headline-tight: clamp(1.5rem, min(4.5vw, 7vw), 4.5rem);
+  --fs-cta: clamp(1.5rem, 5vw, 2.5rem);
+  --lh-display: 1.05;
+  --lh-headline: 1.1;
+  --lh-body: 1.4;
+
+  /* ---- Design tokens: content measure ---- */
+  --content-max: 1200px;
+  --measure-display: min(100%, 22ch);
+  --measure-body: min(100%, 40ch);
+
+  /* ---- Design tokens: CTA ---- */
+  --cta-pad-x: clamp(2rem, 10vw, 6rem);
+  --cta-pad-y: clamp(1rem, 4vw, 3rem);
+  --cta-scale: 1;
 }
 
 @supports (height: 100dvh) {
@@ -322,4 +355,25 @@ textarea::-webkit-scrollbar {
    card bianca con bordo nero e ombra hard, bottoni pill con shadow). */
 .cookie-manager {
   display: none !important;
+}
+
+@layer components {
+  /* Larghezza contenuto unica (1200px): sostituisce max-w-7xl e max-w-[1200px] */
+  .content-max {
+    width: 100%;
+    max-width: var(--content-max);
+    margin-inline: auto;
+  }
+}
+
+/* Rispetta prefers-reduced-motion a livello globale (AGENTS.md:48) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
