@@ -12,7 +12,7 @@ function IphoneStoryMockup({ companyName }: { companyName?: string }) {
   const { t } = useLocale()
   return (
     <div 
-      className="relative w-[140px] xs:w-[160px] sm:w-[200px] md:w-[250px] lg:w-[300px] xl:w-[340px] mx-auto lg:mx-0 shrink-0 transform md:rotate-1"
+      className="relative w-[clamp(8.75rem,34vw,21.25rem)] mx-auto lg:mx-0 shrink-0 transform md:rotate-1"
       style={{ aspectRatio: '252 / 479' }}
     >
       {/* Background/Shadow layer - matches phone shape without shadowing SVG text */}
@@ -130,7 +130,7 @@ export function SuccessSection() {
         </div>
 
           {/* Right Column: Mobile Story Mockup */}
-          <div className="relative mt-4 hidden w-full justify-center lg:mt-0 lg:flex lg:w-[45%] lg:justify-end">
+          <div className="relative mt-4 flex w-full justify-center lg:mt-0 lg:w-[45%] lg:justify-end">
             {/* Decorative Floating Stars */}
             <div className="absolute top-[2%] right-[20%] -z-10 lg:right-[10%]">
               <Image
