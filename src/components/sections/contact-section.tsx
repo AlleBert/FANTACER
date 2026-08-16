@@ -123,12 +123,12 @@ export function ContactSection() {
                 aria-label={t('contact.messageLabel')}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                className="w-full px-4 md:px-5 py-[clamp(0.375rem,1vw,0.5rem)] xl:py-4 text-[clamp(0.75rem,1.5vw,1rem)] bg-white text-black font-bold uppercase rounded-2xl border-[3px] border-ink focus:outline-none focus:shadow-[4px_4px_0_#000] focus:-translate-y-0.5 shadow-[2px_2px_0_#000] transition-all resize-none flex-1 min-h-[3rem] box-border"
+                className="w-full px-4 md:px-5 py-[clamp(0.375rem,1vw,0.5rem)] xl:py-4 text-[clamp(0.75rem,1.5vw,1rem)] bg-white text-black font-bold uppercase rounded-2xl border-[3px] border-ink focus:outline-none focus:shadow-[4px_4px_0_#000] focus:-translate-y-0.5 shadow-[2px_2px_0_#000] transition-all resize-none flex-1 min-h-[3rem] box-border col-span-full"
               />
               <Button
                 type="submit"
                 disabled={status === 'loading' || !name || !email || !message}
-                className="w-full bg-purple hover:bg-[#6b00d6] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-[3px_3px_0_#000] disabled:hover:translate-y-0 text-[clamp(0.875rem,1.5vw,1.125rem)] font-black px-[clamp(1rem,3vw,1.5rem)] py-[clamp(0.5rem,1.5vw,0.75rem)] xl:py-4 min-h-11 rounded-full border-[3px] border-ink shadow-[3px_3px_0_#000] hover:shadow-[5px_5px_0_#000] hover:-translate-y-0.5 transition-all shrink-0 box-border"
+                className="w-full bg-purple hover:bg-[#6b00d6] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-[3px_3px_0_#000] disabled:hover:translate-y-0 text-[clamp(0.875rem,1.5vw,1.125rem)] font-black px-[clamp(1rem,3vw,1.5rem)] py-[clamp(0.5rem,1.5vw,0.75rem)] xl:py-4 min-h-11 rounded-full border-[3px] border-ink shadow-[3px_3px_0_#000] hover:shadow-[5px_5px_0_#000] hover:-translate-y-0.5 transition-all shrink-0 box-border col-span-full"
               >
                 {status === 'loading' ? (
                   <span className="flex items-center justify-center gap-2">
