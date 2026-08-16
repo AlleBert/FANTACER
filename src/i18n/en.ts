@@ -33,6 +33,7 @@ export const en: Dictionary = {
   'search.changePallet': 'Change pallet',
   'search.assignPallet': 'Assign pallet',
   'search.palletBadge': '{count} pallet',
+  'search.removeCompany': 'Remove company',
   'search.confirm': 'CONFIRM',
   'search.submit': 'SUBMIT YOUR VOTE',
   'search.subtitle': 'and check the updated ranking',

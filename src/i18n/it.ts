@@ -33,6 +33,7 @@ export const it: Dictionary = {
   'search.changePallet': 'Cambia pallet',
   'search.assignPallet': 'Assegna pallet',
   'search.palletBadge': '{count} pallet',
+  'search.removeCompany': 'Rimuovi azienda',
   'search.confirm': 'CONFERMA',
   'search.submit': 'INVIA IL TUO VOTO',
   'search.subtitle': 'e controlla la classifica aggiornata',

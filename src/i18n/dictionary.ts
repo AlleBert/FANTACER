@@ -38,6 +38,7 @@ export interface Dictionary {
   'search.changePallet': string
   'search.assignPallet': string
   'search.palletBadge': string
+  'search.removeCompany': string
   'search.confirm': string
   'search.submit': string
   'search.subtitle': string

@@ -167,16 +167,16 @@ export function SearchSection() {
   return (
     <SectionFrame theme="search" grow className="text-purple">
       <div className="safe-shell flex flex-col">
-        <div className="mx-auto flex flex-1 w-full max-w-[1200px] flex-col px-4 md:px-8">
+        <div className="content-max mx-auto flex flex-1 w-full flex-col">
 
           <div className="flex-none w-full text-center pt-[clamp(0.5rem,1.5svh,1.5rem)]">
-            <h2 className="text-[clamp(1.75rem,5vw,5.7rem)] font-[900] text-center tracking-tighter leading-[1.2] text-[#4f03aa]">
+            <h2 className="text-(length:--fs-headline) font-[900] text-center tracking-tighter leading-(--lh-headline) text-[#4f03aa]">
               {t('search.title')}
             </h2>
           </div>
 
           {!votingEnabled ? (
-            <div className="flex-1 flex flex-col items-center justify-center w-full max-w-2xl mx-auto gap-[clamp(1.5rem,3svh,2.5rem)] py-8">
+            <div className="flex-1 flex flex-col items-center justify-center w-full max-w-2xl mx-auto gap-(--rythm-sec) py-8">
               <div className="bg-white rounded-3xl border-[3px] md:border-[4px] border-ink shadow-[6px_6px_0_#000] p-6 md:p-10 text-center max-w-lg">
                 <h3 className="text-[clamp(1.5rem,4vw,2.5rem)] font-[900] text-purple mb-4 leading-tight">
                   Quanta fretta!
@@ -198,7 +198,7 @@ export function SearchSection() {
               </div>
             </div>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center w-full max-w-2xl mx-auto gap-[clamp(1.5rem,3svh,2.5rem)]">
+            <div className="flex-1 flex flex-col items-center justify-center w-full max-w-2xl mx-auto gap-(--rythm-sec)">
 
               <div className="relative w-full flex flex-col items-center">
               <div className="relative w-full">
@@ -303,13 +303,14 @@ export function SearchSection() {
                       <div className="flex items-center gap-2 flex-none shrink-0">
                         <button
                           onClick={() => handleEditPallet(index)}
-                          className="bg-bright px-3 py-1 rounded-full border-2 border-ink font-black text-sm whitespace-nowrap text-black hover:bg-[#ffe066] transition-colors"
+                          className="bg-bright min-h-11 px-4 py-2 rounded-full border-2 border-ink font-black text-sm whitespace-nowrap text-black hover:bg-[#ffe066] transition-colors"
                         >
                           {t('search.palletBadge', { count: item.pallet })}
                         </button>
                         <button
                           onClick={() => removeCompany(index)}
-                          className="text-red-500 hover:text-red-700 transition-colors"
+                          aria-label={t('search.removeCompany')}
+                          className="flex items-center justify-center w-11 h-11 text-red-500 hover:text-red-700 transition-colors"
                         >
                           <X className="w-6 h-6 stroke-[3]" />
                         </button>
