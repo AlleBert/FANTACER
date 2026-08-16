@@ -26,8 +26,8 @@ export const sectionThemes = {
     themeColor: '#FF8C23',
   },
   'how-it-works': {
-    background: 'linear-gradient(to bottom, #ff8a26 10%, #FF2FB2 100%)',
-    themeColor: '#ff8a26',
+    background: 'linear-gradient(to bottom, #4B00AB 0%, #ff8a26 35%, #FF2FB2 100%)',
+    themeColor: '#4B00AB',
   },
   'play-again': {
     background: 'linear-gradient(to bottom, #FF2FB2 0%, #4B00AB 60%, #4B00AB 100%)',
@@ -42,8 +42,8 @@ export const sectionThemes = {
     themeColor: '#FFFFFF',
   },
   'public-ranking': {
-    background: 'linear-gradient(to bottom, #ff8a26 0%, #FF2FB2 25%, #FF2FB2 100%)',
-    themeColor: '#ff8a26',
+    background: 'linear-gradient(to bottom, #FFFFFF 0%, #ff8a26 30%, #FF2FB2 100%)',
+    themeColor: '#FFFFFF',
   },
   'live-ranking': {
     background: 'linear-gradient(to bottom, #ff8a26 0%, #ff8a26 50%, #FF2FB2 100%)',
@@ -54,8 +54,8 @@ export const sectionThemes = {
     themeColor: '#FFFFFF',
   },
   contact: {
-    background: 'linear-gradient(to bottom, #FF2FB2 0%, #4B00AB 60%, #4B00AB 100%)',
-    themeColor: '#FF2FB2',
+    background: 'linear-gradient(to bottom, #ff8a26 0%, #FF2FB2 55%, #4B00AB 100%)',
+    themeColor: '#ff8a26',
   },
 } as const;
 

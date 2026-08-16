@@ -3,14 +3,14 @@ import { sectionThemes } from '@/lib/section-themes'
 const originalBackgrounds = {
   hero: 'linear-gradient(180deg, #FF8C23 0%, #4B00AB 100%)',
   intro: 'linear-gradient(to bottom, #FF8C23 0%, #FF8C23 12%, #FF2FB2 50%, #4B00AB 100%)',
-  'how-it-works': 'linear-gradient(to bottom, #ff8a26 10%, #FF2FB2 100%)',
+  'how-it-works': 'linear-gradient(to bottom, #4B00AB 0%, #ff8a26 35%, #FF2FB2 100%)',
   'play-again': 'linear-gradient(to bottom, #FF2FB2 0%, #4B00AB 60%, #4B00AB 100%)',
   'prize-location': 'linear-gradient(to bottom, #4B00AB 0%, #4B00AB 30%, #8A2BE2 60%, #E0B0FF 85%, #FFFFFF 100%)',
   search: '#FFFFFF',
-  'public-ranking': 'linear-gradient(to bottom, #ff8a26 0%, #FF2FB2 25%, #FF2FB2 100%)',
+  'public-ranking': 'linear-gradient(to bottom, #FFFFFF 0%, #ff8a26 30%, #FF2FB2 100%)',
   'live-ranking': 'linear-gradient(to bottom, #ff8a26 0%, #ff8a26 50%, #FF2FB2 100%)',
   success: 'linear-gradient(to bottom, #FFFFFF 0%, #FF2FB2 45%, #ff8a26 75%)',
-  contact: 'linear-gradient(to bottom, #FF2FB2 0%, #4B00AB 60%, #4B00AB 100%)',
+  contact: 'linear-gradient(to bottom, #ff8a26 0%, #FF2FB2 55%, #4B00AB 100%)',
 } as const
 
 describe('sectionThemes', () => {
@@ -56,14 +56,14 @@ describe('sectionThemes', () => {
     const map = new Map(Object.entries(sectionThemes).map(([key, v]) => [key, v.themeColor]))
     expect(map.get('hero')).toBe('#FF8C23')
     expect(map.get('intro')).toBe('#FF8C23')
-    expect(map.get('how-it-works')).toBe('#ff8a26')
+    expect(map.get('how-it-works')).toBe('#4B00AB')
     expect(map.get('play-again')).toBe('#FF2FB2')
     expect(map.get('prize-location')).toBe('#4B00AB')
     expect(map.get('search')).toBe('#FFFFFF')
-    expect(map.get('public-ranking')).toBe('#ff8a26')
+    expect(map.get('public-ranking')).toBe('#FFFFFF')
     expect(map.get('live-ranking')).toBe('#ff8a26')
     expect(map.get('success')).toBe('#FFFFFF')
-    expect(map.get('contact')).toBe('#FF2FB2')
+    expect(map.get('contact')).toBe('#ff8a26')
   })
 
   it('starts intro with a flat monochromatic top band matching its themeColor', () => {
@@ -79,8 +79,10 @@ describe('sectionThemes', () => {
     expect(search.background).not.toContain('gradient')
   })
 
-  it('keeps play-again and contact visually identical (as today)', () => {
-    expect(sectionThemes['play-again'].background).toBe(sectionThemes.contact.background)
+  it('allinea gli start dei gradienti alle sezioni precedenti (C4)', () => {
+    expect(sectionThemes['how-it-works'].background.startsWith('linear-gradient(to bottom, #4B00AB')).toBe(true)
+    expect(sectionThemes['public-ranking'].background.startsWith('linear-gradient(to bottom, #FFFFFF')).toBe(true)
+    expect(sectionThemes.contact.background.startsWith('linear-gradient(to bottom, #ff8a26')).toBe(true)
   })
 })
 
