@@ -76,6 +76,8 @@ export function SuccessSection() {
   const { t } = useLocale();
 
   useEffect(() => {
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
     const colors = ['#fccb27', '#8000ff', '#ff803b', '#4B00AB', '#ffffff'];
 
     const timer = setTimeout(() => {
