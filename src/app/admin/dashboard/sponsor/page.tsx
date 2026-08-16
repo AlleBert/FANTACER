@@ -18,6 +18,7 @@ interface Sponsor {
   image_url: string | null;
   website_url: string | null;
   is_active: boolean;
+  has_stand: boolean;
   sort_order: number;
 }
 
@@ -28,7 +29,7 @@ export default function SponsorPage() {
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<Sponsor | null>(null)
-  const [form, setForm] = useState({ name: '', image_url: '', website_url: '', sort_order: 0 })
+  const [form, setForm] = useState({ name: '', image_url: '', website_url: '', is_active: true, has_stand: false, sort_order: 0 })
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null)
@@ -66,7 +67,7 @@ export default function SponsorPage() {
 
   const openCreate = () => {
     setEditing(null)
-    setForm({ name: '', image_url: '', website_url: '', sort_order: sponsors.length })
+    setForm({ name: '', image_url: '', website_url: '', is_active: true, has_stand: false, sort_order: sponsors.length })
     clearLogoFile()
     setShowModal(true)
   }
@@ -77,6 +78,8 @@ export default function SponsorPage() {
       name: sponsor.name,
       image_url: sponsor.image_url || '',
       website_url: sponsor.website_url || '',
+      is_active: sponsor.is_active,
+      has_stand: sponsor.has_stand,
       sort_order: sponsor.sort_order,
     })
     clearLogoFile()
@@ -131,7 +134,8 @@ export default function SponsorPage() {
     formData.append('name', form.name)
     formData.append('website_url', form.website_url)
     formData.append('sort_order', String(form.sort_order))
-    formData.append('is_active', String(editing ? editing.is_active : true))
+    formData.append('is_active', String(editing ? editing.is_active : form.is_active))
+    formData.append('has_stand', String(form.has_stand))
     if (editing) formData.append('id', editing.id)
     if (logoFile) formData.append('file', logoFile)
 
@@ -161,6 +165,15 @@ export default function SponsorPage() {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...sponsor, is_active: !sponsor.is_active }),
+    })
+    loadSponsors()
+  }
+
+  const handleToggleStand = async (sponsor: Sponsor) => {
+    await fetch('/api/admin/sponsors', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...sponsor, has_stand: !sponsor.has_stand }),
     })
     loadSponsors()
   }
@@ -207,7 +220,10 @@ export default function SponsorPage() {
                     )}
                     <div>
                       <p className="font-bold text-[clamp(0.8rem,2.5vw,1rem)]">{s.name}</p>
-                      <p className="text-[clamp(0.65rem,2vw,0.8rem)] text-muted-foreground">{s.is_active ? 'Attivo' : 'Disattivo'}</p>
+                      <p className="text-[clamp(0.65rem,2vw,0.8rem)] text-muted-foreground">
+                      {s.is_active ? 'Attivo' : 'Disattivo'}
+                      {s.has_stand ? ' · Stand: SÌ' : ''}
+                    </p>
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -223,7 +239,7 @@ export default function SponsorPage() {
             </div>
           )}
           <div className="hidden lg:block">
-            <SponsorTable sponsors={sponsors} onEdit={openEdit} onDelete={handleDelete} onToggleActive={handleToggleActive} readOnly={isViewer} />
+            <SponsorTable sponsors={sponsors} onEdit={openEdit} onDelete={handleDelete} onToggleActive={handleToggleActive} onToggleStand={handleToggleStand} readOnly={isViewer} />
           </div>
         </CardContent>
       </Card>
@@ -325,6 +341,18 @@ export default function SponsorPage() {
             <label className="text-sm font-medium text-foreground">Ordine</label>
             <input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: parseInt(e.target.value) || 0 })}
               className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+          </div>
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-foreground">Stand in fiera</label>
+            <button
+              type="button"
+              onClick={() => setForm({ ...form, has_stand: !form.has_stand })}
+              className={`px-3 py-2.5 rounded-full text-xs font-bold border-2 border-black transition-colors ${
+                form.has_stand ? 'bg-blue-400 text-black' : 'bg-gray-200 text-gray-500'
+              }`}
+            >
+              {form.has_stand ? 'SÌ' : 'NO'}
+            </button>
           </div>
           <div className="flex justify-end gap-3 pt-2">
             <button onClick={() => { clearLogoFile(); setShowModal(false) }}

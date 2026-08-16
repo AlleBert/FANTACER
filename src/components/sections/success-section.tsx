@@ -113,7 +113,7 @@ export function SuccessSection() {
         
           <div className="space-y-8 mb-12 lg:mb-12 w-full max-w-xl">
             <p className="text-2xl sm:text-xl md:text-3xl lg:text-4xl font-[900] text-ink leading-tight uppercase tracking-tight">
-              {t('success.shareSocial')} <br/> {t('success.shareTagging')} <span className="bg-bright px-2 border-2 border-black rounded-lg inline-block rotate-1 shadow-[2px_2px_0_#000]">@fantacer</span>
+              {t('success.shareSocial')} <br/> {t('success.shareTagging')} <span className="bg-bright px-2 border-2 border-black rounded-lg inline-block rotate-1 shadow-[2px_2px_0_#000]">@fanta.cer</span>
             </p>
             <div className="flex justify-center lg:justify-start pt-2 gap-6">
               <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-instagram w-11 h-11 md:w-14 md:h-14 lg:w-16 lg:h-16 text-black transition-transform hover:scale-110"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>

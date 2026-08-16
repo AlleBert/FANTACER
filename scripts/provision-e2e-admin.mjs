@@ -201,7 +201,7 @@ async function stepEnsureAdminRow(admin, email, userId, role) {
     .maybeSingle()
   if (existing) {
     const patch = {}
-    if (!existing.auth_id) patch.auth_id = userId
+    if (existing.auth_id !== userId) patch.auth_id = userId
     if (!existing.is_active) patch.is_active = true
     if (existing.role !== role) patch.role = role
     if (Object.keys(patch).length) {

@@ -33,7 +33,7 @@ function mockServerClient(user: unknown, aal: string): void {
   })
 }
 
-function mockAdminRow(row: { id: string; role?: string } | null): void {
+function mockAdminRow(row: { id: string; role?: string; mfa_verified_at?: string | null } | null): void {
   const single = jest.fn().mockResolvedValue({ data: row, error: null })
   mockCreateAdminClient.mockReturnValue({
     from: jest.fn().mockReturnValue({
@@ -53,7 +53,7 @@ describe('requireAdmin (role-aware)', () => {
 
   it('admits admin at AAL2 with role="admin"', async () => {
     mockServerClient(USER, 'aal2')
-    mockAdminRow({ id: 'a1', role: 'admin' })
+    mockAdminRow({ id: 'a1', role: 'admin', mfa_verified_at: new Date().toISOString() })
     const ctx = await requireAdmin(makeRequest())
     expect(ctx.role).toBe('admin')
     expect(ctx.aal).toBe('aal2')
@@ -103,7 +103,7 @@ describe('requireRoleAdmin (admin-only)', () => {
 
   it('admits admin at AAL2', async () => {
     mockServerClient(USER, 'aal2')
-    mockAdminRow({ id: 'a1', role: 'admin' })
+    mockAdminRow({ id: 'a1', role: 'admin', mfa_verified_at: new Date().toISOString() })
     const ctx = await requireRoleAdmin(makeRequest())
     expect(ctx.role).toBe('admin')
   })

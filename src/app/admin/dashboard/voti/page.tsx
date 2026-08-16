@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { FileText, Search } from 'lucide-react'
+import { FileText, Search, Trash2, AlertTriangle } from 'lucide-react'
 import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
+import { useAdminRole } from '@/lib/use-admin-role'
 
 interface PalletAssignment {
   company: string
@@ -24,11 +25,65 @@ interface Pagination {
   page: number; limit: number; total: number; pages: number
 }
 
+interface BatchItem {
+  name: string
+  companyCount: number
+  voteCount: number
+}
+
 export default function VotiPage() {
+  const role = useAdminRole()
+  const isViewer = role === 'viewer'
   const [sessions, setSessions] = useState<VoteSession[]>([])
   const [pagination, setPagination] = useState<Pagination>({ page: 1, limit: 25, total: 0, pages: 0 })
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
+
+  const [batches, setBatches] = useState<BatchItem[]>([])
+  const [resetScope, setResetScope] = useState<'all' | 'batch'>('all')
+  const [resetBatch, setResetBatch] = useState('')
+  const [resetConfirm, setResetConfirm] = useState('')
+  const [resetLoading, setResetLoading] = useState(false)
+  const [resetResult, setResetResult] = useState<{ ok: boolean; text: string } | null>(null)
+
+  useEffect(() => {
+    fetch('/api/admin/batch')
+      .then(res => res.json())
+      .then(data => {
+        setBatches(data.batches || [])
+        if (data.batches?.length > 0) setResetBatch(data.batches[0].name)
+      })
+      .catch(() => {})
+  }, [])
+
+  const handleResetVotes = async () => {
+    if (resetConfirm.trim().toUpperCase() !== 'RESET') return
+    if (resetScope === 'batch' && !resetBatch) return
+    setResetLoading(true)
+    setResetResult(null)
+    try {
+      const res = await fetch('/api/admin/votes/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scope: resetScope, batch: resetScope === 'batch' ? resetBatch : null }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.success) {
+        setResetResult({ ok: false, text: data.error || 'Errore durante il reset' })
+      } else {
+        setResetResult({
+          ok: true,
+          text: `Cancellati ${data.votes_deleted} voti e ${data.stats_deleted} righe daily_stats.`,
+        })
+        setResetConfirm('')
+        loadVotes(1, search, true)
+      }
+    } catch {
+      setResetResult({ ok: false, text: 'Errore di rete' })
+    } finally {
+      setResetLoading(false)
+    }
+  }
 
   const loadVotes = useCallback(async (page: number, searchTerm: string, showLoading = false) => {
     if (showLoading) setLoading(true)
@@ -59,6 +114,94 @@ export default function VotiPage() {
           <p className="text-[clamp(0.75rem,2.5vw,1rem)] text-muted-foreground">Registro votazioni (3 aziende per sessione)</p>
         </div>
       </header>
+
+      {!isViewer && (
+        <Card className="border-destructive/40 bg-destructive/5">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-[clamp(1rem,3vw,1.25rem)] flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Reset dati votazioni
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 md:p-6 space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Cancella definitivamente i voti salvati. Azione irreversibile: i dati rimossi non sono recuperabili.
+            </p>
+
+            <div className="flex flex-wrap gap-4">
+              <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                <input
+                  type="radio"
+                  name="resetScope"
+                  checked={resetScope === 'all'}
+                  onChange={() => setResetScope('all')}
+                  className="accent-destructive"
+                />
+                Tutti i voti
+              </label>
+              <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                <input
+                  type="radio"
+                  name="resetScope"
+                  checked={resetScope === 'batch'}
+                  onChange={() => setResetScope('batch')}
+                  className="accent-destructive"
+                />
+                Solo batch
+              </label>
+            </div>
+
+            {resetScope === 'batch' && (
+              <div>
+                <label className="text-sm font-medium text-foreground">Batch</label>
+                <select
+                  value={resetBatch}
+                  onChange={(e) => setResetBatch(e.target.value)}
+                  className="mt-1 w-full sm:w-auto rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                >
+                  {batches.length === 0 && <option value="">Nessun batch disponibile</option>}
+                  {batches.map((b) => (
+                    <option key={b.name} value={b.name}>
+                      {b.name} ({b.companyCount} aziende · {b.voteCount} voti)
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div>
+              <label className="text-sm font-medium text-foreground">
+                Digita <span className="font-black">RESET</span> per confermare
+              </label>
+              <input
+                value={resetConfirm}
+                onChange={(e) => setResetConfirm(e.target.value)}
+                placeholder="RESET"
+                className="mt-1 w-full sm:w-64 rounded-lg border border-border bg-background px-3 py-2 text-sm uppercase tracking-widest"
+              />
+            </div>
+
+            <button
+              onClick={handleResetVotes}
+              disabled={
+                resetLoading ||
+                resetConfirm.trim().toUpperCase() !== 'RESET' ||
+                (resetScope === 'batch' && !resetBatch)
+              }
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold bg-destructive text-destructive-foreground hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+            >
+              <Trash2 className="h-4 w-4" />
+              {resetLoading ? 'Reset in corso…' : 'Resetta voti'}
+            </button>
+
+            {resetResult && (
+              <p className={`text-sm font-medium ${resetResult.ok ? 'text-emerald-600' : 'text-destructive'}`}>
+                {resetResult.text}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="border-border">
         <CardHeader className="pb-4">

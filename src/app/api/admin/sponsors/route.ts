@@ -68,6 +68,7 @@ async function parseForm(
       name: get('name'),
       website_url: get('website_url'),
       is_active: get('is_active'),
+      has_stand: get('has_stand'),
       sort_order: get('sort_order'),
     },
     file: file && file.size > 0 ? file : null,
@@ -99,6 +100,7 @@ export async function POST(request: NextRequest) {
     let image_url: string | null = null
     let website_url: string | null = null
     let is_active = true
+    let has_stand = false
     let sort_order = 0
 
     if (isMultipart(request)) {
@@ -106,6 +108,7 @@ export async function POST(request: NextRequest) {
       name = String(fields.name ?? '')
       website_url = (fields.website_url as string) || null
       is_active = fields.is_active !== 'false'
+      has_stand = fields.has_stand === 'true'
       sort_order = Number(fields.sort_order ?? 0) || 0
 
       if (file) {
@@ -119,6 +122,7 @@ export async function POST(request: NextRequest) {
       image_url = body.image_url ?? null
       website_url = body.website_url ?? null
       is_active = body.is_active ?? true
+      has_stand = body.has_stand ?? false
       sort_order = body.sort_order ?? 0
     }
 
@@ -128,7 +132,7 @@ export async function POST(request: NextRequest) {
 
     const { data, error } = await supabase
       .from('sponsors')
-      .insert({ name, image_url, website_url, is_active, sort_order })
+      .insert({ name, image_url, website_url, is_active, has_stand, sort_order })
       .select()
       .single()
 
@@ -154,6 +158,7 @@ export async function PUT(request: NextRequest) {
     let image_url: string | null = null
     let website_url: string | null = null
     let is_active = true
+    let has_stand = false
     let sort_order = 0
     let newImageUrl: string | null = null
     let isJsonRequest = false
@@ -164,6 +169,7 @@ export async function PUT(request: NextRequest) {
       name = String(fields.name ?? '')
       website_url = (fields.website_url as string) || null
       is_active = fields.is_active !== 'false'
+      has_stand = fields.has_stand === 'true'
       sort_order = Number(fields.sort_order ?? 0) || 0
 
       if (file) {
@@ -179,6 +185,7 @@ export async function PUT(request: NextRequest) {
       image_url = body.image_url ?? null
       website_url = body.website_url ?? null
       is_active = body.is_active ?? true
+      has_stand = body.has_stand ?? false
       sort_order = body.sort_order ?? 0
     }
 
@@ -200,7 +207,7 @@ export async function PUT(request: NextRequest) {
 
     const { data, error } = await supabase
       .from('sponsors')
-      .update({ name, image_url: finalImageUrl, website_url, is_active, sort_order, updated_at: new Date().toISOString() })
+      .update({ name, image_url: finalImageUrl, website_url, is_active, has_stand, sort_order, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select()
       .single()

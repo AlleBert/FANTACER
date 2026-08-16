@@ -15,13 +15,13 @@ export const it: Dictionary = {
   'howItWorks.title.simple': 'è semplice...',
   'howItWorks.title.win': 'e si vince sempre!',
   'howItWorks.step.vote': 'vota la tua azienda preferita',
-  'howItWorks.step.share': 'condividi il tuo voto taggando @fantacer',
-  'howItWorks.step.collect': 'ritira il tuo premio',
+  'howItWorks.step.share': 'condividi il tuo voto taggando @fanta.cer',
+  'howItWorks.step.collect': 'ritira il tuo gadget',
 
   'playAgain.text': 'puoi giocare una sola volta al giorno',
   'playAgain.dates': 'dal 21 al 25 settembre 2026',
 
-  'prize.title': 'e ritira il tuo premio qui',
+  'prize.title': 'e ritira il tuo gadget qui',
   'prize.inside': "all'interno di",
   'prize.venue': 'Cersaie, a Bologna Fiere',
   'prize.dates': 'dal 21 al 25 settembre 2026',
@@ -50,7 +50,7 @@ export const it: Dictionary = {
   'success.youRock': 'sei forte!',
   'success.shareSocial': 'condividi sui social',
   'success.shareTagging': 'taggando',
-  'success.collectPrize': 'e ritira il tuo premio qui',
+  'success.collectPrize': 'e ritira il tuo gadget qui',
 
   'publicRanking.title': 'gli sponsor di fantacer',
 

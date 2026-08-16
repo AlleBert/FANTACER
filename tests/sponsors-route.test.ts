@@ -155,6 +155,39 @@ describe('PUT /api/admin/sponsors', () => {
     expect(remove).not.toHaveBeenCalled()
   })
 
+  it('JSON PUT persists has_stand', async () => {
+    singleSelect.mockResolvedValue({ data: { image_url: OLD_URL }, error: null })
+    singleUpdate.mockResolvedValue({ data: { id: 's1', has_stand: true }, error: null })
+
+    const res = await PUT(jsonRequest({ id: 's1', name: 'Acme', image_url: OLD_URL, has_stand: true }))
+
+    expect(res.status).toBe(200)
+    expect(update).toHaveBeenCalledTimes(1)
+    expect(update.mock.calls[0][0].has_stand).toBe(true)
+    expect(remove).not.toHaveBeenCalled()
+  })
+
+  it('multipart PUT reads has_stand from form fields', async () => {
+    singleSelect.mockResolvedValue({ data: { image_url: OLD_URL }, error: null })
+    singleUpdate.mockResolvedValue({ data: { id: 's1', has_stand: true }, error: null })
+
+    const res = await PUT(formRequest(null, { id: 's1', name: 'Acme', has_stand: 'true' }))
+
+    expect(res.status).toBe(200)
+    expect(update).toHaveBeenCalledTimes(1)
+    expect(update.mock.calls[0][0].has_stand).toBe(true)
+  })
+
+  it('JSON PUT defaults has_stand to false when omitted', async () => {
+    singleSelect.mockResolvedValue({ data: { image_url: OLD_URL }, error: null })
+    singleUpdate.mockResolvedValue({ data: { id: 's1', has_stand: false }, error: null })
+
+    const res = await PUT(jsonRequest({ id: 's1', name: 'Acme', image_url: OLD_URL }))
+
+    expect(res.status).toBe(200)
+    expect(update.mock.calls[0][0].has_stand).toBe(false)
+  })
+
   it('multipart PUT removes the newly uploaded logo when the update fails', async () => {
     singleSelect.mockResolvedValue({ data: { image_url: OLD_URL }, error: null })
     singleUpdate.mockResolvedValue({ data: null, error: { message: 'DB fail' } })
@@ -175,6 +208,7 @@ describe('POST /api/admin/sponsors', () => {
 
   let upload: jest.Mock
   let remove: jest.Mock
+  let insert: jest.Mock
   let insertSingle: jest.Mock
   let supabase: ReturnType<typeof buildSupabase>
 
@@ -189,9 +223,13 @@ describe('POST /api/admin/sponsors', () => {
   function buildSupabase() {
     upload = jest.fn()
     remove = jest.fn(async () => ({ error: null }))
+    insert = jest.fn()
     insertSingle = jest.fn()
     const chain = {
-      insert: jest.fn(() => ({ select: jest.fn(() => ({ single: insertSingle })) })),
+      insert: jest.fn((payload: object) => {
+        insert(payload)
+        return { select: jest.fn(() => ({ single: insertSingle })) }
+      }),
     }
     return {
       storage: { from: jest.fn().mockReturnValue({ upload, remove }) },
@@ -237,6 +275,16 @@ describe('POST /api/admin/sponsors', () => {
     expect(removed).toHaveLength(1)
     expect(removed[0]).toMatch(/^sponsors\/[0-9a-f-]+\.png$/)
     expect(supabase.storage.from).toHaveBeenCalledWith(SPONSOR_LOGO_BUCKET)
+  })
+
+  it('multipart POST persists has_stand from form fields', async () => {
+    upload.mockResolvedValue({ data: { path: 'sponsors/uploaded.png' }, error: null })
+    insertSingle.mockResolvedValue({ data: { id: 's1', has_stand: true }, error: null })
+
+    const res = await POST(formRequest({ name: 'logo.png', size: 10, type: 'image/png' }, { name: 'Acme', has_stand: 'true' }))
+
+    expect(res.status).toBe(200)
+    expect(insert.mock.calls[0][0].has_stand).toBe(true)
   })
 })
 

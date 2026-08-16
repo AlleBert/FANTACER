@@ -178,7 +178,6 @@ export function SearchSection() {
           {!votingEnabled ? (
             <div className="flex-1 flex flex-col items-center justify-center w-full max-w-2xl mx-auto gap-[clamp(1.5rem,3svh,2.5rem)] py-8">
               <div className="bg-white rounded-3xl border-[3px] md:border-[4px] border-ink shadow-[6px_6px_0_#000] p-6 md:p-10 text-center max-w-lg">
-                <div className="text-6xl md:text-7xl mb-4">🏃‍♂️💨</div>
                 <h3 className="text-[clamp(1.5rem,4vw,2.5rem)] font-[900] text-purple mb-4 leading-tight">
                   Quanta fretta!
                 </h3>
@@ -187,7 +186,7 @@ export function SearchSection() {
                 </p>
                 <div className="bg-bright rounded-2xl border-[3px] border-ink p-4 mb-6">
                   <p className="text-[clamp(1.125rem,3vw,1.5rem)] font-black text-ink">
-                    📅 Dal 21 al 26 settembre
+                    📅 Dal 21 al 25 settembre
                   </p>
                   <p className="text-[clamp(0.875rem,2vw,1rem)] font-bold text-ink mt-1">
                     Ti aspettiamo in fiera per votare la tua azienda preferita!
