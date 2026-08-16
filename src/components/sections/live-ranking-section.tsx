@@ -179,7 +179,7 @@ export function LiveRankingSection() {
               {t('liveRanking.empty')}
             </p>
           ) : (
-            <div className={`w-full max-w-2xl mx-auto bg-white rounded-2xl border-[3px] border-black shadow-[4px_4px_0_#000] p-3 md:p-6 flex flex-col shrink min-h-0 ${showAll ? 'h-[clamp(38svh,48svh,55svh)]' : 'max-h-[clamp(38svh,48svh,55svh)]'}`}>
+            <div className={`w-full max-w-2xl mx-auto bg-white rounded-2xl border-[3px] border-black shadow-[4px_4px_0_#000] p-3 md:p-6 flex flex-col shrink min-h-0 ${showAll ? 'h-[48svh]' : 'max-h-[48svh]'}`}>
               <div
                 ref={rankingRef}
                 className="no-scrollbar flex flex-col flex-1 overflow-y-auto gap-y-2 md:gap-y-3"
