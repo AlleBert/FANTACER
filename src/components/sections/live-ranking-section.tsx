@@ -111,12 +111,12 @@ export function LiveRankingSection() {
   };
 
   return (
-    <SectionFrame theme="live-ranking" className="flex flex-col justify-between pt-4 md:pt-6 pb-2 md:pb-3">
-      <div className="safe-shell w-full max-w-7xl mx-auto flex flex-col h-full min-h-0">
+    <SectionFrame theme="live-ranking" className="flex flex-col justify-between">
+      <div className="safe-shell content-max flex flex-col h-full min-h-0">
 
-        <div className="flex flex-col items-center justify-center flex-1 min-h-0 gap-[clamp(0.5rem,2svh,1.5rem)] md:gap-6">
+        <div className="flex flex-col items-center justify-center flex-1 min-h-0 gap-(--rythm-blk)">
 
-        <h2 className="text-[clamp(1.5rem,5vw,4.375rem)] font-[900] text-center tracking-tighter lowercase leading-[1.1] text-white">
+        <h2 className="text-(length:--fs-headline-tight) font-[900] text-center tracking-tighter lowercase leading-(--lh-headline) text-white">
           {t('liveRanking.title')}
         </h2>
 
@@ -179,7 +179,7 @@ export function LiveRankingSection() {
               {t('liveRanking.empty')}
             </p>
           ) : (
-            <div className={`w-full max-w-2xl mx-auto bg-white rounded-2xl border-[3px] border-black shadow-[4px_4px_0_#000] p-3 md:p-6 flex flex-col shrink min-h-0 ${showAll ? 'h-[45svh] md:h-[55svh]' : 'max-h-[45svh] md:max-h-[55svh]'}`}>
+            <div className={`w-full max-w-2xl mx-auto bg-white rounded-2xl border-[3px] border-black shadow-[4px_4px_0_#000] p-3 md:p-6 flex flex-col shrink min-h-0 ${showAll ? 'h-[clamp(38svh,48svh,55svh)]' : 'max-h-[clamp(38svh,48svh,55svh)]'}`}>
               <div
                 ref={rankingRef}
                 className="no-scrollbar flex flex-col flex-1 overflow-y-auto gap-y-2 md:gap-y-3"
