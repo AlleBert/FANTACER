@@ -10,7 +10,7 @@ const originalBackgrounds = {
   'public-ranking': 'linear-gradient(to bottom, #FFFFFF 0%, #ff8a26 30%, #FF2FB2 100%)',
   'live-ranking': 'linear-gradient(to bottom, #ff8a26 0%, #ff8a26 50%, #FF2FB2 100%)',
   success: 'linear-gradient(to bottom, #FFFFFF 0%, #FF2FB2 45%, #ff8a26 75%)',
-  contact: 'linear-gradient(to bottom, #ff8a26 0%, #FF2FB2 55%, #4B00AB 100%)',
+  contact: 'linear-gradient(to bottom, #FF2FB2 0%, #4B00AB 60%, #4B00AB 100%)',
 } as const
 
 describe('sectionThemes', () => {
@@ -63,7 +63,7 @@ describe('sectionThemes', () => {
     expect(map.get('public-ranking')).toBe('#FFFFFF')
     expect(map.get('live-ranking')).toBe('#ff8a26')
     expect(map.get('success')).toBe('#FFFFFF')
-    expect(map.get('contact')).toBe('#ff8a26')
+    expect(map.get('contact')).toBe('#FF2FB2')
   })
 
   it('starts intro with a flat monochromatic top band matching its themeColor', () => {
@@ -82,7 +82,24 @@ describe('sectionThemes', () => {
   it('allinea gli start dei gradienti alle sezioni precedenti (C4)', () => {
     expect(sectionThemes['how-it-works'].background.startsWith('linear-gradient(to bottom, #4B00AB')).toBe(true)
     expect(sectionThemes['public-ranking'].background.startsWith('linear-gradient(to bottom, #FFFFFF')).toBe(true)
-    expect(sectionThemes.contact.background.startsWith('linear-gradient(to bottom, #ff8a26')).toBe(true)
+    expect(sectionThemes.contact.background.startsWith('linear-gradient(to bottom, #FF2FB2')).toBe(true)
+  })
+
+  it('parte dal colore di arrivo della sezione precedente nell ordine DOM reale', () => {
+    const startOf = (key: string) => sectionThemes[key as keyof typeof sectionThemes].background.match(/linear-gradient\(to bottom, (#[0-9A-Fa-f]{6})/)?.[1] ?? ''
+    const endOf = (key: string) => {
+      const bg = sectionThemes[key as keyof typeof sectionThemes].background
+      const solid = bg.match(/^#[0-9A-Fa-f]{6}$/)
+      if (solid) return solid[0]
+      const matches = bg.match(/#[0-9A-Fa-f]{6} 100%/g)
+      return matches?.[matches.length - 1]?.slice(0, 7) ?? ''
+    }
+    expect(startOf('how-it-works')).toBe(endOf('intro'))
+    expect(startOf('play-again')).toBe(endOf('how-it-works'))
+    expect(startOf('prize-location')).toBe(endOf('play-again'))
+    expect(startOf('public-ranking')).toBe(endOf('search'))
+    expect(startOf('success')).toBe(endOf('search'))
+    expect(startOf('contact')).toBe(endOf('live-ranking'))
   })
 })
 
