@@ -24,7 +24,8 @@ test.describe('Legal pages UI (P0 gate)', () => {
       test(`${route.path} at ${vpName} (${vp.width}x${vp.height})`, async ({ page }, testInfo) => {
         test.skip(!GATE_PROJECTS.includes(testInfo.project.name));
         test.setTimeout(60000);
-        setNavigationFailFast(page);
+        // prima richiesta a una rotta legale = compilazione cold di `next dev`
+        setNavigationFailFast(page, 60000);
         await page.setViewportSize({ width: vp.width, height: vp.height });
         await page.goto(route.path, { waitUntil: 'domcontentloaded' });
         await page.waitForLoadState('load');
