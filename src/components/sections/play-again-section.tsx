@@ -13,8 +13,7 @@ export function PlayAgainSection({ onPlayClick }: PlayAgainSectionProps) {
   const { t } = useLocale()
   const handlePlayClick = () => {
     const main = document.querySelector('main');
-    // HARDCODED: targets 5th child (SearchSection) in page.tsx — keep in sync with section order
-    const target = main?.children[5] as HTMLElement | undefined;
+    const target = main?.querySelector('[data-section="search"]') as HTMLElement | undefined;
     if (main && target) main.scrollTo({ top: target.offsetTop, behavior: 'smooth' })
     onPlayClick?.()
   }

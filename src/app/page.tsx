@@ -23,7 +23,7 @@ function PageContent() {
       <HeroSection
         onPlayClick={() => {
           const main = document.querySelector('main');
-          const target = main?.children[5] as HTMLElement | undefined;
+          const target = main?.querySelector('[data-section="search"]') as HTMLElement | undefined;
           if (main && target) main.scrollTo({ top: target.offsetTop, behavior: 'smooth' });
         }}
       />
