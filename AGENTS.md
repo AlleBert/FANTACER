@@ -9,7 +9,7 @@ La webapp è un gioco multi-device con sezioni full-page a snap. La responsivene
 - Progetta ogni sezione per il **viewport disponibile**, mai per una dimensione fissa.
 - Le sezioni full-page usano `h-[100dvh]` (o il token `--app-height` che è `100dvh` con fallback `100vh`, definito in `src/app/globals.css`). **Non usare `100vh` nudo** e non aggiungere `min-height: 100vh` senza verificare l'effetto reale su mobile.
 - Valuta `dvh`/`svh`/`lvh` in base al comportamento desiderato (URL bar mobile, browser chrome).
-- `SearchSection` è l'unica sezione non fissa: usa `.app-screen` (min-height `var(--app-height)`), cresce col contenuto in modo intenzionale.
+- `SearchSection` e `SuccessSection` sono le sezioni non fisse: usano `grow` su `SectionFrame` → `.app-screen` (min-height `var(--app-height)`), crescono col contenuto in modo intenzionale. Tutte le altre sezioni usano `snap-screen` (`h-[100dvh]`).
 
 ### Zero micro-scroll
 
@@ -40,6 +40,13 @@ La webapp è un gioco multi-device con sezioni full-page a snap. La responsivene
 - Usa il sistema già presente: `.safe-shell`, `.safe-pt`, `.safe-pb`, `.safe-px` e i token `--safe-area-inset-*`, `--safe-top`, `--safe-bottom`, `--safe-x` (definiti in `globals.css`).
 - Le safe-area vanno integrate nel sistema di spacing, non aggiunte a singoli elementi. Attenzione a notch, Dynamic Island, home indicator, landscape, elementi fixed/sticky, HUD di gioco, CTA, nav, elementi ancorati ai bordi.
 - `viewportFit: cover` è già attivo in `src/app/layout.tsx`.
+
+### Design tokens
+
+- Usa i token di sistema definiti in `globals.css`: spacing/ritmo (`--space-*`, `--rythm-*`, `--section-pad`, `--card-size`), tipografia (`--fs-*`, `--lh-*`), contenuto (`--content-max`, `--measure-*`), CTA (`--cta-*`). **Non introdurre nuove costanti di spacing/tipografia/misure.**
+- Sintassi Tailwind v4: `gap-(--x)`, `max-w-(--x)`, `leading-(--x)`, `py-(--x)`; per i **font-size usa `text-(length:--fs-*)`** (senza `length:` compila a `color`).
+- `.content-max` sostituisce `max-w-7xl mx-auto` e `max-w-[1200px]`; `CtaButton` (`src/components/ui/cta-button.tsx`) è l'unico CTA «GIOCA».
+- Se un valore `clamp` si dimostra sbagliato in audit, correggi la causa strutturale (spacing/tipografia); rivedi il token in `globals.css` (SSOT) solo in caso estremo.
 
 ### Animazioni
 
