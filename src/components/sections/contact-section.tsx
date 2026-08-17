@@ -54,7 +54,7 @@ export function ContactSection() {
       className="flex flex-col"
     >
       <div className="safe-shell content-max flex flex-1 flex-col min-h-0">
-        <div className="flex-1 flex w-full flex-col items-center justify-center gap-(--rythm-sec) lg:flex-row-reverse lg:gap-10 min-h-0">
+        <div className="flex-1 flex w-full flex-col items-center justify-center-safe gap-(--rythm-sec) lg:flex-row-reverse lg:gap-10 min-h-0 overflow-y-auto">
 
           {/* Info section */}
           <div className="flex w-full flex-col items-center gap-(--rythm-sec) text-center lg:w-1/2 lg:items-start lg:text-left shrink-0">
