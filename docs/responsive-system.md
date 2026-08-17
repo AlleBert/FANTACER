@@ -31,18 +31,19 @@ Definiti in `globals.css` (`:root` + `@layer components`) dopo una modifica stru
 | Ritmo | `--rythm-blk` | `clamp(0.5rem,2svh,1.5rem)` | gap interni ai blocchi |
 | Ritmo | `--section-pad` | `clamp(0.5rem,2svh,1.5rem)` | padding verticale interno sezione |
 | Ritmo | `--card-size` | `clamp(3.5rem,17svh,13rem)` | card quadrate (how-it-works) |
-| Tipografia | `--fs-display` | `clamp(2rem,6vw,5.625rem)` floor 32px | h1 hero/intro |
+| Tipografia | `--fs-display` | `clamp(2rem,min(6vw,9svh),5.625rem)` floor 32px, height-aware | h1 hero/intro |
 | Tipografia | `--fs-headline` | `clamp(1.5rem,6vw,4.5rem)` floor 24px | h2 sezioni |
-| Tipografia | `--fs-headline-tight` | `clamp(1.5rem,min(4.5vw,7vw),4.5rem)` floor 24px | h2 con righe strette (how-it-works, live-ranking) |
+| Tipografia | `--fs-headline-tight` | `clamp(1.5rem,4.5vw,4.5rem)` floor 24px | h2 con righe strette (how-it-works, live-ranking) |
 | Tipografia | `--fs-cta` | `clamp(1.5rem,5vw,2.5rem)` | CTA |
 | Tipografia | `--lh-display/headline/body` | 1.05 / 1.1 / 1.4 | line-height |
 | Contenuto | `--content-max` | `1200px` (via `.content-max`) | larghezza contenuto unica (sostituisce `max-w-7xl`/`max-w-[1200px]`) |
 | Contenuto | `--measure-display` | `min(100%,22ch)` | misura di lettura h1 |
 | Contenuto | `--measure-body` | `min(100%,40ch)` | misura di lettura corpo |
-| CTA | `--cta-pad-x/y` | `clamp(2rem,10vw,6rem)` / `clamp(1rem,4vw,3rem)` | padding CTA fluido |
+| CTA | `--cta-pad-x/y` | `clamp(2rem,10vw,6rem)` / `clamp(1rem,min(4vw,6svh),3rem)` height-aware | padding CTA fluido |
 | CTA | `--cta-scale` | 1 (sovrascritto inline da `CtaButton`) | scala extra (play-again 1.15) |
 
-- La utility `.content-max` (`width:100%; max-width:var(--content-max); margin-inline:auto`) sostituisce `max-w-7xl mx-auto` e `max-w-[1200px]`.
+- La utility `.content-max` (`width:100%; max-width:var(--content-max); margin-inline:auto`) sostituisce `max-w-7xl mx-auto` e `max-w-[1200px]`. `intro` e `how-it-works` conservano `max-w-7xl mx-auto` (contenuto già vincolato dai `--measure-*`); la regola è comunque preferirla.
+- I token con componente `vw`/`svh` preferita possono usare `min(...)` per essere height-aware su viewport short-landscape (es. `--fs-display: clamp(2rem,min(6vw,9svh),5.625rem)`, `--cta-pad-y: clamp(1rem,min(4vw,6svh),3rem)`): su portrait il comportamento è identico al solo `vw`, su viewport larghe e basse il valore si riduce per altezza.
 - `@media (prefers-reduced-motion: reduce)` globale in `globals.css` riduce animazioni/transizioni a livello di CSS; le animazioni JS (es. confetti) hanno una guardia `matchMedia` dedicata.
 - Il componente `CtaButton` (`src/components/ui/cta-button.tsx`) è l'unico CTA «GIOCA»: geometria fluida via `--cta-*`, `scale` prop per play-again.
 
