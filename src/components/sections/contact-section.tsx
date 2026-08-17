@@ -8,9 +8,9 @@ import { useLocale } from '@/lib/LocaleContext'
 import { OPEN_COOKIE_PREFERENCES_EVENT } from '@/components/cookie-consent'
 
 const FOOTER_LINKS = {
-  cookiePolicy: 'https://www.fantacer.com/cookie-policy',
-  privacy: 'https://www.fantacer.com/privacy-policy',
-  terms: 'https://www.fantacer.com/terms-and-conditions',
+  cookiePolicy: '/cookie-policy',
+  privacy: '/privacy-policy',
+  terms: '/terms-and-conditions',
 } as const
 
 export function ContactSection() {
