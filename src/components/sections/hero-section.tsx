@@ -33,9 +33,7 @@ export function HeroSection({ onPlayClick }: HeroSectionProps) {
 
       {/* Content Layer - Gestito dalla tua classe safe-shell */}
       <div className="relative z-10 flex flex-col justify-between safe-shell">
-        <div className="pt-2 text-center">
-          <span className="text-white font-black tracking-tight uppercase text-[clamp(1.25rem,4vw,2.5rem)]">FANTACER</span>
-        </div>
+        <div className="pt-2" />
         <div className="flex justify-center">
           <CtaButton onClick={onPlayClick}>{t('hero.play')}</CtaButton>
         </div>
