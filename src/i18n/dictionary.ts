@@ -136,6 +136,117 @@ export interface Dictionary {
   'footer.terms': string
   'footer.madeBy': string
 
+  // Cookie Policy
+  'cookiePolicy.title': string
+  'cookiePolicy.lastUpdated': string
+  'cookiePolicy.intro': string
+  'cookiePolicy.whatAreCookies': string
+  'cookiePolicy.whatAreCookiesDesc': string
+  'cookiePolicy.categories': string
+  'cookiePolicy.essential': string
+  'cookiePolicy.essentialDesc': string
+  'cookiePolicy.analytics': string
+  'cookiePolicy.analyticsDesc': string
+  'cookiePolicy.thirdParty': string
+  'cookiePolicy.thirdPartyDesc': string
+  'cookiePolicy.howToManage': string
+  'cookiePolicy.browserSettings': string
+  'cookiePolicy.contact': string
+  'cookiePolicy.tableCookie': string
+  'cookiePolicy.tablePurpose': string
+  'cookiePolicy.tableDuration': string
+  'cookiePolicy.tableProvider': string
+  'cookiePolicy.ga4Note': string
+
+  // Privacy Policy
+  'privacyPolicy.title': string
+  'privacyPolicy.lastUpdated': string
+  'privacyPolicy.controller': string
+  'privacyPolicy.controllerDetails': string
+  'privacyPolicy.dpo': string
+  'privacyPolicy.dpoContact': string
+  'privacyPolicy.dataCategories': string
+  'privacyPolicy.purposes': string
+  'privacyPolicy.legalBases': string
+  'privacyPolicy.recipients': string
+  'privacyPolicy.subprocessors': string
+  'privacyPolicy.supabase': string
+  'privacyPolicy.supabaseDesc': string
+  'privacyPolicy.resend': string
+  'privacyPolicy.resendDesc': string
+  'privacyPolicy.cloudflare': string
+  'privacyPolicy.cloudflareDesc': string
+  'privacyPolicy.googleAnalytics': string
+  'privacyPolicy.googleAnalyticsDesc': string
+  'privacyPolicy.transfers': string
+  'privacyPolicy.transfersDesc': string
+  'privacyPolicy.retention': string
+  'privacyPolicy.rights': string
+  'privacyPolicy.howToExercise': string
+  'privacyPolicy.complaint': string
+  'privacyPolicy.changes': string
+  'privacyPolicy.contact': string
+  'privacyPolicy.dataContact': string
+  'privacyPolicy.dataVoting': string
+  'privacyPolicy.dataAdmin': string
+  'privacyPolicy.dataAnalytics': string
+  'privacyPolicy.dataTechnical': string
+  'privacyPolicy.purposeContact': string
+  'privacyPolicy.purposeVoting': string
+  'privacyPolicy.purposeAdmin': string
+  'privacyPolicy.purposeAnalytics': string
+  'privacyPolicy.purposeSecurity': string
+  'privacyPolicy.basisConsent': string
+  'privacyPolicy.basisLegitimate': string
+  'privacyPolicy.basisContract': string
+  'privacyPolicy.basisLegalObligation': string
+  'privacyPolicy.retentionContact': string
+  'privacyPolicy.retentionVoting': string
+  'privacyPolicy.retentionAdmin': string
+  'privacyPolicy.retentionLogs': string
+  'privacyPolicy.retentionAnalytics': string
+  'privacyPolicy.rightsList': string
+
+  // Terms & Conditions
+  'terms.title': string
+  'terms.lastUpdated': string
+  'terms.acceptance': string
+  'terms.acceptanceDesc': string
+  'terms.serviceDescription': string
+  'terms.eligibility': string
+  'terms.eligibilityDesc': string
+  'terms.votingRules': string
+  'terms.oneVotePerDay': string
+  'terms.threeCompanies': string
+  'terms.prizeCollection': string
+  'terms.prizeDetails': string
+  'terms.fairDates': string
+  'terms.gadget': string
+  'terms.noCashAlternative': string
+  'terms.unclaimedForfeited': string
+  'terms.intellectualProperty': string
+  'terms.brandOwnership': string
+  'terms.companyLogos': string
+  'terms.voteAttribution': string
+  'terms.userContent': string
+  'terms.userContentDesc': string
+  'terms.disclaimer': string
+  'terms.disclaimerDesc': string
+  'terms.limitation': string
+  'terms.maxLiability': string
+  'terms.noIndirectDamages': string
+  'terms.termination': string
+  'terms.organizerMayEnd': string
+  'terms.userMayStop': string
+  'terms.provisionsSurvive': string
+  'terms.governingLaw': string
+  'terms.italianLaw': string
+  'terms.tribunalReggio': string
+  'terms.changes': string
+  'terms.changesDesc': string
+  'terms.contact': string
+  'terms.contactDesc': string
+
   // Vote API errors
   'voteError.missingFields': string
   'voteError.duplicateCompanies': string
