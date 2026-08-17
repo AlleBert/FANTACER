@@ -9,6 +9,7 @@ export const dictionaries: Record<Locale, Dictionary> = { it, en }
 
 export interface TParams {
   count?: string | number
+  [key: string]: string | number | undefined
 }
 
 /**

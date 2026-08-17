@@ -86,6 +86,12 @@ export interface Dictionary {
   'contact.messageLabel': string
   'contact.sending': string
   'contact.submit': string
+  'contact.emailSubject': string
+  'contact.emailIntro': string
+  'contact.emailName': string
+  'contact.emailAddress': string
+  'contact.emailSentAt': string
+  'contact.emailMessage': string
 
   // Turnstile overlay
   'turnstile.ready': string

@@ -19,6 +19,20 @@ npm run dev
 
 ---
 
+# Contact Form (Vercel + Resend)
+
+Il form di contatto nella sezione «PARLA CON NOI» invia i dati a `POST /api/contact`
+(Vercel Serverless Function), che valida, applica anti-spam/rate limiting e invia
+l'email tramite **Resend**. Il browser non comunica mai direttamente con Resend e
+non possiede alcuna API key.
+
+- **Architettura**: `React` → `POST /api/contact` → validazione + honeypot + rate limiting (DB) → Resend API → tua casella email.
+- **Documentazione completa**: [`docs/contact-form.md`](docs/contact-form.md)
+- **Variabili richieste**: `RESEND_API_KEY`, `CONTACT_TO_EMAIL`, `CONTACT_FROM_EMAIL` (vedi [`.env.example`](.env.example)).
+- **Prima del deploy**: verifica il dominio su Resend (record SPF/DKIM) e configura le env in Vercel.
+
+---
+
 # Accesso Admin (sistema di login)
 
 L'area amministrativa è protetta da un **login** su `/admin/login` con due livelli di accesso:

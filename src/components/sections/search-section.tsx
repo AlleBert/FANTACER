@@ -81,6 +81,12 @@ export function SearchSection() {
     setSearchLoading(false);
   }, 300);
 
+  useEffect(() => {
+    if (activeBatch && searchTerm.length >= 2) {
+      fetchCompanies(searchTerm);
+    }
+  }, [activeBatch]);
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const term = e.target.value;
     setSearchTerm(term);

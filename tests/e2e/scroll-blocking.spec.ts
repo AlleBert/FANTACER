@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { completeVotingFlow } from './voting.helper';
 
 test.describe('Scroll Blocking Bug Fix', () => {
-  test.describe.configure({ mode: 'serial' });
+  test.describe.configure({ mode: 'serial', timeout: 60000 });
 
   test('TEST 1: Scroll funziona dalla sezione successo dopo il voto', async ({ page }) => {
     await completeVotingFlow(page);

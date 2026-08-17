@@ -90,3 +90,21 @@ La webapp è un gioco multi-device con sezioni full-page a snap. La responsivene
 - Le suite E2E autenticate (visual-audit, accessibility, admin, viewer) **riusano la sessione admin a livello di modulo** (`cachedAdminCookies` in `tests/e2e/helpers/auth.ts`): il primo test esegue il login MFA completo, i successivi riutilizzano i cookie. Non duplicare il login: ogni MFA login consuma una verify nel rate limit.
 - In `.env.local` sono già presenti `ADMIN_LOGIN_RATE_MAX=100` e `ADMIN_MFA_VERIFY_RATE_MAX=100` per le suite E2E. Se il server dev era già avviato prima di una modifica a `.env.local`, **riavviarlo** (le env sono lette allo startup da `next dev`).
 - I counter del rate limit vivono in DB (`public.rate_limits`): un run fallito lascia tentativi conteggiati per 15min. In caso di "ratelimited" inspiegabile, svuotare le righe con key `admin:login:*` / `admin:mfa:*` o attendere la finestra.
+
+## E2E e stato Admin — invarianti
+
+- Gli input dell'Admin page (`site_settings`, `batch_settings`) sono stato di
+  **competenza esclusiva dell'Admin**: nessun test può modificarli su production.
+- Gli E2E girano **esclusivamente** sul progetto Supabase `fantacer-e2e`
+  (`.env.e2e`), mai sul progetto production (`zdfverdwdsigizxktilz`).
+- `playwright.config.ts` blocca all'avvio qualsiasi URL Supabase diverso da
+  `fantacer-e2e` (guard fail-fast): E2E → production è impedito per costruzione.
+- Nessun test riattiva/disattiva il voto o altera lo stato Admin su production.
+- Se un test deve alterare stato Admin (batch, voting_enabled, sponsor, voti),
+  lo fa esclusivamente sul progetto E2E (seeding in `global-setup.ts`).
+- Percorso ufficiale setup: `.env.e2e` (gitignored) + `npm run provision:e2e:admin:test`.
+  Il webServer Playwright parte sempre lui (`reuseExistingServer: false`):
+  non riusare un `next dev` avviato a mano che potrebbe puntare a prod.
+- Il job CI usa solo secrets `*_TEST`; i secrets production vivono solo in Vercel.
+- Canary manuale su production dopo un run E2E (mai automatizzato, vedi `docs/CI.md`):
+  verificare che `batch_settings.active_batch` e `site_settings` non siano cambiati.

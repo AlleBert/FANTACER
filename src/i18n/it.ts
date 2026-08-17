@@ -77,6 +77,12 @@ export const it: Dictionary = {
   'contact.messageLabel': 'Il tuo messaggio',
   'contact.sending': 'INVIO...',
   'contact.submit': 'INVIA',
+  'contact.emailSubject': 'Nuovo messaggio dal sito - {name}',
+  'contact.emailIntro': 'Hai ricevuto un nuovo messaggio dal modulo di contatto del sito.',
+  'contact.emailName': 'Nome',
+  'contact.emailAddress': 'Email',
+  'contact.emailSentAt': 'Inviato il',
+  'contact.emailMessage': 'Messaggio',
 
   'turnstile.ready': 'Tutto pronto!',
   'turnstile.verify': 'Verifica',

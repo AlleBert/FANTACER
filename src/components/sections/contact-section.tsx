@@ -18,6 +18,7 @@ export function ContactSection() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
+  const [website, setWebsite] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
 
   useEffect(() => {
@@ -35,13 +36,14 @@ export function ContactSection() {
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, message }),
+        body: JSON.stringify({ name, email, message, website }),
       })
       if (!res.ok) throw new Error('Errore invio')
       setStatus('success')
       setName('')
       setEmail('')
       setMessage('')
+      setWebsite('')
     } catch {
       setStatus('error')
     }
@@ -95,6 +97,16 @@ export function ContactSection() {
             )}
 
             <form className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,13rem),1fr))] gap-(--rythm-blk) flex-1 min-h-0 w-full box-border content-start items-stretch" onSubmit={handleSubmit}>
+              <div aria-hidden="true" className="absolute left-[-9999px] top-auto h-px w-px overflow-hidden">
+                <input
+                  type="text"
+                  name="website"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                />
+              </div>
               <input
                 type="text"
                 name="nome"

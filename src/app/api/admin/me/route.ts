@@ -29,7 +29,12 @@ export async function GET() {
     const verifiedFactors = (factorsData?.all || []).filter(f => f.status === 'verified')
 
     if (verifiedFactors.length === 0) {
-      return NextResponse.json({ factorId: null, mfaExpired: false })
+      return NextResponse.json({
+        email: user.email,
+        role: adminUser.role,
+        factorId: null,
+        mfaExpired: false,
+      })
     }
 
     // Check if MFA is expired (24h)
@@ -46,6 +51,7 @@ export async function GET() {
     }
 
     return NextResponse.json({
+      email: user.email,
       factorId: verifiedFactors[0].id,
       mfaExpired,
       role: adminUser.role,

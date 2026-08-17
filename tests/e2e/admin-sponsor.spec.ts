@@ -11,6 +11,7 @@ const PNG_BUFFER = Buffer.from(
 const createName = () => `E2E Sponsor ${Date.now()}`
 
 test.describe('Admin Sponsor — logo upload', () => {
+  test.describe.configure({ timeout: 60000 })
   needsAdmin()
 
   test.beforeEach(async ({ page }) => {

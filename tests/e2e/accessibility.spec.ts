@@ -25,7 +25,9 @@ const ROUTES: { path: string; allowedViolations: AllowedViolation[] }[] = [
   },
   {
     path: '/admin/dashboard/voti',
-    allowedViolations: [],
+    allowedViolations: [
+      { id: 'color-contrast', reason: 'Orange primary active nav link (bg-primary on brand orange) and red destructive card title (text-red-500) — brand palette, pending design system audit' },
+    ],
   },
 ];
 

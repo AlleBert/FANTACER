@@ -42,23 +42,40 @@ npm run test:e2e
 
 The Playwright `webServer` config auto-detects a running server on port 3000 and reuses it (no rebuild needed). For production-accurate results, use `npm run build && npm run start` instead of `npm run dev`.
 
+> **E2E isolato:** per i test E2E Playwright avvia il proprio server (`.env.e2e`
+> → progetto Supabase `fantacer-e2e`) con `reuseExistingServer: false`: non
+> riusare mai un `next dev` avviato a mano (potrebbe puntare a production). Per
+> lo sviluppo manuale puntato a production usare `.env`/`.env.local` come sempre.
+
 ## Required GitHub Secrets
 
-The E2E and build steps need environment variables. Set them as repository secrets in
-**Settings → Secrets and variables → Actions**:
+Il job CI usa **solo** secrets del progetto E2E `fantacer-e2e` (prefisso `_TEST`).
+Impostarli in **Settings → Secrets and variables → Actions**:
 
-| Secret | Value |
+| Secret | Valore |
 |---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key |
+| `NEXT_PUBLIC_SUPABASE_URL_TEST` | URL progetto `fantacer-e2e` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY_TEST` | anon key progetto E2E |
+| `SUPABASE_SERVICE_ROLE_KEY_TEST` | service role key progetto E2E |
+| `E2E_ADMIN_EMAIL_TEST` / `E2E_ADMIN_PASSWORD_TEST` / `E2E_ADMIN_TOTP_SECRET_TEST` | credenziali admin E2E (TOTP lowercase) |
+| `E2E_VIEWER_EMAIL_TEST` / `E2E_VIEWER_PASSWORD_TEST` | credenziali viewer E2E |
 
-Both values are in `.env` (local) or `.env.example` (template). They are prefixed
-`NEXT_PUBLIC_` — safe to expose to the client, but the build process needs them
-at compile time.
+Le `NEXT_PUBLIC_*` devono essere presenti già alla `next build` (inline a
+build-time). Le chiavi di production NON devono mai comparire nel job.
 
-Private keys (`SUPABASE_SERVICE_ROLE_KEY`, `TURNSTILE_SECRET_KEY`) are **not**
-required by the build or E2E steps. The Playwright webServer config injects dummy
-Turnstile keys and the dev bypass env var automatically.
+## Setup progetto E2E (Supabase `fantacer-e2e`)
+
+1. Creare il progetto (org `xrfuwixpevswnqmnnlxz`, regione `eu-west-1`).
+2. `supabase link --project-ref <ref>` + `supabase db push` (23 migrazioni:
+   storage bucket sponsor, realtime, rate_limits, site_settings).
+3. Dashboard progetto test: **Authentication → Multi-factor → TOTP** abilitato.
+4. `npm run provision:e2e:admin:test` (admin + viewer, `--verify`).
+5. `.env.e2e` completo di `E2E_VIEWER_*` (lo script scrive solo `E2E_ADMIN_*`).
+
+Regole: TOTP in lowercase (Google Authenticator); riavviare `next dev` quando
+cambiano le env; canary manuale su production dopo un run E2E:
+`SELECT key, value FROM site_settings; SELECT active_batch FROM batch_settings
+WHERE id='default';` — devono essere invariati.
 
 ## Common failures
 
