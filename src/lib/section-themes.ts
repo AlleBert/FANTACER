@@ -57,6 +57,10 @@ export const sectionThemes = {
     background: 'linear-gradient(to bottom, #FF2FB2 0%, #4B00AB 60%, #4B00AB 100%)',
     themeColor: '#FF2FB2',
   },
+  legal: {
+    background: 'linear-gradient(to bottom, #FF2FB2 0%, #4B00AB 60%, #4B00AB 100%)',
+    themeColor: '#FF2FB2',
+  },
 } as const;
 
 export type SectionThemeKey = keyof typeof sectionThemes;

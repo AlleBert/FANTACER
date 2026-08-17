@@ -11,6 +11,7 @@ const originalBackgrounds = {
   'live-ranking': 'linear-gradient(to bottom, #ff8a26 0%, #ff8a26 50%, #FF2FB2 100%)',
   success: 'linear-gradient(to bottom, #FFFFFF 0%, #FF2FB2 45%, #ff8a26 75%)',
   contact: 'linear-gradient(to bottom, #FF2FB2 0%, #4B00AB 60%, #4B00AB 100%)',
+  legal: 'linear-gradient(to bottom, #FF2FB2 0%, #4B00AB 60%, #4B00AB 100%)',
 } as const
 
 describe('sectionThemes', () => {
@@ -25,6 +26,7 @@ describe('sectionThemes', () => {
     'live-ranking',
     'success',
     'contact',
+    'legal',
   ]
 
   it('exposes exactly the expected section keys', () => {
