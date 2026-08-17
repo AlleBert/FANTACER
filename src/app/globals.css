@@ -148,7 +148,7 @@ input, textarea {
   --card-size: clamp(3.5rem, 17svh, 13rem);
 
   /* ---- Design tokens: typography ---- */
-  --fs-display: clamp(2rem, 6vw, 5.625rem);
+  --fs-display: clamp(2rem, min(6vw, 9svh), 5.625rem);
   --fs-headline: clamp(1.5rem, 6vw, 4.5rem);
   --fs-headline-tight: clamp(1.5rem, min(4.5vw, 7vw), 4.5rem);
   --fs-cta: clamp(1.5rem, 5vw, 2.5rem);
@@ -163,7 +163,7 @@ input, textarea {
 
   /* ---- Design tokens: CTA ---- */
   --cta-pad-x: clamp(2rem, 10vw, 6rem);
-  --cta-pad-y: clamp(1rem, 4vw, 3rem);
+  --cta-pad-y: clamp(1rem, min(4vw, 6svh), 3rem);
   --cta-scale: 1;
 }
 
