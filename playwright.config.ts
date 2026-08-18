@@ -1,7 +1,19 @@
 import { defineConfig, devices } from '@playwright/test';
 import { loadEnvConfig } from '@next/env';
+import { config as loadDotEnv } from 'dotenv';
 
+loadDotEnv({ path: '.env.e2e', override: true });
 loadEnvConfig(process.cwd());
+
+const E2E_SUPABASE_HOST = 'ookipybsnjtvdrzqzpsl.supabase.co';
+
+const e2eSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const e2eHostname = e2eSupabaseUrl ? new URL(e2eSupabaseUrl).hostname : '';
+if (!e2eSupabaseUrl || e2eHostname !== E2E_SUPABASE_HOST) {
+  throw new Error(
+    `E2E bloccato: NEXT_PUBLIC_SUPABASE_URL='${e2eSupabaseUrl}' punta a '${e2eHostname}', atteso '${E2E_SUPABASE_HOST}'. Carica .env.e2e (progetto fantacer-e2e). Mai E2E su production.`,
+  );
+}
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -10,7 +22,10 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: 2,
+  // workers: 1 — i login MFA admin (AAL2) condividono rate limit e sessione
+  // (cachedAdminCookies per worker); l'esecuzione parallela li fa fallire in
+  // modo flaky (auth/session contention). Vale per ogni ambiente, anche CI.
+  workers: 1,
   timeout: 30000,
   snapshotPathTemplate: '{testDir}/screenshots/{projectName}/{testFilePath}/{arg}{ext}',
   use: {
@@ -96,7 +111,7 @@ export default defineConfig({
     command: process.env.CI ? 'npm run start' : 'npm run dev',
     port: 3000,
     timeout: 120_000,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
     env: {
       NEXT_PUBLIC_TURNSTILE_SITE_KEY: '1x00000000000000000000AA',
       TURNSTILE_SECRET_KEY: '1x0000000000000000000000000000000AA',

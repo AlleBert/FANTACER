@@ -11,13 +11,7 @@ interface Step {
   labelKey: 'howItWorks.step.vote' | 'howItWorks.step.share' | 'howItWorks.step.collect'
 }
 
-// Uniform card sizes — all 3 steps same size
-// clamp keeps cards square and proportional on small viewports (svh-based → comprimono con l'altezza)
-const cardSizeClasses = [
-  'w-[clamp(56px,17svh,128px)] aspect-square md:w-40 md:h-40 lg:w-52 lg:h-52',
-  'w-[clamp(56px,17svh,128px)] aspect-square md:w-40 md:h-40 lg:w-52 lg:h-52',
-  'w-[clamp(56px,17svh,128px)] aspect-square md:w-40 md:h-40 lg:w-52 lg:h-52',
-]
+const cardSizeClasses = 'w-(--card-size) aspect-square'
 
 const iconSizeClasses = [
   'w-[clamp(1.75rem,9svh,2.5rem)] h-[clamp(1.75rem,9svh,2.5rem)] md:w-[72px] md:h-[72px] lg:w-20 lg:h-20',
@@ -52,38 +46,38 @@ export function HowItWorksSection() {
   return (
     <SectionFrame theme="how-it-works" className="text-white flex flex-col items-center justify-center">
       <div className="safe-shell h-full flex flex-col">
-      <div className="relative z-10 w-full max-w-7xl mx-auto flex flex-col items-center justify-center flex-1 min-h-0 py-[clamp(0.75rem,3svh,3rem)] lg:py-12">
+      <div className="relative z-10 w-full max-w-7xl mx-auto flex flex-col items-center justify-center flex-1 min-h-0 py-(--section-pad)">
 
-        <h2 className="text-[clamp(1.25rem,min(4.5vw,7vw),4.5rem)] font-[900] text-center mb-[clamp(0.5rem,1.5vw,3rem)] tracking-tighter lowercase leading-[1.08] flex flex-wrap xl:flex-nowrap justify-center items-center gap-x-2 md:gap-x-4 w-full [text-wrap:balance] flex-shrink-0">
+        <h2 className="text-(length:--fs-headline-tight) font-[900] text-center mb-(--rythm-blk) tracking-tighter lowercase leading-(--lh-headline) flex flex-wrap xl:flex-nowrap justify-center items-center gap-x-2 md:gap-x-4 w-full [text-wrap:balance] flex-shrink-0">
           <span className="whitespace-nowrap">{t('howItWorks.title.simple')}</span>
           <span className="whitespace-nowrap flex items-center">
             {t('howItWorks.title.win')}
 
-            <span className="flex items-center -space-x-3 md:-space-x-4 ml-2 md:ml-4 -mt-2">
+            <span className="relative grid grid-cols-[1.1rem_0.9rem] items-end justify-items-center ml-2 md:ml-4 -mt-2">
               <Image
                 src="/star-decoration.svg"
                 alt=""
                 width={83}
                 height={82}
-                className="w-10 h-10 md:w-14 md:h-14 lg:w-[60px] lg:h-[60px] object-contain relative z-10 rotate-12 scale-95"
+                className="w-10 h-10 md:w-14 md:h-14 lg:w-[60px] lg:h-[60px] object-contain relative z-10 rotate-12 scale-95 max-w-none"
               />
               <Image
                 src="/star-decoration-alt.svg"
                 alt=""
                 width={81}
                 height={79}
-                className="w-8 h-8 md:w-10 md:h-10 lg:w-[45px] lg:h-[45px] object-contain relative z-0 -rotate-[15deg] scale-110"
+                className="w-8 h-8 md:w-10 md:h-10 lg:w-[45px] lg:h-[45px] object-contain relative z-0 -rotate-[15deg] scale-110 -ml-3 md:-ml-4 max-w-none"
               />
             </span>
           </span>
         </h2>
 
-        {/* Mobile: vertical stack | Desktop: asymmetric 3-col grid */}
-        <div className="flex flex-col items-center gap-[clamp(0.75rem,2.5svh,2rem)] sm:grid sm:grid-cols-3 sm:gap-6 sm:items-center sm:w-full sm:max-w-6xl flex-shrink min-h-0">
+        {/* Auto-fit grid: 1 col mobile → up to 3 cols desktop */}
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(clamp(9rem,26svh,12rem),1fr))] items-center justify-items-center gap-(--rythm-blk) w-full max-w-6xl flex-shrink min-h-0">
           {steps.map((step, index) => (
-            <div key={index} className="relative flex flex-col items-center w-full max-w-xs lg:max-w-none shrink">
+            <div key={index} className="relative flex flex-col items-center w-full max-w-xs lg:max-w-none">
 
-              <div className={`relative ${cardSizeClasses[index]} bg-white rounded-3xl md:rounded-4xl border-[3px] border-black shadow-[4px_4px_0px_0px_#000] flex items-center justify-center overflow-hidden transition-transform hover:-translate-y-2 shrink`}>
+              <div className={`relative ${cardSizeClasses} bg-white rounded-3xl md:rounded-4xl border-[3px] border-black shadow-[4px_4px_0px_0px_#000] flex items-center justify-center overflow-hidden transition-transform hover:-translate-y-2 shrink`}>
                 {step.icon}
               </div>
 

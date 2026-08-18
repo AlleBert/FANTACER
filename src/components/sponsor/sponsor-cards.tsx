@@ -34,7 +34,7 @@ export function SponsorCards({ className, compact }: { className?: string; compa
           {Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
-              className="w-16 sm:w-20 md:w-24 lg:w-28 xl:w-32 aspect-square bg-white/90 rounded-2xl md:rounded-[2rem] shadow-[4px_4px_0px_0px_#000] border-[3px] md:border-[4px] border-black animate-pulse"
+              className="w-[clamp(4rem,11vw,8rem)] aspect-square bg-white/90 rounded-2xl md:rounded-[2rem] shadow-[4px_4px_0px_0px_#000] border-[3px] md:border-[4px] border-black animate-pulse"
             />
           ))}
         </div>
@@ -44,10 +44,8 @@ export function SponsorCards({ className, compact }: { className?: string; compa
 
   if (!sponsors || sponsors.length === 0) return null;
 
-  const compactCardWidth = 'w-12 sm:w-14 md:w-16 lg:w-20';
-  const cardWidth = compact
-    ? compactCardWidth
-    : 'w-16 sm:w-20 md:w-24 lg:w-28 xl:w-32';
+  const compactCardWidth = 'w-[clamp(3rem,9vw,5rem)]';
+  const cardWidth = compact ? compactCardWidth : 'w-[clamp(4rem,11vw,8rem)]';
   const cardPadding = compact ? 'p-2' : 'p-3';
   const cardGap = compact ? 'gap-3 sm:gap-4 md:gap-5' : 'gap-4 sm:gap-6 md:gap-8';
   const cardWrapper = `flex flex-wrap items-center justify-center ${cardGap} w-full max-w-4xl mx-auto`;

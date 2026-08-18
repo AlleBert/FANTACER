@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { submitVote } from '@/lib/supabase/vote-api'
 import { getActiveBatch } from '@/lib/supabase/batch'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { resolveFingerprint } from '@/lib/vote-dev-bypass'
 import { LOCALE_COOKIE, resolveLocale } from '@/lib/locale'
 import { translate } from '@/i18n'
 
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest) {
     const country = request.headers.get('cf-ipcountry') || 'IT'
 
     const { success, error: submitError } = await submitVote({
-      fingerprint: visitorId,
+      fingerprint: resolveFingerprint(visitorId),
       ip,
       userAgent,
       country,

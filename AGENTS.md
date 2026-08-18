@@ -9,7 +9,7 @@ La webapp è un gioco multi-device con sezioni full-page a snap. La responsivene
 - Progetta ogni sezione per il **viewport disponibile**, mai per una dimensione fissa.
 - Le sezioni full-page usano `h-[100dvh]` (o il token `--app-height` che è `100dvh` con fallback `100vh`, definito in `src/app/globals.css`). **Non usare `100vh` nudo** e non aggiungere `min-height: 100vh` senza verificare l'effetto reale su mobile.
 - Valuta `dvh`/`svh`/`lvh` in base al comportamento desiderato (URL bar mobile, browser chrome).
-- `SearchSection` è l'unica sezione non fissa: usa `.app-screen` (min-height `var(--app-height)`), cresce col contenuto in modo intenzionale.
+- `SearchSection` e `SuccessSection` sono le sezioni non fisse: usano `grow` su `SectionFrame` → `.app-screen` (min-height `var(--app-height)`), crescono col contenuto in modo intenzionale. Tutte le altre sezioni usano `snap-screen` (`h-[100dvh]`).
 
 ### Zero micro-scroll
 
@@ -41,6 +41,13 @@ La webapp è un gioco multi-device con sezioni full-page a snap. La responsivene
 - Le safe-area vanno integrate nel sistema di spacing, non aggiunte a singoli elementi. Attenzione a notch, Dynamic Island, home indicator, landscape, elementi fixed/sticky, HUD di gioco, CTA, nav, elementi ancorati ai bordi.
 - `viewportFit: cover` è già attivo in `src/app/layout.tsx`.
 
+### Design tokens
+
+- Usa i token di sistema definiti in `globals.css`: spacing/ritmo (`--space-*`, `--rythm-*`, `--section-pad`, `--card-size`), tipografia (`--fs-*`, `--lh-*`), contenuto (`--content-max`, `--measure-*`), CTA (`--cta-*`). **Non introdurre nuove costanti di spacing/tipografia/misure.**
+- Sintassi Tailwind v4: `gap-(--x)`, `max-w-(--x)`, `leading-(--x)`, `py-(--x)`; per i **font-size usa `text-(length:--fs-*)`** (senza `length:` compila a `color`).
+- `.content-max` sostituisce `max-w-7xl mx-auto` e `max-w-[1200px]`; `CtaButton` (`src/components/ui/cta-button.tsx`) è l'unico CTA «GIOCA».
+- Se un valore `clamp` si dimostra sbagliato in audit, correggi la causa strutturale (spacing/tipografia); rivedi il token in `globals.css` (SSOT) solo in caso estremo.
+
 ### Animazioni
 
 - **NON introdurre Framer Motion/Motion per risolvere problemi responsive.** Prima risolvi il layout con CSS/HTML.
@@ -59,6 +66,7 @@ La webapp è un gioco multi-device con sezioni full-page a snap. La responsivene
 ### Note operative audit
 
 - **WebKit**: gli audit iOS richiedono `--workers=1`; **non lanciare due suite WebKit in parallelo** (connection-refused). Le suite modali (`safearea`, `chrome`) girano solo con `VISUAL_IOS_MODAL=1`.
+- **Workers**: `playwright.config.ts` imposta `workers: 1` di default. I login MFA admin (AAL2) condividono rate limit e sessione (`cachedAdminCookies` per worker): il parallelismo li fa fallire in modo flaky anche senza modifiche al codice. Non sovrascrivere con `--workers` se non per un motivo esplicito.
 - **Banner cookie**: gli spec che catturano schermate pubbliche pre-impostano il cookie `fantacer_cookie_consent` (`seedConsentCookie` in `tests/e2e/helpers/cookie-consent.ts`) → il banner non compare nelle schermate, zero attese. Se aggiungi screenshot a uno spec pubblico, chiama il seed prima del `goto`.
 - Il **gate strutturale** e i **report riepilogativi** richiedono che le sezioni siano `main > section`; aggiorna selettori se il DOM cambia.
 
@@ -83,3 +91,21 @@ La webapp è un gioco multi-device con sezioni full-page a snap. La responsivene
 - Le suite E2E autenticate (visual-audit, accessibility, admin, viewer) **riusano la sessione admin a livello di modulo** (`cachedAdminCookies` in `tests/e2e/helpers/auth.ts`): il primo test esegue il login MFA completo, i successivi riutilizzano i cookie. Non duplicare il login: ogni MFA login consuma una verify nel rate limit.
 - In `.env.local` sono già presenti `ADMIN_LOGIN_RATE_MAX=100` e `ADMIN_MFA_VERIFY_RATE_MAX=100` per le suite E2E. Se il server dev era già avviato prima di una modifica a `.env.local`, **riavviarlo** (le env sono lette allo startup da `next dev`).
 - I counter del rate limit vivono in DB (`public.rate_limits`): un run fallito lascia tentativi conteggiati per 15min. In caso di "ratelimited" inspiegabile, svuotare le righe con key `admin:login:*` / `admin:mfa:*` o attendere la finestra.
+
+## E2E e stato Admin — invarianti
+
+- Gli input dell'Admin page (`site_settings`, `batch_settings`) sono stato di
+  **competenza esclusiva dell'Admin**: nessun test può modificarli su production.
+- Gli E2E girano **esclusivamente** sul progetto Supabase `fantacer-e2e`
+  (`.env.e2e`), mai sul progetto production (`zdfverdwdsigizxktilz`).
+- `playwright.config.ts` blocca all'avvio qualsiasi URL Supabase diverso da
+  `fantacer-e2e` (guard fail-fast): E2E → production è impedito per costruzione.
+- Nessun test riattiva/disattiva il voto o altera lo stato Admin su production.
+- Se un test deve alterare stato Admin (batch, voting_enabled, sponsor, voti),
+  lo fa esclusivamente sul progetto E2E (seeding in `global-setup.ts`).
+- Percorso ufficiale setup: `.env.e2e` (gitignored) + `npm run provision:e2e:admin:test`.
+  Il webServer Playwright parte sempre lui (`reuseExistingServer: false`):
+  non riusare un `next dev` avviato a mano che potrebbe puntare a prod.
+- Il job CI usa solo secrets `*_TEST`; i secrets production vivono solo in Vercel.
+- Canary manuale su production dopo un run E2E (mai automatizzato, vedi `docs/CI.md`):
+  verificare che `batch_settings.active_batch` e `site_settings` non siano cambiati.

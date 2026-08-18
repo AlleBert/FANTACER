@@ -12,7 +12,7 @@ function IphoneStoryMockup({ companyName }: { companyName?: string }) {
   const { t } = useLocale()
   return (
     <div 
-      className="relative w-[140px] xs:w-[160px] sm:w-[200px] md:w-[250px] lg:w-[300px] xl:w-[340px] mx-auto lg:mx-0 shrink-0 transform md:rotate-1"
+      className="relative w-[clamp(8.75rem,34vw,21.25rem)] mx-auto lg:mx-0 shrink-0 transform md:rotate-1"
       style={{ aspectRatio: '252 / 479' }}
     >
       {/* Background/Shadow layer - matches phone shape without shadowing SVG text */}
@@ -33,7 +33,7 @@ function IphoneStoryMockup({ companyName }: { companyName?: string }) {
       <div className="absolute inset-x-[6%] top-[8%] bottom-[5%] z-10 flex flex-col justify-between py-4 px-2">
         
         {/* Story Text Content Area */}
-        <div className="flex flex-col items-center justify-center space-y-2.5 text-center mt-2 md:mt-4">
+        <div className="flex flex-col items-center justify-center gap-(--space-sm) text-center mt-2 md:mt-4">
           <div className="bg-black/85 px-3.5 py-1.5 rounded-xl backdrop-blur-sm inline-block">
             <h3 className="text-sm md:text-base font-bold text-white leading-tight">
               {t('success.voted')} <br/> <span className="text-bright">{companyName || t('success.noCompany')}</span>
@@ -48,7 +48,7 @@ function IphoneStoryMockup({ companyName }: { companyName?: string }) {
         </div>
 
         {/* Footer Content */}
-        <div className="flex flex-col items-center space-y-6 pb-2">
+        <div className="flex flex-col items-center gap-(--space-lg) pb-2">
           
           <div className="bg-gradient-to-r from-purple to-coral p-[1.5px] rounded-2xl w-[85%] transform rotate-1">
              <div className="bg-white w-full rounded-[14px] py-1.5 px-0.5 text-center">
@@ -76,6 +76,8 @@ export function SuccessSection() {
   const { t } = useLocale();
 
   useEffect(() => {
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
     const colors = ['#fccb27', '#8000ff', '#ff803b', '#4B00AB', '#ffffff'];
 
     const timer = setTimeout(() => {
@@ -100,26 +102,26 @@ export function SuccessSection() {
   }, []);
 
   return (
-    <SectionFrame theme="success" className="flex flex-col justify-between py-4">
-      <div className="safe-shell relative z-10 flex flex-col items-center justify-center max-w-[1200px] mx-auto gap-16 py-12 lg:flex-row lg:justify-between lg:gap-20 lg:py-20 flex-1 min-h-0">
+    <SectionFrame theme="success" grow className="flex flex-col justify-between">
+      <div className="safe-shell relative z-10 flex flex-col items-center justify-center content-max gap-(--rythm-sec) py-(--section-pad) lg:flex-row lg:justify-between lg:gap-20 lg:py-20 flex-1 min-h-0">
         
           {/* Left Column: Text & Logos */}
           <div className="relative flex w-full flex-col items-center text-center lg:w-[55%] lg:items-start lg:text-left">
           {/* Title */}
-          <h2 className="text-[clamp(2.5rem,10vw,80px)] leading-[0.85] font-black mb-4 lg:mb-10 text-purple uppercase tracking-tighter">
+          <h2 className="text-(length:--fs-headline) leading-(--lh-display) font-black mb-4 lg:mb-10 text-purple uppercase tracking-tighter">
             {t('success.youRock')}
           </h2>
           
         
-          <div className="space-y-8 mb-12 lg:mb-12 w-full max-w-xl">
+          <div className="flex flex-col gap-(--space-xl) mb-(--rythm-sec) w-full max-w-xl">
             <p className="text-2xl sm:text-xl md:text-3xl lg:text-4xl font-[900] text-ink leading-tight uppercase tracking-tight">
-              {t('success.shareSocial')} <br/> {t('success.shareTagging')} <span className="bg-bright px-2 border-2 border-black rounded-lg inline-block rotate-1 shadow-[2px_2px_0_#000]">@fantacer</span>
+              {t('success.shareSocial')} <br/> {t('success.shareTagging')} <span className="bg-bright px-2 border-2 border-black rounded-lg inline-block rotate-1 shadow-[2px_2px_0_#000]">@fanta.cer</span>
             </p>
             <div className="flex justify-center lg:justify-start pt-2 gap-6">
               <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-instagram w-11 h-11 md:w-14 md:h-14 lg:w-16 lg:h-16 text-black transition-transform hover:scale-110"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
               <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-facebook w-11 h-11 md:w-14 md:h-14 lg:w-16 lg:h-16 text-black transition-transform hover:scale-110"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
             </div>
-            <p className="text-2xl sm:text-xl md:text-3xl lg:text-4xl font-[900] text-white lg:text-ink leading-[1.2] uppercase tracking-tight mt-8 lg:mt-12">
+            <p className="text-2xl sm:text-xl md:text-3xl lg:text-4xl font-[900] text-white lg:text-ink leading-[1.2] uppercase tracking-tight">
               {t('success.collectPrize')}
             </p>
           </div>
@@ -128,7 +130,7 @@ export function SuccessSection() {
         </div>
 
           {/* Right Column: Mobile Story Mockup */}
-          <div className="relative mt-4 hidden w-full justify-center lg:mt-0 lg:flex lg:w-[45%] lg:justify-end">
+          <div className="relative mt-(--rythm-blk) flex w-full justify-center lg:mt-0 lg:w-[45%] lg:justify-end">
             {/* Decorative Floating Stars */}
             <div className="absolute top-[2%] right-[20%] -z-10 lg:right-[10%]">
               <Image

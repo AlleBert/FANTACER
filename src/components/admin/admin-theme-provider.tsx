@@ -11,13 +11,34 @@ interface AdminThemeContextType {
 
 const AdminThemeContext = createContext<AdminThemeContextType | undefined>(undefined)
 
-export function AdminThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window !== 'undefined') {
-      return (localStorage.getItem('admin-theme') as Theme) || 'light'
-    }
+const THEME_STORAGE_KEY = 'admin-theme'
+
+/**
+ * Storage access must never throw: on mobile browsers with blocked site data
+ * (Safari private browsing, "Prevent Cross-Site Tracking", in-app browsers)
+ * `localStorage` methods throw SecurityError. An uncaught throw here during
+ * render used to bubble to the global error boundary → phantom "500" page
+ * while the server was returning 200.
+ */
+function readTheme(): Theme {
+  if (typeof window === 'undefined') return 'light'
+  try {
+    return (localStorage.getItem(THEME_STORAGE_KEY) as Theme) || 'light'
+  } catch {
     return 'light'
-  })
+  }
+}
+
+function writeTheme(theme: Theme): void {
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, theme)
+  } catch {
+    // storage non disponibile: il tema resta in-memory
+  }
+}
+
+export function AdminThemeProvider({ children }: { children: React.ReactNode }) {
+  const [theme, setTheme] = useState<Theme>(readTheme)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -27,7 +48,7 @@ export function AdminThemeProvider({ children }: { children: React.ReactNode }) 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light'
     setTheme(newTheme)
-    localStorage.setItem('admin-theme', newTheme)
+    writeTheme(newTheme)
   }
 
   return (

@@ -13,6 +13,7 @@
  *
  * Requires NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in the
  * environment (loaded from .env by the npm script via --env-file-if-exists=.env).
+ * The E2E_ADMIN_* variables are written to the file given by --env-file (default .env.local).
  */
 import { createClient } from '@supabase/supabase-js'
 import { createHmac } from 'node:crypto'
@@ -36,7 +37,7 @@ function fail(message) {
 
 const FLAG_RE = /^--([a-z-]+)(?:=(.*))?$/
 const ROLES = ['admin', 'viewer']
-const args = { email: null, password: null, force: false, verify: false, yes: false, role: null, help: false }
+const args = { email: null, password: null, force: false, verify: false, yes: false, role: null, help: false, envFile: null }
 for (const raw of process.argv.slice(2)) {
   const m = raw.match(FLAG_RE)
   if (!m) fail(`Argomento non riconosciuto: ${raw}. Uso: --email=, --password=, --role=, --force, --verify, --yes, --help`)
@@ -49,6 +50,7 @@ for (const raw of process.argv.slice(2)) {
   else if (key === 'email' && value) args.email = value
   else if (key === 'password' && value) args.password = value
   else if (key === 'role' && value && ROLES.includes(value)) args.role = value
+  else if (key === 'env-file' && value) args.envFile = value
   else if (key === 'role') fail(`Valore role non valido: --role=${value} (attesi: ${ROLES.join(' | ')}).`)
   else fail(`Flag non riconosciuto o valore mancante: --${key}`)
 }
@@ -69,6 +71,7 @@ Flags:
   --password=...  password (se omesso viene chiesta interattivamente)
   --role=...      ruolo da assegnare: admin (default, MFA TOTP obbligatoria)
                   oppure viewer (read-only, AAL1, niente TOTP)
+  --env-file=...  file dove scrivere E2E_ADMIN_* (default: .env.local)
   --force         rimuove il factor TOTP esistente (se verified) e ne enrolla uno nuovo
   --verify        esegue un login E2E completo (password + TOTP) per validare le env
   --yes           risponde "sì" ai prompt (uso non-interattivo)
@@ -201,7 +204,7 @@ async function stepEnsureAdminRow(admin, email, userId, role) {
     .maybeSingle()
   if (existing) {
     const patch = {}
-    if (!existing.auth_id) patch.auth_id = userId
+    if (existing.auth_id !== userId) patch.auth_id = userId
     if (!existing.is_active) patch.is_active = true
     if (existing.role !== role) patch.role = role
     if (Object.keys(patch).length) {
@@ -324,8 +327,8 @@ function writeQrSvg(qrCode) {
   return path
 }
 
-function writeEnvLocal(email, password, secret) {
-  const envPath = resolve(process.cwd(), '.env.local')
+function writeEnvFile(email, password, secret) {
+  const envPath = resolve(process.cwd(), args.envFile || '.env.local')
   let content = ''
   try {
     content = readFileSync(envPath, 'utf8')
@@ -337,7 +340,7 @@ function writeEnvLocal(email, password, secret) {
     '# E2E admin (generato da npm run provision:e2e:admin)',
     `E2E_ADMIN_EMAIL=${email}`,
     `E2E_ADMIN_PASSWORD=${password}`,
-    `E2E_ADMIN_TOTP_SECRET=${secret}`,
+    `E2E_ADMIN_TOTP_SECRET=${secret ? secret.toLowerCase() : ''}`,
     '',
   ].join('\n')
   content = content.trimEnd() + (content.trimEnd() ? '\n' : '') + block
@@ -364,7 +367,7 @@ async function main() {
   if (password.length < 8) {
     fail('Password troppo corta (< 8 caratteri — Supabase Auth richiede almeno 8). ' +
       '\nPromemoria: per i test E2E può essere una password generata lunga, ma DEVI ricordarla: ' +
-      'è quella che Playwright usa per il login (E2E_ADMIN_PASSWORD in .env.local).')
+      'è quella che Playwright usa per il login (E2E_ADMIN_PASSWORD nel file --env-file).')
   }
 
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
@@ -401,14 +404,14 @@ ${qrPath ? `QR SVG: ${qrPath} — apri il file e scansiona con l'app authenticat
 ──────────────────────────────────────────────`)
 
   if (role === 'admin' && totp.secret) {
-    const writeOk = args.yes ? true : await askYesNo('\nScrivere queste variabili in .env.local? (sì/no): ')
+    const writeOk = args.yes ? true : await askYesNo(`\nScrivere queste variabili in ${args.envFile || '.env.local'}? (sì/no): `)
     if (writeOk) {
-      writeEnvLocal(email, password, totp.secret)
+      writeEnvFile(email, password, totp.secret)
     } else {
       console.log('  (il secret TOTP si vede SOLO qui — copialo subito)')
     }
   } else {
-    console.log('  (role viewer: nessuna variabile TOTP da scrivere in .env.local)')
+    console.log(`  (role viewer: nessuna variabile TOTP da scrivere in ${args.envFile || '.env.local'})`)
   }
 
   if (args.verify && role === 'admin') {

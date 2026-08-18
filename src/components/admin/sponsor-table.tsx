@@ -6,6 +6,7 @@ interface Sponsor {
   image_url: string | null;
   website_url: string | null;
   is_active: boolean;
+  has_stand: boolean;
   sort_order: number;
 }
 
@@ -14,10 +15,11 @@ interface SponsorTableProps {
   onEdit: (sponsor: Sponsor) => void;
   onDelete: (id: string) => void;
   onToggleActive: (sponsor: Sponsor) => void;
+  onToggleStand: (sponsor: Sponsor) => void;
   readOnly?: boolean;
 }
 
-export function SponsorTable({ sponsors, onEdit, onDelete, onToggleActive, readOnly }: SponsorTableProps) {
+export function SponsorTable({ sponsors, onEdit, onDelete, onToggleActive, onToggleStand, readOnly }: SponsorTableProps) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
@@ -28,6 +30,7 @@ export function SponsorTable({ sponsors, onEdit, onDelete, onToggleActive, readO
             <th className="p-3 font-black">Logo</th>
             <th className="p-3 font-black">Link</th>
             <th className="p-3 font-black">Attivo</th>
+            <th className="p-3 font-black">Stand</th>
             {!readOnly && <th className="p-3 font-black">Azioni</th>}
           </tr>
         </thead>
@@ -67,6 +70,24 @@ export function SponsorTable({ sponsors, onEdit, onDelete, onToggleActive, readO
                     }`}
                   >
                     {sponsor.is_active ? 'SÌ' : 'NO'}
+                  </button>
+                )}
+              </td>
+              <td className="p-3">
+                {readOnly ? (
+                  <span className={`px-3 py-2.5 rounded-full text-xs font-bold text-black ${
+                    sponsor.has_stand ? 'bg-blue-400' : 'bg-gray-200 text-gray-500'
+                  }`}>
+                    {sponsor.has_stand ? 'SÌ' : 'NO'}
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => onToggleStand(sponsor)}
+                    className={`px-3 py-2.5 rounded-full text-xs font-bold border-2 border-black transition-colors ${
+                      sponsor.has_stand ? 'bg-blue-400 text-black' : 'bg-gray-200 text-gray-500'
+                    }`}
+                  >
+                    {sponsor.has_stand ? 'SÌ' : 'NO'}
                   </button>
                 )}
               </td>

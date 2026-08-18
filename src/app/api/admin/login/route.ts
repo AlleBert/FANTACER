@@ -66,8 +66,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Credenziali non valide' }, { status: 401 })
     }
 
-    // 3. Link auth_id if missing
-    if (!adminUser.auth_id) {
+    // 3. Link auth_id if missing or stale (e.g. auth user was re-provisioned
+    //    with a new id). Self-heals the admin_users → auth.users relationship
+    //    so requireAdmin lookup by auth_id always resolves.
+    if (adminUser.auth_id !== data.user.id) {
       await adminSupabase
         .from('admin_users')
         .update({ auth_id: data.user.id })

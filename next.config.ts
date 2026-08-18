@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+if (!supabaseUrl) {
+  throw new Error(
+    'NEXT_PUBLIC_SUPABASE_URL mancante: richiesta per images.remotePatterns (nessun fallback implicito a production).',
+  );
+}
+
 const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ['@/components/ui', 'lucide-react'],
@@ -11,7 +18,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'zdfverdwdsigizxktilz.supabase.co',
+        hostname: new URL(supabaseUrl).hostname,
         pathname: '/storage/**',
       },
     ],

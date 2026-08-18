@@ -36,6 +36,9 @@ export async function loginAsViewer(page: Page): Promise<void> {
   await page.getByPlaceholder('admin@fantacer.it').fill(VIEWER_EMAIL as string);
   await page.getByPlaceholder('••••••••').fill(VIEWER_PASSWORD as string);
   await page.getByRole('button', { name: 'Accedi' }).click();
+  await page.waitForURL((url) => !url.pathname.startsWith('/admin/login'), {
+    timeout: 15_000,
+  });
   await page.waitForLoadState('networkidle');
 }
 

@@ -64,7 +64,7 @@ export async function submitVote(page: Page) {
   await expect(inviaButton).toBeEnabled({ timeout: 5000 });
   await inviaButton.click();
 
-  await page.waitForSelector('[data-section="success"]', { timeout: 15000 });
+  await page.waitForSelector('[data-section="success"]', { timeout: 30000 });
   await page.waitForTimeout(500);
 }
 

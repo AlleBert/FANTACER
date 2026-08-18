@@ -50,7 +50,7 @@ test.describe('Homepage — Screenshots', () => {
   test('search section', async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
-    const searchSection = page.locator('section').filter({ hasText: /Cerca|Azienda|Company|Search/i }).first();
+    const searchSection = page.locator('section[data-section="search"]');
 
     await searchSection.scrollIntoViewIfNeeded();
     await page.waitForLoadState('networkidle');
