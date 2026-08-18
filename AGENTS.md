@@ -66,6 +66,7 @@ La webapp è un gioco multi-device con sezioni full-page a snap. La responsivene
 ### Note operative audit
 
 - **WebKit**: gli audit iOS richiedono `--workers=1`; **non lanciare due suite WebKit in parallelo** (connection-refused). Le suite modali (`safearea`, `chrome`) girano solo con `VISUAL_IOS_MODAL=1`.
+- **Workers**: `playwright.config.ts` imposta `workers: 1` di default. I login MFA admin (AAL2) condividono rate limit e sessione (`cachedAdminCookies` per worker): il parallelismo li fa fallire in modo flaky anche senza modifiche al codice. Non sovrascrivere con `--workers` se non per un motivo esplicito.
 - **Banner cookie**: gli spec che catturano schermate pubbliche pre-impostano il cookie `fantacer_cookie_consent` (`seedConsentCookie` in `tests/e2e/helpers/cookie-consent.ts`) → il banner non compare nelle schermate, zero attese. Se aggiungi screenshot a uno spec pubblico, chiama il seed prima del `goto`.
 - Il **gate strutturale** e i **report riepilogativi** richiedono che le sezioni siano `main > section`; aggiorna selettori se il DOM cambia.
 

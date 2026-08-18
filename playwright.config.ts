@@ -22,7 +22,10 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: 2,
+  // workers: 1 — i login MFA admin (AAL2) condividono rate limit e sessione
+  // (cachedAdminCookies per worker); l'esecuzione parallela li fa fallire in
+  // modo flaky (auth/session contention). Vale per ogni ambiente, anche CI.
+  workers: 1,
   timeout: 30000,
   snapshotPathTemplate: '{testDir}/screenshots/{projectName}/{testFilePath}/{arg}{ext}',
   use: {
