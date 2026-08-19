@@ -36,7 +36,7 @@ Obiettivi approvati:
 - Ombra morbida leggera per staccare il piatto dal gradiente di sezione.
 - `aspect-ratio: 1/1` (le card restano quadrate: il selettore `.aspect-square` usato da `voting-flow.spec.ts` resta valido).
 - Logo: `object-contain` centrato con padding interno fluido.
-- Fallback senza logo: stesso piatto, nome in `font-black` colore ink a contrasto sufficiente (≥ 4.5:1 su bianco), centrato, `text-balance`.
+- Fallback senza logo: stesso piatto, nome in `font-black` colore `text-ink/70` (contrasto ≈5.9:1 ≥ 4.5:1 su bianco), `[text-wrap:balance]`, centrato.
 - Link: card intera cliccabile (`<a target="_blank" rel="noopener noreferrer">`), hover `-translate-y-1`, `active:scale-95`, focus ring purple (accessibilità, già in stile attuale).
 - Rispetta `prefers-reduced-motion` (già globale in `globals.css`).
 
@@ -47,7 +47,7 @@ Nessuna media query: il layout scaturisce da `flex-wrap` + `clamp()`. Il **min**
 - **4 sponsor** → min **112px**: quattro card non stanno in un viewport ≤ ~520px → wrap naturale **2×2**; sopra, fila unica.
 - **3 sponsor** → min **80px**: a 375px tre card stanno **in fila**.
 - **1 sponsor** → card grande centrale.
-- **flex-grow** espande le card per occupare la riga (niente buchi su tablet/desktop); **max-width** le frena a una soglia armoniosa.
+- **Crescita con lo spazio**: il termine `vw` del `clamp()` ingrandisce le card al crescere del viewport (no-op `flex-grow`: `max-width` è ≤ `flex-basis`, quindi le card restano **centrate** alla misura del clamp — blocco compatto centrato, coerente con la filosofia `content-max` del sito; nessun riempimento edge-to-edge). `max-width` frena a una soglia armoniosa per conteggio.
 
 Token nuovi in `:root` (globals.css, SSOT):
 
