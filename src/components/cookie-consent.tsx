@@ -49,10 +49,19 @@ let cachedConsentValue: DetailedCookieConsent | null = null
 function readStoredConsent(): DetailedCookieConsent | null {
   if (typeof window === 'undefined') return null
   const prefix = `${COOKIE_CONSENT_KEY}=`
-  const row = document.cookie
-    .split(';')
-    .map((c) => c.trim())
-    .find((c) => c.startsWith(prefix))
+  let row: string | undefined
+  try {
+    row = document.cookie
+      .split(';')
+      .map((c) => c.trim())
+      .find((c) => c.startsWith(prefix))
+  } catch {
+    // Site-data bloccati (Safari private browsing, "Prevent Cross-Site
+    // Tracking", in-app browser): document.cookie lancia SecurityError.
+    // Nessun consenso leggibile → trattato come "nessun consenso salvato".
+    // La cache resta invariata (null) per non servire snapshot inconsistenti.
+    return null
+  }
   const raw = row ? row.slice(prefix.length) : null
   if (raw === cachedConsentRaw) return cachedConsentValue
   cachedConsentRaw = raw
