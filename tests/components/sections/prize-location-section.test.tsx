@@ -32,6 +32,8 @@ jest.mock('@/components/sponsor/sponsor-cards', () => ({
 describe('PrizeLocationSection', () => {
   beforeEach(() => {
     receivedProps.length = 0
+    mockHolder.subscribe.mockClear()
+    mockHolder.removeChannel.mockClear()
   })
 
   it('usa SponsorCards variant=large + standOnly', () => {
@@ -51,6 +53,13 @@ describe('PrizeLocationSection', () => {
     await act(async () => {
       mockHolder.cb?.()
     })
-    expect(receivedProps[1].refreshKey).toBe(1)
+    const last = receivedProps.at(-1)
+    expect(last?.refreshKey).toBe(1)
+  })
+
+  it('chiama removeChannel all\'unmount', () => {
+    const { unmount } = render(<PrizeLocationSection />)
+    unmount()
+    expect(mockHolder.removeChannel).toHaveBeenCalled()
   })
 })
