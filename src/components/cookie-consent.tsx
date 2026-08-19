@@ -21,7 +21,7 @@ export const COOKIE_CONSENT_KEY = 'fantacer_cookie_consent'
  * voce (e fornire i contenuti) e i toggle riappaiono nel pannello.
  */
 export const COOKIE_CATEGORIES: CookieCategories = {
-  Analytics: false,
+  Analytics: true,
   Social: false,
   Advertising: false,
 }

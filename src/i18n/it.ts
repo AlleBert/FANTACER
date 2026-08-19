@@ -1,8 +1,9 @@
 import type { Dictionary } from './dictionary'
 
 export const it: Dictionary = {
-  'meta.title': 'FANTACER - Gioca e Vinci',
-  'meta.description': 'Il primo gioco semiserio del distretto ceramico',
+  'meta.title': 'FANTACER — Il gioco del distretto ceramico: vota e vinci',
+  'meta.description':
+    'Vota la tua azienda preferita del distretto ceramico a Cersaie, Bologna. Un voto al giorno, condividi e ritira il tuo gadget: qui si vince sempre!',
 
   'hero.play': 'GIOCA',
 
@@ -215,7 +216,7 @@ export const it: Dictionary = {
   'terms.oneVotePerDay': 'Un voto al giorno per dispositivo: puoi votare una sola volta ogni 24 ore (reset a mezzanotte CEST).',
   'terms.threeCompanies': 'Tre aziende distinte: devi selezionare esattamente 3 aziende diverse tra quelle proposte.',
   'terms.prizeCollection': 'Ritiro del premio',
-  'terms.prizeDetails': 'Il premio consiste in un gadget (es. borsa, t-shirt, portachiavi a seconda della disponibilità) da ritirare presso lo stand/area Fantacer a Cersaie, mostrando la schermata di conferma o il QR code ricevuto dopo il voto.',
+  'terms.prizeDetails': 'Il premio consiste in un gadget (es. borsa, t-shirt, portachiavi a seconda della disponibilità) da ritirare presso lo stand/area Fantacer a Cersaie, mostrando la schermata di conferma dopo il voto.',
   'terms.fairDates': 'Il ritiro è possibile solo nei giorni di fiera: 21–25 settembre 2026.',
   'terms.gadget': 'Il gadget non ha valore economico significativo e non è convertibile in denaro.',
   'terms.noCashAlternative': 'Nessuna alternativa in denaro o spedizione: il premio va ritirato personalmente in fiera.',
@@ -229,7 +230,7 @@ export const it: Dictionary = {
   'terms.disclaimer': 'Esclusione di garanzie',
   'terms.disclaimerDesc': 'Il servizio è fornito "così com\'è" per la durata dell\'evento. Non garantiamo disponibilità ininterrotta, assenza di errori, né qualità del gadget.',
   'terms.limitation': 'Limitazione di responsabilità',
-  'terms.maxLiability': 'La nostra responsabilità massima è limitata a 100 € (o all\'importo pagato, che è zero).',
+  'terms.maxLiability': 'Non rispondiamo per danni indiretti, consequenziali o accidentali.',
   'terms.noIndirectDamages': 'Non rispondiamo per danni indiretti, consequenziali, perdita di chance, dati o profitti.',
   'terms.termination': 'Risoluzione',
   'terms.organizerMayEnd': 'L\'organizzatore può terminare il gioco in anticipo per cause di forza maggiore o tecniche.',
@@ -242,4 +243,30 @@ export const it: Dictionary = {
   'terms.changesDesc': 'Eventuali modifiche saranno pubblicate su questa pagina. L\'uso continuato del servizio implica accettazione.',
   'terms.contact': 'Contatti',
   'terms.contactDesc': 'Per informazioni: team@fantacer.com.',
+
+  // Legal pages - Summary boxes
+  'cookiePolicy.summaryTitle': 'In breve',
+  'cookiePolicy.summaryText': 'Usiamo solo cookie essenziali per far funzionare il gioco. Niente tracciamenti invasivi, niente sorprese. I dati sono al sicuro.',
+  'cookiePolicy.essentialSectionTitle': 'Cookie Tecnici/Essenziali',
+  'cookiePolicy.analyticsSectionTitle': 'Cookie Analytics/Terze Parti',
+  'cookiePolicy.badgeAlwaysActive': 'Sempre attivi',
+  'cookiePolicy.badgeRequiresConsent': 'Soggetti a consenso',
+
+  'privacyPolicy.summaryTitle': 'In breve — La tua privacy è al sicuro',
+  'privacyPolicy.summaryWho': '🏢 Chi siamo',
+  'privacyPolicy.summaryWhoDesc': 'Andrea Borghi, P.IVA 02108240355',
+  'privacyPolicy.summaryWhat': '📊 Cosa raccogliamo',
+  'privacyPolicy.summaryWhatDesc': 'Solo dati essenziali per il gioco',
+  'privacyPolicy.summaryHow': '🔒 Come li proteggiamo',
+  'privacyPolicy.summaryHowDesc': 'Server UE (Supabase Francoforte)',
+  'privacyPolicy.summaryContact': '📧 Contattaci',
+  'privacyPolicy.summaryContactDesc': 'team@fantacer.com',
+
+  'terms.summaryTitle': 'In breve — Come funziona il gioco',
+  'terms.summaryText': 'Fantacer è un gioco gratuito riservato ai visitatori di Cersaie 2026 (Bologna Fiere, 21-25 settembre). Vota il tuo stand preferito e ritira un gadget mostrando la conferma di voto!',
+  'terms.goldenRulesTitle': '✨ Le 3 Regole d\'Oro',
+  'terms.goldenRule1': 'Un voto al giorno per dispositivo (reset a mezzanotte CEST)',
+  'terms.goldenRule2': 'Scegli esattamente 3 aziende distinte tra quelle partecipanti',
+  'terms.goldenRule3': 'Supera la verifica Turnstile e mostra la schermata di conferma per ritirare il gadget',
+  'terms.legalDetailsTitle': '⚖️ Clausole legali complete',
 }

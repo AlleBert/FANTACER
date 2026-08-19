@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { LegalPage } from '@/components/legal/legal-page'
+import { LegalPageLayout } from '@/components/legal/legal-page-layout'
 import { dictionaries } from '@/i18n'
 import { LOCALE_COOKIE, resolveLocale } from '@/lib/locale'
 import { cookies, headers } from 'next/headers'
@@ -32,7 +32,7 @@ export default async function CookiePolicyPage() {
     return text
   }
 
-  const cookieTable = [
+  const essentialCookies = [
     {
       cookie: 'supabase-auth-token',
       purpose: t('cookiePolicy.essentialDesc'),
@@ -57,6 +57,9 @@ export default async function CookiePolicyPage() {
       duration: 'Sessione',
       provider: 'Cloudflare',
     },
+  ]
+
+  const analyticsCookies = [
     {
       cookie: '_ga, _ga_*',
       purpose: 'Analytics Google (GA4)',
@@ -75,17 +78,25 @@ export default async function CookiePolicyPage() {
     { id: 'contact', label: t('cookiePolicy.contact') },
   ]
 
+  const summaryBox = (
+    <div>
+      <h2 className="text-lg font-black text-ink mb-2">
+        🍪 {t('cookiePolicy.summaryTitle')}
+      </h2>
+      <p className="text-sm text-ink/80 leading-relaxed">
+        {t('cookiePolicy.summaryText')}
+      </p>
+    </div>
+  )
+
   return (
-    <LegalPage
+    <LegalPageLayout
       toc={toc}
       titleKey="cookiePolicy.title"
       lastUpdatedKey="cookiePolicy.lastUpdated"
+      summaryBox={summaryBox}
+      summaryColor="yellow"
     >
-      <section id="intro" aria-labelledby="intro-heading">
-        <p>{t('cookiePolicy.intro')}</p>
-        <p>{t('cookiePolicy.whatAreCookiesDesc')}</p>
-      </section>
-
       <section id="what-are-cookies" aria-labelledby="what-are-cookies-heading">
         <h2 id="what-are-cookies-heading">{t('cookiePolicy.whatAreCookies')}</h2>
         <p>{t('cookiePolicy.whatAreCookiesDesc')}</p>
@@ -97,9 +108,13 @@ export default async function CookiePolicyPage() {
 
       <section id="essential" aria-labelledby="essential-heading">
         <h2 id="essential-heading">{t('cookiePolicy.essential')}</h2>
-        <p className="muted">{t('cookiePolicy.essentialDesc')}</p>
+        <div className="flex items-center gap-2 mb-3">
+          <span className="inline-block rounded-full bg-green-500 text-white text-xs font-bold px-3 py-1">
+            {t('cookiePolicy.badgeAlwaysActive')}
+          </span>
+        </div>
         <div className="table-scroll">
-          <table className="cookie-table">
+          <table className="cookie-table table-card-mobile">
             <thead>
               <tr>
                 <th>{t('cookiePolicy.tableCookie')}</th>
@@ -109,16 +124,14 @@ export default async function CookiePolicyPage() {
               </tr>
             </thead>
             <tbody>
-              {cookieTable
-                .filter((c) => !c.cookie.includes('_ga'))
-                .map((row, i) => (
-                  <tr key={i}>
-                    <td><code>{row.cookie}</code></td>
-                    <td>{row.purpose}</td>
-                    <td>{row.duration}</td>
-                    <td>{row.provider}</td>
-                  </tr>
-                ))}
+              {essentialCookies.map((row, i) => (
+                <tr key={i}>
+                  <td data-label={t('cookiePolicy.tableCookie')}><code>{row.cookie}</code></td>
+                  <td data-label={t('cookiePolicy.tablePurpose')}>{row.purpose}</td>
+                  <td data-label={t('cookiePolicy.tableDuration')}>{row.duration}</td>
+                  <td data-label={t('cookiePolicy.tableProvider')}>{row.provider}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -126,9 +139,13 @@ export default async function CookiePolicyPage() {
 
       <section id="analytics" aria-labelledby="analytics-heading">
         <h2 id="analytics-heading">{t('cookiePolicy.analytics')}</h2>
-        <p className="muted">{t('cookiePolicy.analyticsDesc')}</p>
+        <div className="flex items-center gap-2 mb-3">
+          <span className="inline-block rounded-full bg-yellow-500 text-black text-xs font-bold px-3 py-1">
+            {t('cookiePolicy.badgeRequiresConsent')}
+          </span>
+        </div>
         <div className="table-scroll">
-          <table className="cookie-table">
+          <table className="cookie-table table-card-mobile">
             <thead>
               <tr>
                 <th>{t('cookiePolicy.tableCookie')}</th>
@@ -138,16 +155,14 @@ export default async function CookiePolicyPage() {
               </tr>
             </thead>
             <tbody>
-              {cookieTable
-                .filter((c) => c.cookie.includes('_ga'))
-                .map((row, i) => (
-                  <tr key={i}>
-                    <td><code>{row.cookie}</code></td>
-                    <td>{row.purpose}</td>
-                    <td>{row.duration}</td>
-                    <td>{row.provider}</td>
-                  </tr>
-                ))}
+              {analyticsCookies.map((row, i) => (
+                <tr key={i}>
+                  <td data-label={t('cookiePolicy.tableCookie')}><code>{row.cookie}</code></td>
+                  <td data-label={t('cookiePolicy.tablePurpose')}>{row.purpose}</td>
+                  <td data-label={t('cookiePolicy.tableDuration')}>{row.duration}</td>
+                  <td data-label={t('cookiePolicy.tableProvider')}>{row.provider}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -181,6 +196,6 @@ export default async function CookiePolicyPage() {
         <h2 id="contact-heading">{t('cookiePolicy.contact')}</h2>
         <p>{t('cookiePolicy.contact')}</p>
       </section>
-    </LegalPage>
+    </LegalPageLayout>
   )
 }

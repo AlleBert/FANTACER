@@ -1,8 +1,9 @@
 import type { Dictionary } from './dictionary'
 
 export const en: Dictionary = {
-  'meta.title': 'FANTACER - Play and Win',
-  'meta.description': 'The first semi-serious game of the ceramic district',
+  'meta.title': 'FANTACER — The ceramic district game: vote and win',
+  'meta.description':
+    'Vote for your favorite ceramic company at Cersaie, Bologna. One vote a day — share it and collect your gadget: everyone wins!',
 
   'hero.play': 'PLAY',
 
@@ -215,7 +216,7 @@ export const en: Dictionary = {
   'terms.oneVotePerDay': 'One vote per day per device: you may vote only once every 24 hours (reset at midnight CEST).',
   'terms.threeCompanies': 'Three distinct companies: you must select exactly 3 different companies from those listed.',
   'terms.prizeCollection': 'Prize collection',
-  'terms.prizeDetails': 'The prize consists of a gadget (e.g., bag, t-shirt, keyring depending on availability) to be collected at the Fantacer stand/area at Cersaie, showing the confirmation screen or QR code received after voting.',
+  'terms.prizeDetails': 'The prize consists of a gadget (e.g., bag, t-shirt, keyring depending on availability) to be collected at the Fantacer stand/area at Cersaie, showing the confirmation screen received after voting.',
   'terms.fairDates': 'Collection is only possible during fair days: 21–25 September 2026.',
   'terms.gadget': 'The gadget has no significant monetary value and cannot be exchanged for cash.',
   'terms.noCashAlternative': 'No cash alternative or shipping: the prize must be collected in person at the fair.',
@@ -229,7 +230,7 @@ export const en: Dictionary = {
   'terms.disclaimer': 'Disclaimer',
   'terms.disclaimerDesc': 'The service is provided "as is" for the duration of the event. We do not guarantee uninterrupted availability, error-free operation, or gadget quality.',
   'terms.limitation': 'Limitation of liability',
-  'terms.maxLiability': 'Our maximum liability is limited to €100 (or the amount paid, which is zero).',
+  'terms.maxLiability': 'We are not liable for indirect, consequential, or incidental damages.',
   'terms.noIndirectDamages': 'We are not liable for indirect, consequential damages, loss of chance, data, or profits.',
   'terms.termination': 'Termination',
   'terms.organizerMayEnd': 'The organiser may end the game early due to force majeure or technical issues.',
@@ -242,4 +243,30 @@ export const en: Dictionary = {
   'terms.changesDesc': 'Any changes will be posted on this page. Continued use of the service constitutes acceptance.',
   'terms.contact': 'Contact',
   'terms.contactDesc': 'For information: team@fantacer.com.',
+
+  // Legal pages - Summary boxes
+  'cookiePolicy.summaryTitle': 'In short',
+  'cookiePolicy.summaryText': 'We only use essential cookies to make the game work. No invasive tracking, no surprises. Your data is safe.',
+  'cookiePolicy.essentialSectionTitle': 'Technical/Essential Cookies',
+  'cookiePolicy.analyticsSectionTitle': 'Analytics/Third-Party Cookies',
+  'cookiePolicy.badgeAlwaysActive': 'Always active',
+  'cookiePolicy.badgeRequiresConsent': 'Requires consent',
+
+  'privacyPolicy.summaryTitle': 'In short — Your privacy is safe',
+  'privacyPolicy.summaryWho': '🏢 Who we are',
+  'privacyPolicy.summaryWhoDesc': 'Andrea Borghi, VAT 02108240355',
+  'privacyPolicy.summaryWhat': '📊 What we collect',
+  'privacyPolicy.summaryWhatDesc': 'Only essential data for the game',
+  'privacyPolicy.summaryHow': '🔒 How we protect it',
+  'privacyPolicy.summaryHowDesc': 'EU servers (Supabase Frankfurt)',
+  'privacyPolicy.summaryContact': '📧 Contact us',
+  'privacyPolicy.summaryContactDesc': 'team@fantacer.com',
+
+  'terms.summaryTitle': 'In short — How the game works',
+  'terms.summaryText': 'Fantacer is a free game for Cersaie 2026 visitors (Bologna Fiere, 21-25 September). Vote for your favorite stand and collect a gadget by showing the confirmation screen!',
+  'terms.goldenRulesTitle': '✨ The 3 Golden Rules',
+  'terms.goldenRule1': 'One vote per day per device (reset at midnight CEST)',
+  'terms.goldenRule2': 'Choose exactly 3 distinct companies from those participating',
+  'terms.goldenRule3': 'Pass the Turnstile verification and show the confirmation screen to collect the gadget',
+  'terms.legalDetailsTitle': '⚖️ Complete legal clauses',
 }

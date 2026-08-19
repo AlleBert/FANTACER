@@ -6,6 +6,7 @@ import { CookieManager } from 'react-cookie-manager'
 import { LocaleProvider } from '@/lib/LocaleContext'
 import type { Locale } from '@/lib/locale'
 import { CookieConsentUI, COOKIE_CATEGORIES, COOKIE_CONSENT_KEY } from '@/components/cookie-consent'
+import { Analytics } from '@/components/analytics'
 
 export function Providers({ locale, children }: { locale: Locale; children: ReactNode }) {
   const pathname = usePathname()
@@ -24,6 +25,7 @@ export function Providers({ locale, children }: { locale: Locale; children: Reac
           initialPreferences={{ Analytics: false, Social: false, Advertising: false }}
         >
           {children}
+          <Analytics />
           <CookieConsentUI />
         </CookieManager>
       )}

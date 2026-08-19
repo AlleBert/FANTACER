@@ -403,7 +403,7 @@ textarea::-webkit-scrollbar {
     font-weight: 900;
     line-height: var(--lh-headline, 1.2);
     letter-spacing: -0.01em;
-    text-transform: uppercase;
+    text-transform: lowercase;
     margin-top: var(--rythm-sec);
     margin-bottom: var(--rythm-blk);
     color: var(--ink);
@@ -421,7 +421,7 @@ textarea::-webkit-scrollbar {
     font-size: var(--fs-body-lg, clamp(1rem, 2vw, 1.25rem));
     font-weight: 700;
     line-height: var(--lh-body, 1.4);
-    text-transform: uppercase;
+    text-transform: lowercase;
     margin-top: var(--rythm-blk);
     margin-bottom: 0.5rem;
     color: var(--ink);
@@ -648,6 +648,19 @@ textarea::-webkit-scrollbar {
     transform: translateX(2px) translateY(2px);
   }
 
+  /* Mobile inline TOC (<details>/<summary>) - rimuove marker nativi */
+  details.mobile-toc summary::-webkit-details-marker,
+  details summary::-webkit-details-marker {
+    display: none;
+  }
+  details summary {
+    list-style: none;
+  }
+  details summary::marker {
+    display: none;
+    content: '';
+  }
+
   /* Contenitore scroll orizzontale per le tabelle legali su viewport strette.
      Le tabelle restano display:table (semantica/collapse preservati) e
      scrollano dentro il foglio senza overflow a livello documento. */
@@ -657,13 +670,74 @@ textarea::-webkit-scrollbar {
     -webkit-overflow-scrolling: touch;
   }
 
+  /* Card-rows: le tabelle legali diventano card impilate su mobile (<640px).
+     Ogni <td> mostra data-label come label affiancata, niente scroll laterale. */
+  @media (max-width: 639px) {
+    .table-card-mobile {
+      display: block;
+      border: none;
+      box-shadow: none;
+      border-radius: 0;
+      overflow: visible;
+    }
+    .table-card-mobile thead {
+      display: none;
+    }
+    .table-card-mobile tbody {
+      display: block;
+    }
+    .table-card-mobile tr {
+      display: block;
+      background: var(--bright);
+      border: 3px solid var(--ink);
+      border-radius: var(--rounded-lg);
+      box-shadow: 4px 4px 0 #000;
+      margin-bottom: var(--space-md);
+      padding: var(--space-md);
+    }
+    .table-card-mobile td {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: var(--space-md);
+      border: none;
+      padding: var(--space-xs) 0;
+      font-size: 0.875rem;
+    }
+    .table-card-mobile td::before {
+      content: attr(data-label);
+      flex-shrink: 0;
+      min-width: 6.5rem;
+      font-size: 0.75rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: color-mix(in srgb, var(--ink) 60%, transparent);
+    }
+    .table-card-mobile td:first-child {
+      font-weight: 900;
+      color: var(--ink);
+      border-bottom: 2px solid var(--ink);
+      padding-bottom: var(--space-sm);
+      margin-bottom: var(--space-sm);
+    }
+    .table-card-mobile td:last-child {
+      padding-bottom: 0;
+    }
+    .table-card-mobile code {
+      background: color-mix(in srgb, var(--ink) 8%, transparent);
+      padding: 0.125em 0.375em;
+      border-radius: 0.25rem;
+    }
+  }
+
   /* Legal section headings - brand chrome */
   .prose-legal h2 {
     font-size: var(--fs-cta, clamp(1.25rem, 3.5vw, 2rem));
     font-weight: 900;
     line-height: var(--lh-headline, 1.2);
     letter-spacing: -0.01em;
-    text-transform: uppercase;
+    text-transform: lowercase;
     margin-top: var(--rythm-sec);
     margin-bottom: var(--rythm-blk);
     color: var(--ink);
@@ -672,36 +746,62 @@ textarea::-webkit-scrollbar {
     position: relative;
   }
 
-  .prose-legal h2::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: 0;
-    width: 48px;
-    height: 4px;
-    background: var(--yellow);
-  }
-
   .prose-legal h2:first-child {
     margin-top: 0;
     padding-top: 0;
     border-top: none;
   }
 
-  .prose-legal h2:first-child::before {
-    display: none;
-  }
-
   .prose-legal h3 {
     font-size: var(--fs-body-lg, clamp(1rem, 2vw, 1.25rem));
     font-weight: 900;
     line-height: var(--lh-body, 1.4);
-    text-transform: uppercase;
+    text-transform: lowercase;
     margin-top: var(--rythm-blk);
     margin-bottom: 0.5rem;
     color: var(--ink);
     letter-spacing: 0.01em;
-    border-left: 4px solid var(--yellow);
-    padding-left: 0.75rem;
+  }
+}
+
+/* Print styles for legal pages */
+@media print {
+  details {
+    display: block !important;
+  }
+  details > summary {
+    display: none !important;
+  }
+  details[open] > *,
+  details:not([open]) > * {
+    display: block !important;
+  }
+
+  aside[aria-label*="Indice"],
+  aside[aria-label*="contents"],
+  details > summary,
+  footer,
+  .cookie-cta {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  a {
+    color: black !important;
+    text-decoration: underline !important;
+  }
+
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  article {
+    max-width: 100% !important;
+    padding: 0 !important;
+    border: none !important;
   }
 }

@@ -255,6 +255,32 @@ export interface Dictionary {
   'voteError.missingSecurity': string
   'voteError.securityFailed': string
   'voteError.alreadyVoted': string
+
+  // Legal pages - Summary boxes
+  'cookiePolicy.summaryTitle': string
+  'cookiePolicy.summaryText': string
+  'cookiePolicy.essentialSectionTitle': string
+  'cookiePolicy.analyticsSectionTitle': string
+  'cookiePolicy.badgeAlwaysActive': string
+  'cookiePolicy.badgeRequiresConsent': string
+
+  'privacyPolicy.summaryTitle': string
+  'privacyPolicy.summaryWho': string
+  'privacyPolicy.summaryWhoDesc': string
+  'privacyPolicy.summaryWhat': string
+  'privacyPolicy.summaryWhatDesc': string
+  'privacyPolicy.summaryHow': string
+  'privacyPolicy.summaryHowDesc': string
+  'privacyPolicy.summaryContact': string
+  'privacyPolicy.summaryContactDesc': string
+
+  'terms.summaryTitle': string
+  'terms.summaryText': string
+  'terms.goldenRulesTitle': string
+  'terms.goldenRule1': string
+  'terms.goldenRule2': string
+  'terms.goldenRule3': string
+  'terms.legalDetailsTitle': string
 }
 
 export type DictionaryKey = keyof Dictionary

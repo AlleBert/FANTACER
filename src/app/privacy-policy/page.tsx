@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { LegalPage } from '@/components/legal/legal-page'
+import { LegalPageLayout } from '@/components/legal/legal-page-layout'
 import { dictionaries } from '@/i18n'
 import { LOCALE_COOKIE, resolveLocale } from '@/lib/locale'
 import { cookies, headers } from 'next/headers'
@@ -49,11 +49,39 @@ export default async function PrivacyPolicyPage() {
     { id: 'contact', label: t('privacyPolicy.contact') },
   ]
 
+  const summaryBox = (
+    <div>
+      <h2 className="text-lg font-black text-ink mb-4">
+        🛡️ {t('privacyPolicy.summaryTitle')}
+      </h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+        <div>
+          <strong className="text-ink">{t('privacyPolicy.summaryWho')}</strong>
+          <p className="text-ink/70 mt-1">{t('privacyPolicy.summaryWhoDesc')}</p>
+        </div>
+        <div>
+          <strong className="text-ink">{t('privacyPolicy.summaryWhat')}</strong>
+          <p className="text-ink/70 mt-1">{t('privacyPolicy.summaryWhatDesc')}</p>
+        </div>
+        <div>
+          <strong className="text-ink">{t('privacyPolicy.summaryHow')}</strong>
+          <p className="text-ink/70 mt-1">{t('privacyPolicy.summaryHowDesc')}</p>
+        </div>
+        <div>
+          <strong className="text-ink">{t('privacyPolicy.summaryContact')}</strong>
+          <p className="text-ink/70 mt-1">{t('privacyPolicy.summaryContactDesc')}</p>
+        </div>
+      </div>
+    </div>
+  )
+
   return (
-    <LegalPage
+    <LegalPageLayout
       toc={toc}
       titleKey="privacyPolicy.title"
       lastUpdatedKey="privacyPolicy.lastUpdated"
+      summaryBox={summaryBox}
+      summaryColor="blue"
     >
       <section id="controller" aria-labelledby="controller-heading">
         <h2 id="controller-heading">{t('privacyPolicy.controller')}</h2>
@@ -136,7 +164,7 @@ export default async function PrivacyPolicyPage() {
       <section id="retention" aria-labelledby="retention-heading">
         <h2 id="retention-heading">{t('privacyPolicy.retention')}</h2>
         <div className="table-scroll">
-          <table>
+          <table className="table-card-mobile">
             <thead>
               <tr>
                 <th>Categoria</th>
@@ -145,24 +173,24 @@ export default async function PrivacyPolicyPage() {
             </thead>
             <tbody>
               <tr>
-                <td>{t('privacyPolicy.dataContact').replace('Modulo contatti: ', '').replace('Contact form: ', '')}</td>
-                <td>{t('privacyPolicy.retentionContact')}</td>
+                <td data-label="Categoria">{t('privacyPolicy.dataContact').replace('Modulo contatti: ', '').replace('Contact form: ', '')}</td>
+                <td data-label="Periodo">{t('privacyPolicy.retentionContact')}</td>
               </tr>
               <tr>
-                <td>{t('privacyPolicy.dataVoting').replace('Votazione: ', '').replace('Voting: ', '')}</td>
-                <td>{t('privacyPolicy.retentionVoting')}</td>
+                <td data-label="Categoria">{t('privacyPolicy.dataVoting').replace('Votazione: ', '').replace('Voting: ', '')}</td>
+                <td data-label="Periodo">{t('privacyPolicy.retentionVoting')}</td>
               </tr>
               <tr>
-                <td>{t('privacyPolicy.dataAdmin').replace('Area admin: ', '').replace('Admin area: ', '')}</td>
-                <td>{t('privacyPolicy.retentionAdmin')}</td>
+                <td data-label="Categoria">{t('privacyPolicy.dataAdmin').replace('Area admin: ', '').replace('Admin area: ', '')}</td>
+                <td data-label="Periodo">{t('privacyPolicy.retentionAdmin')}</td>
               </tr>
               <tr>
-                <td>{t('privacyPolicy.dataTechnical').replace('Dati tecnici: ', '').replace('Technical data: ', '')}</td>
-                <td>{t('privacyPolicy.retentionLogs')}</td>
+                <td data-label="Categoria">{t('privacyPolicy.dataTechnical').replace('Dati tecnici: ', '').replace('Technical data: ', '')}</td>
+                <td data-label="Periodo">{t('privacyPolicy.retentionLogs')}</td>
               </tr>
               <tr>
-                <td>{t('privacyPolicy.dataAnalytics').replace('Analytics: ', '').replace('Analytics: ', '')}</td>
-                <td>{t('privacyPolicy.retentionAnalytics')}</td>
+                <td data-label="Categoria">{t('privacyPolicy.dataAnalytics').replace('Analytics: ', '').replace('Analytics: ', '')}</td>
+                <td data-label="Periodo">{t('privacyPolicy.retentionAnalytics')}</td>
               </tr>
             </tbody>
           </table>
@@ -193,6 +221,6 @@ export default async function PrivacyPolicyPage() {
         <h2 id="contact-heading">{t('privacyPolicy.contact')}</h2>
         <p>{t('privacyPolicy.contactDesc') || 'team@fantacer.com'}</p>
       </section>
-    </LegalPage>
+    </LegalPageLayout>
   )
 }
