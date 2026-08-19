@@ -22,6 +22,7 @@ beforeEach(() => {
 
 afterEach(() => {
   mockFetch.mockReset()
+  delete (global as { fetch?: unknown }).fetch
 })
 
 describe('SponsorCards', () => {
@@ -59,6 +60,20 @@ describe('SponsorCards', () => {
     const alpha = await screen.findByText('Alpha')
     const el = alpha.closest('a') as HTMLElement
     await waitFor(() => expect(el.style.getPropertyValue('--sponsor-size')).toContain('--sponsor-card-4'))
+  })
+
+  it('con variant compact applica --sponsor-scale-compact', async () => {
+    render(<SponsorCards variant="compact" />)
+    const alpha = await screen.findByText('Alpha')
+    const el = alpha.closest('a') as HTMLElement
+    await waitFor(() => expect(el.style.getPropertyValue('--sponsor-scale')).toBe('var(--sponsor-scale-compact)'))
+  })
+
+  it('con variant large applica --sponsor-scale-large', async () => {
+    render(<SponsorCards variant="large" />)
+    const alpha = await screen.findByText('Alpha')
+    const el = alpha.closest('a') as HTMLElement
+    await waitFor(() => expect(el.style.getPropertyValue('--sponsor-scale')).toBe('var(--sponsor-scale-large)'))
   })
 
   it('con standOnly filtra has_stand', async () => {

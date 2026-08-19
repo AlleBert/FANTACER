@@ -27,6 +27,9 @@ const SCALE: Record<SponsorCardsVariant, string> = {
   large: 'var(--sponsor-scale-large)',
 };
 
+// I valori px di SIZES derivano dai token --sponsor-card-*: sono solo un hint
+// `sizes` per next/image, non dimensioni di layout — non tokenizzabili perché
+// var() non funziona negli attributi HTML.
 const SIZES: Record<SponsorCardsVariant, string> = {
   default: '(max-width: 480px) 112px, (max-width: 768px) 169px, 208px',
   compact: '(max-width: 480px) 88px, (max-width: 768px) 120px, 144px',
@@ -110,7 +113,7 @@ export function SponsorCards({ variant = 'default', standOnly = false, refreshKe
             className="object-contain p-(--space-sm)"
           />
         ) : (
-          <span className="px-2 text-center text-sm font-black text-ink/60">{sponsor.name}</span>
+          <span className="px-2 text-center text-sm font-black text-ink/70 [text-wrap:balance]">{sponsor.name}</span>
         );
 
         return sponsor.website_url ? (
