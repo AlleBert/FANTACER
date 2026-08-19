@@ -230,7 +230,7 @@ export function LiveRankingSection() {
         </div>
 
         <div className="mt-auto w-full flex justify-center">
-          <SponsorCards compact />
+          <SponsorCards variant="compact" />
         </div>
       </div>
     </SectionFrame>
