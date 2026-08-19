@@ -61,6 +61,9 @@ supabase/.temp/
 # plan documents
 docs/superpowers/plans/
 
+# brainstorming visual companion mockups
+.superpowers/
+
 # Playwright
 node_modules/
 /test-results/
