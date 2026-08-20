@@ -70,6 +70,16 @@ export interface Dictionary {
   'liveRanking.hide': string
   'liveRanking.showAll': string
 
+  // Live ranking — fasce
+  'liveRanking.band.top20': string
+  'liveRanking.band.gold': string
+  'liveRanking.band.silver': string
+  'liveRanking.band.bronze': string
+  'liveRanking.bandCount': string
+  'liveRanking.yourVote': string
+  'liveRanking.yourVotes': string
+  'liveRanking.badge': string
+
   // Contact
   'contact.title1': string
   'contact.title2': string
