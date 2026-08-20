@@ -26,12 +26,6 @@ export function DevSuccessPreview() {
 
     if (success) {
       unlockGameStep('success');
-      const timeout = window.setTimeout(() => {
-        const main = document.querySelector('main');
-        const target = main?.querySelector('[data-section="success"]') as HTMLElement | undefined;
-        if (main && target) main.scrollTo({ top: target.offsetTop, behavior: 'smooth' });
-      }, 100);
-      return () => window.clearTimeout(timeout);
     }
 
     if (companies) {
@@ -48,9 +42,18 @@ export function DevSuccessPreview() {
             .limit(3);
           for (const c of data ?? []) setCompany(c, 4);
         } catch {
-          // tool dev-only: errori ignorati, la UI resta comunque visibile
+          return;
         }
       })();
+    }
+
+    if (success) {
+      const timeout = window.setTimeout(() => {
+        const main = document.querySelector('main');
+        const target = main?.querySelector('[data-section="success"]') as HTMLElement | undefined;
+        if (main && target) main.scrollTo({ top: target.offsetTop, behavior: 'smooth' });
+      }, 100);
+      return () => window.clearTimeout(timeout);
     }
   }, [unlockGameStep, setCompany]);
 

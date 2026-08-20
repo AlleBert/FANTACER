@@ -101,6 +101,18 @@ describe('DevSuccessPreview', () => {
     )
   })
 
+  it('parametri combinati: sblocca success E pre-seleziona le aziende', async () => {
+    setup('/?dev_success=1&dev_companies=1')
+    await waitFor(() =>
+      expect(document.querySelector('[data-testid="probe-success"]')?.textContent).toBe('true')
+    )
+    await waitFor(() =>
+      expect(document.querySelector('[data-testid="probe-companies"]')?.textContent).toBe(
+        'Alpha SRL|Beta SpA|Gamma SAS'
+      )
+    )
+  })
+
   it('in produzione (NODE_ENV=production) i parametri sono inerti', async () => {
     jest.replaceProperty(process.env, 'NODE_ENV', 'production')
     setup('/?dev_success=1&dev_companies=1')
