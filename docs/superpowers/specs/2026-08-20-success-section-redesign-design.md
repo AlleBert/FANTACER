@@ -28,7 +28,8 @@ Nessuna modifica a dati o API: `SuccessSection` legge già tutto dal
    numero `4|2|1` in `text-purple` font-black (stesso linguaggio dei selettori
    pallet della SearchSection). **Senza totale.** Larghezza ≤ `280px` fluidi.
 4. **Testo condivisione** — "Condividi il tuo voto taggando **@fanta.cer** e
-   ritira il tuo premio qui" (nuova chiave i18n, `success.shareTagline`),
+   ritira il tuo premio qui" (nuove chiavi i18n `success.shareTaglinePre` +
+   `success.shareTaglinePost`, divise attorno al tag sticker),
    uppercase font-bold, con il tag `@fanta.cer` a sticker giallo
    (`bg-bright border-2 border-ink shadow rotate-1`).
 5. **Bottone "Condividi"** — pill corallo (`bg-coral`) con bordo nero + ombra
@@ -86,7 +87,8 @@ Costanti in `src/lib/social-links.ts`:
 
 ### Chiavi i18n (it/en/dictionary)
 
-Nuove: `success.shareTagline`, `success.shareButton`, `success.receiptTitle`.
+Nuove: `success.shareTaglinePre`, `success.shareTaglinePost`,
+`success.shareButton`, `success.shareCopied`, `success.receiptTitle`.
 Rimangono in uso: `success.youRock`, `success.voted` (testo aggiornato).
 **Rimozione definitiva** (verificato: ogni chiave ha un solo uso, tutto in
 `success-section.tsx`): `success.noCompany`, `success.bestStand`,
