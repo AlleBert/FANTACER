@@ -47,6 +47,7 @@ function makePayload() {
   set(3, 'c03', 'Gres Z')
   set(21, 'c04', 'Marmo W')
   set(22, 'c05', 'Porcellanato V')
+  set(23, 'c08', 'Extra GOLD')
   set(51, 'c06', 'Bioceramic R')
   set(101, 'c07', 'Klinker T')
   return { companies }
@@ -107,6 +108,19 @@ describe('LiveRankingSection', () => {
     })
   })
 
+  it('con 1 voto nella fascia mostra posizione e nome', async () => {
+    ;(useVote as jest.Mock).mockReturnValue({
+      gameUnlock: { success: true },
+      selectedCompanies: [
+        { company: { id: 'c04', name: 'Marmo W' }, pallet: 4 },
+      ],
+    })
+    render(<LiveRankingSection />)
+    await screen.findByText('Ceramiche X')
+    expect(screen.getByText('#21')).toBeInTheDocument()
+    expect(screen.getByText('Marmo W')).toBeInTheDocument()
+  })
+
   it('con 2 voti nella stessa fascia mostra il badge con conteggio e posizioni', async () => {
     ;(useVote as jest.Mock).mockReturnValue({
       gameUnlock: { success: true },
@@ -126,12 +140,12 @@ describe('LiveRankingSection', () => {
       selectedCompanies: [
         { company: { id: 'c04', name: 'Marmo W' }, pallet: 4 },
         { company: { id: 'c05', name: 'Porcellanato V' }, pallet: 2 },
-        { company: { id: 'c07', name: 'Klinker T' }, pallet: 1 },
+        { company: { id: 'c08', name: 'Extra GOLD' }, pallet: 1 },
       ],
     })
     render(<LiveRankingSection />)
     await screen.findByText('Ceramiche X')
-    expect(screen.getByText(/2 ·/)).toBeInTheDocument()
+    expect(screen.getByText('3 · your votes')).toBeInTheDocument()
   })
 
   it('non rende alcuna CTA lead-gen', async () => {

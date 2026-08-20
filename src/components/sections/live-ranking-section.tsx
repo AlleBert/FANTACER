@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SponsorCards } from '@/components/sponsor/sponsor-cards';
 import { SectionFrame } from '@/components/layout/section-frame';
@@ -36,10 +36,21 @@ function getInitialOpen(): Record<Cluster, boolean> {
 function bandBadge(
   t: (key: string, vars?: Record<string, unknown>) => string,
   votedInBand: ApiCompany[],
-): string {
-  const positions = votedInBand.map((c) => `#${c.rank}`).join(' ')
-  if (votedInBand.length === 1) return positions
-  return `${votedInBand.length} · ${positions}`
+): ReactNode {
+  const n = votedInBand.length
+  if (n === 1) {
+    const c = votedInBand[0]
+    return (
+      <span className="flex items-center gap-1 min-w-0">
+        <span className="shrink-0">#{c.rank}</span>
+        <span className="truncate max-w-[8rem]">{c.name}</span>
+      </span>
+    )
+  }
+  if (n === 2) {
+    return `2 · ${votedInBand.map((c) => `#${c.rank}`).join(' ')}`
+  }
+  return `${n} · ${t('liveRanking.yourVotes')}`
 }
 
 export function LiveRankingSection() {
@@ -51,6 +62,7 @@ export function LiveRankingSection() {
   const [votingEnabled, setVotingEnabled] = useState(true)
   const [open, setOpen] = useState<Record<Cluster, boolean>>(getInitialOpen)
   const [channelActive, setChannelActive] = useState(false)
+  const [isVisible, setIsVisible] = useState(true)
 
   const sectionRef = useRef<HTMLDivElement>(null)
   const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null)
@@ -74,14 +86,17 @@ export function LiveRankingSection() {
     }
   }, [t])
 
-  // INITIAL FETCH + fallback polling (solo se il channel non è attivo)
+  // INITIAL FETCH + fallback polling (solo se il channel non è attivo e la sezione è in viewport)
   useEffect(() => {
-    fetchRanking()
+    // Initial fetch: i setState di fetchRanking avvengono solo dopo l'await (mai
+    // sincroni nel corpo dell'effect); la rule è conservativa e non lo riconosce.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (isVisible) fetchRanking()
     const interval = setInterval(() => {
-      if (!channelActive) fetchRanking(false)
+      if (!channelActive && isVisible) fetchRanking(false)
     }, PALLETS_POLLING_MS)
     return () => clearInterval(interval)
-  }, [fetchRanking, channelActive])
+  }, [fetchRanking, channelActive, isVisible])
 
   // Realtime channel su vote_sessions (primario), sospeso fuori viewport
   useEffect(() => {
@@ -124,6 +139,7 @@ export function LiveRankingSection() {
     }
 
     const io = new IntersectionObserver(([entry]) => {
+      setIsVisible(entry.isIntersecting)
       if (entry.isIntersecting) {
         startChannel()
         fetchRanking(false)
@@ -245,6 +261,7 @@ export function LiveRankingSection() {
                     const isOpen = open[cluster]
                     const votedInBand = bandCompanies.filter((c) => votedIds.has(c.id))
                     const badge = votedInBand.length > 0 ? bandBadge(t as (k: string, v?: Record<string, unknown>) => string, votedInBand) : null
+                    const panelId = `live-ranking-band-${cluster.toLowerCase()}`
 
                     return (
                       <div key={cluster}>
@@ -252,6 +269,7 @@ export function LiveRankingSection() {
                           type="button"
                           onClick={() => toggleBand(cluster)}
                           aria-expanded={isOpen}
+                          aria-controls={panelId}
                           className={cn(
                             'w-full flex items-center justify-between gap-2 rounded-lg px-3 py-3 min-h-11 border-2 border-ink font-[900] text-sm md:text-base cursor-pointer transition-colors',
                             isOpen ? 'bg-bright' : 'bg-gray-100 hover:bg-gray-200',
@@ -267,7 +285,7 @@ export function LiveRankingSection() {
                           </span>
                           <span className="flex items-center gap-2 shrink-0">
                             {badge && (
-                              <span className="bg-purple text-white text-xs font-black rounded-full px-2 py-0.5 border border-ink whitespace-nowrap">
+                              <span className="bg-purple text-white text-xs font-black rounded-full px-2 py-0.5 border border-ink whitespace-nowrap inline-flex items-center gap-1 min-w-0">
                                 {badge}
                               </span>
                             )}
@@ -278,6 +296,7 @@ export function LiveRankingSection() {
                         <AnimatePresence initial={false}>
                           {isOpen && (
                             <motion.div
+                              id={panelId}
                               initial={reduced ? { opacity: 1 } : { height: 0, opacity: 0 }}
                               animate={{ height: 'auto', opacity: 1 }}
                               exit={reduced ? { opacity: 1 } : { height: 0, opacity: 0 }}
