@@ -20,22 +20,13 @@ import { cn } from '@/lib/utils';
 const PALLETS_POLLING_MS = 30000;
 const REFETCH_DEBOUNCE_MS = 500;
 
-interface ApiCompany {
-  id: string;
-  name: string;
-  image_url: string | null;
-  total_pallets: number;
-  vote_count: number;
-  rank: number;
-}
-
 function getInitialOpen(): Record<Cluster, boolean> {
   return { TOP20: true, GOLD: false, SILVER: false, BRONZE: false };
 }
 
 function bandBadge(
   t: (key: string, vars?: Record<string, unknown>) => string,
-  votedInBand: ApiCompany[],
+  votedInBand: RankingCompany[],
 ): ReactNode {
   const n = votedInBand.length
   if (n === 1) {
@@ -86,12 +77,17 @@ export function LiveRankingSection() {
     }
   }, [t])
 
-  // INITIAL FETCH + fallback polling (solo se il channel non è attivo e la sezione è in viewport)
+  // Initial fetch al mount (unico, con loader sul primo caricamento). Il setState
+  // sincrono (setIsLoading(true)) è un no-op benigno (isLoading è già true al mount);
+  // la rule è conservativa e non distingue questo caso.
   useEffect(() => {
-    // Initial fetch: i setState di fetchRanking avvengono solo dopo l'await (mai
-    // sincroni nel corpo dell'effect); la rule è conservativa e non lo riconosce.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (isVisible) fetchRanking()
+    fetchRanking()
+  }, [fetchRanking])
+
+  // Polling di fallback: solo se il channel non è attivo e la sezione è visibile.
+  // Mai con loader: gli aggiornamenti successivi sono silenziosi.
+  useEffect(() => {
     const interval = setInterval(() => {
       if (!channelActive && isVisible) fetchRanking(false)
     }, PALLETS_POLLING_MS)
