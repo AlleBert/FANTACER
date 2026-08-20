@@ -39,8 +39,9 @@ test.describe('Voting Flow', () => {
     await page.waitForSelector('[data-section="success"]', { timeout: 15000 });
 
     const rankingSection = page.locator('main > section[data-section="live-ranking"]');
+    const rankingResponse = page.waitForResponse('/api/public/ranking', { timeout: 20000 });
     await rankingSection.scrollIntoViewIfNeeded();
-    await page.waitForResponse('/api/public/ranking', { timeout: 20000 });
+    await rankingResponse;
     await expect(rankingSection).toBeVisible();
 
     // le aziende votate hanno il badge "il tuo voto" nella loro fascia
