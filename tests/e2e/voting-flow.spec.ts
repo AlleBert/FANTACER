@@ -29,6 +29,25 @@ test.describe('Voting Flow', () => {
     await expect(successSection).toBeVisible();
   });
 
+  test('dopo il voto la sezione ranking evidenzia le aziende votate', async ({ page }) => {
+    await page.goto('/');
+    await addCompany(page, 'Test Co');
+    await addCompany(page, 'GreenEnergy');
+    await addCompany(page, 'Third Co');
+    const inviaButton = page.locator('button:has-text("INVIA IL TUO VOTO")').first();
+    await inviaButton.click();
+    await page.waitForSelector('[data-section="success"]', { timeout: 15000 });
+
+    const rankingSection = page.locator('main > section[data-section="live-ranking"]');
+    await rankingSection.scrollIntoViewIfNeeded();
+    await page.waitForResponse('/api/public/ranking', { timeout: 20000 });
+    await expect(rankingSection).toBeVisible();
+
+    // le aziende votate hanno il badge "il tuo voto" nella loro fascia
+    const badges = rankingSection.getByText(/il tuo voto/).first();
+    await expect(badges).toBeVisible({ timeout: 10000 });
+  });
+
   test('sponsor cards stay within the success section bounds at mobile', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/');
