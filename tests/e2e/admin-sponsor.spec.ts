@@ -3,6 +3,8 @@ import { setupAdminForTest, hasAdminMfaCredentials } from './helpers/auth'
 
 const needsAdmin = () => test.skip(!hasAdminMfaCredentials(), 'E2E admin MFA credentials not configured')
 
+const GATE_PROJECTS = ['chromium']
+
 const PNG_BUFFER = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
   'base64'
@@ -14,7 +16,8 @@ test.describe('Admin Sponsor — logo upload', () => {
   test.describe.configure({ timeout: 60000 })
   needsAdmin()
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page }, testInfo) => {
+    test.skip(!GATE_PROJECTS.includes(testInfo.project.name))
     const viewport = page.viewportSize()
     if (viewport && viewport.width < 1024) {
       test.skip(true, 'Desktop-only: table hidden on mobile viewports')

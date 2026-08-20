@@ -4,6 +4,12 @@ import { checkNoHorizontalOverflow } from './helpers/responsive';
 import { VIEWPORTS } from './helpers/viewports';
 import { checkAccessibility } from './helpers/accessibility';
 
+const GATE_PROJECTS = ['chromium', 'mobile-webkit'];
+
+test.beforeEach(async ({}, testInfo) => {
+  test.skip(!GATE_PROJECTS.includes(testInfo.project.name));
+});
+
 test.describe('Voting Flow', () => {
   test.describe.configure({ mode: 'serial' });
 

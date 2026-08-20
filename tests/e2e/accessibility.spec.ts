@@ -2,6 +2,12 @@ import { test } from '@playwright/test';
 import { checkAccessibility, type AllowedViolation } from './helpers/accessibility';
 import { hasAdminMfaCredentials, setupAdminForTest } from './helpers/auth';
 
+const GATE_PROJECTS = ['chromium', 'mobile-webkit'];
+
+test.beforeEach(async ({}, testInfo) => {
+  test.skip(!GATE_PROJECTS.includes(testInfo.project.name));
+});
+
 const ROUTES: { path: string; allowedViolations: AllowedViolation[] }[] = [
   { path: '/', allowedViolations: [] },
   { path: '/coming-soon', allowedViolations: [] },

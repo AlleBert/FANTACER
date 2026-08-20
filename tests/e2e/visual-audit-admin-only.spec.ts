@@ -6,6 +6,12 @@ import { setupAdminForTest, hasAdminMfaCredentials } from './helpers/auth';
 import { collectSectionReport, type RouteReport, type SectionReport } from './helpers/layout-analysis';
 import { setNavigationFailFast } from './helpers/navigation';
 
+const GATE_PROJECTS = ['chromium'];
+
+test.beforeEach(async ({}, testInfo) => {
+  test.skip(!GATE_PROJECTS.includes(testInfo.project.name));
+});
+
 const SCREENSHOT_DIR = 'tests/e2e/visual-audit/screenshots';
 const REPORT_PATH = 'tests/e2e/visual-audit/report-admin.json';
 

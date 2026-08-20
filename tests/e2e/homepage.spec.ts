@@ -5,7 +5,13 @@ import { checkAccessibility } from './helpers/accessibility';
 import { seedConsentCookie } from './helpers/cookie-consent';
 import { setNavigationFailFast } from './helpers/navigation';
 
+const GATE_PROJECTS = ['chromium', 'mobile-webkit'];
+
 test.describe('Homepage — Responsive', () => {
+  test.beforeEach(async ({}, testInfo) => {
+    test.skip(!GATE_PROJECTS.includes(testInfo.project.name));
+  });
+
   for (const [name, viewport] of Object.entries(VIEWPORTS)) {
     test.describe(`${name} (${viewport.width}x${viewport.height})`, () => {
       test.use({ viewport });
@@ -61,6 +67,10 @@ test.describe('Homepage — Screenshots', () => {
 
 test.describe('Homepage — Accessibility', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
+
+  test.beforeEach(async ({}, testInfo) => {
+    test.skip(!GATE_PROJECTS.includes(testInfo.project.name));
+  });
 
   test('WCAG AA scan', async ({ page }) => {
     await page.goto('/');

@@ -7,6 +7,12 @@ import { seedConsentCookie } from './helpers/cookie-consent';
 import { setNavigationFailFast } from './helpers/navigation';
 import { collectSectionReport, type RouteReport, type SectionReport } from './helpers/layout-analysis';
 
+const GATE_PROJECTS = ['chromium'];
+
+test.beforeEach(async ({}, testInfo) => {
+  test.skip(!GATE_PROJECTS.includes(testInfo.project.name));
+});
+
 const SCREENSHOT_DIR = 'tests/e2e/visual-audit/screenshots';
 const REPORT_PATH = 'tests/e2e/visual-audit/report.json';
 

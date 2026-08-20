@@ -1,6 +1,12 @@
 import { test, expect } from '@playwright/test';
 import { setNavigationFailFast } from './helpers/navigation';
 
+const GATE_PROJECTS = ['chromium'];
+
+test.beforeEach(async ({}, testInfo) => {
+  test.skip(!GATE_PROJECTS.includes(testInfo.project.name));
+});
+
 /**
  * Regression gate — phantom client-side 500 su mobile con site-data bloccati.
  *

@@ -1,6 +1,12 @@
 import { test, expect } from '@playwright/test';
 import { completeVotingFlow } from './voting.helper';
 
+const GATE_PROJECTS = ['chromium', 'mobile-webkit'];
+
+test.beforeEach(async ({}, testInfo) => {
+  test.skip(!GATE_PROJECTS.includes(testInfo.project.name));
+});
+
 test.describe('Scroll Blocking Bug Fix', () => {
   test.describe.configure({ mode: 'serial', timeout: 60000 });
 

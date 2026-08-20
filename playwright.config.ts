@@ -22,10 +22,12 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  // workers: 1 — i login MFA admin (AAL2) condividono rate limit e sessione
-  // (cachedAdminCookies per worker); l'esecuzione parallela li fa fallire in
-  // modo flaky (auth/session contention). Vale per ogni ambiente, anche CI.
-  workers: 1,
+  // workers: 2 — i login MFA admin (AAL2) condividono rate limit e sessione
+  // (cachedAdminCookies per worker); il margine è dato da ADMIN_LOGIN_RATE_MAX /
+  // ADMIN_MFA_VERIFY_RATE_MAX (STEP A). Le suite serial (voting-flow,
+  // scroll-blocking) usano mode:'serial' → nessun conflitto parallelo. I progetti
+  // WebKit e iOS restano a workers=1 (cap per-project).
+  workers: 2,
   timeout: 30000,
   snapshotPathTemplate: '{testDir}/screenshots/{projectName}/{testFilePath}/{arg}{ext}',
   use: {
@@ -39,6 +41,7 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
+      workers: 2,
       use: {
         ...devices['Desktop Chrome'],
         viewport: { width: 1440, height: 900 },
@@ -46,6 +49,7 @@ export default defineConfig({
     },
     {
       name: 'firefox',
+      workers: 1,
       use: {
         ...devices['Desktop Firefox'],
         viewport: { width: 1440, height: 900 },
@@ -53,6 +57,7 @@ export default defineConfig({
     },
     {
       name: 'mobile-chrome',
+      workers: 2,
       use: {
         ...devices['Pixel 5'],
         viewport: { width: 375, height: 812 },
@@ -60,48 +65,56 @@ export default defineConfig({
     },
     {
       name: 'mobile-webkit',
+      workers: 1,
       use: {
         ...devices['iPhone 13'],
       },
     },
     {
       name: 'ios-se',
+      workers: 1,
       use: {
         ...devices['iPhone SE (3rd gen)'],
       },
     },
     {
       name: 'ios-iphone',
+      workers: 1,
       use: {
         ...devices['iPhone 13'],
       },
     },
     {
       name: 'ios-pro-max',
+      workers: 1,
       use: {
         ...devices['iPhone 15 Pro Max'],
       },
     },
     {
       name: 'ios-ipad-portrait',
+      workers: 1,
       use: {
         ...devices['iPad Mini'],
       },
     },
     {
       name: 'ios-ipad-landscape',
+      workers: 1,
       use: {
         ...devices['iPad Mini landscape'],
       },
     },
     {
       name: 'ios-ipad-pro-portrait',
+      workers: 1,
       use: {
         ...devices['iPad Pro 11'],
       },
     },
     {
       name: 'ios-ipad-pro-landscape',
+      workers: 1,
       use: {
         ...devices['iPad Pro 11 landscape'],
       },
