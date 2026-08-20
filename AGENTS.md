@@ -93,6 +93,18 @@ La macchina di sviluppo ha RAM limitata (~3.7GiB, WSL2) e **si blocca se la suit
 - **Swap WSL attivo**: `/swapfile` 4GiB + `vm.swappiness=10` (persistiti via `/etc/fstab` e `/etc/sysctl.conf`). Se spariscono da `swapon --show` dopo un reboot, riapplicare i comandi sudo relativi.
 - Suite pesanti solo a macchina "quieta": chiudere browser/app prima di un audit.
 
+## SuccessSection in anteprima (solo dev)
+
+Tool di sviluppo per lavorare alla UI della pagina di successo senza votare davvero:
+
+- **`?dev_success=1`** su `next dev` sblocca `SuccessSection` (+ scroll alla sezione).
+- **`&dev_companies=1`** pre-seleziona le prime 3 aziende del batch attivo (SELECT read-only, nessuna scrittura).
+- Implementazione: `src/components/dev/dev-success-preview.tsx` (render `null`), montato in `src/app/page.tsx`.
+- **Guardia**: `process.env.NODE_ENV === 'production'` **inline** nel corpo dell'effect. NON avvolgere in un helper con default param (`nodeEnv = process.env.NODE_ENV`): impedisce l'inlining statico di NODE_ENV da parte di Next e il bypass resta attivo in build prod (difetto verificato). Con l'inline, in `next build`/`next start` il branch è eliminato dal bundle → parametro **inerte**.
+- Funziona **solo in `next dev`**. Mai su produzione (`npm run start`, Vercel, tunnel).
+- **Verifica di inertness**: `npm run start -p 3001` + aprire `http://localhost:3001/?dev_success=1` → sezione assente, e `grep -rl dev_success .next/static/chunks/` → 0 match. NON verificare su :3000 se un `next dev` è attivo (occupa la porta → EADDRINUSE e il test colpisce il server sbagliato).
+- I test unit sono in `tests/components/dev/dev-success-preview.test.tsx` (ramo prod coperto via `jest.replaceProperty(process.env, 'NODE_ENV', ...)`).
+
 ## TOTP / Google Authenticator
 
 - **Google Authenticator (inserimento manuale)** accetta il secret base32 **solo in minuscolo**. Se incollato in MAIUSCOLO rifiuta con "carattere non valido nel valore del codice".
