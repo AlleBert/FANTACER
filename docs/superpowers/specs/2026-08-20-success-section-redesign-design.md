@@ -40,10 +40,13 @@ Nessuna modifica a dati o API: `SuccessSection` legge già tutto dal
 6. **Card sponsor con stand** — `<SponsorCards variant="default" standOnly />`
    (stile attuale, ombra morbida; nessuna modifica al componente). In produzione
    mostra le 2 aziende con `has_stand=true`.
-7. **Icone social** — sotto gli sponsor, in riga centrata: `Instagram` e
-   `Facebook` da `lucide-react`, cerchi a sticker (`bg-coral`/`bg-purple`),
-   `border-2 border-ink shadow`, **linkati ai profili** (URL da configurazione,
-   vedi sotto).
+7. **Icone social** — sotto gli sponsor, in riga centrata: nuovi componenti
+   `InstagramIcon` / `FacebookIcon` in `src/components/ui/social-icons.tsx` con
+   i **percorsi SVG ufficiali lucide** (gli stessi già usati inline oggi,
+   righe 121-122 — lucide-react non esporta più le icone brand in v1.16.0),
+   stilizzabili via `className`. Cerchi a sticker (`bg-coral`/`bg-purple`),
+   `border-2 border-ink shadow`, **linkati ai profili** (URL in
+   `src/lib/social-links.ts`).
 
 ### Confetti
 
@@ -68,8 +71,9 @@ Invariato: animazione confetti esistente con guardia `prefers-reduced-motion`.
 - Rimozione di `IphoneStoryMockup` e del layout a due colonne (`lg:flex-row`)
   con la colonna destra (mockup + stelle decorative): le stelle decorative
   appartenevano alla colonna del mockup e vengono rimosse insieme.
-- Sostituzione dei due SVG inline (Instagram/Facebook righe 121-122) con le
-  icone `lucide-react`.
+- Sostituzione dei due SVG inline (Instagram/Facebook righe 121-122) con i
+  componenti `InstagramIcon`/`FacebookIcon` da `src/components/ui/social-icons.tsx`
+  (percorsi lucide ufficiali, extract da quelli inline attuali).
 - Nuovo componente interno `VoteReceipt` (scontrino) e `ShareButton` (Web Share
   API + fallback clipboard).
 
