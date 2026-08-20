@@ -54,10 +54,12 @@ export function LiveRankingSection() {
   const [open, setOpen] = useState<Record<Cluster, boolean>>(getInitialOpen)
   const [channelActive, setChannelActive] = useState(false)
   const [isVisible, setIsVisible] = useState(true)
+  const [flash, setFlash] = useState<Record<Cluster, number>>({ TOP20: 0, GOLD: 0, SILVER: 0, BRONZE: 0 })
 
   const sectionRef = useRef<HTMLDivElement>(null)
   const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const prevBandSig = useRef<Record<Cluster, string>>({ TOP20: '', GOLD: '', SILVER: '', BRONZE: '' })
 
   const votedIds = useMemo(() => new Set(selectedCompanies.map((s) => s.company.id)), [selectedCompanies])
 
@@ -187,6 +189,40 @@ export function LiveRankingSection() {
     [],
   )
 
+  // Pulse badge: quando il voto utente cambia posizione in una fascia CHIUSA,
+  // il badge header fa un breve flash (1-2 cicli animate-pulse). La firma è la
+  // lista dei rank votati nella fascia; il primo calcolo inizializza il ref
+  // senza flash (prevBandSig '' → nessun confronto).
+  useEffect(() => {
+    const changed: Cluster[] = []
+    for (const { cluster, companies: bandCompanies } of bands) {
+      if (open[cluster]) continue // solo fasce chiuse
+      if (bandCompanies.length === 0) continue
+      const votedInBand = bandCompanies.filter((c) => votedIds.has(c.id))
+      if (votedInBand.length === 0) continue
+      const sig = votedInBand.map((c) => c.rank).join(',')
+      if (prevBandSig.current[cluster] !== '' && prevBandSig.current[cluster] !== sig) {
+        changed.push(cluster)
+      }
+      prevBandSig.current[cluster] = sig
+    }
+    if (changed.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setFlash((f) => {
+        const next = { ...f }
+        for (const c of changed) next[c] += 1
+        return next
+      })
+    }
+  }, [bands, open, votedIds])
+
+  // Riporta flash a 0 dopo un breve intervallo: il pulse si spegne da solo.
+  useEffect(() => {
+    if (Object.values(flash).every((f) => f === 0)) return
+    const t = setTimeout(() => setFlash({ TOP20: 0, GOLD: 0, SILVER: 0, BRONZE: 0 }), 1000)
+    return () => clearTimeout(t)
+  }, [flash])
+
   return (
     <SectionFrame theme="live-ranking" className="flex flex-col justify-between">
       <div ref={sectionRef} className="safe-shell content-max flex flex-col h-full min-h-0">
@@ -281,7 +317,13 @@ export function LiveRankingSection() {
                           </span>
                           <span className="flex items-center gap-2 shrink-0">
                             {badge && (
-                              <span className="bg-purple text-white text-xs font-black rounded-full px-2 py-0.5 border border-ink whitespace-nowrap inline-flex items-center gap-1 min-w-0">
+                              <span
+                                key={flash[cluster]}
+                                className={cn(
+                                  'bg-purple text-white text-xs font-black rounded-full px-2 py-0.5 border border-ink whitespace-nowrap inline-flex items-center gap-1 min-w-0',
+                                  !reduced && flash[cluster] > 0 && 'animate-pulse',
+                                )}
+                              >
                                 {badge}
                               </span>
                             )}
