@@ -75,10 +75,10 @@ Invariato: animazione confetti esistente con guardia `prefers-reduced-motion`.
 
 ### URL profili social
 
-Configurati come costanti in un punto unico (es. `src/lib/social-links.ts`):
-`FANTACER_INSTAGRAM_URL`, `FANTACER_FACEBOOK_URL` con placeholder reali da
-confermare (attualmente non esistono link social nel codice). Da verificare con
-l'utente in fase di implementazione.
+Costanti in `src/lib/social-links.ts`:
+- `INSTAGRAM_URL = 'https://instagram.com/fanta.cer'` (handle confermato).
+- `FACEBOOK_URL = ''` (non ancora noto): l'icona Facebook viene resa **solo se**
+  l'URL non è vuoto. Con Facebook vuoto si mostra solo l'icona Instagram.
 
 ### Chiavi i18n (it/en/dictionary)
 
@@ -98,7 +98,8 @@ Rimangono in uso: `success.youRock`, `success.voted` (testo aggiornato).
   - `ShareButton`: se `navigator.share` esiste → chiamato; altrimenti
     fallback clipboard + stato "Copiato!";
   - assenza totale (nessuna riga "Totale");
-  - icone social linkate ai profili (`href` attesi);
+  - icone social linkate ai profili (`href` attesi): Instagram sempre presente,
+    Facebook assente quando `FACEBOOK_URL` è vuoto;
   - guardia `prefers-reduced-motion` per confetti (invariata).
 - **Dev preview**: `?dev_success=1&dev_companies=1` (tool esistente) per
   verificare visualmente la sezione senza votare.
@@ -114,5 +115,4 @@ Rimangono in uso: `success.youRock`, `success.voted` (testo aggiornato).
 - `SelectedCompany` contiene solo `{id, name}` + `pallet`: lo scontrino mostra i
   **nomi**, non i logo aziendali. Mostrare i logo richiederebbe estendere
   `VoteContext`/`SET_COMPANY` (fuori scope).
-- Il tag testo usa `@fanta.cer` (handle attuale dell'app); l'utente aveva
-  scritto "Fanta-CUP" in bozza — da confermare l'handle definitivo.
+- Il tag testo usa **@fanta.cer** (handle confermato dall'utente).
