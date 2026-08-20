@@ -45,4 +45,14 @@ describe('SuccessSection', () => {
     jest.advanceTimersByTime(2000)
     expect(mockedConfetti).toHaveBeenCalled()
   })
+
+  it('rende il link a Instagram sotto gli sponsor', () => {
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: jest.fn().mockReturnValue({ matches: true }),
+    })
+    const { container } = render(<SuccessSection />)
+    const ig = container.querySelector('a[href="https://instagram.com/fanta.cer"]')
+    expect(ig).toBeTruthy()
+  })
 })
