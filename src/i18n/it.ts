@@ -45,19 +45,12 @@ export const it: Dictionary = {
   'search.errUnknown': 'Errore sconosciuto',
 
   'success.voted': 'Hai votato!',
-  'success.noCompany': 'Nessuna azienda',
-  'success.bestStand': 'miglior stand 2026',
-  'success.playToo1': 'Gioca anche tu,',
-  'success.playToo2': 'si vince sempre!',
   'success.youRock': 'sei forte!',
   'success.receiptTitle': 'Il tuo voto',
   'success.shareTaglinePre': 'Condividi il tuo voto taggando',
   'success.shareTaglinePost': 'e ritira il tuo premio qui',
   'success.shareButton': 'Condividi',
   'success.shareCopied': 'Copiato!',
-  'success.shareSocial': 'condividi sui social',
-  'success.shareTagging': 'taggando',
-  'success.collectPrize': 'e ritira il tuo gadget qui',
 
   'publicRanking.title': 'gli sponsor di fantacer',
 

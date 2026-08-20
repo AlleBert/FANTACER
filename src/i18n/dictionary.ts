@@ -50,19 +50,12 @@ export interface Dictionary {
 
   // Success
   'success.voted': string
-  'success.noCompany': string
-  'success.bestStand': string
-  'success.playToo1': string
-  'success.playToo2': string
   'success.youRock': string
   'success.receiptTitle': string
   'success.shareTaglinePre': string
   'success.shareTaglinePost': string
   'success.shareButton': string
   'success.shareCopied': string
-  'success.shareSocial': string
-  'success.shareTagging': string
-  'success.collectPrize': string
 
   // Public ranking
   'publicRanking.title': string
