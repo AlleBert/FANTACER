@@ -75,24 +75,30 @@ describe('rankCompanies', () => {
     expect(ranked.map((c) => c.id)).toEqual(['zzz-0001', 'zzz-0002'])
   })
 
-  it('risolve i pareggi ai confini 20/21, 50/51, 100/101 con rank univoco', () => {
+  it.each([
+    [20, 'TOP20', 'GOLD'],
+    [50, 'GOLD', 'SILVER'],
+    [100, 'SILVER', 'BRONZE'],
+  ])('risolve il pareggio al confine %s/%s', (hi, cHi, cLo) => {
     const input: Array<Omit<RankingCompany, 'rank'>> = []
-    for (let i = 1; i <= 20; i++) {
-      input.push(company(`c${String(i).padStart(3, '0')}`, `Name ${i}`, 100 - i))
+    for (let i = 1; i <= hi; i++) {
+      input.push(company(`c${String(i).padStart(3, '0')}`, `Name ${i}`, 1000 - i))
     }
-    input.push(company('zzz-0001', 'Confine A', 80))
-    input.push(company('zzz-0002', 'Confine B', 80))
+    // due aziende a parità di punteggio al confine: una prende il #hi, l'altra #hi+1
+    input.push(company('zzz-0001', 'Confine A', 1000 - hi))
+    input.push(company('zzz-0002', 'Confine B', 1000 - hi))
 
     const ranked = rankCompanies(input)
-    const r20 = ranked[19]
-    const r21 = ranked[20]
+    const rHi = ranked[hi - 1]
+    const rLo = ranked[hi]
 
-    expect(r20.rank).toBe(20)
-    expect(r21.rank).toBe(21)
-    expect(r20.name).toBe('Confine A')
-    expect(r21.name).toBe('Confine B')
-    expect(getCluster(r20.rank)).toBe('TOP20')
-    expect(getCluster(r21.rank)).toBe('GOLD')
+    expect(rHi.rank).toBe(hi)
+    expect(rLo.rank).toBe(hi + 1)
+    // a parità di punteggio, l'ordine alfabetico decide: A < B
+    expect(rHi.name).toBe('Confine A')
+    expect(rLo.name).toBe('Confine B')
+    expect(getCluster(rHi.rank)).toBe(cHi)
+    expect(getCluster(rLo.rank)).toBe(cLo)
   })
 
   it('non muta l\'array in input', () => {
