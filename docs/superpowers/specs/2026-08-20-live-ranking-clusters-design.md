@@ -27,15 +27,21 @@ derivate deterministicamente dal rank:
    nell'header (30/50/233).
 4. **Aziende votate evidenziate nella loro fascia**: niente blocco "il tuo voto"
    separato (lo gestisce già la `SuccessSection`, in lavorazione parallela).
-   Se una fascia chiusa contiene un'azienda votata dall'utente, l'header mostra
-   un badge compatto `#37 MARAZZI`; all'apertura la riga è evidenziata
-   (sfondo viola chiaro + badge "il tuo voto").
-5. **CTA "richiedi la classifica completa"** in fondo alla card: invito
-   lead-gen post-Cersaie. **Non implementata ora** — il punto 10 analizza dove
-   andrà e quali dati serviranno.
-6. **Tie-breaker deterministico** da aggiungere all'ordinamento (vedi §6).
-7. **Realtime da implementare**: sostituire il polling 30s con il canale
-   Supabase Realtime su `vote_sessions` (già presente nella publication).
+   Se una fascia chiusa contiene aziende votate dall'utente, l'header mostra un
+   badge compatto; all'apertura le righe interessate sono evidenziate (sfondo
+   viola chiaro + badge "il tuo voto"). Regola per più aziende nella stessa
+   fascia (vedi §3.1): 1 voto → `#37 MARAZZI`; 2+ → `2 · #37 #44`; 3+ su
+   mobile → `3 · i tuoi voti`.
+5. **CTA "request full ranking" FUORI SCOPO**: non si implementa, nessun
+   componente, endpoint o chiave i18n. Rimosso dal design (vedi §11).
+6. **Tie-breaker deterministico**: `ORDER BY total_pallets DESC, name ASC,
+   id ASC` nella RPC `get_company_ranking` (vedi §6). Niente `vote_count` come
+   chiave di ordinamento. Rank = posizione assoluta 1–333, **nessun pari
+   merito**.
+7. **Realtime**: canale Supabase su `vote_sessions` come meccanismo PRIMARIO;
+   il polling 30s resta esclusivamente come FALLBACK quando il canale non è
+   connesso/disponibile, e viene disattivato quando Realtime torna attivo.
+   Gestione visibilità della sezione via `IntersectionObserver` (vedi §4.3).
 8. **Nessuna ricerca nel ranking** per ora: la ricerca esiste solo nella
    sezione voto.
 
@@ -157,15 +163,13 @@ scroll interno.
 - La `SuccessSection` mostra il risultato del voto (in lavorazione parallela,
   fuori scope).
 - Quando l'utente arriva alla sezione ranking, le aziende votate sono
-  evidenziate **nella loro fascia**: badge compatto sull'header della fascia
-  chiusa (`#37 MARAZZI`) e riga evidenziata (sfondo viola chiaro + badge
-  "il tuo voto") all'apertura. Nessun auto-scroll forzato.
+  evidenziate **nella loro fascia** (vedi §3.1). Nessun auto-scroll forzato.
 
 ### LIVE RANKING (sezione dedicata)
 
 Una sola card: header "LIVE RANKING", poi la TOP 20 aperta, poi le fasce
-chiuse con conteggio, poi la CTA lead-gen. Le fasce sono `<details>`-like
-(accordion nativo accessibile) o controllate via stato React.
+chiuse con conteggio. Le fasce sono `<details>`-like (accordion nativo
+accessibile) o controllate via stato React. **Nessuna CTA lead-gen.**
 
 ### TOP20/GOLD/SILVER/BRONZE
 
@@ -173,6 +177,21 @@ chiuse con conteggio, poi la CTA lead-gen. Le fasce sono `<details>`-like
   (come oggi).
 - GOLD/SILVER/BRONZE: rank + nome, **senza punteggio**. Header con intervallo
   rank + conteggio aziende (es. `GOLD · 21-50 · 30`).
+
+### 3.1 Più aziende votate nella stessa fascia
+
+Un utente vota 3 aziende: più di una può cadere nella stessa fascia.
+Regola degli indicatori (un solo badge, lato destro dell'header):
+
+- **1 voto nella fascia** → `#37 MARAZZI` (posizione + nome, se il nome
+  entra nel badge; altrimenti solo `#37`).
+- **2+ voti nella fascia** → `2 · #37 #44` (conteggio + posizioni).
+- **3+ voti (o viewport mobile stretta)** → `3 · i tuoi voti` (conteggio
+  corto: le posizioni si vedono a fascia aperta, header mai affollato).
+
+A fascia aperta ogni riga votata è evidenziata individualmente (sfondo viola
+chiaro + badge `il tuo voto`); se sono 3 nella stessa fascia, tutte e 3 sono
+evidenziate insieme. Fasce diverse con voti mostrano ognuna il proprio badge.
 
 ### Ricerca
 
@@ -187,6 +206,7 @@ di un'azienda solo scorrendo o cercandola nella sezione voto.
 - Header fascia e badge leggibili a basso contrasto ambientale (fiera):
   font-weight 900, dimensioni da token (`--fs-*`/clamp).
 - Touch target dei trigger accordion ≥ 44px.
+- Il badge header con 3+ voti si riduce a `3 · i tuoi voti` (mai affollato).
 
 ## 4. Proposta tecnica
 
@@ -203,18 +223,18 @@ di un'azienda solo scorrendo o cercandola nella sezione voto.
   `rankCompanies(companies)` (derivazione rank 1-based con tie-breaker),
   costanti fasce (`TOP20`, `GOLD`, `SILVER`, `BRONZE`), `CLUSTER_LABELS`.
 - `src/i18n/dictionary.ts` + `it.ts` + `en.ts` — chiavi: titoli fasce, badge
-  "il tuo voto", conteggi, CTA lead-gen.
+  "il tuo voto", conteggi. **Nessuna chiave lead-gen.**
 - `src/app/page.tsx` — invariato: la `LiveRankingSection` resta montata nella
   stessa posizione (9ª sezione, 8ª quando success non è montata).
 
 ### Componenti
 
 - `RankingBand` (interno a `live-ranking-section.tsx` o file dedicato):
-  header fascia + lista + stato aperto/chiuso + badge voto utente.
+  header fascia + lista + stato aperto/chiuso + badge voto utente (regola
+  §3.1: 1 voto → `#37 MARAZZI`; 2+ → `2 · #37 #44`; 3+/mobile → `3 · i tuoi
+  voti`).
 - `RankingRow` (interno): riga rank+nome(+punteggio se TOP20) + evidenziazione
   voto utente.
-- `RequestFullRankingCTA` (interno): card CTA lead-gen (render condizionale,
-  **disattivata di default** finché non esiste il backend lead-gen).
 
 ### API/endpoint
 
@@ -222,9 +242,6 @@ di un'azienda solo scorrendo o cercandola nella sezione voto.
   calcolo rank/cluster lato server, si aggiungono `rank` e `cluster` senza
   togliere nulla (additivo, non breaking).
 - Nessun nuovo endpoint.
-- Realtime: nuovo channel Supabase (client) su
-  `postgres_changes` INSERT/UPDATE/DELETE su `vote_sessions` → refetch del
-  ranking (o aggiornamento incrementale) quando la sezione è visibile.
 
 ### Dati usati
 
@@ -236,16 +253,28 @@ di un'azienda solo scorrendo o cercandola nella sezione voto.
 - Nessuna modifica a `submit_vote`, `companies`, `vote_sessions`, `batch_settings`,
   `site_settings`. Nessuna modifica alla logica del voto/punteggio.
 
-### Realtime
+### 4.3 Realtime (architettura)
 
-- Mantenere il polling come fallback/sync iniziale; attivare il channel
-  Realtime quando la sezione è in viewport (o sempre, con `refetch` su evento).
-- Su evento `vote_sessions` → refetch di `/api/public/ranking` e aggiornamento
-  delle fasce con transizione coerente (posizione/fascia delle righe già
-  evidenziate).
-- Pausare il channel quando la sezione è fuori viewport (risparmio risorse) —
-  riutilizzare `IntersectionObserver` già presente in `use-active-section` o
-  un observer dedicato.
+**INITIAL FETCH** → fetch di `/api/public/ranking` al mount (stato di carico
+mostrato). Supabase Realtime è il meccanismo principale di aggiornamento.
+
+1. **Channel Realtime** su `postgres_changes` (INSERT/UPDATE/DELETE) di
+   `vote_sessions`. Su evento → refetch di `/api/public/ranking` e
+   aggiornamento della UI (fasce + righe evidenziate si riconciliano con
+   l'ultimo snapshot).
+2. **Polling 30s = SOLO fallback**: attivo esclusivamente quando il canale
+   Realtime non è connesso/disponibile (stato `SUBSCRIBED` non raggiunto,
+   errore di connessione, sessione non supportata). Appena Realtime torna
+   `SUBSCRIBED`, il polling viene **disattivato**.
+3. **Visibilità sezione**: un `IntersectionObserver` sulla sezione (o il
+   riuso di `use-active-section`) controlla il channel: quando la sezione non è
+   visibile, il channel viene **sospeso** (rimozione/`removeChannel`) per
+   risparmiare risorse; al rientro in viewport si ristabilisce il channel e si
+   fa un refetch di sync. Il polling di fallback segue la stessa logica di
+   visibilità (pausa fuori viewport).
+4. **Debounce**: i refetch su eventi ravvicinati vengono coalescati (es.
+   debounce ~500ms) per evitare raffiche di fetch durante il picco di voti in
+   fiera.
 
 ### Cluster derivato
 
@@ -290,22 +319,24 @@ A parità di punteggio l'ordine relativo è **non deterministico** (Postgres non
 garantisce l'ordine delle righe con chiave duplicata senza chiave secondaria).
 Non esiste alcun tie-breaker.
 
-**Regola proposta (deterministica, minima)**:
+**Regola proposta (deterministica, minima, senza nuove metriche)**:
 
 ```sql
-order by total_pallets desc, vote_count desc, name asc, id asc
+order by total_pallets desc, name asc, id asc
 ```
 
-- `vote_count desc`: chi ha più sessioni di voto (più "consenso diffuso") sale.
+- `total_pallets desc`: il punteggio (metrica esistente, invariata).
 - `name asc`: ordine alfabetico stabile e predicibile per l'utente.
-- `id asc`: ultima risorsa, UUID deterministica, rende l'ordine totale.
+- `id asc`: ultima risorsa, UUID deterministica, rende l'ordine **totale**.
 
-Questa regola è **deterministica e totale** (nessun pareggio possibile),
-riutilizza dati già calcolati dalla RPC (`vote_count`) e non cambia la logica
-del punteggio. Il rank 1-based deriva da questo ordinamento.
+**NON si usa `vote_count` come tie-breaker**: il rank deriva esclusivamente da
+`total_pallets` e, a parità, dall'ordinamento alfabetico. Il `vote_count` resta
+un dato restituito dal payload ma non partecipa all'ordinamento.
 
-Nessuna nuova regola arbitraria: si formalizza l'unico punto di ordinamento
-(la RPC) così da evitare ambiguità ai confini di fascia (20/21, 50/51, 100/101).
+Il **rank è una posizione assoluta 1–333**: non esistono pari merito ai fini
+del rank. Ne derivano i cluster: TOP20 = 1-20, GOLD = 21-50, SILVER = 51-100,
+BRONZE = 101-333. Ai confini (20/21, 50/51, 100/101) l'ordine è sempre
+determinato e unico → nessuna ambiguità di fascia.
 
 ## 7. Impatto
 
@@ -329,18 +360,19 @@ Nessuna nuova regola arbitraria: si formalizza l'unico punto di ordinamento
 
 Ordine suggerito:
 
-1. Migrazione SQL: tie-breaker in `get_company_ranking` (+ eventuale campo
-   `rank`/`cluster` nel payload, se si sceglie il calcolo server-side).
+1. Migrazione SQL: tie-breaker (`total_pallets desc, name asc, id asc`) in
+   `get_company_ranking` (+ eventuale campo `rank`/`cluster` nel payload, se
+   si sceglie il calcolo server-side).
 2. `src/lib/ranking.ts`: helper puri `getCluster`, `rankCompanies`,
    costanti fasce + unit test.
 3. Refactor `LiveRankingSection`: card a fasce (TOP20 aperta, altre chiuse
-   con conteggi), righe con/ senza punteggio, evidenziazione voto utente.
-4. Integrazione Realtime (channel su `vote_sessions`) con gestione visibilità
-   e fallback polling.
-5. CTA lead-gen (render condizionale, disattivata di default).
-6. i18n (it/en/dictionary).
-7. Test (unit + e2e + audit).
-8. Verifiche responsive/audit.
+   con conteggi), righe con/ senza punteggio, evidenziazione voto utente
+   (regola §3.1 per più voti nella stessa fascia).
+4. Integrazione Realtime (channel su `vote_sessions` come primario, polling
+   30s come fallback, visibilità via IntersectionObserver).
+5. i18n (it/en/dictionary).
+6. Test (unit + e2e + audit).
+7. Verifiche responsive/audit.
 
 ## 9. Test plan
 
@@ -348,16 +380,28 @@ Ordine suggerito:
 
 - **Unit** (`tests/lib/ranking.test.ts`):
   - `getCluster(rank)` per i confini (1, 20, 21, 50, 51, 100, 101, 333, 0/negativo);
-  - `rankCompanies` ordina con tie-breaker (punteggio, poi vote_count, poi
-    name, poi id) e assegna rank 1-based;
-  - pareggi ai confini (20/21, 50/51, 100/101) risolti deterministicamente;
+  - `rankCompanies` ordina con tie-breaker (`total_pallets desc`, poi
+    `name asc`, poi `id asc`) e assegna rank 1-based univoco;
+  - **pareggi ai confini** (20/21, 50/51, 100/101): aziende con lo stesso
+    `total_pallets` ai confini → la fascia è decisa solo dal rank univoco
+    (es. #20 in TOP20, #21 in GOLD; #50 in GOLD, #51 in SILVER; #100 in
+    SILVER, #101 in BRONZE);
   - azienda con rank alto in fascia giusta.
 - **Unit** (`tests/components/sections/live-ranking-section.test.tsx`):
   - render TOP20 con punteggi; GOLD/SILVER/BRONZE chiuse senza punteggi;
   - badge voto utente su header fascia chiusa + riga evidenziata;
-  - CTA lead-gen assente di default.
+  - **più voti nella stessa fascia**: 2 voti → `2 · #37 #44`; 3 voti →
+    `3 · i tuoi voti`; a fascia aperta tutte le righe evidenziate;
+  - **nessuna CTA lead-gen presente**.
+- **Unit Realtime** (`tests/components/sections/live-ranking-realtime.test.tsx`):
+  - initial fetch al mount;
+  - evento `vote_sessions` → refetch;
+  - channel non connesso → polling fallback attivo; quando `SUBSCRIBED` →
+    polling disattivato;
+  - fuori viewport → channel sospeso; rientro → ristabilito + refetch di sync.
 - **E2E** (`tests/e2e/voting-flow.spec.ts` o nuovo spec):
-  - dopo il voto, la sezione ranking mostra il badge dell'azienda votata;
+  - dopo il voto, la sezione ranking mostra il badge dell'azienda votata
+    (anche con più aziende nella stessa fascia);
   - fasce collassate/espandibili;
   - nessun overflow orizzontale/verticale su tutti i viewport del gate P0.
 - **Audit**: `npm run visual:audit:homepage` + `:ios` (screenshot sezione
@@ -367,9 +411,11 @@ Ordine suggerito:
 
 - Verifica su tutti i viewport (mobile piccolo, mobile, tablet, desktop,
   wide) con ranking reale.
-- Flusso post-voto: azienda in TOP20, in GOLD, in BRONZE.
+- Flusso post-voto: azienda in TOP20, in GOLD, in BRONZE; 2 o 3 aziende nella
+  stessa fascia (header non affollato su mobile).
 - Cambio fascia in tempo reale: azienda #19 → #21 mentre la sezione è aperta.
-- Realtime con più dispositivi (due browser in parallelo).
+- Realtime con più dispositivi (due browser in parallelo); disconnessione
+  rete → fallback polling attivo → riconnessione → polling disattivato.
 - Test su iOS Safari (WebKit) con safe-area.
 
 ## 10. Mockup testuale
@@ -386,17 +432,14 @@ Ordine suggerito:
 │  3  Gres Z                  87                │
 │  ⋮ fino a 20                                  │
 ├───────────────────────────────────────────────┤
-│ ░ GOLD · 21-50 · 30         [#37 MARAZZI] ▸   │  ← badge se la fascia contiene un tuo voto
+│ ░ GOLD · 21-50 · 30         [2 · #37 #44] ▸   │  ← badge "2 voti + posizioni" se la fascia
+│                                               │    contiene 2 tuoi voti (3+ → "3 · i tuoi voti")
 ├───────────────────────────────────────────────┤
 │ ░ SILVER · 51-100 · 50                ▸        │
 ├───────────────────────────────────────────────┤
 │ ░ BRONZE · 101-333 · 233   [#102 Gres Z] ▸    │  ← badge se la fascia contiene un tuo voto
-├───────────────────────────────────────────────┤
-│ 📩 Dopo Cersaie — la classifica completa      │
-│ (333 aziende con punteggi) sarà disponibile   │
-│ su richiesta.            [richiedi la        │
-│                          classifica completa] │
 └───────────────────────────────────────────────┘
+        (scroll interno card)
 ```
 
 ### Mobile (card a tutta larghezza, scroll interno)
@@ -410,31 +453,24 @@ Ordine suggerito:
 │  2 Piastrelle Y    98        │   ← evidenziata se è un tuo voto
 │  ⋮ fino a 20                 │
 ├──────────────────────────────┤
-│ ░ GOLD · 21-50 · 30   #37 ▸  │   ← badge "#37 MARAZZI" se tuo voto
+│ ░ GOLD · 21-50 · 30  3 · ▸   │   ← badge compatto "3 · i tuoi voti"
+│                              │     (niente affollamento su mobile)
 ├──────────────────────────────┤
 │ ░ SILVER · 51-100 · 50   ▸   │
 ├──────────────────────────────┤
 │ ░ BRONZE · 101-333 · 233 ▸   │
-├──────────────────────────────┤
-│ 📩 Dopo Cersaie              │
-│ [richiedi la classifica      │
-│  completa]                   │
 └──────────────────────────────┘
         (scroll interno card)
 ```
 
-## 11. Post-Cersaie / lead-gen (analisi, non implementazione)
+## 11. Post-Cersaie / lead-gen — FUORI SCOPO
 
-L'architettura attuale permette di aggiungere una CTA "Request full ranking"
-senza refactoring: esiste già `/api/contact` (form contatto con nome+email)
-che può ospitare l'invio della richiesta (oggetto "richiesta classifica
-completa" + messaggio). La CTA verrebbe inserita nel footer della card
-ranking (come da mockup) e attivata **solo dopo l'evento** (config o flag).
-
-Dati che servirebbero: nome, email, eventuale azienda di interesse. Nessun
-nuovo endpoint richiesto ora; eventualmente un endpoint dedicato
-`/api/lead/ranking` quando la feature diventa attiva. Non si crea alcun
-sistema di raccolta email nel frattempo.
+La CTA "Request full ranking" **non fa parte di questo lavoro**: nessun
+componente, endpoint o chiave i18n. Il design attuale lascia libero il footer
+della card (nessun elemento aggiuntivo), quindi un'eventuale CTA futura potrà
+essere aggiunta senza refactoring. L'architettura esistente (form contatto
+`/api/contact`) offre già un canale per una futura raccolta lead, ma non viene
+toccata.
 
 ## Note operative
 
