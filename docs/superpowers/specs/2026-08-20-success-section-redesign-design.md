@@ -14,19 +14,29 @@ Nessuna modifica a dati o API: `SuccessSection` legge già tutto dal
 
 ## Design approvato
 
-### Struttura (colonna unica centrata, dall'alto)
+### Struttura responsive (aggiornato — opzione B)
+
+- **Mobile/tablet (default)**: colonna unica centrata, ordine DOM:
+  titolo → badge → scontrino → tagline → share → sponsor → icone.
+- **Desktop (`lg`)**: **due colonne** via `lg:grid lg:grid-cols-2`
+  (`lg:items-center`, `lg:gap-x-20 lg:gap-y-12`), con riordino via
+  `lg:col-start-*`/`lg:row-start-*` che **preserva l'ordine DOM mobile**:
+  - Colonna sinistra: "SEI FORTE!" + badge (row 1), tagline + bottone Condividi
+    (row 2), allineate a sinistra (`lg:items-start lg:text-left`).
+  - Colonna destra: scontrino (row 1), sponsor (row 2), icone social (row 3),
+    centrate (`lg:justify-center`).
+- Contenitore: `flex w-full max-w-(--content-max) ... lg:grid lg:grid-cols-2`.
+- Tagline usa `max-w-(--measure-wide)` (token, sostituisce il vecchio `max-w-[20rem]`).
+
+### Elementi (dall'alto, per colonna)
+
+Colonna sinistra (desktop) / sopra (mobile):
 
 1. **"SEI FORTE!"** — headline attuale (`success.youRock`), `text-purple`,
    uppercase, font-black, tracking tight. Sul bianco in cima al gradiente.
 2. **Badge "HAI VOTATO!"** — sticker giallo (`bg-bright`), `border-2 border-ink`,
    `shadow-[3px_3px_0_#000]`, `rotate-(-2deg)`, uppercase, font-black. Testo da
    chiave `success.voted` **aggiornata** a "Hai votato!" / "You voted!".
-3. **Scontrino "IL TUO VOTO"** — card bianca `border-2 border-ink` con ombra dura,
-   `rotate-1deg`. Intestazione "IL TUO VOTO" (nuova chiave i18n), separatore
-   tratteggiato. 3 righe: nome azienda (sinistra) + cerchietto punteggio pallet
-   (destra): cerchio bianco `border-2 border-ink shadow-[2px_2px_0_#000]` con il
-   numero `4|2|1` in `text-purple` font-black (stesso linguaggio dei selettori
-   pallet della SearchSection). **Senza totale.** Larghezza ≤ `280px` fluidi.
 4. **Testo condivisione** — "Condividi il tuo voto taggando **@fanta.cer** e
    ritira il tuo premio qui" (nuove chiavi i18n `success.shareTaglinePre` +
    `success.shareTaglinePost`, divise attorno al tag sticker),
@@ -38,6 +48,15 @@ Nessuna modifica a dati o API: `SuccessSection` legge già tutto dal
    - fallback su desktop/assenza API: `navigator.clipboard.writeText` del testo
      + stato "Copiato!" temporaneo (3s).
    - Testo da chiave `success.shareButton`.
+
+Colonna destra (desktop) / sotto (mobile):
+
+3. **Scontrino "IL TUO VOTO"** — card bianca `border-2 border-ink` con ombra dura,
+   `rotate-1deg`. Intestazione "IL TUO VOTO" (nuova chiave i18n), separatore
+   tratteggiato. 3 righe: nome azienda (sinistra) + cerchietto punteggio pallet
+   (destra): cerchio bianco `border-2 border-ink shadow-[2px_2px_0_#000]` con il
+   numero `4|2|1` in `text-purple` font-black (stesso linguaggio dei selettori
+   pallet della SearchSection). **Senza totale.** Larghezza ≤ `280px` fluidi.
 6. **Card sponsor con stand** — `<SponsorCards variant="default" standOnly />`
    (stile attuale, ombra morbida; nessuna modifica al componente). In produzione
    mostra le 2 aziende con `has_stand=true`.
