@@ -196,12 +196,12 @@ export function LiveRankingSection() {
   useEffect(() => {
     const changed: Cluster[] = []
     for (const { cluster, companies: bandCompanies } of bands) {
-      if (open[cluster]) continue // solo fasce chiuse
       if (bandCompanies.length === 0) continue
       const votedInBand = bandCompanies.filter((c) => votedIds.has(c.id))
       if (votedInBand.length === 0) continue
       const sig = votedInBand.map((c) => c.rank).join(',')
-      if (prevBandSig.current[cluster] !== '' && prevBandSig.current[cluster] !== sig) {
+      // solo fasce chiuse: registra sempre la sig ma fai pulse solo se chiusa
+      if (!open[cluster] && prevBandSig.current[cluster] !== '' && prevBandSig.current[cluster] !== sig) {
         changed.push(cluster)
       }
       prevBandSig.current[cluster] = sig

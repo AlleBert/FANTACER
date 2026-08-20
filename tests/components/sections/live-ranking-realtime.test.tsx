@@ -219,4 +219,43 @@ describe('LiveRankingSection realtime', () => {
     const badge = container.querySelector('[class*="animate-pulse"]')
     expect(badge).not.toBeNull()
   })
+
+  it('sopprime il pulse con prefers-reduced-motion', async () => {
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      configurable: true,
+      value: jest.fn().mockReturnValue({ matches: true }),
+    })
+    ;(useVote as jest.Mock).mockReturnValue({
+      gameUnlock: { success: false },
+      selectedCompanies: [{ company: { id: 'c04', name: 'Marmo W' }, pallet: 4 }],
+    })
+    let pallets = goldPallets()
+    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('/api/public/flag/voting')) {
+        return { ok: true, json: async () => ({ enabled: true }) }
+      }
+      return { ok: true, json: async () => buildPayload(pallets) }
+    })
+    const { container } = render(<LiveRankingSection />)
+    await act(async () => {})
+    const io = MockIntersectionObserver.instances[0]
+    await act(async () => { io.fire(true) })
+
+    // I dati sono renderizzati (le aziende caricate) prima di verificare l'assenza del pulse.
+    await screen.findByText('Marmo W')
+
+    // c04 scende da rank 22 a rank 21 (stessa fascia GOLD): firma cambia, ma
+    // con prefers-reduced-motion il pulse NON deve apparire.
+    pallets = goldPallets()
+    pallets[20][2] = 978
+    await act(async () => {
+      mockHolder.changeCb?.()
+      jest.advanceTimersByTime(600)
+    })
+
+    const badge = container.querySelector('[class*="animate-pulse"]')
+    expect(badge).toBeNull()
+  })
 })
