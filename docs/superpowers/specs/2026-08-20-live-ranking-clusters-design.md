@@ -276,6 +276,36 @@ mostrato). Supabase Realtime è il meccanismo principale di aggiornamento.
    debounce ~500ms) per evitare raffiche di fetch durante il picco di voti in
    fiera.
 
+### 4.4 Realtime — comportamento visivo
+
+Regole vincolanti per l'aggiornamento della UI su eventi realtime:
+
+- **Niente auto-scroll**: l'aggiornamento avviene in posizione.
+- **Niente modifica arbitraria dell'accordion**: lo stato aperto/chiuso delle
+  fasce è dell'utente e non viene toccato dai refetch; i dati si aggiornano,
+  lo stato UI resta (due stati separati in React).
+- **Niente layout jump**: le righe sono **keyed by company id** e usano
+  l'animazione **layout FLIP** di framer-motion (`motion.div layout`): quando
+  l'array si riordina, la riga scivola nella nuova posizione.
+- **Cambio fascia** (es. #19→#21 o #21→#20): l'azienda esce dalla fascia
+  precedente (`AnimatePresence mode="popLayout"` exit) ed entra nella nuova
+  (enter), mantenendo l'evidenziazione "il tuo voto".
+- **Fasce chiuse**: il badge header si aggiorna con un breve **pulse**
+  (1-2 cicli) per segnalare il cambio di posizione senza aprire la fascia.
+- **prefers-reduced-motion**: la guardia globale in `globals.css` (duration ~0)
+  + check esplicito per disattivare FLIP/pulse e mostrare solo lo stato finale.
+
+**Scenari coperti (mockup realizzato in visual companion):**
+
+1. **Sorpasso dentro la TOP20 (aperta)**: due righe si scambiano posizione →
+   FLIP sulle righe keyed, nessun salto.
+2. **Sorpasso GOLD↔TOP20**: l'azienda esce dalla TOP20 (exit animato) e il
+   badge della GOLD chiusa si aggiorna con pulse (`21 · Azienda Z`); l'accordion
+   resta chiuso. Caso inverso (#21→#20): badge GOLD perde la voce e la riga
+   appare in TOP20 (enter animato).
+3. **Cambio posizione dentro una fascia chiusa**: solo il badge header si
+   aggiorna (#37 → #38) con pulse; a fascia aperta la riga si sposta col FLIP.
+
 ### Cluster derivato
 
 La catena è: `score → ordinamento (tie-breaker) → rank 1-based → cluster`.
@@ -370,9 +400,11 @@ Ordine suggerito:
    (regola §3.1 per più voti nella stessa fascia).
 4. Integrazione Realtime (channel su `vote_sessions` come primario, polling
    30s come fallback, visibilità via IntersectionObserver).
-5. i18n (it/en/dictionary).
-6. Test (unit + e2e + audit).
-7. Verifiche responsive/audit.
+5. Animazioni realtime: FLIP su righe keyed, `AnimatePresence` per il cambio
+   fascia, pulse sui badge header, guardia `prefers-reduced-motion`.
+6. i18n (it/en/dictionary).
+7. Test (unit + e2e + audit).
+8. Verifiche responsive/audit.
 
 ## 9. Test plan
 
@@ -399,6 +431,14 @@ Ordine suggerito:
   - channel non connesso → polling fallback attivo; quando `SUBSCRIBED` →
     polling disattivato;
   - fuori viewport → channel sospeso; rientro → ristabilito + refetch di sync.
+- **Unit animazioni realtime** (stesso file o dedicato):
+  - righe keyed by id: riordino con FLIP (layout) senza layout jump;
+  - cambio fascia: exit dalla fascia precedente + enter nella nuova con
+    `AnimatePresence`, badge "il tuo voto" mantenuto;
+  - badge header fascia chiusa aggiornato + pulse sul cambio posizione;
+  - stato accordion invariato dopo un refetch (aperto resta aperto, chiuso
+    resta chiuso);
+  - `prefers-reduced-motion` → nessuna animazione (solo stato finale).
 - **E2E** (`tests/e2e/voting-flow.spec.ts` o nuovo spec):
   - dopo il voto, la sezione ranking mostra il badge dell'azienda votata
     (anche con più aziende nella stessa fascia);
@@ -416,6 +456,9 @@ Ordine suggerito:
 - Cambio fascia in tempo reale: azienda #19 → #21 mentre la sezione è aperta.
 - Realtime con più dispositivi (due browser in parallelo); disconnessione
   rete → fallback polling attivo → riconnessione → polling disattivato.
+- Scenari visivi realtime: sorpasso dentro TOP20; sorpasso GOLD↔TOP20;
+  cambio posizione dentro fascia chiusa (badge pulse, accordion non toccato,
+  nessun auto-scroll, nessun layout jump); con `prefers-reduced-motion` attivo.
 - Test su iOS Safari (WebKit) con safe-area.
 
 ## 10. Mockup testuale
