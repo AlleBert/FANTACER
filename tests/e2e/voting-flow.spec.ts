@@ -35,12 +35,15 @@ test.describe('Voting Flow', () => {
     await inviaButton.click();
 
     await page.waitForSelector('[data-section="success"]', { timeout: 15000 });
-    await page.waitForSelector('[data-section="success"] .aspect-square', { timeout: 15000 });
+    await page.waitForSelector('[data-section="success"] [style*="--sponsor-size"]', { timeout: 15000 });
 
     const overflows = await page.locator('[data-section="success"]').evaluate((section) => {
       const sr = section.getBoundingClientRect();
       const offenders: { text: string; overflowBy: number; axis: string }[] = [];
-      for (const card of section.querySelectorAll<HTMLElement>('.aspect-square')) {
+      const cards = Array.from(section.querySelectorAll<HTMLElement>('a, div')).filter((el) =>
+        el.style.getPropertyValue('--sponsor-size'),
+      );
+      for (const card of cards) {
         const cr = card.getBoundingClientRect();
         if (cr.right > sr.right + 2) {
           offenders.push({

@@ -37,13 +37,26 @@ const SIZES: Record<SponsorCardsVariant, string> = {
 };
 
 const CARD_CLASSES =
-  'relative aspect-square rounded-2xl bg-white shadow-[0_4px_16px_rgba(0,0,0,.15)] flex items-center justify-center overflow-hidden transition-transform hover:-translate-y-1 active:scale-95 focus-visible:ring-2 focus-visible:ring-purple focus-visible:outline-none';
+  'relative rounded-2xl bg-white shadow-[0_4px_16px_rgba(0,0,0,.15)] flex items-center justify-center overflow-hidden transition-transform hover:-translate-y-1 active:scale-95 focus-visible:ring-2 focus-visible:ring-purple focus-visible:outline-none';
 
 function sizeKey(count: number): string {
   if (count === 1) return '1';
   if (count === 2) return '2';
   if (count === 3) return '3';
   return '4';
+}
+
+function sizeStyle(variant: SponsorCardsVariant, sizeVar: string): React.CSSProperties {
+  const size = 'calc(var(--sponsor-size) * var(--sponsor-scale))';
+  return {
+    '--sponsor-size': sizeVar,
+    '--sponsor-scale': SCALE[variant],
+    flexBasis: size,
+    width: size,
+    height: size,
+    maxWidth: `min(${size}, var(--sponsor-card-maxh))`,
+    maxHeight: 'var(--sponsor-card-maxh)',
+  } as React.CSSProperties;
 }
 
 export function SponsorCards({ variant = 'default', standOnly = false, refreshKey, className }: SponsorCardsProps) {
@@ -79,13 +92,8 @@ export function SponsorCards({ variant = 'default', standOnly = false, refreshKe
           <div
             key={i}
             aria-hidden="true"
-            className="aspect-square animate-pulse rounded-2xl bg-white/90 shadow-[0_4px_16px_rgba(0,0,0,.12)]"
-            style={{
-              '--sponsor-size': 'var(--sponsor-card-4)',
-              '--sponsor-scale': SCALE[variant],
-              flexBasis: 'calc(var(--sponsor-size) * var(--sponsor-scale))',
-              maxWidth: 'min(calc(var(--sponsor-size) * var(--sponsor-scale)), var(--sponsor-card-maxh))',
-            } as React.CSSProperties}
+            className="animate-pulse rounded-2xl bg-white/90 shadow-[0_4px_16px_rgba(0,0,0,.12)]"
+            style={sizeStyle(variant, 'var(--sponsor-card-4)')}
           />
         ))}
       </div>
@@ -97,12 +105,7 @@ export function SponsorCards({ variant = 'default', standOnly = false, refreshKe
   return (
     <div className={cn('flex flex-wrap items-center justify-center gap-(--sponsor-gap)', className)}>
       {visible.map((sponsor) => {
-        const cardStyle = {
-          '--sponsor-size': `var(--sponsor-card-${sizeKey(count)})`,
-          '--sponsor-scale': SCALE[variant],
-          flexBasis: 'calc(var(--sponsor-size) * var(--sponsor-scale))',
-          maxWidth: 'min(calc(var(--sponsor-size) * var(--sponsor-scale)), var(--sponsor-card-maxh))',
-        } as React.CSSProperties;
+        const cardStyle = sizeStyle(variant, `var(--sponsor-card-${sizeKey(count)})`);
 
         const content = sponsor.image_url ? (
           <Image

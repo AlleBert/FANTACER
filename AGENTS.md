@@ -76,6 +76,23 @@ La webapp è un gioco multi-device con sezioni full-page a snap. La responsivene
 - `SuccessSection` è condizionale (compare solo dopo il voto) e non è coperta dagli audit standard.
 - WebKit/Playwright non simula `env(safe-area-inset-*)` reali: l'audit safe-area li emula via override dei token CSS (`--safe-top`, `--safe-bottom`, `--safe-x`). Non dichiarare una verifica superata senza averla eseguita.
 
+## Esecuzione test su hardware limitato (PC dev)
+
+La macchina di sviluppo ha RAM limitata (~3.7GiB, WSL2) e **si blocca se la suite e2e completa viene lanciata tutta insieme**. Regole vincolanti:
+
+- **Mai `npm run test:e2e` nudo**: esegue tutti i 18 spec × 11 progetti e satura la RAM. Usa sempre i **batch dedicati**:
+  - `npm run e2e:gate` — `responsive-structural` + `voting-flow` su `chromium` + `mobile-webkit` (gate P0)
+  - `npm run e2e:home` — `homepage`, `legal-pages`, `smoke`, `scroll-blocking`, `accessibility` su `chromium`
+  - `npm run e2e:admin` — `admin`, `admin-auth`, `admin-sponsor`, `viewer`, `repro-phantom-500` su `chromium`
+  - Gli script includono già `--workers=1` (obbligatorio: login MFA admin condivisi) e `NODE_OPTIONS=--max-old-space-size=2560`.
+- **Audit sempre con server production**: `CI=true npm run visual:audit:ios` / `:homepage` (webServer usa `npm run start`, ~metà RAM di `next dev`). Serve un build aggiornato.
+- **Matrice iOS ridotta**: 3 iPhone (SE, 13, Pro Max) + iPad Mini portrait. Mai `--project=ios-*` oltre questo set, mai due suite WebKit in parallelo.
+- **Una suite WebKit alla volta**, mai in parallelo con altri run.
+- **`jest` limitato**: `--maxWorkers=4` (già in `npm test`); `build` ha `NODE_OPTIONS` dedicata.
+- **Dopo un run interrotto** (Ctrl-C, crash, OOM) lancia `npm run e2e:cleanup`: uccide i browser Playwright orfani che altrimenti rubano RAM.
+- **Swap WSL attivo**: `/swapfile` 4GiB + `vm.swappiness=10` (persistiti via `/etc/fstab` e `/etc/sysctl.conf`). Se spariscono da `swapon --show` dopo un reboot, riapplicare i comandi sudo relativi.
+- Suite pesanti solo a macchina "quieta": chiudere browser/app prima di un audit.
+
 ## TOTP / Google Authenticator
 
 - **Google Authenticator (inserimento manuale)** accetta il secret base32 **solo in minuscolo**. Se incollato in MAIUSCOLO rifiuta con "carattere non valido nel valore del codice".

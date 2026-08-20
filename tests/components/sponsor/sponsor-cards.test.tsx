@@ -76,6 +76,26 @@ describe('SponsorCards', () => {
     await waitFor(() => expect(el.style.getPropertyValue('--sponsor-scale')).toBe('var(--sponsor-scale-large)'))
   })
 
+  it('applica size var, scale e cap di altezza (--sponsor-card-maxh) alla card', async () => {
+    mockFetch.mockResolvedValue({ ok: true, json: async () => ({ sponsors: BASE.slice(0, 2) }) } as Response)
+    render(<SponsorCards />)
+    const alpha = await screen.findByText('Alpha')
+    const el = alpha.closest('a') as HTMLElement
+    const size = 'calc(var(--sponsor-size) * var(--sponsor-scale))'
+    await waitFor(() => expect(el.style.getPropertyValue('--sponsor-size')).toContain('--sponsor-card-2'))
+    expect(el.style.getPropertyValue('--sponsor-scale')).toBe('1')
+    expect(el.style.maxWidth).toBe(`min(${size}, var(--sponsor-card-maxh))`)
+    expect(el.style.maxHeight).toBe('var(--sponsor-card-maxh)')
+  })
+
+  it('il skeleton applica size var, scale e cap di altezza', () => {
+    mockFetch.mockReturnValue(new Promise(() => {}))
+    const { container } = render(<SponsorCards />)
+    const sk = container.querySelector('.animate-pulse') as HTMLElement
+    expect(sk.style.getPropertyValue('--sponsor-size')).toContain('--sponsor-card-4')
+    expect(sk.style.maxHeight).toBe('var(--sponsor-card-maxh)')
+  })
+
   it('con standOnly filtra has_stand', async () => {
     render(<SponsorCards standOnly />)
     await waitFor(() => expect(screen.queryByText('Alpha')).not.toBeNull())
