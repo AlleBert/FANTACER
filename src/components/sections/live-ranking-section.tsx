@@ -96,7 +96,11 @@ export function LiveRankingSection() {
     return () => clearInterval(interval)
   }, [fetchRanking, channelActive, isVisible])
 
-  // Realtime channel su vote_sessions (primario), sospeso fuori viewport
+  // Realtime channel su ranking_tick (primario), sospeso fuori viewport.
+  // ranking_tick è una tabella "tick" con solo un contatore di versione (no
+  // PII) e una policy anon select: gli eventi Realtime vengono consegnati ai
+  // client pubblici, che poi refetchano /api/public/ranking. vote_sessions
+  // resta chiuso ai client (solo service_role), quindi NON va sottoscritto qui.
   useEffect(() => {
     const section = sectionRef.current
     if (!section) return
@@ -113,7 +117,7 @@ export function LiveRankingSection() {
         .channel('live-ranking-votes')
         .on(
           'postgres_changes',
-          { event: '*', schema: 'public', table: 'vote_sessions' },
+          { event: 'UPDATE', schema: 'public', table: 'ranking_tick' },
           () => {
             if (debounceRef.current) clearTimeout(debounceRef.current)
             debounceRef.current = setTimeout(() => {
@@ -124,11 +128,12 @@ export function LiveRankingSection() {
         )
         .subscribe((status) => {
           // MAI attivare il realtime dal solo status di socket: Supabase Realtime
-          // consegna gli eventi solo se l'RLS del subscriber li autorizza. vote_sessions
-          // ha solo policy service_role (no anon select), quindi un client pubblico riceve
-          // SUBSCRIBED ma ZERO eventi. channelActive va impostato SOLO alla consegna reale
-          // di un evento (nell'handler sopra); altrimenti il polling fallback resta attivo
-          // e la classifica non si congela.
+          // consegna gli eventi solo se l'RLS del subscriber li autorizza. Con
+          // ranking_tick (policy anon select, solo un contatore, nessuna PII) il
+          // client pubblico riceve davvero gli eventi, ma channelActive va comunque
+          // impostato SOLO alla consegna reale di un evento (nell'handler sopra):
+          // se un subscriber non è autorizzato riceve SUBSCRIBED ma ZERO eventi, e
+          // senza questa guardia il polling fallback si congelerebbe.
           if (status !== 'SUBSCRIBED') setChannelActive(false)
         })
       channelRef.current = channel

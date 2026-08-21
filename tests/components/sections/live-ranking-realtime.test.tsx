@@ -39,7 +39,7 @@ const mockHolder = {
 jest.mock('@/lib/supabase/client', () => ({
   createClient: () => ({
     channel: (name: string) => {
-      // Solo il channel primario vote_sessions espone i callback controllabili;
+      // Solo il channel primario ranking_tick espone i callback controllabili;
       // quello del voting flag è un fake inerte (non deve sovrascrivere i handler).
       const isVote = name === 'live-ranking-votes'
       return {
@@ -135,7 +135,7 @@ describe('LiveRankingSection realtime', () => {
     await screen.findByText('Ceramiche X')
   })
 
-  it('refetch su evento vote_sessions (channel primario)', async () => {
+  it('refetch su evento ranking_tick (channel primario)', async () => {
     render(<LiveRankingSection />)
     await act(async () => {})
     const io = MockIntersectionObserver.instances[0]
