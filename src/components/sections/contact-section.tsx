@@ -109,7 +109,7 @@ export function ContactSection() {
                 aria-label={t('contact.nameLabel')}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 md:px-5 py-[clamp(0.375rem,1vw,0.5rem)] xl:py-4 text-[clamp(0.75rem,1.5vw,1rem)] bg-white text-black font-bold uppercase rounded-full border-[3px] border-ink focus:outline-none focus:shadow-[4px_4px_0_#000] focus:-translate-y-0.5 shadow-[2px_2px_0_#000] transition-all min-h-11 box-border"
+                className="w-full px-4 md:px-5 py-[clamp(0.375rem,1vw,0.5rem)] xl:py-4 text-base bg-white text-black font-bold uppercase rounded-full border-[3px] border-ink focus:outline-none focus:shadow-[4px_4px_0_#000] focus:-translate-y-0.5 shadow-[2px_2px_0_#000] transition-all min-h-11 box-border"
               />
               <input
                 type="email"
@@ -119,7 +119,7 @@ export function ContactSection() {
                 aria-label={t('contact.emailLabel')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 md:px-5 py-[clamp(0.375rem,1vw,0.5rem)] xl:py-4 text-[clamp(0.75rem,1.5vw,1rem)] bg-white text-black font-bold uppercase rounded-full border-[3px] border-ink focus:outline-none focus:shadow-[4px_4px_0_#000] focus:-translate-y-0.5 shadow-[2px_2px_0_#000] transition-all min-h-11 box-border"
+                className="w-full px-4 md:px-5 py-[clamp(0.375rem,1vw,0.5rem)] xl:py-4 text-base bg-white text-black font-bold uppercase rounded-full border-[3px] border-ink focus:outline-none focus:shadow-[4px_4px_0_#000] focus:-translate-y-0.5 shadow-[2px_2px_0_#000] transition-all min-h-11 box-border"
               />
               <textarea
                 name="messaggio"
@@ -129,7 +129,7 @@ export function ContactSection() {
                 aria-label={t('contact.messageLabel')}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                className="w-full px-4 md:px-5 py-[clamp(0.375rem,1vw,0.5rem)] xl:py-4 text-[clamp(0.75rem,1.5vw,1rem)] bg-white text-black font-bold uppercase rounded-2xl border-[3px] border-ink focus:outline-none focus:shadow-[4px_4px_0_#000] focus:-translate-y-0.5 shadow-[2px_2px_0_#000] transition-all resize-none flex-1 min-h-[3rem] box-border col-span-full"
+                className="w-full px-4 md:px-5 py-[clamp(0.375rem,1vw,0.5rem)] xl:py-4 text-base bg-white text-black font-bold uppercase rounded-2xl border-[3px] border-ink focus:outline-none focus:shadow-[4px_4px_0_#000] focus:-translate-y-0.5 shadow-[2px_2px_0_#000] transition-all resize-none flex-1 min-h-[3rem] box-border col-span-full"
               />
               <Button
                 type="submit"

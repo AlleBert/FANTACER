@@ -55,7 +55,7 @@ export function SuccessSection() {
                 <h2 className="-rotate-1 text-(length:--fs-hero) leading-(--lh-display) font-black uppercase tracking-[-0.05em] text-purple [text-wrap:balance]">
                   {t('success.youRock')}
                 </h2>
-                <div className="flex items-center gap-(--space-md)">
+                <div className="hidden sm:flex items-center gap-(--space-md)">
                   <span className="inline-flex -rotate-2 items-center rounded-(--rounded-sm) border-2 border-ink bg-bright px-(--space-md) py-(--space-xs) font-black uppercase text-ink shadow-[3px_3px_0_#000]">
                     {t('success.voted')}
                   </span>

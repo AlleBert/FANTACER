@@ -142,6 +142,12 @@ input, textarea {
   --space-2xl: clamp(2rem, 6svh, 3rem);
   --space-3xl: clamp(2.5rem, 8svh, 4rem);
 
+  /* ---- Design tokens: section padding (fluido, no breakpoint) ---- */
+  --section-pad: clamp(1.5rem, 3svh + 1vw, 4.5rem);
+
+  /* ---- Design tokens: gap tra gruppi (fluido, container-relative) ---- */
+  --gap-between-groups: clamp(1.25rem, 2cqi + 1svh, 3rem);
+
   /* ---- Design tokens: border radius ---- */
   --rounded-sm: 0.75rem;
   --rounded-md: 1.5rem;
@@ -151,11 +157,11 @@ input, textarea {
 
   --rythm-sec: clamp(1.25rem, 3.5svh, 3rem);
   --rythm-blk: clamp(0.5rem, 2svh, 1.5rem);
-  --section-pad: clamp(0.5rem, 2svh, 1.5rem);
   --card-size: clamp(3.5rem, 17svh, 13rem);
 
   /* ---- Design tokens: typography ---- */
   --fs-display: clamp(2rem, min(6vw, 9svh), 5.625rem);
+  --fs-hero: clamp(2.75rem, 5cqi, 5rem);
   --fs-headline: clamp(1.5rem, 6vw, 4.5rem);
   --fs-headline-tight: clamp(1.5rem, min(4.5vw, 7vw), 4.5rem);
   --fs-cta: clamp(1.5rem, 5vw, 2.5rem);
@@ -379,10 +385,59 @@ textarea::-webkit-scrollbar {
 
 @layer components {
   /* Larghezza contenuto unica (1200px): sostituisce max-w-7xl e max-w-[1200px] */
+  /* Container query per switch macro 1→2 colonne */
   .content-max {
+    container-type: inline-size;
     width: 100%;
     max-width: var(--content-max);
     margin-inline: auto;
+  }
+
+  /* Safe centering shell: per sezioni che devono centrare verticalmente
+     senza clipping quando il contenuto eccede il viewport.
+     Regola AGENTS.md: mai center nudo su assi overflow-able, solo safe center. */
+  .centered-shell {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    width: 100%;
+    align-items: safe center;
+  }
+
+  /* Success section: layout mobile (flex column) */
+  .success-grid {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: safe center;
+  }
+
+  /* Success section: layout a 2 colonne su container ≥ 960px */
+  @container (min-width: 60rem) {
+    .success-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(320px, 420px);
+      align-items: start;
+      justify-content: center; /* centra le grid tracks nel container */
+    }
+    .success-grid-col-1 {
+      grid-column: 1;
+      grid-row: 1;
+    }
+    .success-grid-col-2 {
+      grid-column: 2;
+      grid-row: 1;
+    }
+    .success-desktop-only {
+      display: flex;
+    }
+    .success-mobile-only {
+      display: none;
+    }
+    .vote-receipt-responsive {
+      max-width: none;
+      margin-inline: 0;
+    }
   }
 }
 
@@ -689,9 +744,9 @@ textarea::-webkit-scrollbar {
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Card-rows: le tabelle legali diventano card impilate su mobile (<640px).
+  /* Card-rows: le tabelle legali diventano card impilate su container < 40rem (640px).
      Ogni <td> mostra data-label come label affiancata, niente scroll laterale. */
-  @media (max-width: 639px) {
+  @container (max-width: 40rem) {
     .table-card-mobile {
       display: block;
       border: none;
