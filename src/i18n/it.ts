@@ -53,8 +53,6 @@ export const it: Dictionary = {
   'success.shareCta': 'Condividi il tuo voto',
   'success.shareCopied': 'Copiato!',
   'success.redeemPrize': 'Ritira il tuo premio',
-  // Label desktop sotto la CTA per social links (contesto: success section)
-  'success.followUs': 'Seguici',
   'success.saveCta': 'Salva',
   'success.saveDone': 'Salvato!',
 
