@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
+import html2canvas from 'html2canvas'
 import { SaveButton } from '@/components/sections/save-button'
 
 jest.mock('@/lib/LocaleContext', () => ({ useLocale: () => ({ t: (key: string) => key }) }))
@@ -22,7 +23,6 @@ describe('SaveButton', () => {
   })
 
   it('chiama html2canvas e scarica il PNG', async () => {
-    const html2canvas = require('html2canvas').default
     const ref = { current: document.createElement('div') }
     render(<SaveButton containerRef={ref} />)
     fireEvent.click(screen.getByRole('button'))
