@@ -53,6 +53,10 @@ export const en: Dictionary = {
   'success.shareCta': 'Share your vote',
   'success.shareCopied': 'Copied!',
   'success.redeemPrize': 'Collect your prize',
+  // Desktop label under CTA for social links (context: success section)
+  'success.followUs': 'Follow us',
+  'success.saveCta': 'Save',
+  'success.saveDone': 'Saved!',
 
   'publicRanking.title': 'the fantacer sponsors',
 

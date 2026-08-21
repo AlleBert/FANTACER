@@ -58,6 +58,9 @@ export interface Dictionary {
   'success.shareCta': string
   'success.shareCopied': string
   'success.redeemPrize': string
+  'success.followUs': string
+  'success.saveCta': string
+  'success.saveDone': string
 
   // Public ranking
   'publicRanking.title': string
