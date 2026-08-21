@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Critique · Legal Pages FANTACER</title>
+<style>
+  :root {
+    --ink: #231f20;
+    --dark: #0d0c0b;
+    --paper: #ffffff;
+    --bg: #f3f0ea;
+    --orange: #ff8a26;
+    --yellow: #fccb27;
+    --purple: #8000ff;
+    --magenta: #ff00ff;
+    --blue: #c2e1ff;
+    --muted: #6b7280;
+    --good: #2e7d32;
+    --warn: #e65100;
+    --bad: #b71c1c;
+
+    --sans: "Open Sauce One", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--purple); font-weight: 700; }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 48px 24px 96px; }
+
+  /* ===== Header ===== */
+  .hd {
+    background: var(--paper);
+    border: 3px solid var(--ink);
+    border-radius: 2.25rem;
+    box-shadow: 8px 8px 0 #000;
+    padding: clamp(28px, 5vw, 48px);
+    margin-bottom: 56px;
+  }
+  .hd-badge {
+    display: inline-block;
+    background: var(--yellow);
+    border: 2px solid var(--ink);
+    border-radius: 9999px;
+    box-shadow: 3px 3px 0 #000;
+    padding: 6px 16px;
+    font-weight: 900;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .hd-title {
+    font-size: clamp(30px, 4.6vw, 56px);
+    font-weight: 900;
+    line-height: 1.02;
+    letter-spacing: -0.03em;
+    text-transform: lowercase;
+    margin: 0 0 14px;
+  }
+  .hd-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 22px;
+  }
+  .hd-meta strong { color: var(--ink); }
+  .hd-verdict {
+    background: var(--blue);
+    border: 2px solid var(--ink);
+    border-radius: 1.5rem;
+    box-shadow: 4px 4px 0 #000;
+    padding: 18px 22px;
+    font-size: 17px;
+    font-weight: 500;
+    margin: 0;
+  }
+  .hd-verdict b { font-weight: 900; }
+
+  /* ===== Radar + score table ===== */
+  .top { display: grid; grid-template-columns: minmax(320px, 420px) 1fr; gap: 40px; margin-bottom: 64px; align-items: center; }
+  @media (max-width: 860px) { .top { grid-template-columns: 1fr; } }
+  .radar-card {
+    background: var(--paper);
+    border: 3px solid var(--ink);
+    border-radius: 2.25rem;
+    box-shadow: 6px 6px 0 #000;
+    padding: 22px;
+    text-align: center;
+  }
+  .radar-card .lbl {
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+  .radar-card svg { width: 100%; height: auto; }
+  .radar-card .overall { font-weight: 800; font-size: 13px; color: var(--muted); margin-top: 14px; }
+  .radar-card .overall .n { font-weight: 900; font-size: 26px; color: var(--ink); }
+
+  .score-tbl {
+    background: var(--paper);
+    border: 3px solid var(--ink);
+    border-radius: 2.25rem;
+    box-shadow: 6px 6px 0 #000;
+    padding: 22px;
+  }
+  .score-tbl h2 { margin: 0 0 16px; font-size: 20px; font-weight: 900; text-transform: lowercase; letter-spacing: -0.01em; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 12px; border: 2px solid var(--ink); vertical-align: top; }
+  th { background: var(--ink); color: var(--paper); font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em; font-size: 12px; }
+  tr:nth-child(even) td { background: #f8f6f2; }
+  .sc { font-weight: 900; font-size: 18px; white-space: nowrap; }
+  .band-broken { color: var(--bad); }
+  .band-functional { color: var(--warn); }
+  .band-strong { color: var(--good); }
+  .band-exceptional { color: var(--purple); }
+
+  /* ===== Dimension cards ===== */
+  .sec-title { font-size: clamp(22px, 3vw, 32px); font-weight: 900; letter-spacing: -0.02em; text-transform: lowercase; margin: 0 0 8px; }
+  .sec-sub { color: var(--muted); font-weight: 600; margin: 0 0 28px; max-width: 72ch; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-bottom: 64px; }
+  @media (max-width: 820px) { .grid { grid-template-columns: 1fr; } }
+  .dim {
+    background: var(--paper);
+    border: 3px solid var(--ink);
+    border-radius: 1.5rem;
+    box-shadow: 5px 5px 0 #000;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .dim-head { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+  .dim-name { font-size: 17px; font-weight: 900; text-transform: lowercase; letter-spacing: -0.01em; margin: 0; }
+  .dim-en { display: block; font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  .dim-score { display: flex; align-items: baseline; gap: 8px; font-weight: 900; font-size: 34px; line-height: 1; }
+  .dim-band { font-size: 11px; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 10px; border-radius: 9999px; border: 2px solid var(--ink); }
+  .band-broken .dim-band { background: #ffcdd2; }
+  .band-functional .dim-band { background: #ffe0b2; }
+  .band-strong .dim-band { background: #c8e6c9; }
+  .band-exceptional .dim-band { background: #e1bee7; }
+  .dim-evidence { margin: 0; font-size: 14.5px; }
+  .dim-evidence code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.88em; background: rgba(35,31,32,0.06); border-radius: 4px; padding: 1px 6px; }
+  .dim-trio { display: grid; grid-template-columns: 1fr; gap: 8px; font-size: 13.5px; }
+  .k, .f, .q { border-left: 4px solid; padding: 6px 10px; border-radius: 0 8px 8px 0; }
+  .k { border-color: var(--good); background: #f1f8e9; }
+  .f { border-color: var(--warn); background: #fff3e0; }
+  .q { border-color: var(--purple); background: #f3e5f5; }
+  .k b, .f b, .q b { font-weight: 900; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; display: block; margin-bottom: 2px; }
+
+  /* ===== Action lists ===== */
+  .actions { display: grid; gap: 28px; margin-bottom: 40px; }
+  .act {
+    background: var(--paper);
+    border: 3px solid var(--ink);
+    border-radius: 1.5rem;
+    box-shadow: 5px 5px 0 #000;
+    padding: 26px;
+  }
+  .act h3 { margin: 0 0 16px; font-size: 20px; font-weight: 900; text-transform: lowercase; letter-spacing: -0.01em; display: flex; align-items: center; gap: 10px; }
+  .act h3 .tag { font-size: 11px; font-weight: 900; letter-spacing: 0.1em; padding: 3px 10px; border-radius: 9999px; border: 2px solid var(--ink); }
+  .act ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .act li { position: relative; padding-left: 34px; font-size: 14.5px; }
+  .act li::before {
+    content: "";
+    position: absolute; left: 0; top: 2px;
+    width: 22px; height: 22px;
+    border: 2px solid var(--ink); border-radius: 6px; background: var(--paper);
+  }
+  .act.keep li::before { background: var(--yellow); box-shadow: 2px 2px 0 #000; }
+  .act.fix li::before { background: var(--orange); box-shadow: 2px 2px 0 #000; }
+  .act.quick li::before { background: var(--blue); box-shadow: 2px 2px 0 #000; }
+  .act li code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9em; background: rgba(35,31,32,0.06); border-radius: 4px; padding: 1px 6px; }
+  .act li .sev { font-size: 11px; font-weight: 900; letter-spacing: 0.08em; padding: 1px 8px; border-radius: 9999px; border: 2px solid var(--ink); margin-left: 6px; }
+  .sev.p0 { background: var(--magenta); color: #fff; }
+  .sev.p1 { background: var(--yellow); }
+
+  .ft { text-align: center; color: var(--muted); font-size: 12px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 24px; }
+  .ft .dot { color: var(--orange); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ================= HEADER ================= -->
+  <header class="hd">
+    <span class="hd-badge">OD · Critique skill</span>
+    <h1 class="hd-title">Critique · Legal pages FANTACER</h1>
+    <div class="hd-meta">
+      <span><strong>Superficie</strong> /cookie-policy · /privacy-policy · /terms-and-conditions</span>
+      <span><strong>Reviewer</strong> OD · Critique skill</span>
+      <span><strong>Data</strong> 18/08/2026</span>
+      <span><strong>Media</strong> 6.2 / 10</span>
+    </div>
+    <p class="hd-verdict">
+      <b>Un foglio neo-brutalista davvero distintivo per un documento legale</b> — ma le pagine
+      tradiscono la voce del brand quando il contenuto diventa istituzionale (uppercase, barre
+      d'accento off-system) e diversi hack i18n degradano l'esecuzione fino a un paragrafo vuoto.
+    </p>
+  </header>
+
+  <!-- ================= RADAR + SCORE ================= -->
+  <div class="top">
+    <div class="radar-card">
+      <div class="lbl">Punteggi radar</div>
+      <svg viewBox="0 0 400 320" role="img" aria-label="Radar chart: Philosophy 7, Hierarchy 6, Detail 5, Functionality 7, Innovation 6">
+        <!-- grid rings -->
+        <g fill="none" stroke="#d8d4cc" stroke-width="1.5">
+          <polygon points="200,60 314.1,142.9 270.5,277.1 129.5,277.1 85.9,142.9" />
+          <polygon points="200,84 285.5,150.3 256.4,257.7 143.6,257.7 114.5,150.3" />
+          <polygon points="200,108 256.8,157.7 242.3,238.3 157.7,238.3 143.2,157.7" />
+          <polygon points="200,132 228.2,165.1 228.2,218.9 171.8,218.9 171.8,165.1" />
+          <polygon points="200,156 199.6,172.4 214.1,199.5 185.9,199.5 200.4,172.4" />
+        </g>
+        <!-- axes -->
+        <g stroke="#231f20" stroke-width="2">
+          <line x1="200" y1="180" x2="200" y2="60" />
+          <line x1="200" y1="180" x2="314.1" y2="142.9" />
+          <line x1="200" y1="180" x2="270.5" y2="277.1" />
+          <line x1="200" y1="180" x2="129.5" y2="277.1" />
+          <line x1="200" y1="180" x2="85.9" y2="142.9" />
+        </g>
+        <!-- data polygon -->
+        <polygon points="200,96 268.5,157.8 235.3,228.5 150.6,247.9 131.5,157.8"
+                 fill="#8000ff" fill-opacity="0.35" stroke="#ff00ff" stroke-width="3"
+                 stroke-linejoin="round" />
+        <!-- data points -->
+        <g fill="#231f20">
+          <circle cx="200" cy="96" r="5" />
+          <circle cx="268.5" cy="157.8" r="5" />
+          <circle cx="235.3" cy="228.5" r="5" />
+          <circle cx="150.6" cy="247.9" r="5" />
+          <circle cx="131.5" cy="157.8" r="5" />
+        </g>
+        <!-- score labels -->
+        <g font-family="'Open Sauce One', sans-serif" font-size="12" font-weight="900" fill="#231f20">
+          <text x="200" y="52" text-anchor="middle">7</text>
+          <text x="268.5" y="146" text-anchor="middle">6</text>
+          <text x="235.3" y="222" text-anchor="middle">5</text>
+          <text x="150.6" y="260" text-anchor="middle">7</text>
+          <text x="131.5" y="146" text-anchor="middle">6</text>
+        </g>
+        <!-- axis labels -->
+        <g font-family="'Open Sauce One', sans-serif" font-size="11" font-weight="800" fill="#6b7280">
+          <text x="200" y="34" text-anchor="middle">Philosophy</text>
+          <text x="328" y="140" text-anchor="middle">Hierarchy</text>
+          <text x="282" y="300" text-anchor="middle">Detail</text>
+          <text x="118" y="300" text-anchor="middle">Functionality</text>
+          <text x="72" y="140" text-anchor="middle">Innovation</text>
+        </g>
+      </svg>
+      <div class="overall">Media complessiva <span class="n">6.2 / 10</span> · banda <b>Functional</b></div>
+    </div>
+
+    <div class="score-tbl">
+      <h2>Riepilogo punteggi</h2>
+      <table>
+        <thead>
+          <tr><th>Dimensione</th><th>Score</th><th>Banda</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Philosophy consistency · Coerenza filosofica</td><td class="sc">7</td><td class="band-strong">Strong</td></tr>
+          <tr><td>Visual hierarchy · Gerarchia visiva</td><td class="sc">6</td><td class="band-functional">Functional</td></tr>
+          <tr><td>Detail execution · Esecuzione dei dettagli</td><td class="sc">5</td><td class="band-functional">Functional</td></tr>
+          <tr><td>Functionality · Funzionalità</td><td class="sc">7</td><td class="band-strong">Strong</td></tr>
+          <tr><td>Innovation · Innovazione</td><td class="sc">6</td><td class="band-functional">Functional</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ================= DIMENSION CARDS ================= -->
+  <h2 class="sec-title">Le cinque dimensioni</h2>
+  <p class="sec-sub">Ogni dimensione è indipendente: un documento può essere 7 su Innovazione e 5 su Esecuzione — il report lo dice senza mediare.</p>
+
+  <div class="grid">
+
+    <article class="dim band-strong">
+      <div class="dim-head">
+        <h3 class="dim-name">Coerenza filosofica<span class="dim-en">Philosophy consistency</span></h3>
+        <div class="dim-score">7<span class="dim-band">Strong</span></div>
+      </div>
+      <p class="dim-evidence">
+        Una direzione chiara con drift occasionale. Il foglio bianco con <code>border-[3px] border-ink</code>,
+        ombra <code>6px 6px 0 #000</code>, rounded <code>2.25rem</code>, badge "FANTACER · Info legali",
+        pill TOC e gradient <code>#FF2FB2 → #4B00AB</code> sono impeccabilmente neo-brutalisti
+        (<code>legal-page.tsx</code>). Ma il sistema si rompe in due punti: le h2/h3 sono
+        <b>uppercase</b> (<code>.prose-legal h2</code> in <code>globals.css:401</code>) mentre la
+        "Lowercase Rule" del brand vuole i titoli lowercase — le pagine assumono un registro
+        istituzionale da doc legale; e la barra gialla <code>h2::before</code>
+        (<code>globals.css:675</code>) è un motivo che non esiste da nessun'altra parte dell'app,
+        violando la Block Rule. Il footer usa body text in caps.
+      </p>
+      <div class="dim-trio">
+        <div class="k"><b>Keep</b> Foglio neobrutalista: bordi ink, ombre dure, badge pill.</div>
+        <div class="f"><b>Fix</b> h2/h3 lowercase + rimozione barra gialla off-system.</div>
+        <div class="q"><b>Quick win</b> Footer link senza caps, tracking già ok.</div>
+      </div>
+    </article>
+
+    <article class="dim band-functional">
+      <div class="dim-head">
+        <h3 class="dim-name">Gerarchia visiva<span class="dim-en">Visual hierarchy</span></h3>
+        <div class="dim-score">6<span class="dim-band">Functional</span></div>
+      </div>
+      <p class="dim-evidence">
+        Gerarchia chiara in alto — badge → h1 display → data aggiornamento — ma degrada nel corpo:
+        <b>3 sezioni privacy hanno h2 identici al paragrafo</b> (exercise/complaint/changes usano
+        <code>privacyPolicy.howToExercise</code> sia come heading sia come body,
+        <code>privacy-policy/page.tsx:177-190</code>); la sezione contact cookie ripete la stessa
+        frase in h2 e p. In data-categories gli <code>h3</code> sono blob "label: valore"
+        ("Modulo contatti: nome, email, messaggio…") seguiti dal valore nudo. Il label TOC dei
+        Terms è un troncamento grezzo a 30 char con <code>substring(0,30)+'...'</code>
+        (<code>terms/page.tsx:37</code>). Due affordance di navigazione non allineate: sidebar
+        sticky 220px (desktop) vs bottom-sheet (mobile).
+      </p>
+      <div class="dim-trio">
+        <div class="k"><b>Keep</b> Badge → h1 → meta: opening forte e coerente.</div>
+        <div class="f"><b>Fix</b> Split heading/body keys; h3 non come label+valore.</div>
+        <div class="q"><b>Quick win</b> Key breve reale per il label TOC terms.</div>
+      </div>
+    </article>
+
+    <article class="dim band-functional">
+      <div class="dim-head">
+        <h3 class="dim-name">Esecuzione dei dettagli<span class="dim-en">Detail execution</span></h3>
+        <div class="dim-score">5<span class="dim-band">Functional</span></div>
+      </div>
+      <p class="dim-evidence">
+        Qui vivono i difetti concreti. <b>P0</b> — <code>terms/page.tsx:64</code> usa
+        <code>.replace(&lt;stringa descrizione intera&gt;, '')</code> che rimuove l'<b>intera</b>
+        descrizione del servizio: si renderizza un <code>&lt;p&gt;&lt;/p&gt;</code> vuoto in
+        <b>entrambe le lingue</b> (il literal coincide col valore i18n, verificato in
+        <code>it.ts:211</code> / <code>en.ts:211</code>). Sei+ hack
+        <code>.replace('Modulo contatti: ', '')</code> in privacy (righe 71-79, 85-93) fragili
+        contro edit i18n; riga 164 con doppio <code>.replace('Analytics: ', '')</code>. Testo
+        hardcoded IT non localizzato (bullet terms 77-80, header "Categoria"/"Periodo di
+        conservazione", recipients, nota legal-bases, manage-cookie). <code>lastUpdated</code> =
+        <code>new Date()</code> → "Ultimo aggiornamento: &lt;oggi&gt;" a ogni render, non una
+        data reale del documento. Fallback morto <code>t(...) || 'team@fantacer.com'</code>.
+        Il theme <code>legal</code> è copia identica di <code>contact</code>
+        (<code>section-themes.ts:60-63</code>).
+      </p>
+      <div class="dim-trio">
+        <div class="k"><b>Keep</b> <code>.table-scroll</code> preserva la semantica delle tabelle.</div>
+        <div class="f"><b>Fix</b> Rimuovere gli hack <code>.replace()</code>; key i18n corrette.</div>
+        <div class="q"><b>Quick win</b> Data statica last-updated; fallback morto via.</div>
+      </div>
+    </article>
+
+    <article class="dim band-strong">
+      <div class="dim-head">
+        <h3 class="dim-name">Funzionalità<span class="dim-en">Functionality</span></h3>
+        <div class="dim-score">7<span class="dim-band">Strong</span></div>
+      </div>
+      <p class="dim-evidence">
+        Il flusso regge. Gli anchor del TOC funzionano; il pulsante "Preferenze cookie" dispaccia
+        l'evento <code>OPEN_COOKIE_PREFERENCES_EVENT</code> che <code>CookieConsentUI</code>
+        (montato in <code>providers.tsx:27</code>, su tutte le pagine) ascolta → la modale si
+        apre davvero. Footer same-tab tra legal e new-tab da homepage è bloccato dal gate e2e
+        <code>legal-pages.spec.ts</code>; zero overflow orizzontale a livello documento. Difetti:
+        il paragrafo vuoto in Terms (P0), heading-frase duplicati, nomi accessibili verbosi via
+        <code>aria-labelledby</code> che punta alle frasi intere, e <code>aria-controls</code>
+        sul trigger mobile punta a <code>#mobile-toc-drawer</code> che esiste solo quando aperto.
+      </p>
+      <div class="dim-trio">
+        <div class="k"><b>Keep</b> Wiring eventi condiviso per la modale preferenze cookie.</div>
+        <div class="f"><b>Fix</b> Paragrafo descrizione servizio vuoto in Terms.</div>
+        <div class="q"><b>Quick win</b> Allineare <code>aria-controls</code> alla presenza del drawer.</div>
+      </div>
+    </article>
+
+    <article class="dim band-functional">
+      <div class="dim-head">
+        <h3 class="dim-name">Innovazione<span class="dim-en">Innovation</span></h3>
+        <div class="dim-score">6<span class="dim-band">Functional</span></div>
+      </div>
+      <p class="dim-evidence">
+        La mossa memorabile c'è: un documento legale trattato come <b>superficie di gioco</b> —
+        foglio neobrutalista su gradient saturo, TOC a pill con ombra dura, badge giallo. È
+        esattamente il tipo di scelta che fa chiedere "come l'hanno fatto?". Ma è diluita:
+        gli uppercase istituzionali e le barre d'accento riportano verso un registro da ufficio
+        legale, le h2-frase duplicate e l'hack del paragrafo vuoto la fanno sembrare meno
+        intenzionale, e il bottom-sheet mobile è un pattern standard. Il gradient legale identico
+        al contact indebolisce l'identità della superficie.
+      </p>
+      <div class="dim-trio">
+        <div class="k"><b>Keep</b> Il concetto: legal page come gioco, non come PDF.</div>
+        <div class="f"><b>Fix</b> Riportare il tono al lowercase system del brand.</div>
+        <div class="q"><b>Quick win</b> Differenziare il gradient <code>legal</code> da <code>contact</code>.</div>
+      </div>
+    </article>
+
+  </div>
+
+  <!-- ================= ACTION LISTS ================= -->
+  <h2 class="sec-title">Piano d'azione</h2>
+  <p class="sec-sub">Aggregato dalle cinque evidenze, ordinato per costo visivo risparmiato per minuto speso.</p>
+
+  <div class="actions">
+
+    <section class="act keep">
+      <h3><span class="tag" style="background:var(--yellow)">Keep</span> Cosa funziona, non toccare</h3>
+      <ul>
+        <li>Foglio bianco neobrutalista su gradient saturo: border-3 ink, ombra <code>6px 6px 0 #000</code>, rounded 2.25rem (<code>legal-page.tsx:96</code>).</li>
+        <li>TOC pill desktop + badge "In questa pagina" (sticky, max-height, overflow) — firma visiva riconoscibile.</li>
+        <li>Wiring "Preferenze cookie" via evento condiviso: la modale funziona su tutte le pagine (<code>providers.tsx</code>).</li>
+        <li>Tabelle brand-styled (header ink, hover giallo) con <code>.table-scroll</code> che preserva semantica e zero overflow documento.</li>
+        <li>Gate e2e <code>legal-pages.spec.ts</code>: h1, superficie bianca, zero overflow, footer same-tab/new-tab.</li>
+      </ul>
+    </section>
+
+    <section class="act fix">
+      <h3><span class="tag" style="background:var(--orange)">Fix</span> P0 / P1 — visivamente costosi</h3>
+      <ul>
+        <li><span class="sev p0">P0</span> Rimuovere il <code>.replace()</code> a <code>terms/page.tsx:64</code>: la descrizione del servizio deve renderizzare (o key dedicata breve).</li>
+        <li><span class="sev p1">P1</span> Sostituire i 6+ hack <code>.replace('Prefisso: ', '')</code> in privacy con key i18n corrette (data-categories, purposes, riga 164 doppio replace).</li>
+        <li><span class="sev p1">P1</span> Split heading/body keys per le sezioni duplicate (exercise, complaint, changes, cookie contact): h2 ≠ paragrafo.</li>
+        <li><span class="sev p1">P1</span> Localizzare gli hardcoded IT: bullet voting-rules terms, header tabella "Categoria"/"Periodo", recipients, nota legal-bases, manage-cookie.</li>
+        <li><span class="sev p1">P1</span> h2/h3 lowercase secondo la Lowercase Rule del brand + rimozione barra <code>h2::before</code> gialla (off-system).</li>
+        <li><span class="sev p1">P1</span> <code>lastUpdated</code> → data statica del documento, non <code>new Date()</code> per render.</li>
+      </ul>
+    </section>
+
+    <section class="act quick">
+      <h3><span class="tag" style="background:var(--blue)">Quick wins</span> 5-15 minuti, impatto alto</h3>
+      <ul>
+        <li>Rimuovere il fallback morto <code>t('privacyPolicy.contactDesc') || 'team@fantacer.com'</code> (la key esiste sempre).</li>
+        <li>Dedupe del doppio <code>.replace('Analytics: ', '')</code> a <code>privacy-policy/page.tsx:164</code>.</li>
+        <li>Key breve reale per il label TOC terms al posto di <code>substring(0,30)+'...'</code>.</li>
+        <li>Allineare <code>aria-expanded</code>/<code>aria-controls</code> del trigger mobile TOC alla presenza del drawer nel DOM.</li>
+        <li>Differenziare il gradient del theme <code>legal</code> da <code>contact</code> in <code>section-themes.ts</code>.</li>
+      </ul>
+    </section>
+
+  </div>
+
+  <p class="ft">FANTACER <span class="dot">•</span> OD critique skill <span class="dot">•</span> report self-contained</p>
+
+</div>
+</body>
+</html>
