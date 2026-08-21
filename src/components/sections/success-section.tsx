@@ -45,39 +45,53 @@ export function SuccessSection() {
   const shareUrl = typeof window !== 'undefined' ? window.location.href : ''
 
   return (
-    <SectionFrame theme="success" grow className="flex flex-col justify-between">
-      <div className="safe-shell relative z-10 flex flex-1 min-h-0 flex-col items-center justify-center gap-(--rythm-sec) py-(--section-pad)">
-        <div className="flex w-full max-w-(--content-max) flex-col items-center gap-(--space-lg) text-center lg:grid lg:grid-cols-2 lg:items-center lg:gap-x-20 lg:gap-y-12 lg:text-left">
-          <div className="flex flex-col items-center gap-(--space-lg) lg:col-start-1 lg:row-start-1 lg:items-start">
-            <h2 className="text-(length:--fs-headline) leading-(--lh-display) font-black text-purple uppercase tracking-tighter">
-              {t('success.youRock')}
-            </h2>
-            <p className="-rotate-2 rounded-xl border-2 border-ink bg-bright px-4 py-1.5 font-black uppercase text-ink shadow-[3px_3px_0_#000]">
-              {t('success.voted')}
-            </p>
+    <SectionFrame theme="success" grow className="flex flex-col">
+      <div className="safe-shell relative z-10 flex flex-1 min-h-0 flex-col py-(--section-pad)">
+        <div className="content-max flex h-full flex-col gap-(--space-2xl) lg:grid lg:grid-cols-[1fr_420px] lg:gap-x-16 lg:gap-y-0">
+          {/* Left Column: Hero + Copy + CTA */}
+          <div className="flex flex-col justify-center gap-(--space-xl) lg:col-start-1 lg:row-start-1">
+            {/* Hero Section */}
+            <div className="flex flex-col gap-(--space-md)">
+              <h2 className="text-(length:--fs-headline) leading-(--lh-display) font-black uppercase tracking-tighter text-purple">
+                {t('success.youRock')}
+              </h2>
+              <div className="flex items-center gap-(--space-md)">
+                <span className="inline-flex items-center rounded-full border-2 border-ink bg-bright px-4 py-1.5 font-black uppercase text-ink shadow-[3px_3px_0_#000]">
+                  {t('success.voted')}
+                </span>
+              </div>
+            </div>
+
+            {/* Copy Section */}
+            <div className="flex flex-col gap-(--space-lg)">
+              <p className="max-w-[550px] text-base font-[800] uppercase leading-relaxed text-ink sm:text-lg md:text-xl">
+                {t('success.shareTaglinePre')}{' '}
+                <span className="inline-block rounded-lg border-2 border-ink bg-bright px-2.5 py-0.5 font-black shadow-[2px_2px_0_#000]">
+                  @fanta.cer
+                </span>{' '}
+                {t('success.shareTaglinePost')}
+              </p>
+              <ShareButton text={shareText} url={shareUrl} />
+            </div>
           </div>
 
-          <div className="flex w-full justify-center lg:col-start-2 lg:row-start-1 lg:justify-center">
+          {/* Right Column: Vote Receipt + Prizes + Social */}
+          <div className="flex flex-col gap-(--space-xl) lg:col-start-2 lg:row-start-1">
+            {/* Vote Receipt */}
             <VoteReceipt companies={selectedCompanies} />
-          </div>
 
-          <div className="flex flex-col items-center gap-5 lg:col-start-1 lg:row-start-2 lg:items-start">
-            <p className="max-w-(--measure-wide) text-base font-[800] uppercase leading-relaxed text-ink sm:text-lg md:text-xl">
-              {t('success.shareTaglinePre')}{' '}
-              <span className="inline-block rotate-1 rounded-lg border-2 border-ink bg-bright px-2 py-0.5 font-black shadow-[2px_2px_0_#000]">
-                @fanta.cer
-              </span>{' '}
-              {t('success.shareTaglinePost')}
-            </p>
-            <ShareButton text={shareText} url={shareUrl} />
-          </div>
+            {/* Prizes Section */}
+            <div className="flex flex-col gap-(--space-md)">
+              <h3 className="text-sm font-black uppercase tracking-widest text-ink/70">
+                {t('success.redeemPrize')}
+              </h3>
+              <SponsorCards standOnly />
+            </div>
 
-          <div className="flex w-full justify-center lg:col-start-2 lg:row-start-2 lg:justify-center">
-            <SponsorCards standOnly />
-          </div>
-
-          <div className="flex w-full items-center justify-center lg:col-start-2 lg:row-start-3 lg:justify-center">
-            <SocialLinksRow instagramUrl={INSTAGRAM_URL} facebookUrl={FACEBOOK_URL} />
+            {/* Social Links */}
+            <div className="flex items-center gap-(--space-md) lg:mt-auto">
+              <SocialLinksRow instagramUrl={INSTAGRAM_URL} facebookUrl={FACEBOOK_URL} />
+            </div>
           </div>
         </div>
       </div>

@@ -31,6 +31,6 @@ describe('ShareButton', () => {
     act(() => {
       jest.advanceTimersByTime(3000)
     })
-    expect(screen.getByText('success.shareButton')).toBeTruthy()
+    expect(screen.getByText('success.shareCta')).toBeTruthy()
   })
 })
