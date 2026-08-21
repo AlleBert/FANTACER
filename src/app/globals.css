@@ -142,6 +142,13 @@ input, textarea {
   --space-2xl: clamp(2rem, 6svh, 3rem);
   --space-3xl: clamp(2.5rem, 8svh, 4rem);
 
+  /* ---- Design tokens: border radius ---- */
+  --rounded-sm: 0.75rem;
+  --rounded-md: 1.5rem;
+  --rounded-lg: 2.25rem;
+  --rounded-xl: 3rem;
+  --rounded-full: 9999px;
+
   --rythm-sec: clamp(1.25rem, 3.5svh, 3rem);
   --rythm-blk: clamp(0.5rem, 2svh, 1.5rem);
   --section-pad: clamp(0.5rem, 2svh, 1.5rem);
@@ -152,6 +159,8 @@ input, textarea {
   --fs-headline: clamp(1.5rem, 6vw, 4.5rem);
   --fs-headline-tight: clamp(1.5rem, min(4.5vw, 7vw), 4.5rem);
   --fs-cta: clamp(1.5rem, 5vw, 2.5rem);
+  --fs-body: clamp(1rem, 2.5vw, 1.5rem);
+  --fs-label: clamp(0.875rem, 2vw, 1rem);
   --lh-display: 1.05;
   --lh-headline: 1.1;
   --lh-body: 1.4;

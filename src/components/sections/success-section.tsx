@@ -47,16 +47,16 @@ export function SuccessSection() {
   return (
     <SectionFrame theme="success" grow className="flex flex-col">
       <div className="safe-shell relative z-10 flex flex-1 min-h-0 flex-col py-(--section-pad)">
-        <div className="content-max flex h-full flex-col gap-(--space-2xl) lg:grid lg:grid-cols-[1fr_420px] lg:gap-x-16 lg:gap-y-0">
+        <div className="content-max flex h-full flex-col gap-(--space-2xl) lg:grid lg:grid-cols-[1fr_420px] lg:gap-x-(--space-2xl) lg:gap-y-0">
           {/* Left Column: Hero + Copy + CTA */}
           <div className="flex flex-col justify-center gap-(--space-xl) lg:col-start-1 lg:row-start-1">
             {/* Hero Section */}
             <div className="flex flex-col gap-(--space-md)">
-              <h2 className="text-(length:--fs-headline) leading-(--lh-display) font-black uppercase tracking-tighter text-purple">
+              <h2 className="text-(length:--fs-headline) leading-(--lh-display) font-black uppercase tracking-[-0.05em] text-purple">
                 {t('success.youRock')}
               </h2>
               <div className="flex items-center gap-(--space-md)">
-                <span className="inline-flex items-center rounded-full border-2 border-ink bg-bright px-4 py-1.5 font-black uppercase text-ink shadow-[3px_3px_0_#000]">
+                <span className="inline-flex items-center rounded-full border-2 border-ink bg-bright px-(--space-md) py-(--space-xs) font-black uppercase text-ink shadow-[3px_3px_0_#000]">
                   {t('success.voted')}
                 </span>
               </div>
@@ -64,9 +64,9 @@ export function SuccessSection() {
 
             {/* Copy Section */}
             <div className="flex flex-col gap-(--space-lg)">
-              <p className="max-w-[550px] text-base font-[800] uppercase leading-relaxed text-ink sm:text-lg md:text-xl">
+              <p className="max-w-(--measure-body) text-(length:--fs-body) font-black uppercase leading-(--lh-body) text-ink">
                 {t('success.shareTaglinePre')}{' '}
-                <span className="inline-block rounded-lg border-2 border-ink bg-bright px-2.5 py-0.5 font-black shadow-[2px_2px_0_#000]">
+                <span className="inline-block rounded-(--rounded-sm) border-2 border-ink bg-bright px-(--space-sm) py-1 font-black shadow-[2px_2px_0_#000]">
                   @fanta.cer
                 </span>{' '}
                 {t('success.shareTaglinePost')}
@@ -82,7 +82,7 @@ export function SuccessSection() {
 
             {/* Prizes Section */}
             <div className="flex flex-col gap-(--space-md)">
-              <h3 className="text-sm font-black uppercase tracking-widest text-ink/70">
+              <h3 className="text-(length:--fs-label) font-black uppercase tracking-[0.02em] text-ink/70">
                 {t('success.redeemPrize')}
               </h3>
               <SponsorCards standOnly />
