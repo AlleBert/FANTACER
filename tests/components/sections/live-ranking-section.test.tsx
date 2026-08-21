@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { LiveRankingSection } from '@/components/sections/live-ranking-section'
 import { useVote } from '@/lib/VoteContext'
 
@@ -58,23 +58,51 @@ global.fetch = mockFetch as unknown as typeof fetch
 
 const mockHolder = {
   subscribeCb: null as ((status: string) => void) | null,
+  changeCb: null as (() => void) | null,
   removeChannel: jest.fn(),
 }
 
 jest.mock('@/lib/supabase/client', () => ({
   createClient: () => ({
-    channel: () => ({
-      on: () => ({ subscribe: (cb: (s: string) => void) => { mockHolder.subscribeCb = cb; return { unsubscribe: jest.fn() } } }),
-      subscribe: (cb: (s: string) => void) => { mockHolder.subscribeCb = cb; return { unsubscribe: jest.fn() } },
+    channel: (name: string) => ({
+      on: (_e: string, _o: unknown, cb: () => void) => {
+        if (name === 'live-ranking-votes') mockHolder.changeCb = cb
+        return {
+          subscribe: (cb2: (s: string) => void) => {
+            if (name === 'live-ranking-votes') mockHolder.subscribeCb = cb2
+            return { unsubscribe: jest.fn() }
+          },
+        }
+      },
+      subscribe: (cb2: (s: string) => void) => {
+        if (name === 'live-ranking-votes') mockHolder.subscribeCb = cb2
+        return { unsubscribe: jest.fn() }
+      },
     }),
     removeChannel: mockHolder.removeChannel,
   }),
 }))
 
+class MockIntersectionObserver {
+  static instances: MockIntersectionObserver[] = []
+  callback: (entries: Array<{ isIntersecting: boolean }>) => void
+  constructor(cb: (entries: Array<{ isIntersecting: boolean }>) => void) {
+    this.callback = cb
+    MockIntersectionObserver.instances.push(this)
+  }
+  observe() {}
+  disconnect() {}
+  unobserve() {}
+  fire(isIntersecting: boolean) {
+    this.callback([{ isIntersecting }])
+  }
+}
+
 describe('LiveRankingSection', () => {
   beforeEach(() => {
     mockFetch.mockReset()
     mockHolder.subscribeCb = null
+    mockHolder.changeCb = null
     mockHolder.removeChannel.mockClear()
     mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
       const url = String(input)
@@ -153,5 +181,67 @@ describe('LiveRankingSection', () => {
     await screen.findByText('Ceramiche X')
     expect(screen.queryByText(/classifica completa/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/full ranking/i)).not.toBeInTheDocument()
+  })
+})
+
+describe('LiveRankingSection — stato accordion al refetch', () => {
+  beforeEach(() => {
+    jest.useFakeTimers()
+    MockIntersectionObserver.instances = []
+    mockHolder.changeCb = null
+    mockHolder.subscribeCb = null
+    ;(global as { IntersectionObserver: unknown }).IntersectionObserver = MockIntersectionObserver
+  })
+
+  afterEach(() => {
+    jest.useRealTimers()
+    ;(global as { IntersectionObserver: unknown }).IntersectionObserver = undefined
+  })
+
+  it('preserva lo stato aperto/chiuso delle fasce quando i dati vengono aggiornati', async () => {
+    let payload = makePayload()
+    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('/api/public/flag/voting')) {
+        return { ok: true, json: async () => ({ enabled: true }) }
+      }
+      return { ok: true, json: async () => payload }
+    })
+
+    render(<LiveRankingSection />)
+    await act(async () => {})
+    const io = MockIntersectionObserver.instances[0]
+    await act(async () => { io.fire(true) })
+
+    // TOP20 aperta di default, GOLD chiusa
+    expect(screen.getByRole('button', { name: /GOLD/ })).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.getByRole('button', { name: /TOP 20/ })).toHaveAttribute('aria-expanded', 'true')
+
+    // apri la fascia GOLD
+    fireEvent.click(screen.getByRole('button', { name: /GOLD/ }))
+    expect(screen.getByRole('button', { name: /GOLD/ })).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByText('Marmo W')).toBeInTheDocument()
+
+    // nuovo dataset: aziende diverse, sempre con una fascia GOLD
+    payload = makePayload()
+    payload.companies[0] = { ...payload.companies[0], id: 'n01', name: 'Nuova Ceramiche' }
+    payload.companies[20] = { ...payload.companies[20], id: 'n02', name: 'Nuova GOLD' }
+    payload.companies[21] = { ...payload.companies[21], id: 'n03', name: 'Nuova GOLD 2' }
+
+    // refetch via evento realtime (dopo il debounce di 500ms)
+    await act(async () => {
+      mockHolder.changeCb?.()
+      jest.advanceTimersByTime(600)
+    })
+
+    // lo stato è preservato: GOLD resta aperta, SILVER/BRONZE restano chiuse
+    expect(screen.getByRole('button', { name: /GOLD/ })).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('button', { name: /SILVER/ })).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.getByRole('button', { name: /BRONZE/ })).toHaveAttribute('aria-expanded', 'false')
+
+    // i nuovi dati sono renderizzati nelle fasce corrispondenti
+    expect(screen.getByText('Nuova Ceramiche')).toBeInTheDocument()
+    expect(screen.getByText('Nuova GOLD')).toBeInTheDocument()
+    expect(screen.queryByText('Marmo W')).not.toBeInTheDocument()
   })
 })

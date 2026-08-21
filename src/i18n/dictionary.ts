@@ -55,7 +55,9 @@ export interface Dictionary {
   'success.shareTaglinePre': string
   'success.shareTaglinePost': string
   'success.shareButton': string
+  'success.shareCta': string
   'success.shareCopied': string
+  'success.redeemPrize': string
 
   // Public ranking
   'publicRanking.title': string
@@ -67,18 +69,11 @@ export interface Dictionary {
   'liveRanking.retry': string
   'liveRanking.empty': string
   'liveRanking.pallets': string
-  'liveRanking.hide': string
-  'liveRanking.showAll': string
 
   // Live ranking — fasce
-  'liveRanking.band.top20': string
-  'liveRanking.band.gold': string
-  'liveRanking.band.silver': string
-  'liveRanking.band.bronze': string
   'liveRanking.bandCount': string
   'liveRanking.yourVote': string
   'liveRanking.yourVotes': string
-  'liveRanking.badge': string
 
   // Contact
   'contact.title1': string

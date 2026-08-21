@@ -50,7 +50,9 @@ export const en: Dictionary = {
   'success.shareTaglinePre': 'Share your vote tagging',
   'success.shareTaglinePost': 'and pick up your prize here',
   'success.shareButton': 'Share',
+  'success.shareCta': 'Share your vote',
   'success.shareCopied': 'Copied!',
+  'success.redeemPrize': 'Collect your prize',
 
   'publicRanking.title': 'the fantacer sponsors',
 
@@ -60,16 +62,9 @@ export const en: Dictionary = {
   'liveRanking.retry': 'retry',
   'liveRanking.empty': 'no votes yet — be the first!',
   'liveRanking.pallets': '{count} pallets',
-  'liveRanking.hide': 'hide ↑',
-  'liveRanking.showAll': 'show full ranking ↓',
-  'liveRanking.band.top20': 'TOP 20',
-  'liveRanking.band.gold': 'GOLD',
-  'liveRanking.band.silver': 'SILVER',
-  'liveRanking.band.bronze': 'BRONZE',
   'liveRanking.bandCount': '{count} companies',
   'liveRanking.yourVote': 'your vote',
   'liveRanking.yourVotes': 'your votes',
-  'liveRanking.badge': '{positions}',
 
   'contact.title1': 'TALK',
   'contact.title2': 'TO US',

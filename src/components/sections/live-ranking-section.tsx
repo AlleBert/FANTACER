@@ -73,7 +73,7 @@ export function LiveRankingSection() {
       const ranked = rankCompanies((data.companies || []) as Array<Omit<RankingCompany, 'rank'>>)
       setCompanies(ranked)
     } catch {
-      setError(t('liveRanking.error'))
+      if (showLoader) setError(t('liveRanking.error'))
     } finally {
       if (showLoader) setIsLoading(false)
     }
