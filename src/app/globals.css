@@ -418,7 +418,7 @@ textarea::-webkit-scrollbar {
       display: grid;
       grid-template-columns: minmax(0, 1.15fr) minmax(320px, 420px);
       align-items: start;
-      justify-content: center; /* centra le grid tracks nel container */
+      justify-content: normal; /* override: grid usa justify-content diversamente */
     }
     .success-grid-col-1 {
       grid-column: 1;
