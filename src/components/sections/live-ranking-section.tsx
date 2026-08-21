@@ -123,7 +123,13 @@ export function LiveRankingSection() {
           }
         )
         .subscribe((status) => {
-          setChannelActive(status === 'SUBSCRIBED')
+          // MAI attivare il realtime dal solo status di socket: Supabase Realtime
+          // consegna gli eventi solo se l'RLS del subscriber li autorizza. vote_sessions
+          // ha solo policy service_role (no anon select), quindi un client pubblico riceve
+          // SUBSCRIBED ma ZERO eventi. channelActive va impostato SOLO alla consegna reale
+          // di un evento (nell'handler sopra); altrimenti il polling fallback resta attivo
+          // e la classifica non si congela.
+          if (status !== 'SUBSCRIBED') setChannelActive(false)
         })
       channelRef.current = channel
     }

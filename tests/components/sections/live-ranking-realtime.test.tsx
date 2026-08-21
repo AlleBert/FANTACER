@@ -148,19 +148,31 @@ describe('LiveRankingSection realtime', () => {
     expect(mockFetch.mock.calls.length).toBeGreaterThan(callsBefore)
   })
 
-  it('il polling fallback è attivo solo quando il channel NON è connesso', async () => {
+  it('il polling fallback resta attivo finché non arriva un evento reale (RLS)', async () => {
+    mockFetch.mockResolvedValue({ ok: true, json: async () => buildPayload(defaultPallets) })
     render(<LiveRankingSection />)
     await act(async () => {})
     const io = MockIntersectionObserver.instances[0]
     await act(async () => { io.fire(true) })
     const callsBefore = mockFetch.mock.calls.length
+
+    // socket SUBSCRIBED ma nessun evento consegnato (RLS bloccante): il polling DEVE continuare
+    await act(async () => { mockHolder.subscribeCb?.('SUBSCRIBED') })
     await act(async () => { jest.advanceTimersByTime(30000) })
     expect(mockFetch.mock.calls.length).toBeGreaterThan(callsBefore)
 
-    await act(async () => { mockHolder.subscribeCb?.('SUBSCRIBED') })
-    const callsAfterSubscribe = mockFetch.mock.calls.length
+    // un evento reale arriva → l'handler esegue fetchRanking(false) + setChannelActive(true)
+    // dopo il debounce (500ms): superando 600ms il refetch parte e channelActive diventa true
+    await act(async () => {
+      mockHolder.changeCb?.()
+      jest.advanceTimersByTime(600)
+    })
+    const callsAfterEvent = mockFetch.mock.calls.length
+    expect(callsAfterEvent).toBeGreaterThan(callsBefore)
+
+    // channelActive ora true → il tick di polling successivo NON aggiunge nuovi fetch
     await act(async () => { jest.advanceTimersByTime(30000) })
-    expect(mockFetch.mock.calls.length).toBe(callsAfterSubscribe)
+    expect(mockFetch.mock.calls.length).toBe(callsAfterEvent)
   })
 
   it('sospende il channel fuori viewport e lo ristabilisce al rientro', async () => {
