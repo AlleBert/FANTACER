@@ -41,4 +41,16 @@ create trigger trg_bump_ranking_tick
   for each row execute function bump_ranking_tick();
 
 -- Abilita il realtime sulla tabella (coerente con enable_realtime_admin_tables).
-alter publication supabase_realtime add table ranking_tick;
+-- Idempotente: evita l'errore duplicate_object se la tabella è già pubblicata.
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'ranking_tick'
+  ) then
+    alter publication supabase_realtime add table public.ranking_tick;
+  end if;
+end;
+$$;
