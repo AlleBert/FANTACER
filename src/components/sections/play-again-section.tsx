@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import { CtaButton } from '@/components/ui/cta-button'
 import { SectionFrame } from '@/components/layout/section-frame'
+import { SafeCenterSection } from '@/components/layout/safe-center-section'
 import { useLocale } from '@/lib/LocaleContext'
 
 interface PlayAgainSectionProps {
@@ -19,10 +20,8 @@ export function PlayAgainSection({ onPlayClick }: PlayAgainSectionProps) {
   }
 
   return (
-    <SectionFrame theme="play-again" className="flex items-center justify-center">
-      
-      <div className="safe-shell h-full flex flex-col">
-      <div className="relative z-10 w-full content-max text-center flex flex-col items-center justify-center gap-(--rythm-sec) flex-1">
+    <SectionFrame theme="play-again" className="flex flex-col">
+      <SafeCenterSection scrollable={false} gap="var(--rythm-sec)" className="content-max text-center">
         <p className="text-[clamp(1.125rem,3.5vw,2.875rem)] text-white font-medium leading-(--lh-body) max-w-(--measure-body)">
           {t('playAgain.text')}
           <br className="hidden md:block" />
@@ -50,8 +49,7 @@ export function PlayAgainSection({ onPlayClick }: PlayAgainSectionProps) {
 
           <CtaButton onClick={handlePlayClick} scale={1.15}>{t('hero.play')}</CtaButton>
         </div>
-      </div>
-      </div>
+      </SafeCenterSection>
     </SectionFrame>
   )
 }

@@ -17,6 +17,8 @@ export type SponsorCardsVariant = 'default' | 'compact' | 'large';
 interface SponsorCardsProps {
   variant?: SponsorCardsVariant;
   standOnly?: boolean;
+  /** Limita il numero di card renderizzate (utile per viewport piccoli) */
+  maxItems?: number;
   refreshKey?: number | string;
   className?: string;
 }
@@ -59,7 +61,13 @@ function sizeStyle(variant: SponsorCardsVariant, sizeVar: string): React.CSSProp
   } as React.CSSProperties;
 }
 
-export function SponsorCards({ variant = 'default', standOnly = false, refreshKey, className }: SponsorCardsProps) {
+export function SponsorCards({
+  variant = 'default',
+  standOnly = false,
+  maxItems,
+  refreshKey,
+  className,
+}: SponsorCardsProps) {
   const [sponsors, setSponsors] = useState<Sponsor[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -83,12 +91,13 @@ export function SponsorCards({ variant = 'default', standOnly = false, refreshKe
   }, [refreshKey]);
 
   const visible = sponsors ? (standOnly ? sponsors.filter((s) => s.has_stand) : sponsors) : [];
-  const count = visible.length;
+  const displaySponsors = maxItems ? visible.slice(0, maxItems) : visible;
+  const count = displaySponsors.length;
 
   if (isLoading) {
     return (
       <div className={cn('flex flex-wrap items-center justify-center gap-(--sponsor-gap)', className)}>
-        {Array.from({ length: 4 }).map((_, i) => (
+        {Array.from({ length: maxItems || 4 }).map((_, i) => (
           <div
             key={i}
             aria-hidden="true"
@@ -104,7 +113,7 @@ export function SponsorCards({ variant = 'default', standOnly = false, refreshKe
 
   return (
     <div className={cn('flex flex-wrap items-center justify-center gap-(--sponsor-gap)', className)}>
-      {visible.map((sponsor) => {
+      {displaySponsors.map((sponsor) => {
         const cardStyle = sizeStyle(variant, `var(--sponsor-card-${sizeKey(count)})`);
 
         const content = sponsor.image_url ? (

@@ -4,6 +4,7 @@ import Image from 'next/image'
 import type { ReactNode } from 'react'
 import { Heart, Smartphone, AtSign, Gift } from 'lucide-react'
 import { SectionFrame } from '@/components/layout/section-frame'
+import { SafeCenterSection } from '@/components/layout/safe-center-section'
 import { useLocale } from '@/lib/LocaleContext'
 
 interface Step {
@@ -44,10 +45,8 @@ const steps: Step[] = [
 export function HowItWorksSection() {
   const { t } = useLocale()
   return (
-    <SectionFrame theme="how-it-works" className="text-white flex flex-col items-center justify-center">
-      <div className="safe-shell h-full flex flex-col">
-      <div className="relative z-10 w-full max-w-7xl mx-auto flex flex-col items-center justify-center flex-1 min-h-0 py-(--section-pad)">
-
+    <SectionFrame theme="how-it-works" className="text-white flex flex-col">
+      <SafeCenterSection scrollable={false} gap="var(--rythm-blk)" className="max-w-7xl mx-auto py-(--section-pad)">
         <h2 className="text-(length:--fs-headline-tight) font-[900] text-center mb-(--rythm-blk) tracking-tighter lowercase leading-(--lh-headline) flex flex-wrap xl:flex-nowrap justify-center items-center gap-x-2 md:gap-x-4 w-full [text-wrap:balance] flex-shrink-0">
           <span className="whitespace-nowrap">{t('howItWorks.title.simple')}</span>
           <span className="whitespace-nowrap flex items-center">
@@ -87,8 +86,7 @@ export function HowItWorksSection() {
             </div>
           ))}
         </div>
-      </div>
-      </div>
+      </SafeCenterSection>
     </SectionFrame>
   )
 }

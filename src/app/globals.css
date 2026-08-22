@@ -402,6 +402,47 @@ textarea::-webkit-scrollbar {
     flex: 1;
     width: 100%;
     align-items: safe center;
+    justify-content: safe center;
+  }
+
+  /* Safe center shell per SafeCenterSection:
+     - Eredita padding safe-area da .safe-shell
+     - Usa flex: 1 1 0% + min-height: 0 (non min-height: 100dvh)
+     - Permette footer fissi senza overflow */
+  .safe-center-shell {
+    box-sizing: border-box;
+    width: 100%;
+    flex: 1 1 0%;
+    min-height: 0;
+    padding-top: var(--safe-top-offset);
+    padding-bottom: var(--safe-bottom-offset);
+    padding-left: var(--safe-x);
+    padding-right: var(--safe-x);
+  }
+
+  /* Safe center utilities */
+  .items-safe-center {
+    align-items: safe center;
+  }
+  .justify-safe-center {
+    justify-content: safe center;
+  }
+
+  /* Fallback per browser senza supporto safe center (iOS < 17.4) */
+  @supports (justify-content: safe center) {
+    .safe-center-spacer {
+      display: none;
+    }
+  }
+  @supports not (justify-content: safe center) {
+    .safe-center-shell {
+      justify-content: normal;
+    }
+    .safe-center-spacer {
+      flex-grow: 1;
+      flex-shrink: 1;
+      min-height: 0;
+    }
   }
 
   /* Success section: layout mobile (flex column) */

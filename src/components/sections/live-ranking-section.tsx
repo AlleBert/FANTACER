@@ -4,8 +4,10 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { motion, AnimatePresence } from 'framer-motion';
 import { SponsorCards } from '@/components/sponsor/sponsor-cards';
 import { SectionFrame } from '@/components/layout/section-frame';
+import { SafeCenterSection } from '@/components/layout/safe-center-section';
 import { useLocale } from '@/lib/LocaleContext';
 import { useVote } from '@/lib/VoteContext';
+import { useSponsorMaxItems } from '@/hooks/use-sponsor-max-items';
 import { createClient } from '@/lib/supabase/client';
 import {
   CLUSTERS,
@@ -47,6 +49,7 @@ function bandBadge(
 export function LiveRankingSection() {
   const { t } = useLocale()
   const { selectedCompanies } = useVote()
+  const maxItems = useSponsorMaxItems()
   const [companies, setCompanies] = useState<RankingCompany[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -235,9 +238,9 @@ export function LiveRankingSection() {
   }, [flash])
 
   return (
-    <SectionFrame theme="live-ranking" className="flex flex-col justify-between">
-      <div ref={sectionRef} className="safe-shell content-max flex flex-col h-full min-h-0">
-        <div className="flex flex-col items-center justify-center flex-1 min-h-0 gap-(--rythm-blk)">
+    <SectionFrame theme="live-ranking" className="flex flex-col">
+      <SafeCenterSection scrollable={false} gap="var(--rythm-blk)" className="content-max">
+        <div ref={sectionRef} className="w-full flex flex-col items-center gap-(--rythm-blk)">
           <h2 className="text-(length:--fs-headline-tight) font-[900] text-center tracking-tighter lowercase leading-(--lh-headline) text-white">
             {t('liveRanking.title')}
           </h2>
@@ -395,10 +398,11 @@ export function LiveRankingSection() {
             )}
           </div>
         </div>
+      </SafeCenterSection>
 
-        <div className="mt-auto w-full flex justify-center">
-          <SponsorCards variant="compact" />
-        </div>
+      {/* Sponsor footer fisso */}
+      <div className="flex-shrink-0 w-full flex justify-center p-(--space-md)">
+        <SponsorCards variant="compact" maxItems={maxItems} />
       </div>
     </SectionFrame>
   );

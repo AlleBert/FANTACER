@@ -30,6 +30,8 @@ La webapp è un gioco multi-device con sezioni full-page a snap. La responsivene
 - Niente breakpoint arbitrari creati solo per correggere un singolo screenshot.
 - Non usare `transform`/`scale`/animazioni per nascondere problemi strutturali di layout.
 
+**Safe Centering Rule.** **MAI usare `center` nudo** (`justify-content: center`, `align-items: center`, `items-center`, `justify-center`) su assi che possono overfloware. Usare sempre **safe center** (`justify-content: safe center`, `align-items: safe center`). Il `safe` garantisce: centra se il contenuto sta nel container/viewport, allinea all'inizio (`start`) se trabocca, evita clipping della parte superiore. In Tailwind v4 `items-[safe_center]` non è supportato: scrivere in CSS puro in `globals.css`. Override esplicito richiesto quando `display: grid` nel container query desktop: `justify-content: normal` (grid usa `justify-content` con semantica diversa).
+
 ### Tipografia
 
 - La tipografia deve adattarsi alla viewport: font-size, line-height, letter-spacing, larghezza dei blocchi, wrapping, CTA, titoli multilinea, contenuto localizzato (IT/EN).
