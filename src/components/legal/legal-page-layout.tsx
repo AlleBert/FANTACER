@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { SectionFrame } from '@/components/layout/section-frame'
 import { SiteFooter } from '@/components/layout/site-footer'
 import { cn } from '@/lib/utils'
@@ -49,7 +49,6 @@ export function LegalPageLayout({
     year: 'numeric',
   })
 
-  const activeIdRef = useRef<string | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -62,10 +61,7 @@ export function LegalPageLayout({
     const io = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          if (entry.isIntersecting) {
-            activeIdRef.current = entry.target.id
-            setActiveId(entry.target.id)
-          }
+          if (entry.isIntersecting) setActiveId(entry.target.id)
         }
       },
       { rootMargin: '-20% 0px -70% 0px', threshold: 0 },
@@ -75,9 +71,9 @@ export function LegalPageLayout({
   }, [toc])
 
   return (
-    <SectionFrame theme="legal" grow className={cn('legal-surface flex flex-col', className)}>
-      <header className="safe-px sticky top-0 z-20 border-b-2 border-ink/10 bg-[color-mix(in_srgb,var(--background)_85%,transparent)] backdrop-blur-sm">
-        <div className="content-max mx-auto flex items-center justify-between gap-4 py-3">
+    <SectionFrame theme="legal" grow clip className={cn('legal-surface flex flex-col', className)}>
+      <header className="safe-px sticky top-0 z-20 border-b-2 border-ink/10 bg-[color-mix(in_srgb,var(--background)_85%,transparent)] pt-(--safe-top) backdrop-blur-sm">
+        <div className="content-max mx-auto flex items-center justify-between gap-4 pb-3">
           <span className="text-lg font-black lowercase tracking-tighter text-ink">
             fantacer<span className="text-orange">★</span>
           </span>
