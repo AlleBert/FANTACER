@@ -51,8 +51,8 @@ export function SuccessSection() {
             {/* Left Column: Hero + Copy + CTA */}
             <div className="success-grid-col-1 flex flex-col gap-(--space-lg)">
               {/* Hero Section */}
-              <div className="flex flex-col gap-(--space-md)">
-                <h2 className="-rotate-1 text-(length:--fs-hero) leading-(--lh-display) font-black uppercase tracking-[-0.05em] text-purple [text-wrap:balance]">
+              <div className="flex flex-col items-center gap-(--space-md) sm:items-start">
+                <h2 className="-rotate-1 text-(length:--fs-hero) leading-(--lh-display) font-black uppercase tracking-[-0.05em] text-purple [text-wrap:balance] text-center sm:text-left">
                   {t('success.youRock')}
                 </h2>
                 <div className="flex items-center gap-(--space-md)">
@@ -63,8 +63,8 @@ export function SuccessSection() {
               </div>
 
               {/* Copy Section */}
-              <div className="flex flex-col gap-(--space-lg)">
-                <p className="max-w-(--measure-body) text-(length:--fs-body) font-black uppercase leading-(--lh-body) text-ink [text-wrap:pretty]">
+              <div className="flex flex-col items-center gap-(--space-lg) sm:items-start">
+                <p className="max-w-(--measure-body) text-(length:--fs-body) font-black uppercase leading-(--lh-body) text-ink [text-wrap:pretty] text-center sm:text-left">
                   {t('success.shareTaglinePre')}{' '}
                   <span className="inline-block rotate-1 rounded-(--rounded-sm) border-2 border-ink bg-bright px-(--space-sm) py-1 font-black shadow-[2px_2px_0_#000]">
                     @fanta.cer
@@ -81,8 +81,8 @@ export function SuccessSection() {
               <VoteReceipt companies={selectedCompanies} />
 
               {/* Prizes Section */}
-              <div className="flex flex-col gap-(--space-md)">
-                <h3 className="text-(length:--fs-label) font-black uppercase tracking-[0.02em] text-ink">
+              <div className="flex flex-col items-center gap-(--space-md)">
+                <h3 className="text-(length:--fs-label) font-black uppercase tracking-[0.02em] text-ink text-center">
                   {t('success.redeemPrize')}
                 </h3>
                 <SponsorCards standOnly />
