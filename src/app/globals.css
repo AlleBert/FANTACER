@@ -445,6 +445,21 @@ textarea::-webkit-scrollbar {
     }
   }
 
+  /* Legal pages — superficie "Clean Document": velatura brand tenue che
+     sfuma al caldo off-white. Sostituisce il gradiente a tutta pagina. */
+  .legal-surface {
+    background: linear-gradient(180deg, #f0eaff 0%, #faf9f6 40%, #faf9f6 100%);
+  }
+
+  /* Summary box delle legal pages: banda sobria con bordo sinistro di accento
+     (privacy=blu, terms=verde, cookie=giallo). */
+  .summary-band {
+    border-left-width: 4px;
+    border-left-style: solid;
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+  }
+
   /* Success section: layout mobile (flex column) */
   .success-grid {
     display: flex;
@@ -510,35 +525,6 @@ textarea::-webkit-scrollbar {
     letter-spacing: -0.02em;
     text-transform: uppercase;
     margin-bottom: var(--rythm-blk);
-    color: var(--ink);
-  }
-
-  .prose-legal h2 {
-    font-size: var(--fs-cta, clamp(1.25rem, 3.5vw, 2rem));
-    font-weight: 900;
-    line-height: var(--lh-headline, 1.2);
-    letter-spacing: -0.01em;
-    text-transform: lowercase;
-    margin-top: var(--rythm-sec);
-    margin-bottom: var(--rythm-blk);
-    color: var(--ink);
-    padding-top: var(--rythm-blk);
-    border-top: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
-  }
-
-  .prose-legal h2:first-child {
-    margin-top: 0;
-    padding-top: 0;
-    border-top: none;
-  }
-
-  .prose-legal h3 {
-    font-size: var(--fs-body-lg, clamp(1rem, 2vw, 1.25rem));
-    font-weight: 700;
-    line-height: var(--lh-body, 1.4);
-    text-transform: lowercase;
-    margin-top: var(--rythm-blk);
-    margin-bottom: 0.5rem;
     color: var(--ink);
   }
 
@@ -740,22 +726,32 @@ textarea::-webkit-scrollbar {
     border-radius: 0.25rem;
   }
 
-  /* TOC pill styles */
+  /* TOC pill — versione pulita (niente ombra nera pesante) */
   .toc-pill {
     display: block;
     width: 100%;
-    border: 2px solid var(--ink);
+    border: 2px solid transparent;
     border-radius: 9999px;
-    background: var(--bright);
-    box-shadow: 2px 2px 0 #000;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: color-mix(in srgb, var(--ink) 55%, transparent);
     transition: all 0.15s ease;
   }
 
   .toc-pill:hover {
+    color: var(--ink);
+    border-color: color-mix(in srgb, var(--ink) 25%, transparent);
+    background: color-mix(in srgb, var(--ink) 4%, transparent);
+  }
+
+  .toc-pill.is-active {
+    color: var(--ink);
     border-color: var(--ink);
-    background: color-mix(in srgb, var(--ink) 3%, transparent);
-    box-shadow: 4px 4px 0 #000;
-    transform: translateX(2px);
+    background: var(--bright);
+    box-shadow: 2px 2px 0 #000;
   }
 
   .toc-pill:active {
@@ -857,7 +853,7 @@ textarea::-webkit-scrollbar {
     margin-bottom: var(--rythm-blk);
     color: var(--ink);
     padding-top: var(--rythm-blk);
-    border-top: 2px solid var(--ink);
+    border-top: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
     position: relative;
   }
 
