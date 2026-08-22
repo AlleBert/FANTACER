@@ -141,6 +141,9 @@ export interface Dictionary {
   'footer.terms': string
   'footer.madeBy': string
 
+  // Legal pages
+  'legal.backToGame': string
+
   // Cookie Policy
   'cookiePolicy.title': string
   'cookiePolicy.lastUpdated': string

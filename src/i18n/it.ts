@@ -128,6 +128,8 @@ export const it: Dictionary = {
   'footer.terms': 'Termini e condizioni',
   'footer.madeBy': 'FANTACER — Ceramica Experience',
 
+  'legal.backToGame': '← torna al gioco',
+
   'voteError.missingFields': 'Campi obbligatori mancanti',
   'voteError.duplicateCompanies': 'Le aziende devono essere diverse',
   'voteError.companiesNotFound': 'Una o più aziende non trovate',
