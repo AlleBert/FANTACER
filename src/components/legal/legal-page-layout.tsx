@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, type ReactNode } from 'react'
+import Link from 'next/link'
 import { SectionFrame } from '@/components/layout/section-frame'
 import { SiteFooter } from '@/components/layout/site-footer'
 import { cn } from '@/lib/utils'
@@ -77,12 +78,12 @@ export function LegalPageLayout({
           <span className="text-lg font-black lowercase tracking-tighter text-ink">
             fantacer<span className="text-orange">★</span>
           </span>
-          <a
+          <Link
             href="/"
             className="inline-flex items-center rounded-full border-2 border-ink bg-ink px-4 py-2 text-xs font-black uppercase tracking-wider text-bright shadow-[2px_2px_0_#000] transition-all hover:-translate-y-0.5 hover:shadow-[3px_3px_0_#000]"
           >
             {t('legal.backToGame')}
-          </a>
+          </Link>
         </div>
       </header>
 

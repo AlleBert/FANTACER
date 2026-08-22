@@ -5,8 +5,6 @@ jest.mock('@/lib/LocaleContext', () => ({
   useLocale: () => ({ t: (key: string) => key, locale: 'it' }),
 }))
 
-type MockEntry = { isIntersecting: boolean; target: { id: string } }
-
 let ioCallback: IntersectionObserverCallback | null = null
 
 class MockIntersectionObserver implements IntersectionObserver {
