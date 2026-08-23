@@ -8,6 +8,12 @@ on:
 
   pull_request:
 
+# Serializza i job E2E: il dataset Supabase fantacer-e2e è condiviso e il
+# seed/cleanup (globalSetup/globalTeardown) non è idempotente sotto concorrenza.
+concurrency:
+  group: e2e-suite
+  cancel-in-progress: false
+
 env:
   NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL_TEST }}
   NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY_TEST }}
@@ -59,4 +65,8 @@ jobs:
           E2E_ADMIN_TOTP_SECRET: ${{ secrets.E2E_ADMIN_TOTP_SECRET_TEST }}
           E2E_VIEWER_EMAIL: ${{ secrets.E2E_VIEWER_EMAIL_TEST }}
           E2E_VIEWER_PASSWORD: ${{ secrets.E2E_VIEWER_PASSWORD_TEST }}
+          # Rate-limit DB-backed (default 10 login / 5 verify per 15min): i
+          # worker paralleli condividono IP+factorId; margine per workers>1 e retries.
+          ADMIN_LOGIN_RATE_MAX: 100
+          ADMIN_MFA_VERIFY_RATE_MAX: 100
         run: npm run test:e2e

@@ -10,5 +10,12 @@ export async function GET() {
     return NextResponse.json({ companies: [] })
   }
 
-  return NextResponse.json({ companies: data || [] })
+  // La RPC ordina già deterministicamente (pallets desc, name asc, id asc):
+  // il rank è la posizione 1-based nell'array ordinato.
+  const companies = (data || []).map((c: Record<string, unknown>, index: number) => ({
+    ...c,
+    rank: index + 1,
+  }))
+
+  return NextResponse.json({ companies })
 }

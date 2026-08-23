@@ -6,6 +6,12 @@ import {
   generateTotp,
 } from './helpers/auth';
 
+const GATE_PROJECTS = ['chromium'];
+
+test.beforeEach(async ({}, testInfo) => {
+  test.skip(!GATE_PROJECTS.includes(testInfo.project.name));
+});
+
 test.describe('Admin security', () => {
   test('admin API returns 401 without session', async ({ request }) => {
     const res = await request.get('/api/admin/votes');

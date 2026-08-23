@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import sharp from 'sharp';
 
 function createTestAdminClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -16,6 +17,11 @@ function createTestAdminClient() {
 
 const TEST_BATCH = 'TEST';
 const TEST_COMPANIES = [{ name: 'Test Co' }, { name: 'GreenEnergy' }, { name: 'Third Co' }];
+const TEST_SPONSORS = [
+  { name: 'E2E Sponsor A', color: { r: 231, g: 76, b: 60 }, has_stand: true, website_url: 'https://example-a.it' },
+  { name: 'E2E Sponsor B', color: { r: 46, g: 204, b: 113 }, has_stand: true, website_url: null },
+  { name: 'E2E Sponsor C', color: { r: 52, g: 152, b: 219 }, has_stand: false, website_url: null },
+];
 
 /**
  * Rimuove i voti di oggi generati dalle suite E2E (fingerprint `e2e-voter-*`).
@@ -46,8 +52,52 @@ export async function clearRuntimeVotes() {
   }
 }
 
+async function seedSponsors(supabase: ReturnType<typeof createTestAdminClient>) {
+  for (let i = 0; i < TEST_SPONSORS.length; i++) {
+    const sp = TEST_SPONSORS[i];
+    const slug = sp.name.toLowerCase().replace(/\s+/g, '-');
+    const fileName = `${slug}-${sp.color.r}-${sp.color.g}-${sp.color.b}.png`;
+    const objectPath = `sponsors/${fileName}`;
+
+    const png = await sharp({
+      create: { width: 400, height: 200, channels: 4, background: { ...sp.color, alpha: 1 } },
+    })
+      .png()
+      .toBuffer();
+
+    const { error: uploadError } = await supabase.storage
+      .from('sponsor-logos')
+      .upload(objectPath, png, { upsert: true, contentType: 'image/png' });
+    if (uploadError) {
+      throw new Error(`Failed to upload sponsor logo ${fileName}: ${uploadError.message}`);
+    }
+
+    const imageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/sponsor-logos/${objectPath}`;
+
+    const { data: existing } = await supabase.from('sponsors').select('id').eq('name', sp.name).maybeSingle();
+    const payload = {
+      name: sp.name,
+      image_url: imageUrl,
+      website_url: sp.website_url,
+      is_active: true,
+      has_stand: sp.has_stand,
+      sort_order: i,
+    };
+
+    if (existing) {
+      const { error } = await supabase.from('sponsors').update(payload).eq('id', existing.id);
+      if (error) throw new Error(`Failed to update sponsor ${sp.name}: ${error.message}`);
+    } else {
+      const { error } = await supabase.from('sponsors').insert(payload);
+      if (error) throw new Error(`Failed to insert sponsor ${sp.name}: ${error.message}`);
+    }
+  }
+}
+
 export async function seedTestData() {
   const supabase = createTestAdminClient();
+
+  await seedSponsors(supabase);
 
   let batchError: { message: string } | null = null;
   for (let attempt = 1; attempt <= 3; attempt++) {

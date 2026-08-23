@@ -44,15 +44,17 @@ export const it: Dictionary = {
   'search.errVote': 'Errore durante la votazione',
   'search.errUnknown': 'Errore sconosciuto',
 
-  'success.voted': 'Hai votato ceramica',
-  'success.noCompany': 'Nessuna azienda',
-  'success.bestStand': 'miglior stand 2026',
-  'success.playToo1': 'Gioca anche tu,',
-  'success.playToo2': 'si vince sempre!',
+  'success.voted': 'Hai votato!',
   'success.youRock': 'sei forte!',
-  'success.shareSocial': 'condividi sui social',
-  'success.shareTagging': 'taggando',
-  'success.collectPrize': 'e ritira il tuo gadget qui',
+  'success.receiptTitle': 'Il tuo voto',
+  'success.shareTaglinePre': 'Condividi il tuo voto taggando',
+  'success.shareTaglinePost': 'e ritira il tuo premio qui',
+  'success.shareButton': 'Condividi',
+  'success.shareCta': 'Condividi il tuo voto',
+  'success.shareCopied': 'Copiato!',
+  'success.redeemPrize': 'Ritira il tuo premio',
+  'success.saveCta': 'Salva',
+  'success.saveDone': 'Salvato!',
 
   'publicRanking.title': 'gli sponsor di fantacer',
 
@@ -62,8 +64,9 @@ export const it: Dictionary = {
   'liveRanking.retry': 'riprova',
   'liveRanking.empty': 'nessun voto ancora — sii il primo!',
   'liveRanking.pallets': '{count} pallet',
-  'liveRanking.hide': 'nascondi ↑',
-  'liveRanking.showAll': 'mostra la classifica completa ↓',
+  'liveRanking.bandCount': '{count} aziende',
+  'liveRanking.yourVote': 'il tuo voto',
+  'liveRanking.yourVotes': 'i tuoi voti',
 
   'contact.title1': 'PARLA',
   'contact.title2': 'CON NOI',
@@ -124,6 +127,8 @@ export const it: Dictionary = {
   'footer.privacyPolicy': 'Privacy Policy',
   'footer.terms': 'Termini e condizioni',
   'footer.madeBy': 'FANTACER — Ceramica Experience',
+
+  'legal.backToGame': '← torna al gioco',
 
   'voteError.missingFields': 'Campi obbligatori mancanti',
   'voteError.duplicateCompanies': 'Le aziende devono essere diverse',

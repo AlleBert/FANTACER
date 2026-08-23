@@ -30,6 +30,8 @@ La webapp è un gioco multi-device con sezioni full-page a snap. La responsivene
 - Niente breakpoint arbitrari creati solo per correggere un singolo screenshot.
 - Non usare `transform`/`scale`/animazioni per nascondere problemi strutturali di layout.
 
+**Safe Centering Rule.** **MAI usare `center` nudo** (`justify-content: center`, `align-items: center`, `items-center`, `justify-center`) su assi che possono overfloware. Usare sempre **safe center** (`justify-content: safe center`, `align-items: safe center`). Il `safe` garantisce: centra se il contenuto sta nel container/viewport, allinea all'inizio (`start`) se trabocca, evita clipping della parte superiore. In Tailwind v4 `items-[safe_center]` non è supportato: scrivere in CSS puro in `globals.css`. Override esplicito richiesto quando `display: grid` nel container query desktop: `justify-content: normal` (grid usa `justify-content` con semantica diversa).
+
 ### Tipografia
 
 - La tipografia deve adattarsi alla viewport: font-size, line-height, letter-spacing, larghezza dei blocchi, wrapping, CTA, titoli multilinea, contenuto localizzato (IT/EN).
@@ -57,7 +59,7 @@ La webapp è un gioco multi-device con sezioni full-page a snap. La responsivene
 ### Verifiche (da eseguire prima di dichiarare completa una feature UI)
 
 - `npm run visual:audit:homepage` — matrice responsive homepage (6 viewport).
-- `npm run visual:audit:ios` — homepage su 7 device iOS WebKit (`--workers=1`).
+- `npm run visual:audit:ios` — homepage su 4 device iOS WebKit (`--workers=1`).
 - `npm run visual:audit:ios:safearea` — modalità safe-area simulata.
 - `npm run visual:audit:ios:chrome` — modalità viewport/chrome stress.
 - `npm run visual:audit:summary` — report riepilogativo di tutte le suite (offline, da rigenerare dopo gli audit).
@@ -65,8 +67,8 @@ La webapp è un gioco multi-device con sezioni full-page a snap. La responsivene
 
 ### Note operative audit
 
-- **WebKit**: gli audit iOS richiedono `--workers=1`; **non lanciare due suite WebKit in parallelo** (connection-refused). Le suite modali (`safearea`, `chrome`) girano solo con `VISUAL_IOS_MODAL=1`.
-- **Workers**: `playwright.config.ts` imposta `workers: 1` di default. I login MFA admin (AAL2) condividono rate limit e sessione (`cachedAdminCookies` per worker): il parallelismo li fa fallire in modo flaky anche senza modifiche al codice. Non sovrascrivere con `--workers` se non per un motivo esplicito.
+- **WebKit**: gli audit iOS richiedono `--workers=1`; **non lanciare due suite WebKit in parallelo** (connection-refused) e mai una suite WebKit in parallelo con altri run. Le suite modali (`safearea`, `chrome`) girano solo con `VISUAL_IOS_MODAL=1`.
+- **Workers**: `playwright.config.ts` imposta `workers: 2` **globale**, con cap per-project: chromium e mobile-chrome = 2, firefox / mobile-webkit / tutti gli ios-* = 1 (WebKit/iOS sempre seriali). Il cap per-project è un limite, non un target: nessun progetto supera il globale. I login MFA admin (AAL2) condividono rate limit e sessione (`cachedAdminCookies` per worker): il margine per i 2 worker è garantito dai rate-limit alzati (vedi sotto). I batch locali forzano `--workers=1` (seriali).
 - **Banner cookie**: gli spec che catturano schermate pubbliche pre-impostano il cookie `fantacer_cookie_consent` (`seedConsentCookie` in `tests/e2e/helpers/cookie-consent.ts`) → il banner non compare nelle schermate, zero attese. Se aggiungi screenshot a uno spec pubblico, chiama il seed prima del `goto`.
 - Il **gate strutturale** e i **report riepilogativi** richiedono che le sezioni siano `main > section`; aggiorna selettori se il DOM cambia.
 
@@ -75,6 +77,35 @@ La webapp è un gioco multi-device con sezioni full-page a snap. La responsivene
 - Le sezioni homepage sono `main > section`. Negli spec esistenti alcune liste usano `main > section:nth-child(1..9)`: se il DOM/ordine delle sezioni cambia, aggiornale.
 - `SuccessSection` è condizionale (compare solo dopo il voto) e non è coperta dagli audit standard.
 - WebKit/Playwright non simula `env(safe-area-inset-*)` reali: l'audit safe-area li emula via override dei token CSS (`--safe-top`, `--safe-bottom`, `--safe-x`). Non dichiarare una verifica superata senza averla eseguita.
+
+## Esecuzione test su hardware limitato (PC dev)
+
+La macchina di sviluppo ha RAM limitata (~3.7GiB, WSL2) e **si blocca se la suite e2e completa viene lanciata tutta insieme**. Regole vincolanti:
+
+- **Mai `npm run test:e2e` nudo**: è un'operazione da CI (tutti gli spec × 11 progetti; il gating runtime via `test.skip` riduce le esecuzioni effettive ma `--list` continua a mostrare 1672 test listed). In locale satura la RAM. Usa sempre i **batch dedicati**:
+  - `npm run e2e:gate` — `responsive-structural` + `voting-flow` su `chromium` + `mobile-webkit` (gate P0)
+  - `npm run e2e:home` — `homepage`, `legal-pages`, `smoke`, `scroll-blocking`, `accessibility` su `chromium`
+  - `npm run e2e:admin` — `admin`, `admin-auth`, `admin-sponsor`, `viewer`, `repro-phantom-500` su `chromium`
+  - Gli script includono già `--workers=1` (seriali: login MFA admin condivisi) e `NODE_OPTIONS=--max-old-space-size=2560`.
+- **Audit sempre con server production**: `CI=true npm run visual:audit:ios` / `:homepage` (webServer usa `npm run start`, ~metà RAM di `next dev`). Serve un build aggiornato. Per audit in modalità production **sul progetto E2E**, il build va fatto con `.env.e2e` (perché `NEXT_PUBLIC_SUPABASE_URL` è inlined a build-time; altrimenti "Invalid API key" sui write admin): `set -a; source .env.e2e; set +a; rm -rf .next && npm run build`. Dettagli in `docs/CI.md`.
+- **Matrice iOS ridotta**: 3 iPhone (SE, 13, Pro Max) + iPad Mini portrait. Mai `--project=ios-*` oltre questo set, mai due suite WebKit in parallelo.
+- **Una suite WebKit alla volta**, mai in parallelo con altri run.
+- **`jest` limitato**: `--maxWorkers=4` (già in `npm test`); `build` ha `NODE_OPTIONS` dedicata.
+- **Dopo un run interrotto** (Ctrl-C, crash, OOM) lancia `npm run e2e:cleanup`: uccide i browser Playwright orfani che altrimenti rubano RAM.
+- **Swap WSL attivo**: `/swapfile` 4GiB + `vm.swappiness=10` (persistiti via `/etc/fstab` e `/etc/sysctl.conf`). Se spariscono da `swapon --show` dopo un reboot, riapplicare i comandi sudo relativi.
+- Suite pesanti solo a macchina "quieta": chiudere browser/app prima di un audit.
+
+## SuccessSection in anteprima (solo dev)
+
+Tool di sviluppo per lavorare alla UI della pagina di successo senza votare davvero:
+
+- **`?dev_success=1`** su `next dev` sblocca `SuccessSection` (+ scroll alla sezione).
+- **`&dev_companies=1`** pre-seleziona le prime 3 aziende del batch attivo (SELECT read-only, nessuna scrittura).
+- Implementazione: `src/components/dev/dev-success-preview.tsx` (render `null`), montato in `src/app/page.tsx`.
+- **Guardia**: `process.env.NODE_ENV === 'production'` **inline** nel corpo dell'effect. NON avvolgere in un helper con default param (`nodeEnv = process.env.NODE_ENV`): impedisce l'inlining statico di NODE_ENV da parte di Next e il bypass resta attivo in build prod (difetto verificato). Con l'inline, in `next build`/`next start` il branch è eliminato dal bundle → parametro **inerte**.
+- Funziona **solo in `next dev`**. Mai su produzione (`npm run start`, Vercel, tunnel).
+- **Verifica di inertness**: `npm run start -p 3001` + aprire `http://localhost:3001/?dev_success=1` → sezione assente, e `grep -rl dev_success .next/static/chunks/` → 0 match. NON verificare su :3000 se un `next dev` è attivo (occupa la porta → EADDRINUSE e il test colpisce il server sbagliato).
+- I test unit sono in `tests/components/dev/dev-success-preview.test.tsx` (ramo prod coperto via `jest.replaceProperty(process.env, 'NODE_ENV', ...)`).
 
 ## TOTP / Google Authenticator
 
@@ -89,7 +120,8 @@ La webapp è un gioco multi-device con sezioni full-page a snap. La responsivene
 
 - Il login admin (`/api/admin/login`) e la verify MFA (`/api/admin/mfa/verify`) hanno **rate limit DB-backed** (finestra 15min): default **10** tentativi login, **5** verify per factorId. Overridabili via env `ADMIN_LOGIN_RATE_MAX` / `ADMIN_MFA_VERIFY_RATE_MAX` (vedi `.env.example`).
 - Le suite E2E autenticate (visual-audit, accessibility, admin, viewer) **riusano la sessione admin a livello di modulo** (`cachedAdminCookies` in `tests/e2e/helpers/auth.ts`): il primo test esegue il login MFA completo, i successivi riutilizzano i cookie. Non duplicare il login: ogni MFA login consuma una verify nel rate limit.
-- In `.env.local` sono già presenti `ADMIN_LOGIN_RATE_MAX=100` e `ADMIN_MFA_VERIFY_RATE_MAX=100` per le suite E2E. Se il server dev era già avviato prima di una modifica a `.env.local`, **riavviarlo** (le env sono lette allo startup da `next dev`).
+- In `.env.local` sono già presenti `ADMIN_LOGIN_RATE_MAX=100` e `ADMIN_MFA_VERIFY_RATE_MAX=100` per le suite E2E; il job CI imposta gli stessi valori (`ci.yml`). Se il server dev era già avviato prima di una modifica a `.env.local`, **riavviarlo** (le env sono lette allo startup da `next dev`).
+- **`DEV_BYPASS_VOTE_LIMIT` è una variabile locale/dev, non un'invariante CI**: in `next start`/production (`NODE_ENV=production`) è inerte. In CI le collisioni di voto si evitano con lo stub `e2e-voter-*` (`stubUniqueVoteFingerprint`), non con quella env.
 - I counter del rate limit vivono in DB (`public.rate_limits`): un run fallito lascia tentativi conteggiati per 15min. In caso di "ratelimited" inspiegabile, svuotare le righe con key `admin:login:*` / `admin:mfa:*` o attendere la finestra.
 
 ## E2E e stato Admin — invarianti
@@ -107,5 +139,6 @@ La webapp è un gioco multi-device con sezioni full-page a snap. La responsivene
   Il webServer Playwright parte sempre lui (`reuseExistingServer: false`):
   non riusare un `next dev` avviato a mano che potrebbe puntare a prod.
 - Il job CI usa solo secrets `*_TEST`; i secrets production vivono solo in Vercel.
+- Il CI serializza i job E2E con `concurrency: { group: e2e-suite, cancel-in-progress: false }` (dataset Supabase condiviso + seed/cleanup non idempotente): non rimuovere né parallelizzare i job E2E su CI.
 - Canary manuale su production dopo un run E2E (mai automatizzato, vedi `docs/CI.md`):
   verificare che `batch_settings.active_batch` e `site_settings` non siano cambiati.

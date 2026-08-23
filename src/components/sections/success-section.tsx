@@ -1,84 +1,23 @@
-'use client';
+'use client'
 
-import { useEffect } from 'react'
-import Image from 'next/image'
+import { useEffect, useRef } from 'react'
 import { useVote } from '@/lib/VoteContext'
 import confetti from 'canvas-confetti'
 import { SponsorCards } from '@/components/sponsor/sponsor-cards'
 import { SectionFrame } from '@/components/layout/section-frame'
 import { useLocale } from '@/lib/LocaleContext'
-
-function IphoneStoryMockup({ companyName }: { companyName?: string }) {
-  const { t } = useLocale()
-  return (
-    <div 
-      className="relative w-[clamp(8.75rem,34vw,21.25rem)] mx-auto lg:mx-0 shrink-0 transform md:rotate-1"
-      style={{ aspectRatio: '252 / 479' }}
-    >
-      {/* Background/Shadow layer - matches phone shape without shadowing SVG text */}
-      <div 
-        className="absolute inset-[3px] bg-black/25 rounded-[38px] translate-x-3 translate-y-3 blur-[2px] z-[-1]" 
-        aria-hidden="true"
-      />
-      
-      {/* Base Phone and Background */}
-      <img 
-        src="/stories.svg?v=3"
-        alt="Phone Frame"
-        className="absolute inset-0 w-full h-full object-fill pointer-events-none z-0"
-      />
-
-      {/* Instagram Story Content Overlay */}
-      {/* Positioned inside the screen bezel safely */}
-      <div className="absolute inset-x-[6%] top-[8%] bottom-[5%] z-10 flex flex-col justify-between py-4 px-2">
-        
-        {/* Story Text Content Area */}
-        <div className="flex flex-col items-center justify-center gap-(--space-sm) text-center mt-2 md:mt-4">
-          <div className="bg-black/85 px-3.5 py-1.5 rounded-xl backdrop-blur-sm inline-block">
-            <h3 className="text-sm md:text-base font-bold text-white leading-tight">
-              {t('success.voted')} <br/> <span className="text-bright">{companyName || t('success.noCompany')}</span>
-            </h3>
-          </div>
-          
-          <div className="bg-white px-2.5 py-1 rounded-lg inline-block transform -rotate-1">
-            <p className="text-[10px] md:text-xs font-bold text-black uppercase tracking-wide">
-              {t('success.bestStand')}
-            </p>
-          </div>
-        </div>
-
-        {/* Footer Content */}
-        <div className="flex flex-col items-center gap-(--space-lg) pb-2">
-          
-          <div className="bg-gradient-to-r from-purple to-coral p-[1.5px] rounded-2xl w-[85%] transform rotate-1">
-             <div className="bg-white w-full rounded-[14px] py-1.5 px-0.5 text-center">
-                <p className="text-[10px] md:text-xs font-bold text-black leading-tight">
-                  {t('success.playToo1')}<br/>{t('success.playToo2')}
-                </p>
-             </div>
-          </div>
-          
-          <div className="flex justify-center gap-3">
-            <div className="w-8 h-8 md:w-9 md:h-9 bg-white rounded-full shadow-md border border-gray-100 flex items-center justify-center">
-            </div>
-            <div className="w-8 h-8 md:w-9 md:h-9 bg-white rounded-full shadow-md border border-gray-100 flex items-center justify-center">
-            </div>
-          </div>
-          
-        </div>
-      </div>
-    </div>
-  )
-}
+import { VoteReceipt } from '@/components/sections/vote-receipt'
+import { ActionBar } from '@/components/sections/action-bar'
 
 export function SuccessSection() {
-  const { selectedCompanies } = useVote();
-  const { t } = useLocale();
+  const { selectedCompanies } = useVote()
+  const { t } = useLocale()
+  const sectionRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
-    const colors = ['#fccb27', '#8000ff', '#ff803b', '#4B00AB', '#ffffff'];
+    const colors = ['#fccb27', '#8000ff', '#ff803b', '#4B00AB', '#ffffff']
 
     const timer = setTimeout(() => {
       confetti({
@@ -86,7 +25,7 @@ export function SuccessSection() {
         spread: 180,
         origin: { y: 0.6 },
         colors,
-      });
+      })
 
       setTimeout(() => {
         confetti({
@@ -94,65 +33,63 @@ export function SuccessSection() {
           spread: 120,
           origin: { y: 0.5 },
           colors,
-        });
-      }, 1000);
-    }, 600);
+        })
+      }, 1000)
+    }, 600)
 
-    return () => clearTimeout(timer);
-  }, []);
+    return () => clearTimeout(timer)
+  }, [])
+
+  const shareText = `${t('success.shareTaglinePre')} @fanta.cer ${t('success.shareTaglinePost')}`
+  const shareUrl = typeof window !== 'undefined' ? window.location.href : ''
 
   return (
-    <SectionFrame theme="success" grow className="flex flex-col justify-between">
-      <div className="safe-shell relative z-10 flex flex-col items-center justify-center content-max gap-(--rythm-sec) py-(--section-pad) lg:flex-row lg:justify-between lg:gap-20 lg:py-20 flex-1 min-h-0">
-        
-          {/* Left Column: Text & Logos */}
-          <div className="relative flex w-full flex-col items-center text-center lg:w-[55%] lg:items-start lg:text-left">
-          {/* Title */}
-          <h2 className="text-(length:--fs-headline) leading-(--lh-display) font-black mb-4 lg:mb-10 text-purple uppercase tracking-tighter">
-            {t('success.youRock')}
-          </h2>
-          
-        
-          <div className="flex flex-col gap-(--space-xl) mb-(--rythm-sec) w-full max-w-xl">
-            <p className="text-2xl sm:text-xl md:text-3xl lg:text-4xl font-[900] text-ink leading-tight uppercase tracking-tight">
-              {t('success.shareSocial')} <br/> {t('success.shareTagging')} <span className="bg-bright px-2 border-2 border-black rounded-lg inline-block rotate-1 shadow-[2px_2px_0_#000]">@fanta.cer</span>
-            </p>
-            <div className="flex justify-center lg:justify-start pt-2 gap-6">
-              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-instagram w-11 h-11 md:w-14 md:h-14 lg:w-16 lg:h-16 text-black transition-transform hover:scale-110"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
-              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-facebook w-11 h-11 md:w-14 md:h-14 lg:w-16 lg:h-16 text-black transition-transform hover:scale-110"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-            </div>
-            <p className="text-2xl sm:text-xl md:text-3xl lg:text-4xl font-[900] text-white lg:text-ink leading-[1.2] uppercase tracking-tight">
-              {t('success.collectPrize')}
-            </p>
-          </div>
-        
-          <SponsorCards />
-        </div>
+    <SectionFrame theme="success" grow scrollable className="flex flex-col">
+      <div ref={sectionRef} className="safe-shell relative z-10 flex flex-1 min-h-0 flex-col items-center py-(--section-pad)">
+        <div className="content-max centered-shell">
+          <div className="success-grid gap-(--gap-between-groups)">
+            {/* Left Column: Hero + Copy + CTA */}
+            <div className="success-grid-col-1 flex flex-col gap-(--space-lg)">
+              {/* Hero Section */}
+              <div className="flex flex-col items-center gap-(--space-md) sm:items-start">
+                <h2 className="-rotate-1 text-(length:--fs-hero) leading-(--lh-display) font-black uppercase tracking-[-0.05em] text-purple [text-wrap:balance] text-center sm:text-left">
+                  {t('success.youRock')}
+                </h2>
+                <div className="flex items-center gap-(--space-md)">
+                  <span className="inline-flex -rotate-2 items-center rounded-(--rounded-sm) border-2 border-ink bg-bright px-(--space-md) py-(--space-xs) font-black uppercase text-ink shadow-[3px_3px_0_#000]">
+                    {t('success.voted')}
+                  </span>
+                </div>
+              </div>
 
-          {/* Right Column: Mobile Story Mockup */}
-          <div className="relative mt-(--rythm-blk) flex w-full justify-center lg:mt-0 lg:w-[45%] lg:justify-end">
-            {/* Decorative Floating Stars */}
-            <div className="absolute top-[2%] right-[20%] -z-10 lg:right-[10%]">
-              <Image
-                src="/star-decoration-alt.svg"
-                alt=""
-                width={100}
-                height={100}
-                className="w-16 h-16 lg:w-20 lg:h-20 object-contain rotate-12 opacity-90 drop-shadow-[2px_2px_0_rgba(0,0,0,0.3)] animate-pulse"
-              />
+              {/* Copy Section */}
+              <div className="flex flex-col items-center gap-(--space-lg) sm:items-start">
+                <p className="max-w-(--measure-body) text-(length:--fs-body) font-black uppercase leading-(--lh-body) text-ink [text-wrap:pretty] text-center sm:text-left">
+                  {t('success.shareTaglinePre')}{' '}
+                  <span className="inline-block rotate-1 rounded-(--rounded-sm) border-2 border-ink bg-bright px-(--space-sm) py-1 font-black shadow-[2px_2px_0_#000]">
+                    @fanta.cer
+                  </span>{' '}
+                  {t('success.shareTaglinePost')}
+                </p>
+                <ActionBar containerRef={sectionRef} text={shareText} url={shareUrl} />
+              </div>
             </div>
-            <div className="absolute bottom-[5%] left-[10%] -z-10 lg:left-[5%]">
-              <Image
-                src="/star-decoration.svg"
-                alt=""
-                width={90}
-                height={90}
-                className="w-14 h-14 lg:w-18 lg:h-18 object-contain -rotate-12 opacity-80 drop-shadow-[2px_2px_0_rgba(0,0,0,0.3)]"
-              />
+
+            {/* Right Column: Vote Receipt + Prizes */}
+            <div className="success-grid-col-2 flex flex-col gap-(--space-lg)">
+              {/* Vote Receipt */}
+              <VoteReceipt companies={selectedCompanies} />
+
+              {/* Prizes Section */}
+              <div className="flex flex-col items-center gap-(--space-md)">
+                <h3 className="text-(length:--fs-label) font-black uppercase tracking-[0.02em] text-ink text-center">
+                  {t('success.redeemPrize')}
+                </h3>
+                <SponsorCards standOnly />
+              </div>
             </div>
-            
-            <IphoneStoryMockup companyName={selectedCompanies[0]?.company.name} />
           </div>
+        </div>
       </div>
     </SectionFrame>
   )

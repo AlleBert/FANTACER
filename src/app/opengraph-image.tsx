@@ -61,9 +61,9 @@ export default async function Image() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', paddingRight: 72 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={logoUri}
+            alt="FANTACER logo"
             width={420}
             height={420}
             style={{ borderRadius: 48, border: `8px solid ${BRAND.purple}`, objectFit: 'cover' }}

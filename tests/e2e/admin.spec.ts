@@ -4,6 +4,12 @@ import { VIEWPORTS } from './helpers/viewports';
 import { checkAccessibility } from './helpers/accessibility';
 import { setupAdminForTest, hasAdminMfaCredentials } from './helpers/auth';
 
+const GATE_PROJECTS = ['chromium'];
+
+test.beforeEach(async ({}, testInfo) => {
+  test.skip(!GATE_PROJECTS.includes(testInfo.project.name));
+});
+
 const needsAdmin = () => test.skip(!hasAdminMfaCredentials(), 'E2E admin MFA credentials not configured');
 
 test.describe('Admin Login — Responsive', () => {

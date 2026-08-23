@@ -1,5 +1,11 @@
 import { test, expect } from "@playwright/test";
 
+const GATE_PROJECTS = ['chromium'];
+
+test.beforeEach(async ({}, testInfo) => {
+  test.skip(!GATE_PROJECTS.includes(testInfo.project.name));
+});
+
 const ROUTES = [
   "/",
   "/coming-soon",

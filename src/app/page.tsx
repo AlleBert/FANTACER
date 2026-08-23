@@ -12,6 +12,7 @@ import { LiveRankingSection } from '@/components/sections/live-ranking-section'
 import { SuccessSection } from '@/components/sections/success-section'
 import { ContactSection } from '@/components/sections/contact-section'
 import { VoteProvider, useVote } from '@/lib/VoteContext'
+import { DevSuccessPreview } from '@/components/dev/dev-success-preview'
 import { getOrCreateDeviceId } from '@/lib/device'
 import { AppShell } from '@/components/layout/app-shell'
 
@@ -36,6 +37,7 @@ function PageContent() {
       <PublicRankingSection />
       <LiveRankingSection />
       <ContactSection />
+      <DevSuccessPreview />
     </AppShell>
   )
 }

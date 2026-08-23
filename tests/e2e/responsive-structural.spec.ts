@@ -96,6 +96,17 @@ test.describe('Responsive structural gate (P0)', () => {
         for (const issue of sectionIssues) {
           allIssues.push(`[section #${i + 1}] ${issue.message}: ${issue.detail ?? ''}`);
         }
+
+        const cardHeights = await page.evaluate((sel: string) => {
+          const section = document.querySelector(sel);
+          if (!section) return [];
+          return Array.from(section.querySelectorAll<HTMLElement>('a, div'))
+            .filter((el) => el.style.getPropertyValue('--sponsor-size'))
+            .map((el) => Math.round(el.getBoundingClientRect().height));
+        }, selector);
+        for (const h of cardHeights) {
+          if (h < 40) allIssues.push(`[section #${i + 1}] sponsor card collassata: altezza ${h}px (< 40px)`);
+        }
       }
 
       allRuns.push({

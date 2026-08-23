@@ -50,14 +50,16 @@ export interface Dictionary {
 
   // Success
   'success.voted': string
-  'success.noCompany': string
-  'success.bestStand': string
-  'success.playToo1': string
-  'success.playToo2': string
   'success.youRock': string
-  'success.shareSocial': string
-  'success.shareTagging': string
-  'success.collectPrize': string
+  'success.receiptTitle': string
+  'success.shareTaglinePre': string
+  'success.shareTaglinePost': string
+  'success.shareButton': string
+  'success.shareCta': string
+  'success.shareCopied': string
+  'success.redeemPrize': string
+  'success.saveCta': string
+  'success.saveDone': string
 
   // Public ranking
   'publicRanking.title': string
@@ -69,8 +71,11 @@ export interface Dictionary {
   'liveRanking.retry': string
   'liveRanking.empty': string
   'liveRanking.pallets': string
-  'liveRanking.hide': string
-  'liveRanking.showAll': string
+
+  // Live ranking — fasce
+  'liveRanking.bandCount': string
+  'liveRanking.yourVote': string
+  'liveRanking.yourVotes': string
 
   // Contact
   'contact.title1': string
@@ -135,6 +140,9 @@ export interface Dictionary {
   'footer.privacyPolicy': string
   'footer.terms': string
   'footer.madeBy': string
+
+  // Legal pages
+  'legal.backToGame': string
 
   // Cookie Policy
   'cookiePolicy.title': string

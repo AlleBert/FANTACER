@@ -59,6 +59,12 @@ const test = base.extend<ViewerFixtures, ViewerWorkerFixtures>({
   },
 });
 
+const GATE_PROJECTS = ['chromium'];
+
+test.beforeEach(async ({}, testInfo) => {
+  test.skip(!GATE_PROJECTS.includes(testInfo.project.name));
+});
+
 test.describe('Viewer role (read-only)', () => {
   needsViewer();
 

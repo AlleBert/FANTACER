@@ -32,11 +32,12 @@ export async function searchAndSelectCompany(page: Page, companyName: string) {
   await searchInput.waitFor({ state: 'visible', timeout: 10000 });
   await searchInput.click();
   await searchInput.fill(companyName);
-  await page.waitForTimeout(1500);
-  const resultsList = page.locator('ul').first();
-  await resultsList.waitFor({ state: 'visible', timeout: 10000 });
-  const companyOption = resultsList.locator(`li`).filter({ hasText: companyName }).first();
-  await companyOption.waitFor({ state: 'visible', timeout: 5000 });
+  // La ricerca è debounced (300ms) + query Supabase client-side (non una fetch
+  // URL attendibile via waitForResponse). La condizione funzionale è l'opzione
+  // azienda che compare nei risultati: si aspetta direttamente quell'elemento
+  // (polling fino a 10s), niente timeout fisso che sotto carico è insufficiente.
+  const companyOption = page.locator('ul li').filter({ hasText: companyName }).first();
+  await companyOption.waitFor({ state: 'visible', timeout: 10000 });
   await companyOption.click();
 }
 
@@ -44,7 +45,10 @@ export async function confirmPallet(page: Page) {
   const confermaButton = page.locator('button:has-text("CONFERMA")').first();
   await confermaButton.waitFor({ state: 'visible', timeout: 5000 });
   await confermaButton.click();
-  await page.waitForTimeout(500);
+  // Il picker pallet (ModalShell, id pallet-picker-title) si smonta al confirm
+  // (AnimatePresence exit ~200ms): attenderne la chiusura è la condizione
+  // funzionale della conferma, niente timeout fisso.
+  await page.locator('#pallet-picker-title').waitFor({ state: 'hidden', timeout: 5000 });
 }
 
 export async function addCompany(page: Page, companyName: string) {
@@ -65,7 +69,6 @@ export async function submitVote(page: Page) {
   await inviaButton.click();
 
   await page.waitForSelector('[data-section="success"]', { timeout: 30000 });
-  await page.waitForTimeout(500);
 }
 
 export async function completeVotingFlow(page: Page, companies?: string[]) {

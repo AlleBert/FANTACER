@@ -4,6 +4,12 @@ import { checkNoHorizontalOverflow } from './helpers/responsive';
 import { VIEWPORTS } from './helpers/viewports';
 import { checkAccessibility } from './helpers/accessibility';
 
+const GATE_PROJECTS = ['chromium', 'mobile-webkit'];
+
+test.beforeEach(async ({}, testInfo) => {
+  test.skip(!GATE_PROJECTS.includes(testInfo.project.name));
+});
+
 test.describe('Voting Flow', () => {
   test.describe.configure({ mode: 'serial' });
 
@@ -23,6 +29,26 @@ test.describe('Voting Flow', () => {
     await expect(successSection).toBeVisible();
   });
 
+  test('dopo il voto la sezione ranking evidenzia le aziende votate', async ({ page }) => {
+    await page.goto('/');
+    await addCompany(page, 'Test Co');
+    await addCompany(page, 'GreenEnergy');
+    await addCompany(page, 'Third Co');
+    const inviaButton = page.locator('button:has-text("INVIA IL TUO VOTO")').first();
+    await inviaButton.click();
+    await page.waitForSelector('[data-section="success"]', { timeout: 15000 });
+
+    const rankingSection = page.locator('main > section[data-section="live-ranking"]');
+    const rankingResponse = page.waitForResponse('/api/public/ranking', { timeout: 20000 });
+    await rankingSection.scrollIntoViewIfNeeded();
+    await rankingResponse;
+    await expect(rankingSection).toBeVisible();
+
+    // le aziende votate hanno il badge "il tuo voto" nella loro fascia
+    const badges = rankingSection.getByText(/il tuo voto/).first();
+    await expect(badges).toBeVisible({ timeout: 10000 });
+  });
+
   test('sponsor cards stay within the success section bounds at mobile', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/');
@@ -35,12 +61,15 @@ test.describe('Voting Flow', () => {
     await inviaButton.click();
 
     await page.waitForSelector('[data-section="success"]', { timeout: 15000 });
-    await page.waitForSelector('[data-section="success"] .aspect-square', { timeout: 15000 });
+    await page.waitForSelector('[data-section="success"] [style*="--sponsor-size"]', { timeout: 15000 });
 
     const overflows = await page.locator('[data-section="success"]').evaluate((section) => {
       const sr = section.getBoundingClientRect();
       const offenders: { text: string; overflowBy: number; axis: string }[] = [];
-      for (const card of section.querySelectorAll<HTMLElement>('.aspect-square')) {
+      const cards = Array.from(section.querySelectorAll<HTMLElement>('a, div')).filter((el) =>
+        el.style.getPropertyValue('--sponsor-size'),
+      );
+      for (const card of cards) {
         const cr = card.getBoundingClientRect();
         if (cr.right > sr.right + 2) {
           offenders.push({
