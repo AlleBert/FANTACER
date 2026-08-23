@@ -23,16 +23,8 @@ export function IntroSection() {
           {t('intro.subtitle')}
         </p>
 
-        <div className="mt-(--rythm-blk)">
-          <SponsorCards maxItems={maxItems} />
-        </div>
+        <SponsorCards maxItems={maxItems} />
       </SafeCenterSection>
-
-      {/* Footer: Chevron */}
-      <div className="flex-shrink-0 flex flex-col items-center gap-2 pb-(--space-md) animate-bounce">
-        <span className="text-[clamp(0.625rem,1.5vw,0.75rem)] font-[700] text-white/50 tracking-[0.15em] uppercase">{t('intro.discover')}</span>
-        <ChevronDown className="w-4 h-4 md:w-5 md:h-5 text-white/50" />
-      </div>
     </SectionFrame>
   )
 }

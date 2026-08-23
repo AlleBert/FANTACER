@@ -16,12 +16,8 @@ export function PublicRankingSection() {
         <h2 className="text-(length:--fs-headline) font-[900] text-center tracking-tighter lowercase leading-(--lh-headline) text-white">
           {t('publicRanking.title')}
         </h2>
-      </SafeCenterSection>
-
-      {/* Sponsor footer fisso */}
-      <div className="flex-shrink-0 w-full flex justify-center p-(--space-md)">
         <SponsorCards maxItems={maxItems} />
-      </div>
+      </SafeCenterSection>
     </SectionFrame>
   );
 }
