@@ -61,10 +61,17 @@ export function ContactSection() {
 
             <div className="flex w-full flex-col items-center gap-(--rythm-blk) sm:flex-row sm:flex-wrap sm:justify-center lg:gap-4 lg:items-start">
               <div className="bg-white px-[clamp(1rem,min(3vw,5svh),1.5rem)] py-[clamp(0.375rem,1vw,0.75rem)] lg:py-4 rounded-full border-2 border-ink shadow-[3px_3px_0_#000] -rotate-2 hover:rotate-0 transition-transform cursor-default">
-                <p className="text-[clamp(0.75rem,min(2vw,3svh),1.25rem)] font-black text-black lowercase">team@fantacer.com</p>
+                <a
+                  href="mailto:team@fantacer.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2 text-[clamp(0.75rem,min(2vw,3svh),1.25rem)] font-black text-black lowercase hover:text-purple transition-colors"
+                >
+                  team@fantacer.com
+                </a>
               </div>
               <div className="bg-bright px-[clamp(1rem,min(3vw,5svh),1.5rem)] py-[clamp(0.375rem,1vw,0.75rem)] lg:py-4 rounded-full border-2 border-ink shadow-[3px_3px_0_#000] rotate-2 hover:rotate-0 transition-transform cursor-default">
-                <p className="text-[clamp(0.75rem,min(2vw,3svh),1.25rem)] font-black text-black tracking-wider">+393331385574</p>
+                <p className="text-[clamp(0.75rem,min(2vw,3svh),1.25rem)] font-black text-black tracking-wider">+39 333 138 5574</p>
               </div>
               <a href="https://www.fantacer.com" target="_blank" rel="noopener noreferrer" className="bg-white px-[clamp(1rem,min(3vw,5svh),1.5rem)] py-[clamp(0.375rem,1vw,0.75rem)] lg:py-4 rounded-full border-2 border-ink shadow-[3px_3px_0_#000] -rotate-1 hover:rotate-0 transition-transform hover:-translate-y-0.5 block">
                 <p className="text-[clamp(0.75rem,min(2vw,3svh),1.25rem)] font-black text-purple lowercase">www.fantacer.com</p>
