@@ -27,7 +27,7 @@ describe('SaveButton', () => {
     render(<SaveButton containerRef={ref} />)
     fireEvent.click(screen.getByRole('button'))
     await act(async () => {})
-    expect(html2canvas).toHaveBeenCalledWith(ref.current)
+    expect(html2canvas).toHaveBeenCalledWith(ref.current, expect.any(Object))
   })
 
   it('mostra Salvato! per 3s dopo il click', async () => {

@@ -12,6 +12,7 @@ interface SaveButtonProps {
 export function SaveButton({ containerRef }: SaveButtonProps) {
   const { t } = useLocale()
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const timeoutRef = useRef<number | null>(null)
 
   useEffect(
@@ -24,8 +25,16 @@ export function SaveButton({ containerRef }: SaveButtonProps) {
   const handleSave = async () => {
     if (!containerRef.current) return
 
+    setError(null)
     try {
-      const canvas = await html2canvas(containerRef.current)
+      const canvas = await html2canvas(containerRef.current, {
+        scale: 2,
+        width: containerRef.current.clientWidth,
+        height: containerRef.current.clientHeight,
+        useCORS: true,
+        windowWidth: window.innerWidth,
+        windowHeight: window.innerHeight,
+      })
       const link = document.createElement('a')
       link.download = 'fantacer-voto.png'
       link.href = canvas.toDataURL('image/png')
@@ -34,8 +43,12 @@ export function SaveButton({ containerRef }: SaveButtonProps) {
       setSaved(true)
       if (timeoutRef.current) window.clearTimeout(timeoutRef.current)
       timeoutRef.current = window.setTimeout(() => setSaved(false), 3000)
-    } catch {
-      return
+    } catch (err) {
+      console.error('SaveButton html2canvas error:', err)
+      setError('errore_salvataggio')
+      // Clear error after 5 seconds
+      const id = window.setTimeout(() => setError(null), 5000)
+      return () => window.clearTimeout(id)
     }
   }
 
@@ -50,6 +63,11 @@ export function SaveButton({ containerRef }: SaveButtonProps) {
     >
       <Icon className="h-5 w-5 stroke-[2.5]" />
       <span className="sr-only">{saved ? t('success.saveDone') : t('success.saveCta')}</span>
+      {error && (
+        <span className="absolute -top-1 -right-1 bg-red-100 text-red-800 text-xs rounded px-2 py-1">
+          {error}
+        </span>
+      )}
     </button>
   )
 }
