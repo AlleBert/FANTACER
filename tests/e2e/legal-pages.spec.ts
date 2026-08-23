@@ -45,9 +45,25 @@ test.describe('Legal pages UI (P0 gate)', () => {
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
         expect(overflow, `horizontal overflow ${overflow}px`).toBeLessThanOrEqual(1);
 
-        // footer legale: bottone preferenze cookie + 3 link stessa scheda
+        // header sticky: bottone torna al gioco → HOME
+        const back = page.locator('section[data-section="legal"] a[href="/"]');
+        await expect(back.first()).toBeVisible();
+
+        // scroll sulla finestra: il documento scrolla, il TOC desktop resta sticky
+        if (vp.width >= 1024) {
+          const toc = page.locator('section[data-section="legal"] aside');
+          const before = await toc.evaluate((el) => el.getBoundingClientRect().top);
+          await page.evaluate(() => window.scrollBy(0, 600));
+          await page.waitForTimeout(200);
+          const after = await toc.evaluate((el) => el.getBoundingClientRect().top);
+          expect(Math.abs(before - after), 'TOC must stay sticky on window scroll').toBeLessThanOrEqual(50);
+          const scrollY = await page.evaluate(() => window.scrollY);
+          expect(scrollY).toBeGreaterThan(0);
+        }
+
+        // footer legale: NIENTE bottone preferenze cookie (solo 3 link, stessa scheda)
         const footer = page.locator('section[data-section="legal"] footer');
-        await expect(footer.getByRole('button', { name: itDict['footer.cookieConsent'] })).toBeVisible();
+        expect(footer.getByRole('button', { name: itDict['footer.cookieConsent'] })).toHaveCount(0);
         const legalLinks = footer.locator(
           'a[href*="/cookie-policy"], a[href*="/privacy-policy"], a[href*="/terms-and-conditions"]'
         );
