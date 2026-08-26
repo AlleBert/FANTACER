@@ -22,9 +22,9 @@ function PageContent() {
   return (
     <AppShell>
       <HeroSection
-        onPlayClick={() => {
+        onScrollDown={() => {
           const main = document.querySelector('main');
-          const target = main?.querySelector('[data-section="search"]') as HTMLElement | undefined;
+          const target = main?.querySelector('[data-section="intro"]') as HTMLElement | undefined;
           if (main && target) main.scrollTo({ top: target.offsetTop, behavior: 'smooth' });
         }}
       />
