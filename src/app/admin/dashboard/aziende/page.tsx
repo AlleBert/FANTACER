@@ -6,6 +6,7 @@ import { Users } from 'lucide-react'
 import { CompanyCardList } from '@/components/admin/company-card-list'
 import { CompanyTable } from '@/components/admin/company-table'
 import { createClient } from '@/lib/supabase/client'
+import { safeSubscribe } from '@/lib/supabase/realtime'
 
 interface Company {
   rank: number
@@ -46,7 +47,7 @@ export default function AziendePage() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'vote_sessions' }, () => {
         loadCompanies()
       })
-      .subscribe()
+    safeSubscribe(channel)
 
     return () => {
       supabase.removeChannel(channel)

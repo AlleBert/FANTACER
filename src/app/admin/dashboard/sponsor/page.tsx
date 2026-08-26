@@ -9,6 +9,7 @@ import { SPONSOR_LOGO_MAX_BYTES, getExtFromFilename } from '@/lib/sponsor-logo'
 import { cn } from '@/lib/utils'
 import { ModalShell } from '@/components/ui/modal-shell'
 import { createClient } from '@/lib/supabase/client'
+import { safeSubscribe } from '@/lib/supabase/realtime'
 
 const LOGO_INPUT_ACCEPT = 'image/png,image/jpeg,image/webp,image/svg+xml'
 
@@ -58,7 +59,7 @@ export default function SponsorPage() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sponsors' }, () => {
         loadSponsors()
       })
-      .subscribe()
+    safeSubscribe(channel)
 
     return () => {
       supabase.removeChannel(channel)

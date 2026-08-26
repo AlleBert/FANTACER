@@ -10,6 +10,7 @@ import { it } from 'date-fns/locale'
 import { useRouter } from 'next/navigation'
 import { useAdminRole } from '@/lib/use-admin-role'
 import { createClient } from '@/lib/supabase/client'
+import { safeSubscribe } from '@/lib/supabase/realtime'
 
 interface Stats {
   totalVotes: number
@@ -115,7 +116,7 @@ export default function PanoramicaPage() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'batch_settings' }, () => {
         loadData()
       })
-      .subscribe()
+    safeSubscribe(channel)
 
     return () => {
       supabase.removeChannel(channel)

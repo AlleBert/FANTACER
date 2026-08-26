@@ -9,6 +9,7 @@ import { useLocale } from '@/lib/LocaleContext';
 import { useVote } from '@/lib/VoteContext';
 import { useSponsorMaxItems } from '@/hooks/use-sponsor-max-items';
 import { createClient } from '@/lib/supabase/client';
+import { safeSubscribe } from '@/lib/supabase/realtime';
 import {
   CLUSTERS,
   CLUSTER_ORDER,
@@ -131,16 +132,16 @@ export function LiveRankingSection() {
             }, REFETCH_DEBOUNCE_MS)
           }
         )
-        .subscribe((status) => {
-          // MAI attivare il realtime dal solo status di socket: Supabase Realtime
-          // consegna gli eventi solo se l'RLS del subscriber li autorizza. Con
-          // ranking_tick (policy anon select, solo un contatore, nessuna PII) il
-          // client pubblico riceve davvero gli eventi, ma channelActive va comunque
-          // impostato SOLO alla consegna reale di un evento (nell'handler sopra):
-          // se un subscriber non è autorizzato riceve SUBSCRIBED ma ZERO eventi, e
-          // senza questa guardia il polling fallback si congelerebbe.
-          if (status !== 'SUBSCRIBED') setChannelActive(false)
-        })
+      safeSubscribe(channel, (status) => {
+        // MAI attivare il realtime dal solo status di socket: Supabase Realtime
+        // consegna gli eventi solo se l'RLS del subscriber li autorizza. Con
+        // ranking_tick (policy anon select, solo un contatore, nessuna PII) il
+        // client pubblico riceve davvero gli eventi, ma channelActive va comunque
+        // impostato SOLO alla consegna reale di un evento (nell'handler sopra):
+        // se un subscriber non è autorizzato riceve SUBSCRIBED ma ZERO eventi, e
+        // senza questa guardia il polling fallback si congelerebbe.
+        if (status !== 'SUBSCRIBED') setChannelActive(false)
+      })
       channelRef.current = channel
     }
 
@@ -183,7 +184,7 @@ export function LiveRankingSection() {
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'site_settings', filter: 'key=eq.voting_enabled' }, () => {
         fetch('/api/public/flag/voting').then((res) => res.json()).then((d) => setVotingEnabled(d.enabled)).catch(() => {})
       })
-      .subscribe()
+    safeSubscribe(flagChannel)
 
     return () => {
       supabase.removeChannel(flagChannel)

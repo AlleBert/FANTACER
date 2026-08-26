@@ -5,6 +5,7 @@ import { SectionFrame } from '@/components/layout/section-frame'
 import { SafeCenterSection } from '@/components/layout/safe-center-section'
 import { useLocale } from '@/lib/LocaleContext'
 import { createClient } from '@/lib/supabase/client'
+import { safeSubscribe } from '@/lib/supabase/realtime'
 import { SponsorCards } from '@/components/sponsor/sponsor-cards'
 import { useSponsorMaxItems } from '@/hooks/use-sponsor-max-items'
 import { useViewportHeightLessThan } from '@/hooks/use-viewport-height'
@@ -23,7 +24,7 @@ export function PrizeLocationSection() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sponsors' }, () => {
         setRefreshKey((k) => k + 1)
       })
-      .subscribe()
+    safeSubscribe(channel)
 
     return () => {
       supabase.removeChannel(channel)

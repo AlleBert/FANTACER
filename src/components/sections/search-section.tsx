@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useVote } from '@/lib/VoteContext';
 import { createClient } from '@/lib/supabase/client';
+import { safeSubscribe } from '@/lib/supabase/realtime';
 import { useDebouncedCallback } from 'use-debounce';
 import { Search, Loader2, X } from 'lucide-react';
 import { LiquidFillButton } from '@/components/voting/liquid-fill-button';
@@ -57,8 +58,8 @@ export function SearchSection() {
         fetch('/api/public/flag/voting')
           .then(res => res.json())
           .then(data => setVotingEnabled(data.enabled));
-      })
-      .subscribe();
+      });
+    safeSubscribe(channel);
 
     return () => {
       supabase.removeChannel(channel);
