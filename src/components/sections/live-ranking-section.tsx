@@ -53,7 +53,7 @@ export function LiveRankingSection() {
   const [companies, setCompanies] = useState<RankingCompany[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [votingEnabled, setVotingEnabled] = useState(true)
+  const [votingEnabled, setVotingEnabled] = useState(false)
   const [open, setOpen] = useState<Record<Cluster, boolean>>(getInitialOpen)
   const [channelActive, setChannelActive] = useState(false)
   const [isVisible, setIsVisible] = useState(true)
@@ -175,7 +175,7 @@ export function LiveRankingSection() {
       supabase.removeChannel(flagChannel)
       if (debounceRef.current) clearTimeout(debounceRef.current)
     }
-  }, [fetchRanking])
+  }, [fetchRanking, votingEnabled])
 
   // voting flag initial fetch
   useEffect(() => {
@@ -237,6 +237,11 @@ export function LiveRankingSection() {
     return () => clearTimeout(t)
   }, [flash])
 
+  // Pre-fiera (voto disattivo) la classifica non deve esistere nel DOM:
+  // nessuna sezione, nessuno skeleton. Il flag voting_enabled (admin) la
+  // ripristina dal lunedì di fiera.
+  if (!votingEnabled) return null
+
   return (
     <SectionFrame theme="live-ranking" className="flex flex-col">
       <SafeCenterSection scrollable={false} gap="var(--rythm-blk)" className="content-max">
@@ -249,31 +254,7 @@ export function LiveRankingSection() {
           </p>
 
           <div className="w-full max-w-2xl mx-auto">
-            {!votingEnabled ? (
-              <div className="w-full max-w-2xl mx-auto bg-white rounded-2xl border-[3px] border-black shadow-[4px_4px_0_#000] p-3 md:p-6">
-                <div className="flex flex-col gap-y-2 md:gap-y-3">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <div key={i} className="mb-3 animate-pulse">
-                      <div className="flex items-center gap-3 mb-1">
-                        <div className="w-8 h-8 bg-gray-300 rounded-full" />
-                        <div className="flex-1">
-                          <div className="flex justify-between items-center mb-1">
-                            <div className="h-4 bg-gray-300 rounded w-3/5" />
-                            <div className="h-5 bg-gray-300 rounded-full w-16 ml-2" />
-                          </div>
-                          <div className="w-full h-4 bg-gray-300 rounded-full" />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-4 text-center">
-                  <p className="text-lg font-black text-gray-500">
-                    🏆 Classifica disponibile durante il Cersaie!
-                  </p>
-                </div>
-              </div>
-            ) : isLoading ? (
+            {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="mb-3 animate-pulse">
                   <div className="flex items-center gap-3 mb-1">

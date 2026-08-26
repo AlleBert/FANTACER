@@ -149,7 +149,13 @@ describe('LiveRankingSection realtime', () => {
   })
 
   it('il polling fallback resta attivo finché non arriva un evento reale (RLS)', async () => {
-    mockFetch.mockResolvedValue({ ok: true, json: async () => buildPayload(defaultPallets) })
+    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('/api/public/flag/voting')) {
+        return { ok: true, json: async () => ({ enabled: true }) }
+      }
+      return { ok: true, json: async () => buildPayload(defaultPallets) }
+    })
     render(<LiveRankingSection />)
     await act(async () => {})
     const io = MockIntersectionObserver.instances[0]
@@ -189,13 +195,14 @@ describe('LiveRankingSection realtime', () => {
     expect(mockHolder.subscribeCb).not.toBeNull()
   })
 
-  it('rispetta prefers-reduced-motion (stato finale renderizzato)', () => {
+  it('rispetta prefers-reduced-motion (stato finale renderizzato)', async () => {
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
       configurable: true,
       value: jest.fn().mockReturnValue({ matches: true }),
     })
     render(<LiveRankingSection />)
+    await act(async () => {})
     expect(screen.getByText('live ranking')).toBeInTheDocument()
   })
 

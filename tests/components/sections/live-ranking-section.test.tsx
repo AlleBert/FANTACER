@@ -182,6 +182,20 @@ describe('LiveRankingSection', () => {
     expect(screen.queryByText(/classifica completa/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/full ranking/i)).not.toBeInTheDocument()
   })
+
+  it('con voto disattivato non renderizza la sezione', async () => {
+    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('/api/public/flag/voting')) {
+        return { ok: true, json: async () => ({ enabled: false }) }
+      }
+      return { ok: true, json: async () => makePayload() }
+    })
+    const { container } = render(<LiveRankingSection />)
+    await waitFor(() => {
+      expect(container.querySelector('section')).toBeNull()
+    })
+  })
 })
 
 describe('LiveRankingSection — stato accordion al refetch', () => {
