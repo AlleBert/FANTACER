@@ -6,6 +6,7 @@ export const en: Dictionary = {
     'Vote for your favorite ceramic company at Cersaie, Bologna. One vote a day — share it and collect your gadget: everyone wins!',
 
   'hero.play': 'PLAY',
+  'hero.scroll': 'scroll to discover more',
 
   'intro.title.line1': 'the first',
   'intro.title.line2': 'semi-serious game',
@@ -15,7 +16,7 @@ export const en: Dictionary = {
 
   'howItWorks.title.simple': "it's simple...",
   'howItWorks.title.win': 'and you always win!',
-  'howItWorks.step.vote': 'vote for your favourite company',
+  'howItWorks.step.vote': 'vote for your favourite companies',
   'howItWorks.step.share': 'share your vote tagging @fanta.cer',
   'howItWorks.step.collect': 'collect your gadget',
 
@@ -27,7 +28,10 @@ export const en: Dictionary = {
   'prize.venue': 'Cersaie, at Bologna Fiere',
   'prize.dates': 'from 21 to 25 September 2026',
 
-  'search.title': 'VOTE FOR YOUR FAVOURITE COMPANY',
+  'search.title': 'VOTE FOR YOUR FAVOURITE COMPANIES',
+  'search.instructions':
+    'assign 4 to 1 pallets to the 3 brands you prefer and help them climb the ranking',
+  'search.progress': '{count} of 3',
   'search.placeholder': 'Search a company...',
   'search.alreadySelected': '(already selected)',
   'search.viewAll': 'View all',

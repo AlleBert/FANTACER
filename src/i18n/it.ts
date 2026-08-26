@@ -6,6 +6,7 @@ export const it: Dictionary = {
     'Vota la tua azienda preferita del distretto ceramico a Cersaie, Bologna. Un voto al giorno, condividi e ritira il tuo gadget: qui si vince sempre!',
 
   'hero.play': 'GIOCA',
+  'hero.scroll': 'scorri e scopri di più',
 
   'intro.title.line1': 'il primo gioco',
   'intro.title.line2': 'semiserio del',
@@ -15,7 +16,7 @@ export const it: Dictionary = {
 
   'howItWorks.title.simple': 'è semplice...',
   'howItWorks.title.win': 'e si vince sempre!',
-  'howItWorks.step.vote': 'vota la tua azienda preferita',
+  'howItWorks.step.vote': 'vota le tue aziende preferite',
   'howItWorks.step.share': 'condividi il tuo voto taggando @fanta.cer',
   'howItWorks.step.collect': 'ritira il tuo gadget',
 
@@ -27,7 +28,10 @@ export const it: Dictionary = {
   'prize.venue': 'Cersaie, a Bologna Fiere',
   'prize.dates': 'dal 21 al 25 settembre 2026',
 
-  'search.title': 'VOTA LA TUA AZIENDA PREFERITA',
+  'search.title': 'VOTA LE TUE AZIENDE PREFERITE',
+  'search.instructions':
+    'assegna da 4 a 1 pallet ai 3 brand che preferisci per fare scalare loro la classifica',
+  'search.progress': '{count} di 3',
   'search.placeholder': 'Cerca azienda...',
   'search.alreadySelected': '(già selezionata)',
   'search.viewAll': 'View all',
