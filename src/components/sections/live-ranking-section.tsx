@@ -84,20 +84,22 @@ export function LiveRankingSection() {
 
   // Initial fetch al mount (unico, con loader sul primo caricamento). Il setState
   // sincrono (setIsLoading(true)) è un no-op benigno (isLoading è già true al mount);
-  // la rule è conservativa e non distingue questo caso.
+  // la rule è conservativa e non distingue questo caso. Solo a voto attivo: a voto
+  // disattivo la sezione è null e il fetch è inutile (riparte quando il flag va true).
   useEffect(() => {
+    if (!votingEnabled) return
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchRanking()
-  }, [fetchRanking])
+  }, [fetchRanking, votingEnabled])
 
-  // Polling di fallback: solo se il channel non è attivo e la sezione è visibile.
-  // Mai con loader: gli aggiornamenti successivi sono silenziosi.
+  // Polling di fallback: solo se il voto è attivo, il channel non è attivo e la
+  // sezione è visibile. Mai con loader: gli aggiornamenti successivi sono silenziosi.
   useEffect(() => {
     const interval = setInterval(() => {
-      if (!channelActive && isVisible) fetchRanking(false)
+      if (votingEnabled && !channelActive && isVisible) fetchRanking(false)
     }, PALLETS_POLLING_MS)
     return () => clearInterval(interval)
-  }, [fetchRanking, channelActive, isVisible])
+  }, [fetchRanking, channelActive, isVisible, votingEnabled])
 
   // Realtime channel su ranking_tick (primario), sospeso fuori viewport.
   // ranking_tick è una tabella "tick" con solo un contatore di versione (no
@@ -161,7 +163,21 @@ export function LiveRankingSection() {
     })
     io.observe(section)
 
-    // voting flag channel (invariato rispetto all'esistente)
+    return () => {
+      io.disconnect()
+      stopChannel()
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [fetchRanking, votingEnabled])
+
+  // Canale del flag voting_enabled (site_settings): sempre attivo, anche quando
+  // la sezione è null (voto disattivo, pre-fiera). Il client già aperto riceve
+  // l'UPDATE quando l'admin accende il voto e monta la classifica senza reload.
+  // Il fetch iniziale del flag vive qui, nello stesso effect mount-only.
+  useEffect(() => {
+    fetch('/api/public/flag/voting').then((res) => res.json()).then((d) => setVotingEnabled(d.enabled)).catch(() => {})
+
+    const supabase = createClient()
     const flagChannel = supabase
       .channel('live-ranking-voting-flag')
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'site_settings', filter: 'key=eq.voting_enabled' }, () => {
@@ -170,16 +186,8 @@ export function LiveRankingSection() {
       .subscribe()
 
     return () => {
-      io.disconnect()
-      stopChannel()
       supabase.removeChannel(flagChannel)
-      if (debounceRef.current) clearTimeout(debounceRef.current)
     }
-  }, [fetchRanking, votingEnabled])
-
-  // voting flag initial fetch
-  useEffect(() => {
-    fetch('/api/public/flag/voting').then((res) => res.json()).then((d) => setVotingEnabled(d.enabled)).catch(() => {})
   }, [])
 
   const toggleBand = (cluster: Cluster) => {
