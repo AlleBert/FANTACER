@@ -179,6 +179,9 @@ export function SearchSection() {
             <h2 className="text-(length:--fs-headline) font-[900] text-center tracking-tighter leading-(--lh-headline) text-[#4f03aa]">
               {t('search.title')}
             </h2>
+            <p className="text-[clamp(0.875rem,2.5vw,1.125rem)] font-bold text-purple mt-[clamp(0.375rem,1vw,0.625rem)] max-w-(--measure-body) mx-auto [text-wrap:balance]">
+              {t('search.instructions')}
+            </p>
           </div>
 
           {!votingEnabled ? (
@@ -195,7 +198,7 @@ export function SearchSection() {
                     📅 Dal 21 al 25 settembre
                   </p>
                   <p className="text-[clamp(0.875rem,2vw,1rem)] font-bold text-ink mt-1">
-                    Ti aspettiamo in fiera per votare la tua azienda preferita!
+                    Ti aspettiamo in fiera per votare le tue aziende preferite!
                   </p>
                 </div>
                 <p className="text-[clamp(0.875rem,2vw,1rem)] font-bold text-gray-600">
@@ -338,6 +341,12 @@ export function SearchSection() {
                 label={t('search.submit')}
                 onClick={handleSubmit}
               />
+              <p
+                aria-live="polite"
+                className="text-center text-[clamp(0.75rem,2vw,1rem)] font-[900] text-purple mt-[clamp(0.375rem,1vw,0.5rem)]"
+              >
+                {t('search.progress', { count: selectedCompanies.length })}
+              </p>
               <p className="text-center text-[clamp(0.875rem,2.5vw,1.125rem)] font-bold text-purple mt-[clamp(0.5rem,1.5vw,0.75rem)] max-w-sm">
                 {t('search.subtitle')}
               </p>
