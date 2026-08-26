@@ -39,7 +39,7 @@ export function HeroSection({ onScrollDown }: HeroSectionProps) {
             type="button"
             onClick={onScrollDown}
             aria-label={t('hero.scroll')}
-            className="flex items-center justify-center w-[clamp(3rem,10svh,4rem)] h-[clamp(3rem,10svh,4rem)] rounded-full bg-bright border-[3px] md:border-[4px] border-black shadow-[6px_6px_0_#000] transition-transform hover:scale-105 active:scale-95 cursor-pointer animate-bounce motion-reduce:animate-none"
+            className="flex items-center justify-center w-[clamp(3rem,10svh,4rem)] h-[clamp(3rem,10svh,4rem)] rounded-full bg-bright border-[3px] md:border-[4px] border-black shadow-[6px_6px_0_#000] transition-transform hover:scale-105 active:scale-95 cursor-pointer animate-bounce motion-reduce:animate-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2"
           >
             <ChevronsDown
               className="w-[clamp(1.75rem,6svh,2.5rem)] h-[clamp(1.75rem,6svh,2.5rem)] stroke-black stroke-[3]"
