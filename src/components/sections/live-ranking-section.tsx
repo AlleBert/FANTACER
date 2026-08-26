@@ -9,6 +9,7 @@ import { useLocale } from '@/lib/LocaleContext';
 import { useVote } from '@/lib/VoteContext';
 import { useSponsorMaxItems } from '@/hooks/use-sponsor-max-items';
 import { createClient } from '@/lib/supabase/client';
+import { safeSubscribe } from '@/lib/supabase/realtime';
 import {
   CLUSTERS,
   CLUSTER_ORDER,
@@ -53,7 +54,7 @@ export function LiveRankingSection() {
   const [companies, setCompanies] = useState<RankingCompany[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [votingEnabled, setVotingEnabled] = useState(true)
+  const [votingEnabled, setVotingEnabled] = useState(false)
   const [open, setOpen] = useState<Record<Cluster, boolean>>(getInitialOpen)
   const [channelActive, setChannelActive] = useState(false)
   const [isVisible, setIsVisible] = useState(true)
@@ -84,20 +85,22 @@ export function LiveRankingSection() {
 
   // Initial fetch al mount (unico, con loader sul primo caricamento). Il setState
   // sincrono (setIsLoading(true)) è un no-op benigno (isLoading è già true al mount);
-  // la rule è conservativa e non distingue questo caso.
+  // la rule è conservativa e non distingue questo caso. Solo a voto attivo: a voto
+  // disattivo la sezione è null e il fetch è inutile (riparte quando il flag va true).
   useEffect(() => {
+    if (!votingEnabled) return
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchRanking()
-  }, [fetchRanking])
+  }, [fetchRanking, votingEnabled])
 
-  // Polling di fallback: solo se il channel non è attivo e la sezione è visibile.
-  // Mai con loader: gli aggiornamenti successivi sono silenziosi.
+  // Polling di fallback: solo se il voto è attivo, il channel non è attivo e la
+  // sezione è visibile. Mai con loader: gli aggiornamenti successivi sono silenziosi.
   useEffect(() => {
     const interval = setInterval(() => {
-      if (!channelActive && isVisible) fetchRanking(false)
+      if (votingEnabled && !channelActive && isVisible) fetchRanking(false)
     }, PALLETS_POLLING_MS)
     return () => clearInterval(interval)
-  }, [fetchRanking, channelActive, isVisible])
+  }, [fetchRanking, channelActive, isVisible, votingEnabled])
 
   // Realtime channel su ranking_tick (primario), sospeso fuori viewport.
   // ranking_tick è una tabella "tick" con solo un contatore di versione (no
@@ -129,16 +132,16 @@ export function LiveRankingSection() {
             }, REFETCH_DEBOUNCE_MS)
           }
         )
-        .subscribe((status) => {
-          // MAI attivare il realtime dal solo status di socket: Supabase Realtime
-          // consegna gli eventi solo se l'RLS del subscriber li autorizza. Con
-          // ranking_tick (policy anon select, solo un contatore, nessuna PII) il
-          // client pubblico riceve davvero gli eventi, ma channelActive va comunque
-          // impostato SOLO alla consegna reale di un evento (nell'handler sopra):
-          // se un subscriber non è autorizzato riceve SUBSCRIBED ma ZERO eventi, e
-          // senza questa guardia il polling fallback si congelerebbe.
-          if (status !== 'SUBSCRIBED') setChannelActive(false)
-        })
+      safeSubscribe(channel, (status) => {
+        // MAI attivare il realtime dal solo status di socket: Supabase Realtime
+        // consegna gli eventi solo se l'RLS del subscriber li autorizza. Con
+        // ranking_tick (policy anon select, solo un contatore, nessuna PII) il
+        // client pubblico riceve davvero gli eventi, ma channelActive va comunque
+        // impostato SOLO alla consegna reale di un evento (nell'handler sopra):
+        // se un subscriber non è autorizzato riceve SUBSCRIBED ma ZERO eventi, e
+        // senza questa guardia il polling fallback si congelerebbe.
+        if (status !== 'SUBSCRIBED') setChannelActive(false)
+      })
       channelRef.current = channel
     }
 
@@ -161,25 +164,31 @@ export function LiveRankingSection() {
     })
     io.observe(section)
 
-    // voting flag channel (invariato rispetto all'esistente)
+    return () => {
+      io.disconnect()
+      stopChannel()
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [fetchRanking, votingEnabled])
+
+  // Canale del flag voting_enabled (site_settings): sempre attivo, anche quando
+  // la sezione è null (voto disattivo, pre-fiera). Il client già aperto riceve
+  // l'UPDATE quando l'admin accende il voto e monta la classifica senza reload.
+  // Il fetch iniziale del flag vive qui, nello stesso effect mount-only.
+  useEffect(() => {
+    fetch('/api/public/flag/voting').then((res) => res.json()).then((d) => setVotingEnabled(d.enabled)).catch(() => {})
+
+    const supabase = createClient()
     const flagChannel = supabase
       .channel('live-ranking-voting-flag')
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'site_settings', filter: 'key=eq.voting_enabled' }, () => {
         fetch('/api/public/flag/voting').then((res) => res.json()).then((d) => setVotingEnabled(d.enabled)).catch(() => {})
       })
-      .subscribe()
+    safeSubscribe(flagChannel)
 
     return () => {
-      io.disconnect()
-      stopChannel()
       supabase.removeChannel(flagChannel)
-      if (debounceRef.current) clearTimeout(debounceRef.current)
     }
-  }, [fetchRanking])
-
-  // voting flag initial fetch
-  useEffect(() => {
-    fetch('/api/public/flag/voting').then((res) => res.json()).then((d) => setVotingEnabled(d.enabled)).catch(() => {})
   }, [])
 
   const toggleBand = (cluster: Cluster) => {
@@ -237,6 +246,11 @@ export function LiveRankingSection() {
     return () => clearTimeout(t)
   }, [flash])
 
+  // Pre-fiera (voto disattivo) la classifica non deve esistere nel DOM:
+  // nessuna sezione, nessuno skeleton. Il flag voting_enabled (admin) la
+  // ripristina dal lunedì di fiera.
+  if (!votingEnabled) return null
+
   return (
     <SectionFrame theme="live-ranking" className="flex flex-col">
       <SafeCenterSection scrollable={false} gap="var(--rythm-blk)" className="content-max">
@@ -249,31 +263,7 @@ export function LiveRankingSection() {
           </p>
 
           <div className="w-full max-w-2xl mx-auto">
-            {!votingEnabled ? (
-              <div className="w-full max-w-2xl mx-auto bg-white rounded-2xl border-[3px] border-black shadow-[4px_4px_0_#000] p-3 md:p-6">
-                <div className="flex flex-col gap-y-2 md:gap-y-3">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <div key={i} className="mb-3 animate-pulse">
-                      <div className="flex items-center gap-3 mb-1">
-                        <div className="w-8 h-8 bg-gray-300 rounded-full" />
-                        <div className="flex-1">
-                          <div className="flex justify-between items-center mb-1">
-                            <div className="h-4 bg-gray-300 rounded w-3/5" />
-                            <div className="h-5 bg-gray-300 rounded-full w-16 ml-2" />
-                          </div>
-                          <div className="w-full h-4 bg-gray-300 rounded-full" />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-4 text-center">
-                  <p className="text-lg font-black text-gray-500">
-                    🏆 Classifica disponibile durante il Cersaie!
-                  </p>
-                </div>
-              </div>
-            ) : isLoading ? (
+            {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="mb-3 animate-pulse">
                   <div className="flex items-center gap-3 mb-1">

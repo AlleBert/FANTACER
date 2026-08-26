@@ -16,6 +16,7 @@
     "e2e:gate": "NODE_OPTIONS=--max-old-space-size=2560 playwright test tests/e2e/responsive-structural.spec.ts tests/e2e/voting-flow.spec.ts --project=chromium --project=mobile-webkit --workers=1",
     "e2e:home": "NODE_OPTIONS=--max-old-space-size=2560 playwright test tests/e2e/homepage.spec.ts tests/e2e/legal-pages.spec.ts tests/e2e/smoke.spec.ts tests/e2e/scroll-blocking.spec.ts tests/e2e/accessibility.spec.ts --project=chromium --workers=1",
     "e2e:admin": "NODE_OPTIONS=--max-old-space-size=2560 playwright test tests/e2e/admin-auth.spec.ts tests/e2e/admin.spec.ts tests/e2e/admin-sponsor.spec.ts tests/e2e/viewer.spec.ts tests/e2e/repro-phantom-500.spec.ts --project=chromium --workers=1",
+    "e2e:phantom-admin": "NODE_OPTIONS=--max-old-space-size=2560 playwright test tests/e2e/phantom-500-admin.spec.ts --project=mobile-webkit --workers=1",
     "e2e:cleanup": "bash scripts/kill-browsers.sh",
     "provision:e2e:admin": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/provision-e2e-admin.mjs",
     "provision:e2e:admin:test": "node --env-file-if-exists=.env.e2e scripts/provision-e2e-admin.mjs --env-file=.env.e2e",

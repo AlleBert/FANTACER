@@ -8,6 +8,7 @@ import { AuditLogTable } from '@/components/admin/audit-log-table'
 import { useAdminRole } from '@/lib/use-admin-role'
 import { ModalShell } from '@/components/ui/modal-shell'
 import { createClient } from '@/lib/supabase/client'
+import { safeSubscribe } from '@/lib/supabase/realtime'
 
 interface AuditLog {
   id: string
@@ -60,7 +61,7 @@ export default function ImpostazioniPage() {
           .then(res => res.json())
           .then(data => setVotingEnabled(data.enabled))
       })
-      .subscribe()
+    safeSubscribe(channel)
 
     return () => {
       supabase.removeChannel(channel)

@@ -33,18 +33,21 @@ global.fetch = mockFetch as unknown as typeof fetch
 const mockHolder = {
   subscribeCb: null as ((status: string) => void) | null,
   changeCb: null as (() => void) | null,
+  flagChangeCb: null as (() => void) | null,
   removeChannel: jest.fn(),
 }
 
 jest.mock('@/lib/supabase/client', () => ({
   createClient: () => ({
     channel: (name: string) => {
-      // Solo il channel primario ranking_tick espone i callback controllabili;
-      // quello del voting flag è un fake inerte (non deve sovrascrivere i handler).
+      // Solo i due channel controllabili espongono i callback: ranking_tick
+      // (primario) e voting flag (sempre attivo, anche a sezione null).
       const isVote = name === 'live-ranking-votes'
+      const isFlag = name === 'live-ranking-voting-flag'
       return {
         on: (_e: string, _o: unknown, cb: () => void) => {
           if (isVote) mockHolder.changeCb = cb
+          if (isFlag) mockHolder.flagChangeCb = cb
           return {
             subscribe: (cb2: (s: string) => void) => {
               if (isVote) mockHolder.subscribeCb = cb2
@@ -117,6 +120,7 @@ describe('LiveRankingSection realtime', () => {
     })
     mockHolder.changeCb = null
     mockHolder.subscribeCb = null
+    mockHolder.flagChangeCb = null
     mockHolder.removeChannel.mockClear()
     MockIntersectionObserver.instances = []
     ;(global as { IntersectionObserver: unknown }).IntersectionObserver = MockIntersectionObserver
@@ -135,6 +139,33 @@ describe('LiveRankingSection realtime', () => {
     await screen.findByText('Ceramiche X')
   })
 
+  it('quando l\'admin accende il voto, la classifica si monta senza reload', async () => {
+    let enabled = false
+    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('/api/public/flag/voting')) {
+        return { ok: true, json: async () => ({ enabled }) }
+      }
+      return { ok: true, json: async () => buildPayload(defaultPallets) }
+    })
+    const { container } = render(<LiveRankingSection />)
+    await act(async () => {})
+
+    // pre-fiera: sezione assente dal DOM, ma il canale flag è già sottoscritto
+    expect(container.querySelector('section')).toBeNull()
+    expect(mockHolder.flagChangeCb).not.toBeNull()
+
+    // l'admin accende voting_enabled: UPDATE → refetch flag → true → sezione montata
+    enabled = true
+    await act(async () => {
+      mockHolder.flagChangeCb?.()
+    })
+
+    await screen.findByText('Ceramiche X')
+    expect(container.querySelector('section')).not.toBeNull()
+    expect(mockFetch).toHaveBeenCalledWith('/api/public/ranking')
+  })
+
   it('refetch su evento ranking_tick (channel primario)', async () => {
     render(<LiveRankingSection />)
     await act(async () => {})
@@ -149,7 +180,13 @@ describe('LiveRankingSection realtime', () => {
   })
 
   it('il polling fallback resta attivo finché non arriva un evento reale (RLS)', async () => {
-    mockFetch.mockResolvedValue({ ok: true, json: async () => buildPayload(defaultPallets) })
+    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('/api/public/flag/voting')) {
+        return { ok: true, json: async () => ({ enabled: true }) }
+      }
+      return { ok: true, json: async () => buildPayload(defaultPallets) }
+    })
     render(<LiveRankingSection />)
     await act(async () => {})
     const io = MockIntersectionObserver.instances[0]
@@ -189,13 +226,14 @@ describe('LiveRankingSection realtime', () => {
     expect(mockHolder.subscribeCb).not.toBeNull()
   })
 
-  it('rispetta prefers-reduced-motion (stato finale renderizzato)', () => {
+  it('rispetta prefers-reduced-motion (stato finale renderizzato)', async () => {
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
       configurable: true,
       value: jest.fn().mockReturnValue({ matches: true }),
     })
     render(<LiveRankingSection />)
+    await act(async () => {})
     expect(screen.getByText('live ranking')).toBeInTheDocument()
   })
 

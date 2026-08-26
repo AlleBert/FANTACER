@@ -5,6 +5,7 @@ export interface Dictionary {
 
   // Hero
   'hero.play': string
+  'hero.scroll': string
 
   // Intro
   'intro.title.line1': string
@@ -32,6 +33,8 @@ export interface Dictionary {
 
   // Search / vote
   'search.title': string
+  'search.instructions': string
+  'search.progress': string
   'search.placeholder': string
   'search.alreadySelected': string
   'search.viewAll': string

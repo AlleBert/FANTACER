@@ -36,7 +36,14 @@ export async function searchAndSelectCompany(page: Page, companyName: string) {
   // URL attendibile via waitForResponse). La condizione funzionale è l'opzione
   // azienda che compare nei risultati: si aspetta direttamente quell'elemento
   // (polling fino a 10s), niente timeout fisso che sotto carico è insufficiente.
-  const companyOption = page.locator('ul li').filter({ hasText: companyName }).first();
+  // Scoping alla sezione search: `ul li` nudo matcha anche le righe della
+  // classifica live (che contengono gli stessi nomi seedati). Sotto carico la
+  // classifica renderizza prima dei risultati di ricerca → il click colpiva la
+  // riga sbagliata e il modale pallet non si apriva.
+  const companyOption = page
+    .locator('section[data-section="search"] ul li')
+    .filter({ hasText: companyName })
+    .first();
   await companyOption.waitFor({ state: 'visible', timeout: 10000 });
   await companyOption.click();
 }
