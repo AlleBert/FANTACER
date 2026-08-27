@@ -54,6 +54,8 @@ export function ModalShell({ open, onClose, labelledBy, dismissible = true, clas
   const onCloseRef = useRef(onClose)
   const dismissibleRef = useRef(dismissible)
   const [visible, setVisible] = useState(false)
+  const [openSeq, setOpenSeq] = useState(0)
+  const [prevOpen, setPrevOpen] = useState(open)
 
   useScrollLock(open)
 
@@ -62,8 +64,16 @@ export function ModalShell({ open, onClose, labelledBy, dismissible = true, clas
     dismissibleRef.current = dismissible
   }, [onClose, dismissible])
 
-  // Adjust state during render: appena `open` diventa true, `visible` segue.
-  // Il setState guardato è il pattern documentato da React (niente effect).
+  // Adjust state during render (pattern documentato da React, niente effect):
+  // appena `open` diventa true, `visible` segue e `openSeq` incrementa. La key
+  // del pannello usa `openSeq`: il remount (che ri-avvia l'enter) avviene solo
+  // quando `openSeq` cambia, cioè a ogni apertura — NON durante l'exit.
+  if (open && !prevOpen) {
+    setOpenSeq((s) => s + 1)
+    setPrevOpen(true)
+  } else if (!open && prevOpen) {
+    setPrevOpen(false)
+  }
   if (open && !visible) {
     setVisible(true)
   }
@@ -150,7 +160,7 @@ export function ModalShell({ open, onClose, labelledBy, dismissible = true, clas
       />
       <div
         ref={panelRef}
-        key={open ? "open" : "closed"}
+        key={openSeq}
         role="dialog"
         aria-modal="true"
         aria-labelledby={labelledBy}

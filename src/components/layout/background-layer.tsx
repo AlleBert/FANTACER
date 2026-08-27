@@ -62,6 +62,7 @@ export function BackgroundLayer({ theme }: BackgroundLayerProps) {
         />
       )}
       <div
+        key={theme ?? old}
         className="absolute inset-0 background-fade-in"
         style={{ background: sectionThemes[(theme ?? old) as SectionThemeKey].background }}
       />

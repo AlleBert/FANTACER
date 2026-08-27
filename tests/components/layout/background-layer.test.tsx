@@ -56,6 +56,21 @@ describe('BackgroundLayer', () => {
     expect(layers[1].className).toContain('background-fade-in')
   })
 
+  it('rimonta il layer corrente quando il tema cambia (il crossfade si ri-avvia)', () => {
+    const { container, rerender } = render(<BackgroundLayer theme="hero" />)
+    const layerHero = container.querySelector('.background-fade-in')
+
+    act(() => {
+      rerender(<BackgroundLayer theme="intro" />)
+    })
+
+    // il nuovo layer corrente è un nodo DOM diverso (rimontato via key):
+    // solo un remount fa ripartire l'animazione CSS `.background-fade-in`
+    const layerIntro = container.querySelector('.background-fade-in')
+    expect(layerIntro).not.toBeNull()
+    expect(layerIntro).not.toBe(layerHero)
+  })
+
   it('maps every section theme to a background defined in sectionThemes', () => {
     for (const key of Object.keys(sectionThemes)) {
       expect(sectionThemes[key as keyof typeof sectionThemes].background.length).toBeGreaterThan(0)

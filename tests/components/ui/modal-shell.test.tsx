@@ -67,7 +67,7 @@ describe('ModalShell', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 
-  it("riproduce l'animazione di ingresso a ogni apertura", () => {
+  it("riproduce l'animazione di ingresso a ogni apertura ma non durante l'exit", () => {
     jest.useFakeTimers()
     const { rerender } = render(
       <ModalShell open labelledBy="t">
@@ -82,6 +82,11 @@ describe('ModalShell', () => {
         <p>contenuto</p>
       </ModalShell>
     )
+    // durante l'exit il pannello NON viene rimontato: stesso nodo,
+    // nessun replay dell'animazione di ingresso mentre l'overlay sfuma
+    const dialogDuringExit = document.body.querySelector('[role="dialog"]')
+    expect(dialogDuringExit).toBe(dialogOpen1)
+
     act(() => {
       jest.advanceTimersByTime(250)
     })
