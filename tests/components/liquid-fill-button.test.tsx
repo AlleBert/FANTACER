@@ -51,4 +51,21 @@ describe('LiquidFillButton', () => {
     renderButton({ step: 3, loading: true })
     expect(screen.getByRole('button')).toBeDisabled()
   })
+
+  it('cancels the in-flight tween when step changes mid-animation', async () => {
+    const cancel = jest.mocked(window.cancelAnimationFrame)
+    cancel.mockClear()
+    const { rerender } = renderButton({ step: 0 })
+
+    rerender(
+      <LiquidFillButton step={1} steps={3} label="INVIA IL TUO VOTO" onClick={() => {}} />
+    )
+    await new Promise((r) => setTimeout(r, 40))
+    expect(cancel).not.toHaveBeenCalled()
+
+    rerender(
+      <LiquidFillButton step={2} steps={3} label="INVIA IL TUO VOTO" onClick={() => {}} />
+    )
+    expect(cancel).toHaveBeenCalledWith(expect.any(Number))
+  })
 })

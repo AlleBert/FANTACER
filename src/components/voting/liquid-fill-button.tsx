@@ -92,6 +92,7 @@ export function LiquidFillButton({
   }
 
   function animateProgress(to: number, duration: number) {
+    if (tweenRef.current) cancelAnimationFrame(tweenRef.current);
     const from = progressRef.current;
     const start = performance.now();
     const easeOutBack = (x: number) => {
