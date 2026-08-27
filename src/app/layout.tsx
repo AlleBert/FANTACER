@@ -113,6 +113,12 @@ export default async function RootLayout({
         suppressHydrationWarning
         className="flex flex-col text-black font-['Open_Sauce_One',_sans-serif]"
       >
+        {process.env.NODE_ENV === "development" && (
+          // react-scan deve girare PRIMA di React per tracciare i re-render:
+          // serve un blocco sincrono, async/defer renderebbero l'instrumentazione inutile.
+          // eslint-disable-next-line @next/next/no-sync-scripts
+          <script src="https://unpkg.com/react-scan/dist/auto.global.js" crossOrigin="anonymous" />
+        )}
         <Providers locale={locale}>{children}</Providers>
         <script
           type="application/ld+json"

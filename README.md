@@ -424,7 +424,9 @@ Esegue `lhci autorun` con la configurazione in `lighthouserc.json`.
 npm run analyze
 ```
 
-Esegue `next build && next experimental-analyze -o`. Il report viene scritto in `.next/diagnostics/analyze/`.
+Esegue `ANALYZE=true next build --webpack` (attiva `@next/bundle-analyzer` in `next.config.ts`). I report interattivi vengono scritti in `.next/analyze/` (`client.html`, `nodejs.html`, `edge.html`).
+
+**Nota**: il bundle-analyzer richiede webpack (`--webpack`); con Turbopack il report non viene generato. I pacchetti client di interesse per la homepage sono in `client.html`.
 
 ### Quando usarlo
 
@@ -432,7 +434,37 @@ Esegue `next build && next experimental-analyze -o`. Il report viene scritto in 
 - se le performance degradano;
 - prima di cambiamenti a import/chunking.
 
-**Nota**: il pacchetto `@next/bundle-analyzer` è installato ma non compatibile con Turbopack (Next.js 16). Il comando `analyze` usa il tool nativo Turbopack `next experimental-analyze`.
+## React Scan (re-render)
+
+`react-scan` è integrato in `src/app/layout.tsx` (solo in `NODE_ENV=development` via CDN unpkg) e traccia i re-render dei componenti React durante l'uso reale.
+
+```bash
+npm run dev
+# apri il sito e interagisci (scroll, ricerca, voto): i componenti che
+# re-renderizzano vengono evidenziati; la toolbar react-scan mostra conteggi e FPS.
+```
+
+### Quando usarlo
+
+- per individuare componenti che re-renderizzano a ogni scroll/resize/input;
+- per validare che una modifica a stato/context non causi render non necessari.
+
+## Report performance combinato
+
+```bash
+npm run perf:report
+```
+
+Comando unico che combina le 2 pratiche e produce un report:
+
+1. **Bundle**: esegue `npm run analyze` (build webpack con bundle-analyzer);
+2. **React Scan**: avvia un server dev, raccoglie le metriche di re-render su un journey utente reale (scroll + ricerca + selezione + resize) via Playwright;
+3. **Report**: aggrega entrambi in `perf-output/`:
+   - `bundle-*.html` — report interattivi del bundle (aprire `bundle-client.html`);
+   - `react-scan-report.json` — metriche re-render per stadio;
+   - `perf-report.md` — riassunto incrociato.
+
+Analisi **locale/on-demand** (non in CI). Richiede RAM sufficiente per build + server dev.
 
 ## Sentry
 
@@ -490,6 +522,7 @@ npx playwright test --update-snapshots
 ```bash
 npm run lighthouse     # audit Lighthouse locale
 npm run analyze        # analisi bundle
+npm run perf:report    # bundle + react-scan (re-render) + report incrociato
 ```
 
 ---

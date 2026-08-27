@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# perf analysis output (npm run perf:report)
+/perf-output/
+
 # production
 /build
 
