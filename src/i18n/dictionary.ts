@@ -45,6 +45,7 @@ export interface Dictionary {
   'search.confirm': string
   'search.submit': string
   'search.subtitle': string
+  'search.votedDone': string
   'search.msgSuccessTitle': string
   'search.msgErrorTitle': string
   'search.msgWarningTitle': string

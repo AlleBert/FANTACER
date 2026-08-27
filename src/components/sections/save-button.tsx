@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Download, Check } from 'lucide-react'
-import html2canvas from 'html2canvas'
+import { toPng } from 'html-to-image'
 import { useLocale } from '@/lib/LocaleContext'
 
 interface SaveButtonProps {
@@ -27,24 +27,24 @@ export function SaveButton({ containerRef }: SaveButtonProps) {
 
     setError(null)
     try {
-      const canvas = await html2canvas(containerRef.current, {
-        scale: 2,
-        width: containerRef.current.clientWidth,
-        height: containerRef.current.clientHeight,
-        useCORS: true,
-        windowWidth: window.innerWidth,
-        windowHeight: window.innerHeight,
+      // html-to-image serializza il nodo in un SVG foreignObject: il browser
+      // rende nativamente, quindi i colori moderni (oklab/oklch di Tailwind v4)
+      // vengono gestiti senza errori di parsing.
+      const dataUrl = await toPng(containerRef.current, {
+        pixelRatio: 2,
+        cacheBust: true,
+        backgroundColor: '#ffffff',
       })
       const link = document.createElement('a')
       link.download = 'fantacer-voto.png'
-      link.href = canvas.toDataURL('image/png')
+      link.href = dataUrl
       link.click()
 
       setSaved(true)
       if (timeoutRef.current) window.clearTimeout(timeoutRef.current)
       timeoutRef.current = window.setTimeout(() => setSaved(false), 3000)
     } catch (err) {
-      console.error('SaveButton html2canvas error:', err)
+      console.error('SaveButton capture error:', err)
       setError('errore_salvataggio')
       // Clear error after 5 seconds
       const id = window.setTimeout(() => setError(null), 5000)

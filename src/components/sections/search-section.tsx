@@ -25,7 +25,7 @@ interface CompanyResult {
 
 export function SearchSection() {
   const { t } = useLocale();
-  const { selectedCompanies, setCompany, removeCompany, setPallet, usedPallets, unlockGameStep } = useVote();
+  const { selectedCompanies, setCompany, removeCompany, setPallet, usedPallets, unlockGameStep, gameUnlock } = useVote();
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState<CompanyResult[]>([]);
   const [showAll, setShowAll] = useState(false);
@@ -170,6 +170,7 @@ export function SearchSection() {
 
   const used = usedPallets();
   const availablePallets = PALLET_OPTIONS.filter((p) => !used.includes(p) || editingIndex !== null);
+  const hasVoted = gameUnlock.success;
 
   return (
     <SectionFrame theme="search" grow className="text-purple">
@@ -313,17 +314,20 @@ export function SearchSection() {
                       <div className="flex items-center gap-2 flex-none shrink-0">
                         <button
                           onClick={() => handleEditPallet(index)}
-                          className="bg-bright min-h-11 px-4 py-2 rounded-full border-2 border-ink font-black text-sm whitespace-nowrap text-black hover:bg-[#ffe066] transition-colors"
+                          disabled={hasVoted}
+                          className="bg-bright min-h-11 px-4 py-2 rounded-full border-2 border-ink font-black text-sm whitespace-nowrap text-black hover:bg-[#ffe066] transition-colors disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-bright"
                         >
                           {t('search.palletBadge', { count: item.pallet })}
                         </button>
-                        <button
-                          onClick={() => removeCompany(index)}
-                          aria-label={t('search.removeCompany')}
-                          className="flex items-center justify-center w-11 h-11 text-red-500 hover:text-red-700 transition-colors"
-                        >
-                          <X className="w-6 h-6 stroke-[3]" />
-                        </button>
+                        {!hasVoted && (
+                          <button
+                            onClick={() => removeCompany(index)}
+                            aria-label={t('search.removeCompany')}
+                            className="flex items-center justify-center w-11 h-11 text-red-500 hover:text-red-700 transition-colors"
+                          >
+                            <X className="w-6 h-6 stroke-[3]" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -335,19 +339,33 @@ export function SearchSection() {
 
           {votingEnabled && (
             <div className="flex-none flex flex-col items-center justify-center w-full pt-[clamp(0.75rem,1.5svh,1.5rem)]">
-              <LiquidFillButton
-                step={selectedCompanies.length}
-                steps={3}
-                loading={loading}
-                label={t('search.submit')}
-                onClick={handleSubmit}
-              />
-              <p
-                aria-live="polite"
-                className="text-center text-[clamp(0.75rem,2vw,1rem)] font-[900] text-purple mt-[clamp(0.375rem,1vw,0.5rem)]"
-              >
-                {t('search.progress', { count: selectedCompanies.length })}
-              </p>
+              {hasVoted ? (
+                <button
+                  type="button"
+                  disabled
+                  className="relative w-full max-w-sm h-[clamp(3rem,12svh,5rem)] md:h-[clamp(3.5rem,13svh,6rem)] rounded-full border-[3px] md:border-[4px] border-ink bg-bright/50 shadow-[4px_4px_0_#000] text-[clamp(1rem,3vw,1.5rem)] md:text-2xl font-[900] cursor-not-allowed select-none"
+                >
+                  <span className="absolute inset-0 flex items-center justify-center text-center px-8 text-[#221a00]">
+                    {t('search.votedDone')}
+                  </span>
+                </button>
+              ) : (
+                <LiquidFillButton
+                  step={selectedCompanies.length}
+                  steps={3}
+                  loading={loading}
+                  label={t('search.submit')}
+                  onClick={handleSubmit}
+                />
+              )}
+              {!hasVoted && (
+                <p
+                  aria-live="polite"
+                  className="text-center text-[clamp(0.75rem,2vw,1rem)] font-[900] text-purple mt-[clamp(0.375rem,1vw,0.5rem)]"
+                >
+                  {t('search.progress', { count: selectedCompanies.length })}
+                </p>
+              )}
               <p className="text-center text-[clamp(0.875rem,2.5vw,1.125rem)] font-bold text-purple mt-[clamp(0.5rem,1.5vw,0.75rem)] max-w-sm">
                 {t('search.subtitle')}
               </p>

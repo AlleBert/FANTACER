@@ -42,6 +42,7 @@ export const it: Dictionary = {
   'search.confirm': 'CONFERMA',
   'search.submit': 'INVIA IL TUO VOTO',
   'search.subtitle': 'e controlla la classifica aggiornata',
+  'search.votedDone': 'HAI VOTATO! TORNA DOMANI',
   'search.msgSuccessTitle': 'Voto Inviato!',
   'search.msgErrorTitle': 'Errore',
   'search.msgWarningTitle': 'Attenzione',
