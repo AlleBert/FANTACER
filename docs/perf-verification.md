@@ -35,4 +35,6 @@ che l'SDK client è davvero assente cercare anche `Sentry.init` e
 
 ## Suite
 
-`npm run ui:health` (lint + typecheck + unit + e2e gate).
+`npm run ui:health` (lint + typecheck + unit + suite e2e completa). Nota: `test:e2e`
+esegue l'intera matrice Playwright (11 progetti): in locale usare i batch dedicati
+(`npm run e2e:gate`, `e2e:home`, `e2e:admin`) per non saturare la RAM.
