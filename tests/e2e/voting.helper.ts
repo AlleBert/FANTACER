@@ -52,9 +52,9 @@ export async function confirmPallet(page: Page) {
   const confermaButton = page.locator('button:has-text("CONFERMA")').first();
   await confermaButton.waitFor({ state: 'visible', timeout: 5000 });
   await confermaButton.click();
-  // Il picker pallet (ModalShell, id pallet-picker-title) si smonta al confirm
-  // (AnimatePresence exit ~200ms): attenderne la chiusura è la condizione
-  // funzionale della conferma, niente timeout fisso.
+  // Il picker pallet (ModalShell, id pallet-picker-title) resta montato per il
+  // fade-out CSS (EXIT_FADE_MS ~220ms) e si smonta dopo: attenderne la chiusura
+  // è la condizione funzionale della conferma, niente timeout fisso.
   await page.locator('#pallet-picker-title').waitFor({ state: 'hidden', timeout: 5000 });
 }
 
