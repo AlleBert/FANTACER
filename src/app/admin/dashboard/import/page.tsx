@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Upload, Download, Check, Trash2, Building2, Vote, AlertTriangle, X, CheckCircle, AlertCircle, FileSpreadsheet, FileText, ChevronDown } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { useAdminRole } from '@/lib/use-admin-role'
 import { ModalShell } from '@/components/ui/modal-shell'
@@ -222,30 +221,24 @@ export default function ImportPage() {
   return (
     <div>
       {/* Notification toast */}
-      <AnimatePresence>
-        {notification && (
-          <motion.div
-            initial={{ opacity: 0, y: -20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-            className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border max-w-sm ${
-              notification.type === 'success'
-                ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200'
-                : notification.type === 'error'
-                ? 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200'
-                : 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200'
-            }`}>
-            {notification.type === 'success' ? <CheckCircle className="h-5 w-5 shrink-0" />
-              : notification.type === 'error' ? <AlertCircle className="h-5 w-5 shrink-0" />
-              : <AlertTriangle className="h-5 w-5 shrink-0" />}
-            <p className="text-sm font-medium">{notification.text}</p>
-            <button onClick={() => setNotification(null)} className="ml-auto shrink-0 opacity-60 hover:opacity-100">
-              <X className="h-4 w-4" />
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {notification && (
+        <div
+          className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border max-w-sm transition-all duration-200 ${
+            notification.type === 'success'
+              ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200'
+              : notification.type === 'error'
+              ? 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200'
+              : 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200'
+          }`}>
+          {notification.type === 'success' ? <CheckCircle className="h-5 w-5 shrink-0" />
+            : notification.type === 'error' ? <AlertCircle className="h-5 w-5 shrink-0" />
+            : <AlertTriangle className="h-5 w-5 shrink-0" />}
+          <p className="text-sm font-medium">{notification.text}</p>
+          <button onClick={() => setNotification(null)} className="ml-auto shrink-0 opacity-60 hover:opacity-100">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       {/* Delete confirmation modal */}
       <ModalShell
@@ -406,53 +399,45 @@ export default function ImportPage() {
                     </span>
                     <ChevronDown className={cn("h-4 w-4 text-muted-foreground shrink-0 transition-transform duration-200", batchSelectOpen && "rotate-180")} />
                   </button>
-                  <AnimatePresence>
-                    {batchSelectOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -4, scale: 0.97 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -4, scale: 0.97 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute z-50 mt-1 w-full rounded-lg border border-border bg-card shadow-xl overflow-hidden"
-                      >
-                        <div className="py-1">
-                          {batchInfo.batches.length === 0 && (
-                            <div className="px-3 py-2 text-sm text-muted-foreground italic">Nessun batch</div>
-                          )}
-                          {batchInfo.batches.map(b => (
-                            <button
-                              key={b.name}
-                              type="button"
-                              onClick={() => { handleBatchSelect(b.name); setBatchSelectOpen(false) }}
-                              className={cn(
-                                "w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors",
-                                "hover:bg-muted/30 cursor-pointer",
-                                !isNewBatch && batchName === b.name && "bg-primary/5 text-primary font-medium"
-                              )}
-                            >
-                              <span className="truncate">{b.name}</span>
-                              {!isNewBatch && batchName === b.name && (
-                                <Check className="h-3.5 w-3.5 shrink-0 ml-auto" />
-                              )}
-                            </button>
-                          ))}
-                          <div className="border-t border-border my-1" />
+                  {batchSelectOpen && (
+                    <div className="absolute z-50 mt-1 w-full rounded-lg border border-border bg-card shadow-xl overflow-hidden">
+                      <div className="py-1">
+                        {batchInfo.batches.length === 0 && (
+                          <div className="px-3 py-2 text-sm text-muted-foreground italic">Nessun batch</div>
+                        )}
+                        {batchInfo.batches.map(b => (
                           <button
+                            key={b.name}
                             type="button"
-                            onClick={() => { handleBatchSelect('__new__'); setBatchSelectOpen(false) }}
+                            onClick={() => { handleBatchSelect(b.name); setBatchSelectOpen(false) }}
                             className={cn(
                               "w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors",
                               "hover:bg-muted/30 cursor-pointer",
-                              isNewBatch && "bg-primary/5 text-primary font-medium"
+                              !isNewBatch && batchName === b.name && "bg-primary/5 text-primary font-medium"
                             )}
                           >
-                            <span>+ Nuovo batch...</span>
-                            {isNewBatch && <Check className="h-3.5 w-3.5 shrink-0 ml-auto" />}
+                            <span className="truncate">{b.name}</span>
+                            {!isNewBatch && batchName === b.name && (
+                              <Check className="h-3.5 w-3.5 shrink-0 ml-auto" />
+                            )}
                           </button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                        ))}
+                        <div className="border-t border-border my-1" />
+                        <button
+                          type="button"
+                          onClick={() => { handleBatchSelect('__new__'); setBatchSelectOpen(false) }}
+                          className={cn(
+                            "w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors",
+                            "hover:bg-muted/30 cursor-pointer",
+                            isNewBatch && "bg-primary/5 text-primary font-medium"
+                          )}
+                        >
+                          <span>+ Nuovo batch...</span>
+                          {isNewBatch && <Check className="h-3.5 w-3.5 shrink-0 ml-auto" />}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 {isNewBatch && (
                   <Input
