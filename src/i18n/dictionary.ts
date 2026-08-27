@@ -118,7 +118,7 @@ export interface Dictionary {
   // Coming soon
   'comingSoon.title': string
 
-  // Cookie consent (react-cookie-manager)
+  // Cookie consent
   'cookie.title': string
   'cookie.message': string
   'cookie.buttonText': string

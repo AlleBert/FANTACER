@@ -2,26 +2,12 @@ import { render, screen } from '@testing-library/react'
 import { CookieConsentUI, COOKIE_CONSENT_KEY } from '@/components/cookie-consent'
 import { LocaleProvider } from '@/lib/LocaleContext'
 
-jest.mock('react-cookie-manager', () => ({
-  useCookieConsent: () => ({
-    hasConsent: null,
-    isDeclined: false,
-    detailedConsent: null,
-    showConsentBanner: jest.fn(),
-    acceptCookies: jest.fn(),
-    declineCookies: jest.fn(),
-    updateDetailedConsent: jest.fn(),
-    openPreferencesModal: jest.fn(),
-  }),
-}))
-
 /**
  * Regressione: su browser mobile con site-data bloccati (Safari private
  * browsing, "Prevent Cross-Site Tracking", in-app browser) `document.cookie`
- * lancia DOMException SecurityError. `readStoredConsent()` leggeva
- * `document.cookie` senza try/catch durante il render (getSnapshot di
- * useSyncExternalStore + initializer di useState) → crash React →
- * `global-error.tsx` → phantom 500 client-side con HTTP 200 dal server.
+ * lancia DOMException SecurityError. `readConsentCookie()` (consent-cookie
+ * core) è no-throw: durante il render (getSnapshot di useSyncExternalStore +
+ * initializer di useState) non deve crashare → nessun phantom 500 client-side.
  */
 describe('CookieConsentUI', () => {
   let cookieGetter: jest.SpyInstance

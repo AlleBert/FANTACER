@@ -2,17 +2,24 @@
 
 import { useEffect, useState, useSyncExternalStore } from 'react'
 import { ArrowLeft, Check, SlidersHorizontal, X } from 'lucide-react'
-import { useCookieConsent, type CookieCategories, type DetailedCookieConsent } from 'react-cookie-manager'
 
 import { useLocale } from '@/lib/LocaleContext'
 import { cn } from '@/lib/utils'
 import { ModalShell } from '@/components/ui/modal-shell'
+import { readConsentCookie, type DetailedCookieConsent } from '@/lib/consent-cookie'
+import { useCookieConsent } from '@/lib/cookie-consent-core'
+
+export { COOKIE_CONSENT_KEY } from '@/lib/consent-cookie'
 
 export const OPEN_COOKIE_PREFERENCES_EVENT = 'fantacer:open-cookie-preferences'
 
 const noop = () => {}
 
-export const COOKIE_CONSENT_KEY = 'fantacer_cookie_consent'
+export type CookieCategories = {
+  Analytics: boolean
+  Social: boolean
+  Advertising: boolean
+}
 
 /**
  * Categorie per cui viene richiesto il consenso. La webapp usa solo cookie
@@ -37,68 +44,18 @@ const OPTIONAL_CATEGORIES = (['Analytics', 'Social', 'Advertising'] as const)
   .map((id) => ({ id, ...CATEGORY_KEYS[id] }))
 
 /**
- * La libreria legge il cookie una sola volta in un initializer di useState, che
- * durante l'SSR gira senza `window` e resta quindi a `null` lato client dopo un
- * reload completo. Qui rileggiamo il cookie lato client: decide se mostrare il
- * banner e inizializza le preferenze nel pannello. La cache sul raw value rende
- * `getSnapshot` stabile (richiesto da useSyncExternalStore).
+ * Stato sconosciuto durante SSR/hydration: il banner non viene pre-renderizzato.
+ * Il cookie viene riletto lato client (no-throw): decide se mostrare il banner e
+ * inizializza le preferenze nel pannello.
  */
-let cachedConsentRaw: string | null = null
-let cachedConsentValue: DetailedCookieConsent | null = null
-
-function readStoredConsent(): DetailedCookieConsent | null {
-  if (typeof window === 'undefined') return null
-  const prefix = `${COOKIE_CONSENT_KEY}=`
-  let row: string | undefined
-  try {
-    row = document.cookie
-      .split(';')
-      .map((c) => c.trim())
-      .find((c) => c.startsWith(prefix))
-  } catch {
-    // Site-data bloccati (Safari private browsing, "Prevent Cross-Site
-    // Tracking", in-app browser): document.cookie lancia SecurityError.
-    // Nessun consenso leggibile → trattato come "nessun consenso salvato".
-    // La cache resta invariata (null) per non servire snapshot inconsistenti.
-    return null
-  }
-  const raw = row ? row.slice(prefix.length) : null
-  if (raw === cachedConsentRaw) return cachedConsentValue
-  cachedConsentRaw = raw
-  cachedConsentValue = null
-  if (raw) {
-    const candidates = [raw]
-    try {
-      candidates.push(decodeURIComponent(raw))
-    } catch {
-      /* valore non encodato */
-    }
-    for (const candidate of candidates) {
-      try {
-        const parsed = JSON.parse(candidate)
-        if (parsed && typeof parsed === 'object') {
-          cachedConsentValue = parsed as DetailedCookieConsent
-          break
-        }
-      } catch {
-        /* formato non valido */
-      }
-    }
-  }
-  return cachedConsentValue
-}
-
-const cookieStoreSubscribe = () => () => {}
-
-/** Stato sconosciuto durante SSR/hydration: il banner non viene pre-renderizzato. */
 const UNKNOWN_CONSENT = Symbol('unknown-consent')
 
 type StoredConsent = DetailedCookieConsent | null | typeof UNKNOWN_CONSENT
 
 function useStoredConsent(): StoredConsent {
   return useSyncExternalStore<StoredConsent>(
-    cookieStoreSubscribe,
-    () => readStoredConsent(),
+    () => () => {},
+    () => readConsentCookie(),
     () => UNKNOWN_CONSENT
   )
 }
@@ -128,7 +85,7 @@ const titleCls = 'text-lg font-black uppercase tracking-tighter text-ink sm:text
 const bodyCls = 'mt-2 text-sm font-medium text-ink/80'
 
 function buildInitialDraft(detailedConsent: DetailedCookieConsent | null): CookieCategories {
-  const source = readStoredConsent() ?? detailedConsent
+  const source = readConsentCookie() ?? detailedConsent
   return {
     Analytics: source?.Analytics?.consented ?? false,
     Social: source?.Social?.consented ?? false,

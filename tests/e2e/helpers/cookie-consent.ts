@@ -8,8 +8,9 @@ export const COOKIE_CONSENT_NAME = 'fantacer_cookie_consent';
  * Il banner cookie (`CookieConsentUI`) mostra quando `view === null && !hasConsent`
  * (vedi `src/components/cookie-consent.tsx`). Con il cookie presente il banner non
  * renderizza mai → screenshot puliti e zero attese per il dismiss.
- * Il valore `{}` è quello che scrive `acceptCookies` della libreria
- * `react-cookie-manager` quando tutte le categorie opzionali sono disattive.
+ * Il valore `{}` è quello che scriveva `acceptCookies` quando tutte le
+ * categorie opzionali erano disattive: `readConsentCookie()` (consent-cookie
+ * core) lo interpreta come consenso dato con categorie false → banner nascosto.
  */
 export async function seedConsentCookie(page: Page): Promise<void> {
   await page.context().addCookies([
