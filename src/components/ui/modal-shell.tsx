@@ -17,6 +17,9 @@ const FOCUSABLE_SELECTOR = [
 
 const emptySubscribe = () => () => {}
 
+/** Durata (ms) del fade-out dell'overlay; deve restare > della durata CSS (200ms). */
+const EXIT_FADE_MS = 220
+
 /** True only after hydration: guards `createPortal(document.body)` from SSR. */
 function useIsMounted(): boolean {
   return useSyncExternalStore(
@@ -65,11 +68,11 @@ export function ModalShell({ open, onClose, labelledBy, dismissible = true, clas
     setVisible(true)
   }
 
-  // Quando `open` scende a false, `visible` resta true per 220ms (exit fade),
+  // Quando `open` scende a false, `visible` resta true per EXIT_FADE_MS (exit fade),
   // poi il timer lo porta a false e l'overlay viene nascosto del tutto.
   useEffect(() => {
     if (open) return
-    const t = window.setTimeout(() => setVisible(false), 220)
+    const t = window.setTimeout(() => setVisible(false), EXIT_FADE_MS)
     return () => window.clearTimeout(t)
   }, [open])
 
@@ -139,7 +142,6 @@ export function ModalShell({ open, onClose, labelledBy, dismissible = true, clas
         open ? "opacity-100" : "opacity-0 pointer-events-none",
         !open && !visible && "hidden"
       )}
-      style={{ visibility: open || visible ? "visible" : "hidden" }}
       aria-hidden={!open}
     >
       <div
@@ -148,6 +150,7 @@ export function ModalShell({ open, onClose, labelledBy, dismissible = true, clas
       />
       <div
         ref={panelRef}
+        key={open ? "open" : "closed"}
         role="dialog"
         aria-modal="true"
         aria-labelledby={labelledBy}
