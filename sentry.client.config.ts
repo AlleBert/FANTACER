@@ -1,8 +1,4 @@
-import * as Sentry from "@sentry/nextjs";
-
-Sentry.init({
-  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN || "",
-  tracesSampleRate: 0,
-  replaysOnErrorSampleRate: 0,
-  replaysSessionSampleRate: 0,
-});
+// Client-side Sentry disabilitato: il bundle pubblico non deve caricare
+// @sentry/nextjs (~273 kB gzip). Il tracking errori resta server-side via
+// sentry.server.config.ts + instrumentation.ts.
+export {};
