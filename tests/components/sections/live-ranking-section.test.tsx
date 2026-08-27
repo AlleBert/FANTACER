@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act, within } from '@testing-library/react'
 import { LiveRankingSection } from '@/components/sections/live-ranking-section'
 import { useVote } from '@/lib/VoteContext'
 
@@ -120,23 +120,31 @@ describe('LiveRankingSection', () => {
     expect(screen.getByText('1000 pallets')).toBeInTheDocument()
   })
 
-  it('GOLD/SILVER/BRONZE sono chiuse di default e non mostrano punteggi', async () => {
+  it('GOLD/SILVER/BRONZE sono chiuse di default (pannelli collassati), TOP20 aperta', async () => {
     render(<LiveRankingSection />)
     await screen.findByText('Ceramiche X')
-    expect(screen.queryByText('Marmo W')).not.toBeInTheDocument()
-    expect(screen.getByText(/GOLD/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /GOLD/ })).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.getByRole('button', { name: /SILVER/ })).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.getByRole('button', { name: /BRONZE/ })).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.getByRole('button', { name: /TOP 20/ })).toHaveAttribute('aria-expanded', 'true')
+    // il pannello GOLD è collassato (grid 0fr) e nascosto all'accessibilità
+    const goldPanel = document.getElementById('live-ranking-band-gold')
+    expect(goldPanel).toHaveClass('grid-rows-[0fr]')
+    expect(goldPanel).toHaveAttribute('aria-hidden', 'true')
   })
 
   it("apre la fascia al click sull'header", async () => {
     render(<LiveRankingSection />)
     await screen.findByText('Ceramiche X')
-    fireEvent.click(screen.getByText(/GOLD/))
-    await waitFor(() => {
-      expect(screen.getByText('Marmo W')).toBeInTheDocument()
-    })
+    const goldButton = screen.getByRole('button', { name: /GOLD/ })
+    expect(goldButton).toHaveAttribute('aria-expanded', 'false')
+    fireEvent.click(goldButton)
+    expect(goldButton).toHaveAttribute('aria-expanded', 'true')
+    expect(document.getElementById('live-ranking-band-gold')).toHaveClass('grid-rows-[1fr]')
+    expect(screen.getByText('Marmo W')).toBeInTheDocument()
   })
 
-  it('con 1 voto nella fascia mostra posizione e nome', async () => {
+  it('con 1 voto nella fascia mostra posizione e nome nel badge', async () => {
     ;(useVote as jest.Mock).mockReturnValue({
       gameUnlock: { success: true },
       selectedCompanies: [
@@ -145,8 +153,9 @@ describe('LiveRankingSection', () => {
     })
     render(<LiveRankingSection />)
     await screen.findByText('Ceramiche X')
-    expect(screen.getByText('#21')).toBeInTheDocument()
-    expect(screen.getByText('Marmo W')).toBeInTheDocument()
+    const goldButton = screen.getByRole('button', { name: /GOLD/ })
+    expect(within(goldButton).getByText('#21')).toBeInTheDocument()
+    expect(within(goldButton).getByText('Marmo W')).toBeInTheDocument()
   })
 
   it('con 2 voti nella stessa fascia mostra il badge con conteggio e posizioni', async () => {

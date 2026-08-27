@@ -270,7 +270,7 @@ describe('LiveRankingSection realtime', () => {
     expect(badge).not.toBeNull()
   })
 
-  it('sopprime il pulse con prefers-reduced-motion', async () => {
+  it('con prefers-reduced-motion il pulse è delegato al CSS (la classe resta applicata)', async () => {
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
       configurable: true,
@@ -293,11 +293,13 @@ describe('LiveRankingSection realtime', () => {
     const io = MockIntersectionObserver.instances[0]
     await act(async () => { io.fire(true) })
 
-    // I dati sono renderizzati (le aziende caricate) prima di verificare l'assenza del pulse.
-    await screen.findByText('Marmo W')
+    // 'Marmo W' compare nel badge header e nella riga del pannello GOLD (sempre montato)
+    await screen.findAllByText('Marmo W')
 
-    // c04 scende da rank 22 a rank 21 (stessa fascia GOLD): firma cambia, ma
-    // con prefers-reduced-motion il pulse NON deve apparire.
+    // c04 scende da rank 22 a rank 21 (stessa fascia GOLD): firma cambia. La
+    // soppressione visiva del pulse sotto reduce è delegata a globals.css
+    // (@media prefers-reduced-motion → animation-duration 0.01ms): il JS non
+    // fa più stripping della classe, che resta applicata quando flash > 0.
     pallets = goldPallets()
     pallets[20][2] = 978
     await act(async () => {
@@ -306,6 +308,6 @@ describe('LiveRankingSection realtime', () => {
     })
 
     const badge = container.querySelector('[class*="animate-pulse"]')
-    expect(badge).toBeNull()
+    expect(badge).not.toBeNull()
   })
 })

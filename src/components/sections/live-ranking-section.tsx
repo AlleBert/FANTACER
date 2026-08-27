@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { SponsorCards } from '@/components/sponsor/sponsor-cards';
 import { SectionFrame } from '@/components/layout/section-frame';
 import { SafeCenterSection } from '@/components/layout/safe-center-section';
@@ -207,11 +206,6 @@ export function LiveRankingSection() {
     return CLUSTER_ORDER.map((key) => ({ cluster: key, companies: groups[key] }))
   }, [companies])
 
-  const reduced = useMemo(
-    () => typeof window !== 'undefined' && (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false),
-    [],
-  )
-
   // Pulse badge: quando il voto utente cambia posizione in una fascia CHIUSA,
   // il badge header fa un breve flash (1-2 cicli animate-pulse). La firma è la
   // lista dei rank votati nella fascia; il primo calcolo inizializza il ref
@@ -325,7 +319,7 @@ export function LiveRankingSection() {
                                 key={flash[cluster]}
                                 className={cn(
                                   'bg-purple text-white text-xs font-black rounded-full px-2 py-0.5 border border-ink whitespace-nowrap inline-flex items-center gap-1 min-w-0',
-                                  !reduced && flash[cluster] > 0 && 'animate-pulse',
+                                  flash[cluster] > 0 && 'animate-pulse',
                                 )}
                               >
                                 {badge}
@@ -335,51 +329,48 @@ export function LiveRankingSection() {
                           </span>
                         </button>
 
-                        <AnimatePresence initial={false}>
-                          {isOpen && (
-                            <motion.div
-                              id={panelId}
-                              initial={reduced ? { opacity: 1 } : { height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              exit={reduced ? { opacity: 1 } : { height: 0, opacity: 0 }}
-                              transition={{ duration: reduced ? 0 : 0.25, ease: 'easeInOut' }}
-                              className="overflow-hidden"
-                            >
-                              <ul className="flex flex-col gap-y-1 py-1">
-                                {bandCompanies.map((company) => {
-                                  const isMine = votedIds.has(company.id)
-                                  const rankDisplay = company.rank <= 3 ? ['🥇', '🥈', '🥉'][company.rank - 1] : `#${company.rank}`
-                                  return (
-                                    <li key={company.id}>
-                                      <motion.div
-                                        layout={!reduced}
-                                        className={cn(
-                                          'flex items-center gap-3 rounded-lg px-2 py-1.5',
-                                          isMine && 'bg-purple/10 border-2 border-purple',
-                                        )}
-                                      >
-                                        <span className="w-8 shrink-0 text-center font-black text-sm">{rankDisplay}</span>
-                                        <span className={cn('flex-1 min-w-0 truncate font-bold text-sm md:text-base', isMine && 'text-purple')}>
-                                          {company.name}
-                                        </span>
-                                        {isMine && (
-                                          <span className="bg-purple text-white text-[10px] font-black rounded-full px-2 py-0.5 border border-ink whitespace-nowrap shrink-0">
-                                            {t('liveRanking.yourVote')}
-                                          </span>
-                                        )}
-                                        {def.showScore && (
-                                          <span className="font-black text-sm bg-bright px-2 py-0.5 rounded-full border-2 border-ink whitespace-nowrap shrink-0">
-                                            {t('liveRanking.pallets', { count: company.total_pallets })}
-                                          </span>
-                                        )}
-                                      </motion.div>
-                                    </li>
-                                  )
-                                })}
-                              </ul>
-                            </motion.div>
+                        <div
+                          id={panelId}
+                          aria-hidden={!isOpen}
+                          className={cn(
+                            'grid transition-[grid-template-rows] duration-300 ease-in-out',
+                            isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
                           )}
-                        </AnimatePresence>
+                        >
+                          <div className="overflow-hidden min-h-0">
+                            <ul className="flex flex-col gap-y-1 py-1">
+                              {bandCompanies.map((company) => {
+                                const isMine = votedIds.has(company.id)
+                                const rankDisplay = company.rank <= 3 ? ['🥇', '🥈', '🥉'][company.rank - 1] : `#${company.rank}`
+                                return (
+                                  <li key={company.id}>
+                                    <div
+                                      className={cn(
+                                        'flex items-center gap-3 rounded-lg px-2 py-1.5',
+                                        isMine && 'bg-purple/10 border-2 border-purple',
+                                      )}
+                                    >
+                                      <span className="w-8 shrink-0 text-center font-black text-sm">{rankDisplay}</span>
+                                      <span className={cn('flex-1 min-w-0 truncate font-bold text-sm md:text-base', isMine && 'text-purple')}>
+                                        {company.name}
+                                      </span>
+                                      {isMine && (
+                                        <span className="bg-purple text-white text-[10px] font-black rounded-full px-2 py-0.5 border border-ink whitespace-nowrap shrink-0">
+                                          {t('liveRanking.yourVote')}
+                                        </span>
+                                      )}
+                                      {def.showScore && (
+                                        <span className="font-black text-sm bg-bright px-2 py-0.5 rounded-full border-2 border-ink whitespace-nowrap shrink-0">
+                                          {t('liveRanking.pallets', { count: company.total_pallets })}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </li>
+                                )
+                              })}
+                            </ul>
+                          </div>
+                        </div>
                       </div>
                     )
                   })}
