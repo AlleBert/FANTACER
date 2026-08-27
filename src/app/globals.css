@@ -503,6 +503,23 @@ textarea::-webkit-scrollbar {
   animation: background-fade-in 0.5s ease-in-out;
 }
 
+/* ModalShell: enter (fade + scale) via CSS, exit via transition-opacity
+   sull'overlay (il timer in ModalShell nasconde dopo 220ms). */
+@keyframes modal-shell-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-shell-enter {
+  animation: modal-shell-in 0.2s ease-out;
+}
+
 /* Rispetta prefers-reduced-motion a livello globale (AGENTS.md:48) */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -515,6 +532,10 @@ textarea::-webkit-scrollbar {
   }
 
   .background-fade-in {
+    animation: none;
+  }
+
+  .modal-shell-enter {
     animation: none;
   }
 }
