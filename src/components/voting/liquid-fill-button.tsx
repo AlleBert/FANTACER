@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
-import { animate, useAnimationFrame, useMotionValue } from 'framer-motion';
 
 const YELLOW = '#fccb27';
 const MENISCUS = '#b78c00';
@@ -20,6 +19,7 @@ interface LiquidFillButtonProps {
  * Bottone "liquid fill": disabilitato finché step < steps.
  * Si riempie da sinistra verso destra con fronte d'onda verticale.
  * L'SVG viene ridisegnato per frame via ref (zero re-render).
+ * Nessuna dipendenza da librerie di animazione: rAF nativo + Web Animations API.
  */
 export function LiquidFillButton({
   steps = 3,
@@ -33,56 +33,27 @@ export function LiquidFillButton({
   const liquidRef = useRef<SVGPathElement>(null);
   const edgeRef = useRef<SVGPathElement>(null);
   const [box, setBox] = useState({ w: 0, h: 0 });
+  const boxRef = useRef(box);
 
-  const progress = useMotionValue(0);
+  useEffect(() => {
+    boxRef.current = box;
+  }, [box]);
+
+  const progressRef = useRef(0);
   const energy = useRef(0);
   const speed = useRef(1);
   const clock = useRef(0);
   const prev = useRef(step);
   const reduced = useRef(false);
+  const rafRef = useRef<number | null>(null);
+  const tweenRef = useRef<number | null>(null);
 
-  useEffect(() => {
-    reduced.current =
-      window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
-    const ro = new ResizeObserver(([entry]) =>
-      setBox({ w: entry.contentRect.width, h: entry.contentRect.height })
-    );
-    if (btnRef.current) ro.observe(btnRef.current);
-    return () => ro.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (step === prev.current) return;
-    const up = step > prev.current;
-    prev.current = step;
-    energy.current = up ? 1 : Math.max(energy.current, 0.35);
-
-    animate(progress, clamp01(step / steps), {
-      duration: up ? 1.1 : 0.55,
-      ease: [0.16, 1, 0.3, 1],
-    });
-
-    if (step >= steps && !reduced.current) {
-      const el = btnRef.current;
-      if (el) {
-        animate(el, { scale: [1, 1.035, 1] }, {
-          duration: 0.55,
-          ease: 'easeOut',
-          delay: 1.05,
-          onComplete: () => {
-            el.style.transform = '';
-          },
-        });
-      }
-    }
-  }, [step, steps, progress]);
-
-  useAnimationFrame((_, delta) => {
-    const { w, h } = box;
+  function draw(delta: number) {
+    const { w, h } = boxRef.current;
     const liquid = liquidRef.current;
     if (!liquid || !w || !h) return;
 
-    const p = clamp01(progress.get());
+    const p = clamp01(progressRef.current);
     const px = p > 0.998 ? w : p * w;
 
     energy.current *= Math.exp(-delta / 420);
@@ -118,7 +89,70 @@ export function LiquidFillButton({
       edge.setAttribute('d', e);
       edge.style.opacity = p > 0 && p < 1 ? (0.5 * settle).toFixed(3) : '0';
     }
-  });
+  }
+
+  function animateProgress(to: number, duration: number) {
+    const from = progressRef.current;
+    const start = performance.now();
+    const easeOutBack = (x: number) => {
+      const c1 = 1.70158;
+      const c3 = c1 + 1;
+      return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
+    };
+    const tick = (now: number) => {
+      const t = clamp01((now - start) / duration);
+      const eased = easeOutBack(t);
+      progressRef.current = from + (to - from) * eased;
+      if (t < 1) {
+        tweenRef.current = requestAnimationFrame(tick);
+      } else {
+        progressRef.current = to;
+        tweenRef.current = null;
+      }
+    };
+    tweenRef.current = requestAnimationFrame(tick);
+  }
+
+  useEffect(() => {
+    reduced.current =
+      window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
+    const ro = new ResizeObserver(([entry]) =>
+      setBox({ w: entry.contentRect.width, h: entry.contentRect.height })
+    );
+    if (btnRef.current) ro.observe(btnRef.current);
+
+    let last = 0;
+    const loop = (ts: number) => {
+      const delta = last ? ts - last : 16;
+      last = ts;
+      draw(delta);
+      rafRef.current = requestAnimationFrame(loop);
+    };
+    rafRef.current = requestAnimationFrame(loop);
+
+    return () => {
+      ro.disconnect();
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (tweenRef.current) cancelAnimationFrame(tweenRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (step === prev.current) return;
+    const up = step > prev.current;
+    prev.current = step;
+    energy.current = up ? 1 : Math.max(energy.current, 0.35);
+
+    animateProgress(clamp01(step / steps), up ? 1100 : 550);
+
+    if (step >= steps && !reduced.current && btnRef.current) {
+      const el = btnRef.current;
+      el.animate(
+        [{ transform: 'scale(1)' }, { transform: 'scale(1.035)' }, { transform: 'scale(1)' }],
+        { duration: 550, easing: 'ease-out', delay: 1050 }
+      );
+    }
+  }, [step, steps]);
 
   const ready = step >= steps;
 

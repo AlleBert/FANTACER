@@ -8,6 +8,13 @@ class ResizeObserverStub {
 }
 global.ResizeObserver = ResizeObserverStub as unknown as typeof ResizeObserver
 
+jest.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+  return window.setTimeout(() => cb(performance.now()), 16) as unknown as number
+})
+jest.spyOn(window, 'cancelAnimationFrame').mockImplementation((id) => {
+  window.clearTimeout(id as unknown as number)
+})
+
 describe('LiquidFillButton', () => {
   const renderButton = (props: { step?: number; steps?: number; loading?: boolean }) =>
     render(
