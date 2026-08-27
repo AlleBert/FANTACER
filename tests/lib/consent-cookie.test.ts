@@ -1,6 +1,7 @@
 import {
   readConsentCookie,
   writeConsentCookie,
+  subscribeConsentStore,
   COOKIE_CONSENT_KEY,
 } from '@/lib/consent-cookie'
 
@@ -42,5 +43,15 @@ describe('consent-cookie', () => {
     const consent = readConsentCookie()
     expect(consent).not.toBeNull()
     expect(consent?.Analytics.consented).toBe(false)
+  })
+
+  it('notifica i listener quando scrive il consenso', () => {
+    const listener = jest.fn()
+    const unsubscribe = subscribeConsentStore(listener)
+    writeConsentCookie({ Analytics: { consented: true, timestamp: '2026-01-01T00:00:00.000Z' } })
+    expect(listener).toHaveBeenCalled()
+    unsubscribe()
+    writeConsentCookie({ Social: { consented: true, timestamp: '2026-01-01T00:00:00.000Z' } })
+    expect(listener).toHaveBeenCalledTimes(1)
   })
 })

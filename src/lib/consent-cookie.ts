@@ -26,6 +26,15 @@ const emptyConsent: DetailedCookieConsent = {
 let cachedRaw: string | null = null
 let cachedValue: DetailedCookieConsent | null = null
 
+const listeners = new Set<() => void>()
+
+export function subscribeConsentStore(listener: () => void): () => void {
+  listeners.add(listener)
+  return () => {
+    listeners.delete(listener)
+  }
+}
+
 export function readConsentCookie(): DetailedCookieConsent | null {
   if (typeof window === 'undefined') return null
   let row: string | undefined
@@ -76,6 +85,7 @@ export function readConsentCookie(): DetailedCookieConsent | null {
 }
 
 export function writeConsentCookie(consent: Partial<DetailedCookieConsent>): void {
+  if (typeof window === 'undefined') return
   const existing = readConsentCookie() ?? emptyConsent
   const next: DetailedCookieConsent = {
     Analytics: consent.Analytics ?? existing.Analytics,
@@ -91,4 +101,5 @@ export function writeConsentCookie(consent: Partial<DetailedCookieConsent>): voi
   }
   cachedRaw = null
   cachedValue = null
+  listeners.forEach((listener) => listener())
 }

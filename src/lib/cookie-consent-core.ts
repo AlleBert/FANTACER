@@ -4,10 +4,9 @@ import { useCallback, useSyncExternalStore } from 'react'
 import {
   readConsentCookie,
   writeConsentCookie,
+  subscribeConsentStore,
   type DetailedCookieConsent,
 } from '@/lib/consent-cookie'
-
-const subscribe = () => () => {}
 
 const UNKNOWN = Symbol('unknown-consent')
 type Unknown = typeof UNKNOWN
@@ -27,7 +26,11 @@ function getServerSnapshot(): Stored {
  * stesso formato cookie, senza la libreria (≈112 kB gzip risparmiati).
  */
 export function useCookieConsent() {
-  const consent = useSyncExternalStore<Stored>(subscribe, getSnapshot, getServerSnapshot)
+  const consent = useSyncExternalStore<Stored>(
+    subscribeConsentStore,
+    getSnapshot,
+    getServerSnapshot
+  )
 
   const acceptCookies = useCallback(() => {
     writeConsentCookie({
@@ -61,5 +64,3 @@ export function useCookieConsent() {
     updateDetailedConsent,
   }
 }
-
-export { UNKNOWN }
