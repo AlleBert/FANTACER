@@ -1,7 +1,7 @@
 'use client'
 
 import { GoogleAnalytics } from '@next/third-parties/google'
-import { useCookieConsent } from 'react-cookie-manager'
+import { useCookieConsent } from '@/lib/cookie-consent-core'
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID
 

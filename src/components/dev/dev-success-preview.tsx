@@ -24,37 +24,52 @@ export function DevSuccessPreview() {
     const { success, companies } = parseDevPreview(window.location.search);
     if (!success && !companies) return;
 
-    if (success) {
+    let scrollTimer: number | undefined;
+    let cancelled = false;
+
+    const unlock = () => {
+      if (cancelled) return;
       unlockGameStep('success');
-    }
-
-    if (companies) {
-      void (async () => {
-        try {
-          const res = await fetch('/api/public/batch');
-          const { activeBatch } = await res.json();
-          if (!activeBatch) return;
-          const { data } = await createClient()
-            .from('companies')
-            .select('id, name')
-            .eq('batch', activeBatch)
-            .order('name', { ascending: true })
-            .limit(3);
-          for (const c of data ?? []) setCompany(c, 4);
-        } catch {
-          return;
-        }
-      })();
-    }
-
-    if (success) {
-      const timeout = window.setTimeout(() => {
+      scrollTimer = window.setTimeout(() => {
         const main = document.querySelector('main');
         const target = main?.querySelector('[data-section="success"]') as HTMLElement | undefined;
         if (main && target) main.scrollTo({ top: target.offsetTop, behavior: 'smooth' });
       }, 100);
-      return () => window.clearTimeout(timeout);
+    };
+
+    const seedCompanies = async () => {
+      try {
+        const res = await fetch('/api/public/batch');
+        const { activeBatch } = await res.json();
+        if (!activeBatch || cancelled) return;
+        const { data } = await createClient()
+          .from('companies')
+          .select('id, name')
+          .eq('batch', activeBatch)
+          .order('name', { ascending: true })
+          .limit(3);
+        for (const c of data ?? []) setCompany(c, 4);
+      } catch {
+        return;
+      }
+    };
+
+    // Le aziende vengono pre-selezionate PRIMA di sbloccare il successo:
+    // una volta che il voto è "inviato" (success), la selezione è congelata
+    // dal reducer, quindi ogni setCompany successivo verrebbe ignorato.
+    if (companies) {
+      void (async () => {
+        await seedCompanies();
+        if (success) unlock();
+      })();
+    } else if (success) {
+      unlock();
     }
+
+    return () => {
+      cancelled = true;
+      if (scrollTimer) window.clearTimeout(scrollTimer);
+    };
   }, [unlockGameStep, setCompany]);
 
   return null;

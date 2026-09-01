@@ -1,8 +1,7 @@
 "use client"
 
-import { useEffect, useRef, useSyncExternalStore, type ReactNode } from "react"
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react"
 import { createPortal } from "react-dom"
-import { AnimatePresence, motion, MotionConfig } from "framer-motion"
 
 import { cn } from "@/lib/utils"
 import { useScrollLock } from "@/lib/use-scroll-lock"
@@ -17,6 +16,9 @@ const FOCUSABLE_SELECTOR = [
 ].join(",")
 
 const emptySubscribe = () => () => {}
+
+/** Durata (ms) del fade-out dell'overlay; deve restare > della durata CSS (200ms). */
+const EXIT_FADE_MS = 220
 
 /** True only after hydration: guards `createPortal(document.body)` from SSR. */
 function useIsMounted(): boolean {
@@ -38,11 +40,12 @@ interface ModalShellProps {
 }
 
 /**
- * Unified modal frame: portal + AnimatePresence + focus trap + ESC close +
- * backdrop click close + scroll lock + safe-area padding.
+ * Unified modal frame: portal + CSS enter/exit animations + focus trap + ESC
+ * close + backdrop click close + scroll lock + safe-area padding.
  *
  * The consumer controls visibility via `open` and must keep the component
- * mounted (do not conditionally unmount it, or exit animations are skipped).
+ * mounted. The portal stays mounted: when `open` is false the overlay keeps a
+ * `visible` state for the 220ms exit fade, then is fully hidden.
  */
 export function ModalShell({ open, onClose, labelledBy, dismissible = true, className, children }: ModalShellProps) {
   const mounted = useIsMounted()
@@ -50,6 +53,9 @@ export function ModalShell({ open, onClose, labelledBy, dismissible = true, clas
   const previousFocusRef = useRef<HTMLElement | null>(null)
   const onCloseRef = useRef(onClose)
   const dismissibleRef = useRef(dismissible)
+  const [visible, setVisible] = useState(false)
+  const [openSeq, setOpenSeq] = useState(0)
+  const [prevOpen, setPrevOpen] = useState(open)
 
   useScrollLock(open)
 
@@ -58,6 +64,29 @@ export function ModalShell({ open, onClose, labelledBy, dismissible = true, clas
     dismissibleRef.current = dismissible
   }, [onClose, dismissible])
 
+  // Adjust state during render (pattern documentato da React, niente effect):
+  // appena `open` diventa true, `visible` segue e `openSeq` incrementa. La key
+  // del pannello usa `openSeq`: il remount (che ri-avvia l'enter) avviene solo
+  // quando `openSeq` cambia, cioè a ogni apertura — NON durante l'exit.
+  if (open && !prevOpen) {
+    setOpenSeq((s) => s + 1)
+    setPrevOpen(true)
+  } else if (!open && prevOpen) {
+    setPrevOpen(false)
+  }
+  if (open && !visible) {
+    setVisible(true)
+  }
+
+  // Quando `open` scende a false, `visible` resta true per EXIT_FADE_MS (exit fade),
+  // poi il timer lo porta a false e l'overlay viene nascosto del tutto.
+  useEffect(() => {
+    if (open) return
+    const t = window.setTimeout(() => setVisible(false), EXIT_FADE_MS)
+    return () => window.clearTimeout(t)
+  }, [open])
+
+  // focus trap
   useEffect(() => {
     if (!open) return
 
@@ -117,39 +146,33 @@ export function ModalShell({ open, onClose, labelledBy, dismissible = true, clas
   if (!mounted) return null
 
   return createPortal(
-    <MotionConfig reducedMotion="user">
-      <AnimatePresence>
-        {open && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-[var(--safe-x)] pt-[var(--safe-top)] pb-[var(--safe-bottom)]">
-            <motion.div
-              className="absolute inset-0 bg-black/60"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={dismissible ? onClose : undefined}
-            />
-            <motion.div
-              ref={panelRef}
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby={labelledBy}
-              tabIndex={-1}
-              className={cn(
-                "relative w-full max-w-sm max-h-full overflow-y-auto outline-none",
-                className
-              )}
-              initial={{ opacity: 0, scale: 0.95, y: 8 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 8 }}
-              transition={{ duration: 0.2 }}
-            >
-              {children}
-            </motion.div>
-          </div>
+    <div
+      className={cn(
+        "fixed inset-0 z-50 flex items-center justify-center px-[var(--safe-x)] pt-[var(--safe-top)] pb-[var(--safe-bottom)] transition-opacity duration-200",
+        open ? "opacity-100" : "opacity-0 pointer-events-none",
+        !open && !visible && "hidden"
+      )}
+      aria-hidden={!open}
+    >
+      <div
+        className="absolute inset-0 bg-black/60"
+        onClick={dismissible ? onClose : undefined}
+      />
+      <div
+        ref={panelRef}
+        key={openSeq}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={labelledBy}
+        tabIndex={-1}
+        className={cn(
+          "relative w-full max-w-sm max-h-full overflow-y-auto outline-none modal-shell-enter",
+          className
         )}
-      </AnimatePresence>
-    </MotionConfig>,
+      >
+        {children}
+      </div>
+    </div>,
     document.body
   )
 }

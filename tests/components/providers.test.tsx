@@ -8,11 +8,10 @@ jest.mock('next/navigation', () => ({
 
 /**
  * Regressione: su browser mobile con site-data bloccati `document.cookie`
- * lancia SecurityError. `react-cookie-manager@5.3.0#getCookie()` lo legge
- * senza try/catch nell'initializer di useState di <CookieManager> → crash
- * durante il render → `global-error.tsx` → phantom 500 client-side con HTTP
- * 200 dal server. Il ConsentErrorBoundary deve catturare l'errore e rendere
- * il contenuto della pagina senza banner cookie né Analytics.
+ * lancia SecurityError. `readConsentCookie()` (consent-cookie core) è no-throw
+ * → nessun crash durante il render. Il ConsentErrorBoundary resta come rete di
+ * sicurezza: se qualcosa nel blocco cookie/analytics fallisce, rende il
+ * contenuto della pagina senza banner cookie né Analytics.
  */
 describe('Providers', () => {
   let cookieGetter: jest.SpyInstance

@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { SponsorCards } from '@/components/sponsor/sponsor-cards';
 import { SectionFrame } from '@/components/layout/section-frame';
 import { SafeCenterSection } from '@/components/layout/safe-center-section';
@@ -9,7 +8,7 @@ import { useLocale } from '@/lib/LocaleContext';
 import { useVote } from '@/lib/VoteContext';
 import { useSponsorMaxItems } from '@/hooks/use-sponsor-max-items';
 import { createClient } from '@/lib/supabase/client';
-import { safeSubscribe } from '@/lib/supabase/realtime';
+import { safeOnPostgresChanges, safeSubscribe } from '@/lib/supabase/realtime';
 import {
   CLUSTERS,
   CLUSTER_ORDER,
@@ -47,7 +46,11 @@ function bandBadge(
   return `${n} · ${t('liveRanking.yourVotes')}`
 }
 
-export function LiveRankingSection() {
+interface LiveRankingSectionProps {
+  showWhenDisabled?: boolean
+}
+
+export function LiveRankingSection({ showWhenDisabled = false }: LiveRankingSectionProps) {
   const { t } = useLocale()
   const { selectedCompanies } = useVote()
   const maxItems = useSponsorMaxItems()
@@ -85,13 +88,15 @@ export function LiveRankingSection() {
 
   // Initial fetch al mount (unico, con loader sul primo caricamento). Il setState
   // sincrono (setIsLoading(true)) è un no-op benigno (isLoading è già true al mount);
-  // la rule è conservativa e non distingue questo caso. Solo a voto attivo: a voto
-  // disattivo la sezione è null e il fetch è inutile (riparte quando il flag va true).
+  // la rule è conservativa e non distingue questo caso. Gira quando la sezione è
+  // davvero renderizzata: a voto attivo, oppure a voto disattivo con showWhenDisabled
+  // (classifica visibile pre-fiera). A voto disattivo senza showWhenDisabled la
+  // sezione è null e il fetch è inutile (riparte quando il flag va true).
   useEffect(() => {
-    if (!votingEnabled) return
+    if (!votingEnabled && !showWhenDisabled) return
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchRanking()
-  }, [fetchRanking, votingEnabled])
+  }, [fetchRanking, votingEnabled, showWhenDisabled])
 
   // Polling di fallback: solo se il voto è attivo, il channel non è attivo e la
   // sezione è visibile. Mai con loader: gli aggiornamenti successivi sono silenziosi.
@@ -119,19 +124,18 @@ export function LiveRankingSection() {
 
     const startChannel = () => {
       if (channelRef.current) return
-      const channel = supabase
-        .channel('live-ranking-votes')
-        .on(
-          'postgres_changes',
-          { event: 'UPDATE', schema: 'public', table: 'ranking_tick' },
-          () => {
-            if (debounceRef.current) clearTimeout(debounceRef.current)
-            debounceRef.current = setTimeout(() => {
-              fetchRanking(false)
-              setChannelActive(true)
-            }, REFETCH_DEBOUNCE_MS)
-          }
-        )
+      const channel = safeOnPostgresChanges(
+        supabase.channel('live-ranking-votes'),
+        { event: 'UPDATE', schema: 'public', table: 'ranking_tick' },
+        () => {
+          if (debounceRef.current) clearTimeout(debounceRef.current)
+          debounceRef.current = setTimeout(() => {
+            fetchRanking(false)
+            setChannelActive(true)
+          }, REFETCH_DEBOUNCE_MS)
+        }
+      )
+      if (!channel) return
       safeSubscribe(channel, (status) => {
         // MAI attivare il realtime dal solo status di socket: Supabase Realtime
         // consegna gli eventi solo se l'RLS del subscriber li autorizza. Con
@@ -179,11 +183,14 @@ export function LiveRankingSection() {
     fetch('/api/public/flag/voting').then((res) => res.json()).then((d) => setVotingEnabled(d.enabled)).catch(() => {})
 
     const supabase = createClient()
-    const flagChannel = supabase
-      .channel('live-ranking-voting-flag')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'site_settings', filter: 'key=eq.voting_enabled' }, () => {
+    const flagChannel = safeOnPostgresChanges(
+      supabase.channel('live-ranking-voting-flag'),
+      { event: 'UPDATE', schema: 'public', table: 'site_settings', filter: 'key=eq.voting_enabled' },
+      () => {
         fetch('/api/public/flag/voting').then((res) => res.json()).then((d) => setVotingEnabled(d.enabled)).catch(() => {})
-      })
+      }
+    )
+    if (!flagChannel) return
     safeSubscribe(flagChannel)
 
     return () => {
@@ -206,11 +213,6 @@ export function LiveRankingSection() {
     }
     return CLUSTER_ORDER.map((key) => ({ cluster: key, companies: groups[key] }))
   }, [companies])
-
-  const reduced = useMemo(
-    () => typeof window !== 'undefined' && (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false),
-    [],
-  )
 
   // Pulse badge: quando il voto utente cambia posizione in una fascia CHIUSA,
   // il badge header fa un breve flash (1-2 cicli animate-pulse). La firma è la
@@ -249,7 +251,8 @@ export function LiveRankingSection() {
   // Pre-fiera (voto disattivo) la classifica non deve esistere nel DOM:
   // nessuna sezione, nessuno skeleton. Il flag voting_enabled (admin) la
   // ripristina dal lunedì di fiera.
-  if (!votingEnabled) return null
+  // Se showWhenDisabled è true, mostriamo comunque la classifica.
+  if (!votingEnabled && !showWhenDisabled) return null
 
   return (
     <SectionFrame theme="live-ranking" className="flex flex-col">
@@ -325,7 +328,7 @@ export function LiveRankingSection() {
                                 key={flash[cluster]}
                                 className={cn(
                                   'bg-purple text-white text-xs font-black rounded-full px-2 py-0.5 border border-ink whitespace-nowrap inline-flex items-center gap-1 min-w-0',
-                                  !reduced && flash[cluster] > 0 && 'animate-pulse',
+                                  flash[cluster] > 0 && 'animate-pulse',
                                 )}
                               >
                                 {badge}
@@ -335,51 +338,48 @@ export function LiveRankingSection() {
                           </span>
                         </button>
 
-                        <AnimatePresence initial={false}>
-                          {isOpen && (
-                            <motion.div
-                              id={panelId}
-                              initial={reduced ? { opacity: 1 } : { height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              exit={reduced ? { opacity: 1 } : { height: 0, opacity: 0 }}
-                              transition={{ duration: reduced ? 0 : 0.25, ease: 'easeInOut' }}
-                              className="overflow-hidden"
-                            >
-                              <ul className="flex flex-col gap-y-1 py-1">
-                                {bandCompanies.map((company) => {
-                                  const isMine = votedIds.has(company.id)
-                                  const rankDisplay = company.rank <= 3 ? ['🥇', '🥈', '🥉'][company.rank - 1] : `#${company.rank}`
-                                  return (
-                                    <li key={company.id}>
-                                      <motion.div
-                                        layout={!reduced}
-                                        className={cn(
-                                          'flex items-center gap-3 rounded-lg px-2 py-1.5',
-                                          isMine && 'bg-purple/10 border-2 border-purple',
-                                        )}
-                                      >
-                                        <span className="w-8 shrink-0 text-center font-black text-sm">{rankDisplay}</span>
-                                        <span className={cn('flex-1 min-w-0 truncate font-bold text-sm md:text-base', isMine && 'text-purple')}>
-                                          {company.name}
-                                        </span>
-                                        {isMine && (
-                                          <span className="bg-purple text-white text-[10px] font-black rounded-full px-2 py-0.5 border border-ink whitespace-nowrap shrink-0">
-                                            {t('liveRanking.yourVote')}
-                                          </span>
-                                        )}
-                                        {def.showScore && (
-                                          <span className="font-black text-sm bg-bright px-2 py-0.5 rounded-full border-2 border-ink whitespace-nowrap shrink-0">
-                                            {t('liveRanking.pallets', { count: company.total_pallets })}
-                                          </span>
-                                        )}
-                                      </motion.div>
-                                    </li>
-                                  )
-                                })}
-                              </ul>
-                            </motion.div>
+                        <div
+                          id={panelId}
+                          aria-hidden={!isOpen}
+                          className={cn(
+                            'grid transition-[grid-template-rows] duration-300 ease-in-out',
+                            isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
                           )}
-                        </AnimatePresence>
+                        >
+                          <div className="overflow-hidden min-h-0">
+                            <ul className="flex flex-col gap-y-1 py-1">
+                              {bandCompanies.map((company) => {
+                                const isMine = votedIds.has(company.id)
+                                const rankDisplay = company.rank <= 3 ? ['🥇', '🥈', '🥉'][company.rank - 1] : `#${company.rank}`
+                                return (
+                                  <li key={company.id}>
+                                    <div
+                                      className={cn(
+                                        'flex items-center gap-3 rounded-lg px-2 py-1.5',
+                                        isMine && 'bg-purple/10 border-2 border-purple',
+                                      )}
+                                    >
+                                      <span className="w-8 shrink-0 text-center font-black text-sm">{rankDisplay}</span>
+                                      <span className={cn('flex-1 min-w-0 truncate font-bold text-sm md:text-base', isMine && 'text-purple')}>
+                                        {company.name}
+                                      </span>
+                                      {isMine && (
+                                        <span className="bg-purple text-white text-[10px] font-black rounded-full px-2 py-0.5 border border-ink whitespace-nowrap shrink-0">
+                                          {t('liveRanking.yourVote')}
+                                        </span>
+                                      )}
+                                      {def.showScore && (
+                                        <span className="font-black text-sm bg-bright px-2 py-0.5 rounded-full border-2 border-ink whitespace-nowrap shrink-0">
+                                          {t('liveRanking.pallets', { count: company.total_pallets })}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </li>
+                                )
+                              })}
+                            </ul>
+                          </div>
+                        </div>
                       </div>
                     )
                   })}

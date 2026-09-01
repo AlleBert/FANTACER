@@ -6,12 +6,6 @@ jest.mock('canvas-confetti', () => jest.fn())
 jest.mock('@/lib/VoteContext', () => ({ useVote: () => ({ selectedCompanies: [] }) }))
 jest.mock('@/lib/LocaleContext', () => ({ useLocale: () => ({ t: (key: string) => key }) }))
 jest.mock('@/components/sponsor/sponsor-cards', () => ({ SponsorCards: () => null }))
-jest.mock('html2canvas', () => ({
-  __esModule: true,
-  default: jest.fn().mockResolvedValue({
-    toDataURL: jest.fn().mockReturnValue('data:image/png;base64,'),
-  }),
-}))
 jest.mock('next/image', () => ({
   __esModule: true,
   default: (props: { src: string; alt: string }) => <img src={props.src} alt={props.alt} />,

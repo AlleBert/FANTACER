@@ -8,13 +8,12 @@ import { setNavigationFailFast } from './helpers/navigation';
  * "Prevent Cross-Site Tracking", in-app browsers): `document.cookie` e
  * `window.localStorage` lanciano DOMException SecurityError.
  *
- * Storia: `readStoredConsent()` (cookie-consent.tsx), la libreria
- * `react-cookie-manager@5.3.0#getCookie()` e `@supabase/auth-js`
- * `_emitInitialSession` leggevano storage SENZA try/catch durante il render →
- * eccezione non gestita → `global-error.tsx` → `<NextError statusCode={500}/>`
- * con server che risponde 200. Fixati con try/catch (readStoredConsent),
- * `ConsentErrorBoundary` (providers) e `safeStorage`/`safeCookieMethods`
- * (supabase client).
+ * Storia: `readConsentCookie()` (prima `readStoredConsent()` in cookie-consent.tsx)
+ * e `@supabase/auth-js` `_emitInitialSession` leggevano storage SENZA try/catch
+ * durante il render → eccezione non gestita → `global-error.tsx` →
+ * `<NextError statusCode={500}/>` con server che risponde 200. Fixati con
+ * try/catch (`readConsentCookie` no-throw), `ConsentErrorBoundary` (providers)
+ * e `safeStorage`/`safeCookieMethods` (supabase client).
  *
  * NON seediamo il consent cookie (vogliamo che il codice di lettura esegua).
  */

@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { ActionBar } from '@/components/sections/action-bar'
+import type { SelectedCompany } from '@/lib/VoteContext'
 
 jest.mock('@/lib/LocaleContext', () => ({ useLocale: () => ({ t: (key: string) => key }) }))
 jest.mock('@/components/sections/share-button', () => ({
@@ -27,7 +28,11 @@ jest.mock('@/lib/social-links', () => ({
 }))
 
 describe('ActionBar', () => {
-  const ref = { current: document.createElement('div') }
+  const companies: SelectedCompany[] = [
+    { company: { id: 'a', name: 'Alpha' }, pallet: 4 },
+    { company: { id: 'b', name: 'Beta' }, pallet: 2 },
+    { company: { id: 'c', name: 'Gamma' }, pallet: 1 },
+  ]
 
   beforeEach(() => {
     mockFacebookUrl = ''
@@ -35,7 +40,7 @@ describe('ActionBar', () => {
 
   it('renderizza share button e icone social', () => {
     const { container } = render(
-      <ActionBar containerRef={ref} text="ciao" url="https://x" />
+      <ActionBar companies={companies} text="ciao" url="https://x" />
     )
     expect(screen.getByRole('button', { name: /condividi/i })).toBeTruthy()
     const igLink = container.querySelector('a[href="https://instagram.com/fanta.cer"]')
@@ -44,7 +49,7 @@ describe('ActionBar', () => {
 
   it('non rende Facebook quando FACEBOOK_URL è vuoto', () => {
     const { container } = render(
-      <ActionBar containerRef={ref} text="ciao" url="https://x" />
+      <ActionBar companies={companies} text="ciao" url="https://x" />
     )
     const fbLink = container.querySelector('a[aria-label="Facebook"]')
     expect(fbLink).toBeNull()
@@ -53,7 +58,7 @@ describe('ActionBar', () => {
   it('rende Facebook quando FACEBOOK_URL è valorizzato', () => {
     mockFacebookUrl = 'https://facebook.com/fantacer'
     const { container } = render(
-      <ActionBar containerRef={ref} text="ciao" url="https://x" />
+      <ActionBar companies={companies} text="ciao" url="https://x" />
     )
     const fbLink = container.querySelector('a[aria-label="Facebook"]')
     expect(fbLink).toBeTruthy()

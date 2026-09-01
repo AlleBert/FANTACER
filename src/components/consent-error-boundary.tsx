@@ -13,13 +13,13 @@ interface ConsentErrorBoundaryState {
 }
 
 /**
- * Cattura errori di render del blocco cookie (CookieManager + Analytics +
- * CookieConsentUI). Su browser mobile con site-data bloccati (Safari private
- * browsing, "Prevent Cross-Site Tracking", in-app browser) `document.cookie`
- * lancia SecurityError: `react-cookie-manager@5.3.0#getCookie()` lo legge
- * senza try/catch nell'initializer di useState di <CookieManager>. Un'eccezione
- * non gestita farebbe rendere `global-error.tsx` → phantom 500 client-side con
- * HTTP 200 dal server.
+ * Cattura errori di render del blocco cookie (Analytics + CookieConsentUI).
+ * `readConsentCookie()` (consent-cookie core) è no-throw, quindi il
+ * SecurityError di `document.cookie` su browser con site-data bloccati (Safari
+ * private browsing, "Prevent Cross-Site Tracking", in-app browser) non arriva
+ * qui. Il boundary resta come rete di sicurezza: se qualcos'altro fallisce nel
+ * blocco, evita `global-error.tsx` → phantom 500 client-side con HTTP 200 dal
+ * server.
  *
  * Il fallback rende SOLO il contenuto della pagina: il sito funziona, senza
  * banner cookie e senza Analytics.

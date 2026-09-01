@@ -42,6 +42,7 @@ export const en: Dictionary = {
   'search.confirm': 'CONFIRM',
   'search.submit': 'SUBMIT YOUR VOTE',
   'search.subtitle': 'and check the updated ranking',
+  'search.votedDone': 'YOU VOTED! COME BACK TOMORROW',
   'search.msgSuccessTitle': 'Vote Sent!',
   'search.msgErrorTitle': 'Error',
   'search.msgWarningTitle': 'Warning',

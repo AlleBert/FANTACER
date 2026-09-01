@@ -2,15 +2,15 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Download, Check } from 'lucide-react'
-import html2canvas from 'html2canvas'
 import { useLocale } from '@/lib/LocaleContext'
+import type { SelectedCompany } from '@/lib/VoteContext'
 
 interface SaveButtonProps {
-  containerRef: React.RefObject<HTMLDivElement | null>
+  companies: SelectedCompany[]
 }
 
-export function SaveButton({ containerRef }: SaveButtonProps) {
-  const { t } = useLocale()
+export function SaveButton({ companies }: SaveButtonProps) {
+  const { t, locale } = useLocale()
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const timeoutRef = useRef<number | null>(null)
@@ -23,30 +23,38 @@ export function SaveButton({ containerRef }: SaveButtonProps) {
   )
 
   const handleSave = async () => {
-    if (!containerRef.current) return
+    if (companies.length !== 3) return
 
     setError(null)
     try {
-      const canvas = await html2canvas(containerRef.current, {
-        scale: 2,
-        width: containerRef.current.clientWidth,
-        height: containerRef.current.clientHeight,
-        useCORS: true,
-        windowWidth: window.innerWidth,
-        windowHeight: window.innerHeight,
+      // Share card generata server-side con next/og (Satori): zero DOM capture,
+      // zero CORS sui logo, font bundle, deterministico su desktop e mobile.
+      const params = new URLSearchParams({
+        c1: companies[0].company.id,
+        c2: companies[1].company.id,
+        c3: companies[2].company.id,
+        p1: String(companies[0].pallet),
+        p2: String(companies[1].pallet),
+        p3: String(companies[2].pallet),
+        lang: locale,
       })
+      const res = await fetch(`/api/share/vote?${params.toString()}`)
+      if (!res.ok) throw new Error(`share card ${res.status}`)
+      const blob = await res.blob()
+
+      const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.download = 'fantacer-voto.png'
-      link.href = canvas.toDataURL('image/png')
+      link.href = url
       link.click()
+      URL.revokeObjectURL(url)
 
       setSaved(true)
       if (timeoutRef.current) window.clearTimeout(timeoutRef.current)
       timeoutRef.current = window.setTimeout(() => setSaved(false), 3000)
     } catch (err) {
-      console.error('SaveButton html2canvas error:', err)
+      console.error('SaveButton fetch error:', err)
       setError('errore_salvataggio')
-      // Clear error after 5 seconds
       const id = window.setTimeout(() => setError(null), 5000)
       return () => window.clearTimeout(id)
     }

@@ -31,6 +31,16 @@ const initialState: VoteState = {
 };
 
 function voteReducer(state: VoteState, action: VoteAction): VoteState {
+  // Una volta che il voto è stato inviato con successo, la selezione è
+  // definitiva e immutabile: qualsiasi modifica (aggiungi/rimuovi/cambia
+  // pallet) è ignorata, così la scheda di successo e l'evidenziazione in
+  // classifica restano congelate e coerenti con il voto effettivamente
+  // registrato. Il voto non può più essere ritoccato in questa sessione.
+  if (state.gameUnlock.success) {
+    if (action.type === 'SET_COMPANY' || action.type === 'REMOVE_COMPANY' || action.type === 'SET_PALLET') {
+      return state;
+    }
+  }
   switch (action.type) {
     case 'SET_COMPANY':
       if (state.selectedCompanies.length >= 3) return state;

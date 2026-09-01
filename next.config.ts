@@ -26,8 +26,21 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ['192.168.1.14', '*.trycloudflare.com'],
 };
 
-export default withSentryConfig(nextConfig, {
+const config: NextConfig = withSentryConfig(nextConfig, {
   silent: process.env.NODE_ENV !== "production",
   sourcemaps: { disable: true },
   webpack: { treeshake: { removeDebugLogging: true } },
 });
+
+// Bundle analyzer: attivo solo quando ANALYZE=true (npm run analyze).
+let wrapped: NextConfig = config;
+if (process.env.ANALYZE === "true") {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const withBundleAnalyzer = require("@next/bundle-analyzer")({
+    enabled: true,
+    openAnalyzer: false,
+  });
+  wrapped = withBundleAnalyzer(config);
+}
+
+export default wrapped;

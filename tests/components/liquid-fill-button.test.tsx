@@ -8,6 +8,13 @@ class ResizeObserverStub {
 }
 global.ResizeObserver = ResizeObserverStub as unknown as typeof ResizeObserver
 
+jest.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+  return window.setTimeout(() => cb(performance.now()), 16) as unknown as number
+})
+jest.spyOn(window, 'cancelAnimationFrame').mockImplementation((id) => {
+  window.clearTimeout(id as unknown as number)
+})
+
 describe('LiquidFillButton', () => {
   const renderButton = (props: { step?: number; steps?: number; loading?: boolean }) =>
     render(
@@ -43,5 +50,22 @@ describe('LiquidFillButton', () => {
   it('is disabled while loading even with 3 companies voted', () => {
     renderButton({ step: 3, loading: true })
     expect(screen.getByRole('button')).toBeDisabled()
+  })
+
+  it('cancels the in-flight tween when step changes mid-animation', async () => {
+    const cancel = jest.mocked(window.cancelAnimationFrame)
+    cancel.mockClear()
+    const { rerender } = renderButton({ step: 0 })
+
+    rerender(
+      <LiquidFillButton step={1} steps={3} label="INVIA IL TUO VOTO" onClick={() => {}} />
+    )
+    await new Promise((r) => setTimeout(r, 40))
+    expect(cancel).not.toHaveBeenCalled()
+
+    rerender(
+      <LiquidFillButton step={2} steps={3} label="INVIA IL TUO VOTO" onClick={() => {}} />
+    )
+    expect(cancel).toHaveBeenCalledWith(expect.any(Number))
   })
 })

@@ -1,6 +1,5 @@
 'use client'
 
-import { ChevronDown } from 'lucide-react'
 import { SponsorCards } from '@/components/sponsor/sponsor-cards'
 import { SectionFrame } from '@/components/layout/section-frame'
 import { SafeCenterSection } from '@/components/layout/safe-center-section'

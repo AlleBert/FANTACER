@@ -35,7 +35,7 @@ function PageContent() {
       <SearchSection />
       {gameUnlock.success && <SuccessSection />}
       <PublicRankingSection />
-      <LiveRankingSection />
+      <LiveRankingSection showWhenDisabled />
       <ContactSection />
       <DevSuccessPreview />
     </AppShell>

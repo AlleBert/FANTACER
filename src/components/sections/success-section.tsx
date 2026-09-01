@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { useVote } from '@/lib/VoteContext'
 import confetti from 'canvas-confetti'
 import { SponsorCards } from '@/components/sponsor/sponsor-cards'
@@ -12,7 +12,6 @@ import { ActionBar } from '@/components/sections/action-bar'
 export function SuccessSection() {
   const { selectedCompanies } = useVote()
   const { t } = useLocale()
-  const sectionRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
@@ -45,7 +44,7 @@ export function SuccessSection() {
 
   return (
     <SectionFrame theme="success" grow scrollable className="flex flex-col">
-      <div ref={sectionRef} className="safe-shell relative z-10 flex flex-1 min-h-0 flex-col items-center py-(--section-pad)">
+      <div className="safe-shell relative z-10 flex flex-1 min-h-0 flex-col items-center py-(--section-pad)">
         <div className="content-max centered-shell">
           <div className="success-grid gap-(--gap-between-groups)">
             {/* Left Column: Hero + Copy + CTA */}
@@ -71,7 +70,7 @@ export function SuccessSection() {
                   </span>{' '}
                   {t('success.shareTaglinePost')}
                 </p>
-                <ActionBar containerRef={sectionRef} text={shareText} url={shareUrl} />
+                <ActionBar companies={selectedCompanies} text={shareText} url={shareUrl} />
               </div>
             </div>
 
