@@ -30,7 +30,7 @@ export const en: Dictionary = {
 
   'search.title': 'VOTE FOR YOUR FAVOURITE COMPANIES',
   'search.instructions':
-    'assign 1 to 4 pallets to the 3 brands you prefer and help them climb the ranking',
+    'assign 1 to 4 pallets to the 3 brands you prefer',
   'search.progress': '{count} of 3',
   'search.placeholder': 'Search a company...',
   'search.alreadySelected': '(already selected)',
