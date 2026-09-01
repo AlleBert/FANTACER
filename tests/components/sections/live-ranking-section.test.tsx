@@ -205,6 +205,21 @@ describe('LiveRankingSection', () => {
       expect(container.querySelector('section')).toBeNull()
     })
   })
+
+  it('con showWhenDisabled e voto disattivato renderizza la classifica', async () => {
+    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('/api/public/flag/voting')) {
+        return { ok: true, json: async () => ({ enabled: false }) }
+      }
+      return { ok: true, json: async () => makePayload() }
+    })
+    const { container } = render(<LiveRankingSection showWhenDisabled />)
+    await waitFor(() => {
+      expect(container.querySelector('section')).not.toBeNull()
+    })
+    expect(screen.getByText('live ranking')).toBeInTheDocument()
+  })
 })
 
 describe('LiveRankingSection — stato accordion al refetch', () => {

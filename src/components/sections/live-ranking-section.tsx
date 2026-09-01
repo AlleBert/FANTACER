@@ -8,7 +8,7 @@ import { useLocale } from '@/lib/LocaleContext';
 import { useVote } from '@/lib/VoteContext';
 import { useSponsorMaxItems } from '@/hooks/use-sponsor-max-items';
 import { createClient } from '@/lib/supabase/client';
-import { safeSubscribe } from '@/lib/supabase/realtime';
+import { safeOnPostgresChanges, safeSubscribe } from '@/lib/supabase/realtime';
 import {
   CLUSTERS,
   CLUSTER_ORDER,
@@ -46,7 +46,11 @@ function bandBadge(
   return `${n} · ${t('liveRanking.yourVotes')}`
 }
 
-export function LiveRankingSection() {
+interface LiveRankingSectionProps {
+  showWhenDisabled?: boolean
+}
+
+export function LiveRankingSection({ showWhenDisabled = false }: LiveRankingSectionProps) {
   const { t } = useLocale()
   const { selectedCompanies } = useVote()
   const maxItems = useSponsorMaxItems()
@@ -84,13 +88,15 @@ export function LiveRankingSection() {
 
   // Initial fetch al mount (unico, con loader sul primo caricamento). Il setState
   // sincrono (setIsLoading(true)) è un no-op benigno (isLoading è già true al mount);
-  // la rule è conservativa e non distingue questo caso. Solo a voto attivo: a voto
-  // disattivo la sezione è null e il fetch è inutile (riparte quando il flag va true).
+  // la rule è conservativa e non distingue questo caso. Gira quando la sezione è
+  // davvero renderizzata: a voto attivo, oppure a voto disattivo con showWhenDisabled
+  // (classifica visibile pre-fiera). A voto disattivo senza showWhenDisabled la
+  // sezione è null e il fetch è inutile (riparte quando il flag va true).
   useEffect(() => {
-    if (!votingEnabled) return
+    if (!votingEnabled && !showWhenDisabled) return
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchRanking()
-  }, [fetchRanking, votingEnabled])
+  }, [fetchRanking, votingEnabled, showWhenDisabled])
 
   // Polling di fallback: solo se il voto è attivo, il channel non è attivo e la
   // sezione è visibile. Mai con loader: gli aggiornamenti successivi sono silenziosi.
@@ -118,19 +124,18 @@ export function LiveRankingSection() {
 
     const startChannel = () => {
       if (channelRef.current) return
-      const channel = supabase
-        .channel('live-ranking-votes')
-        .on(
-          'postgres_changes',
-          { event: 'UPDATE', schema: 'public', table: 'ranking_tick' },
-          () => {
-            if (debounceRef.current) clearTimeout(debounceRef.current)
-            debounceRef.current = setTimeout(() => {
-              fetchRanking(false)
-              setChannelActive(true)
-            }, REFETCH_DEBOUNCE_MS)
-          }
-        )
+      const channel = safeOnPostgresChanges(
+        supabase.channel('live-ranking-votes'),
+        { event: 'UPDATE', schema: 'public', table: 'ranking_tick' },
+        () => {
+          if (debounceRef.current) clearTimeout(debounceRef.current)
+          debounceRef.current = setTimeout(() => {
+            fetchRanking(false)
+            setChannelActive(true)
+          }, REFETCH_DEBOUNCE_MS)
+        }
+      )
+      if (!channel) return
       safeSubscribe(channel, (status) => {
         // MAI attivare il realtime dal solo status di socket: Supabase Realtime
         // consegna gli eventi solo se l'RLS del subscriber li autorizza. Con
@@ -178,11 +183,14 @@ export function LiveRankingSection() {
     fetch('/api/public/flag/voting').then((res) => res.json()).then((d) => setVotingEnabled(d.enabled)).catch(() => {})
 
     const supabase = createClient()
-    const flagChannel = supabase
-      .channel('live-ranking-voting-flag')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'site_settings', filter: 'key=eq.voting_enabled' }, () => {
+    const flagChannel = safeOnPostgresChanges(
+      supabase.channel('live-ranking-voting-flag'),
+      { event: 'UPDATE', schema: 'public', table: 'site_settings', filter: 'key=eq.voting_enabled' },
+      () => {
         fetch('/api/public/flag/voting').then((res) => res.json()).then((d) => setVotingEnabled(d.enabled)).catch(() => {})
-      })
+      }
+    )
+    if (!flagChannel) return
     safeSubscribe(flagChannel)
 
     return () => {
@@ -243,7 +251,8 @@ export function LiveRankingSection() {
   // Pre-fiera (voto disattivo) la classifica non deve esistere nel DOM:
   // nessuna sezione, nessuno skeleton. Il flag voting_enabled (admin) la
   // ripristina dal lunedì di fiera.
-  if (!votingEnabled) return null
+  // Se showWhenDisabled è true, mostriamo comunque la classifica.
+  if (!votingEnabled && !showWhenDisabled) return null
 
   return (
     <SectionFrame theme="live-ranking" className="flex flex-col">
