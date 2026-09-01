@@ -2,17 +2,15 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Download, Check } from 'lucide-react'
-import { toPng } from 'html-to-image'
 import { useLocale } from '@/lib/LocaleContext'
-import { sectionThemes, type SectionThemeKey } from '@/lib/section-themes'
-import { resolveCustomPropertySizes } from '@/lib/resolve-capture-sizes'
+import type { SelectedCompany } from '@/lib/VoteContext'
 
 interface SaveButtonProps {
-  containerRef: React.RefObject<HTMLDivElement | null>
+  companies: SelectedCompany[]
 }
 
-export function SaveButton({ containerRef }: SaveButtonProps) {
-  const { t } = useLocale()
+export function SaveButton({ companies }: SaveButtonProps) {
+  const { t, locale } = useLocale()
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const timeoutRef = useRef<number | null>(null)
@@ -25,50 +23,40 @@ export function SaveButton({ containerRef }: SaveButtonProps) {
   )
 
   const handleSave = async () => {
-    const root = containerRef.current
-    if (!root) return
-
-    // Cattura la <section> (contenitore di scroll) invece del div interno, così
-    // l'immagine coincide col viewport visibile. Il gradiente vive in
-    // BackgroundLayer (sibling fixed fuori dal subtree): lo applichiamo via
-    // `style.background` sul nodo clonato, derivando il tema dal data-section.
-    const section = root.closest('section[data-section]') as HTMLElement | null
-    const target = section ?? root
-    const themeKey = target.getAttribute('data-section') as SectionThemeKey | null
-    const background = themeKey ? sectionThemes[themeKey]?.background : undefined
+    if (companies.length !== 3) return
 
     setError(null)
-    // html-to-image non serializza le CSS custom properties: risolviamo le
-    // dimensioni delle card sponsor in px prima della cattura e le ripristiniamo
-    // dopo (try/finally).
-    const restoreSizes = resolveCustomPropertySizes(target)
     try {
-      // html-to-image serializza il nodo in un SVG foreignObject: il browser
-      // rende nativamente, quindi i colori moderni (oklab/oklch di Tailwind v4)
-      // vengono gestiti senza errori di parsing.
-      const dataUrl = await toPng(target, {
-        pixelRatio: 1,
-        width: target.clientWidth,
-        height: target.clientHeight,
-        style: background ? { background } : undefined,
-        cacheBust: false,
+      // Share card generata server-side con next/og (Satori): zero DOM capture,
+      // zero CORS sui logo, font bundle, deterministico su desktop e mobile.
+      const params = new URLSearchParams({
+        c1: companies[0].company.id,
+        c2: companies[1].company.id,
+        c3: companies[2].company.id,
+        p1: String(companies[0].pallet),
+        p2: String(companies[1].pallet),
+        p3: String(companies[2].pallet),
+        lang: locale,
       })
+      const res = await fetch(`/api/share/vote?${params.toString()}`)
+      if (!res.ok) throw new Error(`share card ${res.status}`)
+      const blob = await res.blob()
+
+      const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.download = 'fantacer-voto.png'
-      link.href = dataUrl
+      link.href = url
       link.click()
+      URL.revokeObjectURL(url)
 
       setSaved(true)
       if (timeoutRef.current) window.clearTimeout(timeoutRef.current)
       timeoutRef.current = window.setTimeout(() => setSaved(false), 3000)
     } catch (err) {
-      console.error('SaveButton capture error:', err)
+      console.error('SaveButton fetch error:', err)
       setError('errore_salvataggio')
-      // Clear error after 5 seconds
       const id = window.setTimeout(() => setError(null), 5000)
       return () => window.clearTimeout(id)
-    } finally {
-      restoreSizes()
     }
   }
 

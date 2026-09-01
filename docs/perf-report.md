@@ -25,7 +25,7 @@ JS **iniziale** (first paint) della homepage pubblica:
 | `@supabase/ssr` + `auth-js` + `@supabase` | **197 + 69 + 42.8 = ~309** | Stack Supabase su pagina pubblica |
 | `react-cookie-manager` | **112** | Solo 2 moduli: dipendenza molto pesante per un cookie banner |
 | `@fingerprintjs/*` | **~53** | Device fingerprinting |
-| `html-to-image` | 19 | Aggiunto di recente (Salva) |
+| ~~`html-to-image`~~ | — | Rimosso: Salva genera la share card server-side (next/og) |
 | `canvas-confetti` | 8 | Success |
 | `lucide-react` | 7.6 | Ottimizzato (tree-shaking ok) |
 
@@ -99,7 +99,7 @@ Rilevati su journey reale (scroll completo + ricerca + selezione + resize mobile
 
 ### 🟢 Bassa / note
 
-8. **`html-to-image` (19 kB)** e **`canvas-confetti` (8 kB)**: costi contenuti e giustificati.
+8. **~~`html-to-image`~~** — rimosso (il Salva ora usa una share card `next/og` server-side). **`canvas-confetti` (8 kB)**: costo contenuto e giustificato.
 9. **`lucide-react`**: già ottimizzato (tree-shaking, 7.6 kB) — ok.
 10. **`recharts`/`@base-ui`**: correttamente code-split (solo admin) — nessuna azione.
 

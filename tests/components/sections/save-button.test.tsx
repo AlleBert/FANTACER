@@ -1,115 +1,92 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
-import { toPng } from 'html-to-image'
 import { SaveButton } from '@/components/sections/save-button'
-import { sectionThemes } from '@/lib/section-themes'
+import type { SelectedCompany } from '@/lib/VoteContext'
 
-jest.mock('@/lib/LocaleContext', () => ({ useLocale: () => ({ t: (key: string) => key }) }))
-
-jest.mock('html-to-image', () => ({
-  __esModule: true,
-  toPng: jest.fn().mockResolvedValue('data:image/png;base64,'),
+jest.mock('@/lib/LocaleContext', () => ({
+  useLocale: () => ({ t: (key: string) => key, locale: 'it' }),
 }))
 
-afterEach(() => {
-  jest.useRealTimers()
-  document.body.innerHTML = ''
-})
+const COMPANIES: SelectedCompany[] = [
+  { company: { id: 'a', name: 'Alpha' }, pallet: 4 },
+  { company: { id: 'b', name: 'Beta' }, pallet: 2 },
+  { company: { id: 'c', name: 'Gamma' }, pallet: 1 },
+]
 
 describe('SaveButton', () => {
+  let fetchMock: jest.Mock
+  let clickSpy: jest.SpyInstance
+
+  beforeEach(() => {
+    fetchMock = jest.fn().mockResolvedValue({
+      ok: true,
+      blob: async () => new Blob(['png'], { type: 'image/png' }),
+    })
+    global.fetch = fetchMock as unknown as typeof fetch
+    clickSpy = jest.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+    // jsdom non implementa createObjectURL/revokeObjectURL
+    URL.createObjectURL = jest.fn(() => 'blob:fake')
+    URL.revokeObjectURL = jest.fn()
+  })
+
+  afterEach(() => {
+    jest.useRealTimers()
+    fetchMock.mockRestore()
+    clickSpy.mockRestore()
+  })
+
   it('renderizza il bottone Salva', () => {
-    const ref = { current: document.createElement('div') }
-    render(<SaveButton containerRef={ref} />)
+    render(<SaveButton companies={COMPANIES} />)
     expect(screen.getByRole('button')).toBeTruthy()
   })
 
-  it('cattura la <section> con lo sfondo del tema e le dimensioni del viewport', async () => {
-    const section = document.createElement('section')
-    section.setAttribute('data-section', 'success')
-    const inner = document.createElement('div')
-    section.appendChild(inner)
-    document.body.appendChild(section)
-    Object.defineProperty(section, 'clientWidth', { value: 1280, configurable: true })
-    Object.defineProperty(section, 'clientHeight', { value: 800, configurable: true })
-
-    const ref = { current: inner }
-    render(<SaveButton containerRef={ref} />)
+  it('chiama /api/share/vote con id aziende, pallet e locale', async () => {
+    render(<SaveButton companies={COMPANIES} />)
     fireEvent.click(screen.getByRole('button'))
     await act(async () => {})
 
-    expect(toPng).toHaveBeenCalledWith(
-      section,
-      expect.objectContaining({
-        pixelRatio: 1,
-        width: 1280,
-        height: 800,
-        cacheBust: false,
-        style: { background: sectionThemes.success.background },
-      })
-    )
-    document.body.removeChild(section)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    const url = (fetchMock.mock.calls[0][0] as string) || ''
+    expect(url).toMatch(/^\/api\/share\/vote\?/)
+    const params = new URLSearchParams(url.split('?')[1])
+    expect(params.get('c1')).toBe('a')
+    expect(params.get('c2')).toBe('b')
+    expect(params.get('c3')).toBe('c')
+    expect(params.get('p1')).toBe('4')
+    expect(params.get('p2')).toBe('2')
+    expect(params.get('p3')).toBe('1')
+    expect(params.get('lang')).toBe('it')
   })
 
-  it('risolve le dimensioni sponsor prima della cattura e le ripristina dopo', async () => {
-    const section = document.createElement('section')
-    section.setAttribute('data-section', 'success')
-    const inner = document.createElement('div')
-    const sponsorCard = document.createElement('div')
-    sponsorCard.setAttribute(
-      'style',
-      '--sponsor-size: 7rem; --sponsor-scale: 1; width: calc(var(--sponsor-size) * var(--sponsor-scale));'
-    )
-    inner.appendChild(sponsorCard)
-    section.appendChild(inner)
-    document.body.appendChild(section)
-    Object.defineProperty(section, 'clientWidth', { value: 1280, configurable: true })
-    Object.defineProperty(section, 'clientHeight', { value: 800, configurable: true })
-
-    // jsdom non fa layout: simuliamo getComputedStyle che risolve i calc in px.
-    const origGetComputedStyle = window.getComputedStyle
-    window.getComputedStyle = jest.fn((node: Element) => {
-      if (node === sponsorCard) {
-        return {
-          getPropertyValue: (prop: string) => {
-            if (prop === 'width') return '112px'
-            return ''
-          },
-        } as CSSStyleDeclaration
-      }
-      return origGetComputedStyle(node)
-    }) as typeof window.getComputedStyle
-
-    const ref = { current: inner }
-    render(<SaveButton containerRef={ref} />)
-    fireEvent.click(screen.getByRole('button'))
-    await act(async () => {})
-
-    // Dopo la cattura l'attributo style è stato ripristinato all'originale.
-    expect(sponsorCard.getAttribute('style')).toBe(
-      '--sponsor-size: 7rem; --sponsor-scale: 1; width: calc(var(--sponsor-size) * var(--sponsor-scale));'
-    )
-    window.getComputedStyle = origGetComputedStyle
-    document.body.removeChild(section)
-  })
-
-  it('mostra Salvato! per 3s dopo il click', async () => {
+  it('scarica il PNG e mostra Salvato! per 3s', async () => {
     jest.useFakeTimers()
-    const section = document.createElement('section')
-    section.setAttribute('data-section', 'success')
-    const inner = document.createElement('div')
-    section.appendChild(inner)
-    document.body.appendChild(section)
-    Object.defineProperty(section, 'clientWidth', { value: 1280, configurable: true })
-    Object.defineProperty(section, 'clientHeight', { value: 800, configurable: true })
-
-    const ref = { current: inner }
-    render(<SaveButton containerRef={ref} />)
+    render(<SaveButton companies={COMPANIES} />)
     fireEvent.click(screen.getByRole('button'))
     await act(async () => {})
+    expect(clickSpy).toHaveBeenCalledTimes(1)
     expect(screen.getByText('success.saveDone')).toBeTruthy()
     act(() => {
       jest.advanceTimersByTime(3000)
     })
     expect(screen.getByText('success.saveCta')).toBeTruthy()
-    document.body.removeChild(section)
+  })
+
+  it('mostra errore se la fetch fallisce', async () => {
+    jest.useFakeTimers()
+    fetchMock.mockResolvedValue({ ok: false, status: 500 })
+    render(<SaveButton companies={COMPANIES} />)
+    fireEvent.click(screen.getByRole('button'))
+    await act(async () => {})
+    expect(screen.getByText('errore_salvataggio')).toBeTruthy()
+    act(() => {
+      jest.advanceTimersByTime(5000)
+    })
+    expect(screen.queryByText('errore_salvataggio')).toBeNull()
+  })
+
+  it('non fa nulla con meno di 3 aziende', async () => {
+    render(<SaveButton companies={COMPANIES.slice(0, 2)} />)
+    fireEvent.click(screen.getByRole('button'))
+    await act(async () => {})
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 })
