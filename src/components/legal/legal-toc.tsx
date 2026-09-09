@@ -27,7 +27,18 @@ export function LegalToc({ items, label }: { items: LegalTocItem[]; label: strin
       { rootMargin: '-25% 0px -70% 0px', threshold: [0, 0.1, 0.5] },
     )
     for (const el of els) io.observe(el)
-    return () => io.disconnect()
+
+    const onScroll = () => {
+      const atBottom =
+        window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4
+      if (atBottom && items.length > 0) setActiveId(items[items.length - 1].id)
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+
+    return () => {
+      io.disconnect()
+      window.removeEventListener('scroll', onScroll)
+    }
   }, [items])
 
   return (
@@ -43,6 +54,7 @@ export function LegalToc({ items, label }: { items: LegalTocItem[]; label: strin
           <li key={item.id}>
             <a
               href={`#${item.id}`}
+              aria-current={activeId === item.id ? 'location' : undefined}
               className={cn(
                 '-ml-px block border-l-2 py-1.5 pl-3 text-[13px] leading-snug text-ink/60 transition-colors hover:text-ink',
                 activeId === item.id
