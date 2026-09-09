@@ -19,7 +19,7 @@ interface LegalPageLayoutProps {
   titleKey: DictionaryKey
   lastUpdatedKey: DictionaryKey
   intro?: DictionaryKey
-  sections?: LegalSectionDef[]
+  sections?: readonly LegalSectionDef[]
   children: ReactNode
   className?: string
 }
