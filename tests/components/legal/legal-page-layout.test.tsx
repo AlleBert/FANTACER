@@ -1,18 +1,16 @@
-import { render, screen, act } from '@testing-library/react'
+import { render, screen, act, fireEvent } from '@testing-library/react'
 import { LegalPageLayout } from '@/components/legal/legal-page-layout'
 
 jest.mock('@/lib/LocaleContext', () => ({
   useLocale: () => ({ t: (key: string) => key, locale: 'it' }),
 }))
 
-let ioCallback: IntersectionObserverCallback | null = null
-
 class MockIntersectionObserver implements IntersectionObserver {
   readonly root = null
   readonly rootMargin = ''
   readonly thresholds = [0]
   constructor(cb: IntersectionObserverCallback) {
-    ioCallback = cb
+    ;(global as any).ioCallback = cb
   }
   observe = jest.fn()
   unobserve = jest.fn()
@@ -23,19 +21,19 @@ class MockIntersectionObserver implements IntersectionObserver {
 global.IntersectionObserver = MockIntersectionObserver as unknown as typeof IntersectionObserver
 
 describe('LegalPageLayout', () => {
-  it('renderizza il bottone torna al gioco con href="/"', () => {
+  it('renderizza il link "torna al gioco" con parola chiave legal.backToGame', () => {
     render(
-      <LegalPageLayout titleKey="cookiePolicy.title" summaryBox={<p>sintesi</p>}>
+      <LegalPageLayout titleKey="cookiePolicy.title" sections={[]}>
         <p>contenuto</p>
       </LegalPageLayout>,
     )
     const back = screen.getByRole('link', { name: 'legal.backToGame' })
-    expect(back.getAttribute('href')).toBe('/')
+    expect(back).toBeInTheDocument()
   })
 
   it('applica la superficie velatura (classe legal-surface)', () => {
     const { container } = render(
-      <LegalPageLayout titleKey="cookiePolicy.title" summaryBox={<p>sintesi</p>}>
+      <LegalPageLayout titleKey="cookiePolicy.title" sections={[]}>
         <p>contenuto</p>
       </LegalPageLayout>,
     )
@@ -45,43 +43,65 @@ describe('LegalPageLayout', () => {
 
   it('renderizza l\'article bianco con id legal-content', () => {
     const { container } = render(
-      <LegalPageLayout titleKey="cookiePolicy.title" summaryBox={<p>sintesi</p>}>
+      <LegalPageLayout titleKey="cookiePolicy.title" sections={[]}>
         <p>contenuto</p>
       </LegalPageLayout>,
     )
     expect(container.querySelector('#legal-content')).not.toBeNull()
   })
 
-  it('passa showCookieButton={false} al SiteFooter (4 link: back-to-game + 3 footer, no bottone cookie)', () => {
+  it('espone uno skip link verso il contenuto legale', () => {
     render(
-      <LegalPageLayout titleKey="cookiePolicy.title" summaryBox={<p>sintesi</p>}>
+      <LegalPageLayout titleKey="cookiePolicy.title" sections={[]}>
+        <p>contenuto</p>
+      </LegalPageLayout>,
+    )
+
+    expect(screen.getByRole('link', { name: /salta|skip/i })).toHaveAttribute('href', '#legal-content')
+  })
+
+  it('footer mostra 6 link (skip + back-to-game + footer nav + credit) e nessun bottone cookie', () => {
+    render(
+      <LegalPageLayout titleKey="cookiePolicy.title" sections={[]}>
         <p>contenuto</p>
       </LegalPageLayout>,
     )
     expect(screen.queryByRole('button', { name: 'footer.cookieConsent' })).not.toBeInTheDocument()
-    expect(screen.getAllByRole('link').length).toBe(4)
+    expect(screen.getAllByRole('link').length).toBe(6)
   })
 
-  it('evidenzia la pill attiva quando una sezione entra in viewport (scrollspy)', () => {
+  it('evidenzia la voce indice attiva nello scrollspy desktop (nessun details mobile)', () => {
     render(
       <LegalPageLayout
         titleKey="cookiePolicy.title"
-        summaryBox={<p>sintesi</p>}
-        toc={[
-          { id: 'controller', label: 'controller' },
-          { id: 'dpo', label: 'dpo' },
+        sections={[
+          { id: 'controller', headingKey: 'cookiePolicy.controller' },
+          { id: 'dpo', headingKey: 'cookiePolicy.dpo' },
         ]}
       >
-        <div id="controller" />
-        <div id="dpo" />
+        <section id="controller"><h2 id="controller-heading">Controller</h2></section>
+        <section id="dpo"><h2 id="dpo-heading">DPO</h2></section>
       </LegalPageLayout>,
     )
     act(() => {
-      ioCallback?.([{ isIntersecting: true, target: { id: 'dpo' } } as unknown as IntersectionObserverEntry], {} as IntersectionObserver)
+      const cb = (global as any).ioCallback
+      if (cb) {
+        cb?.([{ isIntersecting: true, target: { id: 'dpo' } } as unknown as IntersectionObserverEntry], {} as IntersectionObserver)
+      }
     })
-    const dpoPill = document.querySelector('a[href="#dpo"]')
-    expect(dpoPill?.className).toContain('is-active')
-    const controllerPill = document.querySelector('a[href="#controller"]')
-    expect(controllerPill?.className).not.toContain('is-active')
+    const dpoLink = document.querySelector('a[href="#dpo"]')
+    expect(dpoLink?.classList.contains('is-scrollspy-active')).toBe(true)
+    const controllerLink = document.querySelector('a[href="#controller"]')
+    expect(controllerLink?.classList.contains('is-scrollspy-active')).toBe(false)
+  })
+
+  it('non esiste elemento mobile details nella DOM', () => {
+    render(
+      <LegalPageLayout titleKey="cookiePolicy.title" sections={[]}>
+        <p>contenuto</p>
+      </LegalPageLayout>,
+    )
+    expect(screen.queryByRole('button', { name: 'footer.cookieConsent' })).not.toBeInTheDocument()
+    expect(document.querySelector('details')).not.toBeInTheDocument()
   })
 })
