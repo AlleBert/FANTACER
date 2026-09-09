@@ -144,6 +144,8 @@ export interface Dictionary {
   'footer.privacyPolicy': string
   'footer.terms': string
   'footer.madeBy': string
+  'footer.formatBy.before': string
+  'footer.formatBy.after': string
 
   // Legal pages
   'legal.backToGame': string
@@ -169,6 +171,11 @@ export interface Dictionary {
   'cookiePolicy.tableDuration': string
   'cookiePolicy.tableProvider': string
   'cookiePolicy.ga4Note': string
+  'cookiePolicy.contactHeading': string
+  'cookiePolicy.duration.session': string
+  'cookiePolicy.duration.oneYear': string
+  'cookiePolicy.duration.twoYears': string
+  'cookiePolicy.reopenBanner': string
 
   // Privacy Policy
   'privacyPolicy.title': string
@@ -218,6 +225,25 @@ export interface Dictionary {
   'privacyPolicy.retentionLogs': string
   'privacyPolicy.retentionAnalytics': string
   'privacyPolicy.rightsList': string
+  'privacyPolicy.lead': string
+  'privacyPolicy.dataContactLabel': string
+  'privacyPolicy.dataContactDesc': string
+  'privacyPolicy.dataVotingLabel': string
+  'privacyPolicy.dataVotingDesc': string
+  'privacyPolicy.dataAdminLabel': string
+  'privacyPolicy.dataAdminDesc': string
+  'privacyPolicy.dataAnalyticsLabel': string
+  'privacyPolicy.dataAnalyticsDesc': string
+  'privacyPolicy.dataTechnicalLabel': string
+  'privacyPolicy.dataTechnicalDesc': string
+  'privacyPolicy.recipientsDesc': string
+  'privacyPolicy.subprocessorsIntro': string
+  'privacyPolicy.legalBasisNote': string
+  'privacyPolicy.retentionTableCategory': string
+  'privacyPolicy.retentionTablePeriod': string
+  'privacyPolicy.howToExerciseHeading': string
+  'privacyPolicy.complaintHeading': string
+  'privacyPolicy.changesHeading': string
 
   // Terms & Conditions
   'terms.title': string
@@ -240,6 +266,7 @@ export interface Dictionary {
   'terms.brandOwnership': string
   'terms.companyLogos': string
   'terms.voteAttribution': string
+  'terms.voteValidity': string
   'terms.userContent': string
   'terms.userContentDesc': string
   'terms.disclaimer': string
@@ -258,6 +285,10 @@ export interface Dictionary {
   'terms.changesDesc': string
   'terms.contact': string
   'terms.contactDesc': string
+  'terms.votingTurnstile': string
+  'terms.votingConfirm': string
+  'terms.votingNoAutomation': string
+  'terms.votingNoTrading': string
 
   // Vote API errors
   'voteError.missingFields': string
@@ -267,32 +298,6 @@ export interface Dictionary {
   'voteError.missingSecurity': string
   'voteError.securityFailed': string
   'voteError.alreadyVoted': string
-
-  // Legal pages - Summary boxes
-  'cookiePolicy.summaryTitle': string
-  'cookiePolicy.summaryText': string
-  'cookiePolicy.essentialSectionTitle': string
-  'cookiePolicy.analyticsSectionTitle': string
-  'cookiePolicy.badgeAlwaysActive': string
-  'cookiePolicy.badgeRequiresConsent': string
-
-  'privacyPolicy.summaryTitle': string
-  'privacyPolicy.summaryWho': string
-  'privacyPolicy.summaryWhoDesc': string
-  'privacyPolicy.summaryWhat': string
-  'privacyPolicy.summaryWhatDesc': string
-  'privacyPolicy.summaryHow': string
-  'privacyPolicy.summaryHowDesc': string
-  'privacyPolicy.summaryContact': string
-  'privacyPolicy.summaryContactDesc': string
-
-  'terms.summaryTitle': string
-  'terms.summaryText': string
-  'terms.goldenRulesTitle': string
-  'terms.goldenRule1': string
-  'terms.goldenRule2': string
-  'terms.goldenRule3': string
-  'terms.legalDetailsTitle': string
 }
 
 export type DictionaryKey = keyof Dictionary
