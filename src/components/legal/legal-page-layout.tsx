@@ -1,188 +1,133 @@
 'use client'
 
-import { useEffect, useState, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { SectionFrame } from '@/components/layout/section-frame'
 import { SiteFooter } from '@/components/layout/site-footer'
+import { LegalToc, type LegalTocItem } from '@/components/legal/legal-toc'
 import { cn } from '@/lib/utils'
 import { useLocale } from '@/lib/LocaleContext'
 
 import type { DictionaryKey } from '@/i18n/dictionary'
 
+export interface LegalSectionDef {
+  id: string
+  headingKey: DictionaryKey
+}
+
 interface LegalPageLayoutProps {
-  children: ReactNode
-  summaryBox: ReactNode
-  summaryColor?: 'yellow' | 'blue' | 'green'
-  className?: string
-  toc?: Array<{ id: string; label: string }>
   titleKey: DictionaryKey
-  lastUpdatedKey?: DictionaryKey
+  lastUpdatedKey: DictionaryKey
+  intro?: DictionaryKey
+  sections?: LegalSectionDef[]
+  children: ReactNode
+  className?: string
 }
 
-const summaryBands = {
-  yellow: { bg: 'bg-bright/20', border: 'border-bright' },
-  blue: { bg: 'bg-question-blue/15', border: 'border-question-blue' },
-  green: { bg: 'bg-green-100', border: 'border-green-400' },
-}
-
-/**
- * Layout pagine legali — design "Clean Document":
- * - Superficie velatura brand tenue (nessuna card galleggiante su gradiente)
- * - Scroll sulla finestra (niente contenitore overflow-y-auto interno)
- * - Header sticky con wordmark + bottone "torna al gioco" (HOME)
- * - TOC desktop sticky con scrollspy; accordion pulito su mobile
- * - Article bianco full-bleed; footer light con sole 3 legal pages
- */
-export function LegalPageLayout({
-  children,
-  summaryBox,
-  summaryColor = 'yellow',
-  className,
-  toc = [],
-  titleKey,
-  lastUpdatedKey = 'cookiePolicy.lastUpdated',
-}: LegalPageLayoutProps) {
-  const { t, locale } = useLocale()
-  const today = new Date()
-  const formattedDate = today.toLocaleDateString(locale === 'it' ? 'it-IT' : 'en-US', {
+function formatLegalDate(locale: 'it' | 'en'): string {
+  return new Date().toLocaleDateString(locale === 'it' ? 'it-IT' : 'en-US', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
   })
+}
 
-  const [activeId, setActiveId] = useState<string | null>(null)
+/**
+ * Layout pagine legali — design "Brand tenue" minimal:
+ * - Superficie velatura brand tenue (lilla → off-white), articolo bianco full-bleed
+ * - Header sticky minimale (wordmark + link "torna al gioco")
+ * - Indice "IN QUESTA PAGINA" solo desktop (sticky, link testuali, scrollspy)
+ * - Mobile: niente accordion, pagina che scorre dritta
+ * - Colonna di lettura ~75ch (token --measure-wide)
+ */
+export function LegalPageLayout({
+  titleKey,
+  lastUpdatedKey,
+  intro,
+  sections = [],
+  children,
+  className,
+}: LegalPageLayoutProps) {
+  const { t, locale } = useLocale()
 
-  useEffect(() => {
-    if (typeof IntersectionObserver === 'undefined') return
-    const sections = toc
-      .map((item) => document.getElementById(item.id))
-      .filter((el): el is HTMLElement => el !== null)
-    if (sections.length === 0) return
-
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) setActiveId(entry.target.id)
-        }
-      },
-      { rootMargin: '-20% 0px -70% 0px', threshold: 0 },
-    )
-    for (const s of sections) io.observe(s)
-    return () => io.disconnect()
-  }, [toc])
+  const tocItems: LegalTocItem[] = sections.map((s) => ({
+    id: s.id,
+    label: t(s.headingKey),
+  }))
+  const tocLabel = locale === 'it' ? 'In questa pagina' : 'On this page'
 
   return (
-    <SectionFrame theme="legal" grow clip className={cn('legal-surface flex flex-col', className)}>
-      <header className="safe-px sticky top-0 z-20 border-b-2 border-ink/10 bg-[color-mix(in_srgb,var(--background)_85%,transparent)] pt-(--safe-top) backdrop-blur-sm">
-        <div className="content-max mx-auto flex items-center justify-between gap-4 pb-3">
-          <span className="text-lg font-black lowercase tracking-tighter text-ink">
+    <SectionFrame theme="legal" grow className={cn('legal-surface flex flex-col', className)}>
+      <a className="legal-skip-link" href="#legal-content">
+        {locale === 'it' ? 'Salta al contenuto' : 'Skip to content'}
+      </a>
+
+      <header className="safe-px sticky top-0 z-20 border-b border-ink/10 bg-[color-mix(in_srgb,var(--background)_88%,transparent)] pt-(--safe-top) backdrop-blur-sm">
+        <div className="content-max mx-auto flex items-center justify-between gap-4 py-2.5">
+          <span className="text-base font-black lowercase tracking-tighter text-ink">
             fantacer<span className="text-orange">★</span>
           </span>
           <Link
             href="/"
-            className="inline-flex items-center rounded-full border-2 border-ink bg-ink px-4 py-2 text-xs font-black uppercase tracking-wider text-bright shadow-[2px_2px_0_#000] transition-all hover:-translate-y-0.5 hover:shadow-[3px_3px_0_#000]"
+            className="text-xs font-black uppercase tracking-wider text-ink/70 transition-colors hover:text-ink"
           >
             {t('legal.backToGame')}
           </Link>
         </div>
       </header>
 
-      <div className="content-max safe-px mx-auto w-full flex-1 py-(--section-pad) lg:py-[clamp(2rem,4vw,4rem)]">
-        <div className="flex w-full flex-col gap-6 lg:flex-row">
-          {toc.length > 0 && (
-            <aside
-              className="hidden w-[220px] flex-shrink-0 lg:sticky lg:top-24 lg:block lg:self-start"
-              aria-label={locale === 'it' ? 'Indice' : 'Table of contents'}
-            >
-              <nav className="space-y-2">
-                <p className="mb-3 w-fit rounded-full border-2 border-ink/20 bg-white/90 px-3 py-1.5 text-xs font-black uppercase tracking-wider text-ink">
-                  {locale === 'it' ? 'In questa pagina' : 'On this page'}
-                </p>
-                <ul className="space-y-1.5" role="list">
-                  {toc.map((item) => (
-                    <li key={item.id}>
-                      <a
-                        href={`#${item.id}`}
-                        className={cn('toc-pill', activeId === item.id && 'is-active')}
-                      >
-                        {item.label}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </nav>
-            </aside>
-          )}
-
-          {toc.length > 0 && (
-            <details className="group lg:hidden" aria-label={locale === 'it' ? 'Indice' : 'Table of contents'}>
-              <summary className="flex w-full cursor-pointer list-none items-center justify-between gap-2 rounded-full border-2 border-ink/20 bg-white/90 px-4 py-3 text-left text-sm font-black uppercase tracking-wider text-ink transition-all duration-150 hover:border-ink">
-                {locale === 'it' ? 'Indice' : 'Contents'}
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                  className="shrink-0 transition-transform duration-150 group-open:rotate-180"
-                >
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </summary>
-              <nav className="mt-3 space-y-2 px-1" aria-label={locale === 'it' ? 'Indice' : 'Table of contents'}>
-                <ul className="space-y-1.5" role="list">
-                  {toc.map((item) => (
-                    <li key={item.id}>
-                      <a
-                        href={`#${item.id}`}
-                        className="toc-pill"
-                        onClick={(e) => {
-                          const details = e.currentTarget.closest('details')
-                          details?.removeAttribute('open')
-                        }}
-                      >
-                        {item.label}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </nav>
-            </details>
-          )}
+      <div className="content-max safe-px mx-auto w-full flex-1 py-(--section-pad) lg:py-(--space-3xl)">
+        <div className="flex w-full flex-col gap-10 lg:flex-row lg:gap-12">
+          {sections.length > 0 && <LegalToc items={tocItems} label={tocLabel} />}
 
           <article
-            className={cn(
-              'prose-legal w-full flex-1 bg-white px-(--space-md) sm:px-(--space-lg) pb-(--section-pad)',
-              'lg:mx-auto lg:max-w-(--measure-wide)',
-            )}
+            className="w-full min-w-0 flex-1 bg-white px-(--space-md) py-(--section-pad) sm:px-(--space-lg)"
             id="legal-content"
+            aria-labelledby="legal-page-title"
+            tabIndex={-1}
           >
-            <header className="mb-[clamp(1.5rem,3vw,2.5rem)] pb-[clamp(1rem,2vw,1.5rem)] border-b-2 border-ink/10">
-              <span className="mb-4 inline-block rounded-full border-2 border-ink bg-bright px-4 py-1.5 text-xs font-black uppercase tracking-wider text-black shadow-[2px_2px_0_#000]">
-                FANTACER · {locale === 'it' ? 'Info legali' : 'Legal info'}
-              </span>
-              <h1 className="text-(length:--fs-headline-tight) font-black lowercase tracking-tighter text-ink leading-(--lh-headline) text-balance">
-                {t(titleKey)}
-              </h1>
-              <p className="mt-3 text-xs font-black lowercase tracking-wider text-ink/70">
-                {t(lastUpdatedKey, { date: formattedDate })}
-              </p>
-            </header>
+            <div className="prose-legal mx-auto max-w-(--measure-wide)">
+              <header className="mb-8 lg:mb-10">
+                <p className="mb-3 text-[11px] font-black uppercase tracking-[0.14em] text-ink/50">
+                  FANTACER · {locale === 'it' ? 'Info legali' : 'Legal info'}
+                </p>
+                <h1
+                  id="legal-page-title"
+                  className="text-(length:--fs-headline) font-black tracking-tighter text-ink leading-(--lh-headline) text-balance"
+                >
+                  {t(titleKey)}
+                </h1>
+                <p className="mt-2 text-xs font-medium text-ink/60">
+                  {t(lastUpdatedKey, { date: formatLegalDate(locale) })}
+                </p>
+                {intro && <p className="mt-6 text-ink/85">{t(intro)}</p>}
+              </header>
 
-            <div className={cn('summary-band mb-8', summaryBands[summaryColor].bg, summaryBands[summaryColor].border)}>
-              {summaryBox}
+              {children}
             </div>
-
-            {children}
           </article>
         </div>
       </div>
 
       <SiteFooter variant="light" showCookieButton={false} />
     </SectionFrame>
+  )
+}
+
+export function LegalSection({
+  id,
+  headingKey,
+  children,
+}: {
+  id: string
+  headingKey: DictionaryKey
+  children: ReactNode
+}) {
+  const { t } = useLocale()
+  return (
+    <section id={id} aria-labelledby={`${id}-heading`}>
+      <h2 id={`${id}-heading`}>{t(headingKey)}</h2>
+      {children}
+    </section>
   )
 }
