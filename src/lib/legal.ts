@@ -18,7 +18,7 @@ export function makeLegalT(locale: Locale) {
     let text = dict[key]
     if (params) {
       for (const [k, v] of Object.entries(params)) {
-        text = text.replace(`{${k}}`, v)
+        text = text.replaceAll(`{${k}}`, v)
       }
     }
     return text
