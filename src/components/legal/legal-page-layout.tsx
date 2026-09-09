@@ -57,7 +57,7 @@ export function LegalPageLayout({
   const tocLabel = locale === 'it' ? 'In questa pagina' : 'On this page'
 
   return (
-    <SectionFrame theme="legal" grow className={cn('legal-surface flex flex-col', className)}>
+    <SectionFrame theme="legal" grow clip className={cn('legal-surface flex flex-col', className)}>
       <a className="legal-skip-link" href="#legal-content">
         {locale === 'it' ? 'Salta al contenuto' : 'Skip to content'}
       </a>
