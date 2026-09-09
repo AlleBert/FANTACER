@@ -1,176 +1,95 @@
 import type { Metadata } from 'next'
-import { LegalPageLayout } from '@/components/legal/legal-page-layout'
 import { dictionaries } from '@/i18n'
-import { LOCALE_COOKIE, resolveLocale } from '@/lib/locale'
-import { cookies, headers } from 'next/headers'
-
-async function getLocale() {
-  const cookieStore = await cookies()
-  const headerStore = await headers()
-  return resolveLocale(
-    headerStore.get('accept-language') ?? null,
-    cookieStore.get(LOCALE_COOKIE)?.value ?? null,
-  )
-}
+import { LegalPageLayout, LegalSection, type LegalSectionDef } from '@/components/legal/legal-page-layout'
+import { getLegalLocale, makeLegalT } from '@/lib/legal'
+import type { DictionaryKey } from '@/i18n/dictionary'
 
 export async function generateMetadata(): Promise<Metadata> {
-  const locale = await getLocale()
-  return {
-    title: `${dictionaries[locale]['cookiePolicy.title']} — FANTACER`,
-  }
+  const locale = await getLegalLocale()
+  return { title: `${dictionaries[locale]['cookiePolicy.title']} — FANTACER` }
+}
+
+const TABLE_HEADERS = ['cookiePolicy.tableCookie', 'cookiePolicy.tablePurpose', 'cookiePolicy.tableDuration', 'cookiePolicy.tableProvider'] as const
+
+interface CookieRow {
+  cookie: string
+  purposeKey: DictionaryKey
+  durationKey: DictionaryKey
+  provider: string
+}
+
+function CookieTable({ rows, t }: { rows: CookieRow[]; t: ReturnType<typeof makeLegalT> }) {
+  return (
+    <div className="table-scroll">
+      <table className="cookie-table table-card-mobile">
+        <thead>
+          <tr>
+            {TABLE_HEADERS.map((h) => (
+              <th key={h}>{t(h)}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={i}>
+              <td data-label={t(TABLE_HEADERS[0])}><code>{row.cookie}</code></td>
+              <td data-label={t(TABLE_HEADERS[1])}>{t(row.purposeKey)}</td>
+              <td data-label={t(TABLE_HEADERS[2])}>{t(row.durationKey)}</td>
+              <td data-label={t(TABLE_HEADERS[3])}>{row.provider}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
 }
 
 export default async function CookiePolicyPage() {
-  const locale = await getLocale()
-  const t = (key: string, params?: Record<string, string>) => {
-    let text = dictionaries[locale][key as keyof typeof dictionaries[typeof locale]] || key
-    if (params) {
-      Object.entries(params).forEach(([k, v]) => {
-        text = text.replace(`{${k}}`, v)
-      })
-    }
-    return text
-  }
+  const locale = await getLegalLocale()
+  const t = makeLegalT(locale)
 
-  const essentialCookies = [
-    {
-      cookie: 'supabase-auth-token',
-      purpose: t('cookiePolicy.essentialDesc'),
-      duration: 'Sessione',
-      provider: 'Supabase',
-    },
-    {
-      cookie: 'fantacer_locale',
-      purpose: 'Preferenza lingua',
-      duration: '1 anno',
-      provider: 'Fantacer',
-    },
-    {
-      cookie: 'fantacer_cookie_consent',
-      purpose: 'Registrazione consenso cookie',
-      duration: '1 anno',
-      provider: 'Fantacer',
-    },
-    {
-      cookie: 'cf_turnstile_*',
-      purpose: 'Protezione bot Turnstile',
-      duration: 'Sessione',
-      provider: 'Cloudflare',
-    },
+  const sections: LegalSectionDef[] = [
+    { id: 'what-are-cookies', headingKey: 'cookiePolicy.whatAreCookies' },
+    { id: 'categories', headingKey: 'cookiePolicy.categories' },
+    { id: 'third-party', headingKey: 'cookiePolicy.thirdParty' },
+    { id: 'manage', headingKey: 'cookiePolicy.howToManage' },
+    { id: 'contact', headingKey: 'cookiePolicy.contact' },
   ]
 
-  const analyticsCookies = [
-    {
-      cookie: '_ga, _ga_*',
-      purpose: 'Analytics Google (GA4)',
-      duration: '2 anni',
-      provider: 'Google',
-    },
+  const essentialCookies: CookieRow[] = [
+    { cookie: 'supabase-auth-token', purposeKey: 'cookiePolicy.essentialDesc', durationKey: 'cookiePolicy.duration.session', provider: 'Supabase' },
+    { cookie: 'fantacer_locale', purposeKey: 'cookiePolicy.essentialDesc', durationKey: 'cookiePolicy.duration.oneYear', provider: 'Fantacer' },
+    { cookie: 'fantacer_cookie_consent', purposeKey: 'cookiePolicy.essentialDesc', durationKey: 'cookiePolicy.duration.oneYear', provider: 'Fantacer' },
+    { cookie: 'cf_turnstile_*', purposeKey: 'cookiePolicy.essentialDesc', durationKey: 'cookiePolicy.duration.session', provider: 'Cloudflare' },
   ]
 
-  const toc = [
-    { id: 'what-are-cookies', label: t('cookiePolicy.whatAreCookies') },
-    { id: 'categories', label: t('cookiePolicy.categories') },
-    { id: 'essential', label: t('cookiePolicy.essential') },
-    { id: 'analytics', label: t('cookiePolicy.analytics') },
-    { id: 'third-party', label: t('cookiePolicy.thirdParty') },
-    { id: 'manage', label: t('cookiePolicy.howToManage') },
-    { id: 'contact', label: t('cookiePolicy.contact') },
+  const analyticsCookies: CookieRow[] = [
+    { cookie: '_ga, _ga_*', purposeKey: 'cookiePolicy.analyticsDesc', durationKey: 'cookiePolicy.duration.twoYears', provider: 'Google' },
   ]
-
-  const summaryBox = (
-    <div>
-      <h2 className="text-lg font-black text-ink mb-2">
-        🍪 {t('cookiePolicy.summaryTitle')}
-      </h2>
-      <p className="text-sm text-ink/80 leading-relaxed">
-        {t('cookiePolicy.summaryText')}
-      </p>
-    </div>
-  )
 
   return (
     <LegalPageLayout
-      toc={toc}
       titleKey="cookiePolicy.title"
       lastUpdatedKey="cookiePolicy.lastUpdated"
-      summaryBox={summaryBox}
-      summaryColor="yellow"
+      intro="cookiePolicy.intro"
+      sections={sections}
     >
-      <section id="what-are-cookies" aria-labelledby="what-are-cookies-heading">
-        <h2 id="what-are-cookies-heading">{t('cookiePolicy.whatAreCookies')}</h2>
+      <LegalSection id="what-are-cookies" headingKey="cookiePolicy.whatAreCookies">
         <p>{t('cookiePolicy.whatAreCookiesDesc')}</p>
-      </section>
+      </LegalSection>
 
-      <section id="categories" aria-labelledby="categories-heading">
-        <h2 id="categories-heading">{t('cookiePolicy.categories')}</h2>
-      </section>
+      <LegalSection id="categories" headingKey="cookiePolicy.categories">
+        <h3>{t('cookiePolicy.essential')}</h3>
+        <p>{t('cookiePolicy.essentialDesc')}</p>
+        <CookieTable rows={essentialCookies} t={t} />
 
-      <section id="essential" aria-labelledby="essential-heading">
-        <h2 id="essential-heading">{t('cookiePolicy.essential')}</h2>
-        <div className="flex items-center gap-2 mb-3">
-          <span className="inline-block rounded-full bg-green-500 text-white text-xs font-bold px-3 py-1">
-            {t('cookiePolicy.badgeAlwaysActive')}
-          </span>
-        </div>
-        <div className="table-scroll">
-          <table className="cookie-table table-card-mobile">
-            <thead>
-              <tr>
-                <th>{t('cookiePolicy.tableCookie')}</th>
-                <th>{t('cookiePolicy.tablePurpose')}</th>
-                <th>{t('cookiePolicy.tableDuration')}</th>
-                <th>{t('cookiePolicy.tableProvider')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {essentialCookies.map((row, i) => (
-                <tr key={i}>
-                  <td data-label={t('cookiePolicy.tableCookie')}><code>{row.cookie}</code></td>
-                  <td data-label={t('cookiePolicy.tablePurpose')}>{row.purpose}</td>
-                  <td data-label={t('cookiePolicy.tableDuration')}>{row.duration}</td>
-                  <td data-label={t('cookiePolicy.tableProvider')}>{row.provider}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section id="analytics" aria-labelledby="analytics-heading">
-        <h2 id="analytics-heading">{t('cookiePolicy.analytics')}</h2>
-        <div className="flex items-center gap-2 mb-3">
-          <span className="inline-block rounded-full bg-yellow-500 text-black text-xs font-bold px-3 py-1">
-            {t('cookiePolicy.badgeRequiresConsent')}
-          </span>
-        </div>
-        <div className="table-scroll">
-          <table className="cookie-table table-card-mobile">
-            <thead>
-              <tr>
-                <th>{t('cookiePolicy.tableCookie')}</th>
-                <th>{t('cookiePolicy.tablePurpose')}</th>
-                <th>{t('cookiePolicy.tableDuration')}</th>
-                <th>{t('cookiePolicy.tableProvider')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {analyticsCookies.map((row, i) => (
-                <tr key={i}>
-                  <td data-label={t('cookiePolicy.tableCookie')}><code>{row.cookie}</code></td>
-                  <td data-label={t('cookiePolicy.tablePurpose')}>{row.purpose}</td>
-                  <td data-label={t('cookiePolicy.tableDuration')}>{row.duration}</td>
-                  <td data-label={t('cookiePolicy.tableProvider')}>{row.provider}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <h3>{t('cookiePolicy.analytics')}</h3>
+        <p>{t('cookiePolicy.analyticsDesc')}</p>
+        <CookieTable rows={analyticsCookies} t={t} />
         <p className="muted">{t('cookiePolicy.ga4Note')}</p>
-      </section>
+      </LegalSection>
 
-      <section id="third-party" aria-labelledby="third-party-heading">
-        <h2 id="third-party-heading">{t('cookiePolicy.thirdParty')}</h2>
+      <LegalSection id="third-party" headingKey="cookiePolicy.thirdParty">
         <p className="muted">{t('cookiePolicy.thirdPartyDesc')}</p>
         <ul>
           <li><a href="https://supabase.com/privacy" target="_blank" rel="noopener noreferrer">Supabase Privacy Policy</a></li>
@@ -178,10 +97,9 @@ export default async function CookiePolicyPage() {
           <li><a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer">Cloudflare Privacy Policy</a></li>
           <li><a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google Privacy Policy</a></li>
         </ul>
-      </section>
+      </LegalSection>
 
-      <section id="manage" aria-labelledby="manage-heading">
-        <h2 id="manage-heading">{t('cookiePolicy.howToManage')}</h2>
+      <LegalSection id="manage" headingKey="cookiePolicy.howToManage">
         <p>{t('cookiePolicy.browserSettings')}</p>
         <ul>
           <li><a href="https://support.google.com/chrome/answer/95647" target="_blank" rel="noopener noreferrer">Chrome</a></li>
@@ -189,13 +107,12 @@ export default async function CookiePolicyPage() {
           <li><a href="https://support.apple.com/guide/safari/manage-cookies-and-website-data-sfri11471/mac" target="_blank" rel="noopener noreferrer">Safari</a></li>
           <li><a href="https://support.microsoft.com/edge/delete-cookies-in-microsoft-edge-63947406-40ac-c3b8-57b9-2a946a29ae09" target="_blank" rel="noopener noreferrer">Edge</a></li>
         </ul>
-        <p>Puoi anche riaprire il banner delle preferenze cookie in qualsiasi momento cliccando su <strong>«Preferenze cookie»</strong> nel footer di questa pagina.</p>
-      </section>
+        <p className="muted">{t('cookiePolicy.reopenBanner')}</p>
+      </LegalSection>
 
-      <section id="contact" aria-labelledby="contact-heading">
-        <h2 id="contact-heading">{t('cookiePolicy.contact')}</h2>
+      <LegalSection id="contact" headingKey="cookiePolicy.contactHeading">
         <p>{t('cookiePolicy.contact')}</p>
-      </section>
+      </LegalSection>
     </LegalPageLayout>
   )
 }
