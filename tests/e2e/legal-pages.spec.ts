@@ -12,7 +12,14 @@ const LEGAL_ROUTES = [
   { path: '/terms-and-conditions', titleKey: 'terms.title' },
 ] as const;
 
-const AUDIT_VIEWPORTS: ViewportName[] = ['mobile-small', 'desktop'];
+const AUDIT_VIEWPORTS: ViewportName[] = [
+  'mobile-small',
+  'mobile',
+  'tablet-portrait',
+  'tablet-landscape',
+  'desktop',
+  'desktop-wide',
+];
 
 test.describe('Legal pages UI (P0 gate)', () => {
   // serial: evita instabilità WebKit con pagine parallele (connection refused)
@@ -31,7 +38,7 @@ test.describe('Legal pages UI (P0 gate)', () => {
         await page.waitForLoadState('load');
         await page.waitForTimeout(400);
 
-        // h1 brand header
+        // h1 brand header all'interno dell'article
         const h1 = page.locator('#legal-content h1');
         await expect(h1).toHaveText(itDict[route.titleKey]);
 
@@ -61,7 +68,7 @@ test.describe('Legal pages UI (P0 gate)', () => {
           expect(scrollY).toBeGreaterThan(0);
         }
 
-        // footer legale: NIENTE bottone preferenze cookie (solo 3 link, stessa scheda)
+        // footer legale: NIENTE bottone preferenze cookie (3 link, stessa scheda)
         const footer = page.locator('section[data-section="legal"] footer');
         expect(footer.getByRole('button', { name: itDict['footer.cookieConsent'] })).toHaveCount(0);
         const legalLinks = footer.locator(

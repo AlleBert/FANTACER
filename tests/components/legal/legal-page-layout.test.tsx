@@ -23,7 +23,7 @@ global.IntersectionObserver = MockIntersectionObserver as unknown as typeof Inte
 describe('LegalPageLayout', () => {
   it('renderizza il link "torna al gioco" con parola chiave legal.backToGame', () => {
     render(
-      <LegalPageLayout titleKey="cookiePolicy.title" sections={[]}>
+      <LegalPageLayout titleKey="cookiePolicy.title" lastUpdatedKey="cookiePolicy.lastUpdated" sections={[]}>
         <p>contenuto</p>
       </LegalPageLayout>,
     )
@@ -33,7 +33,7 @@ describe('LegalPageLayout', () => {
 
   it('applica la superficie velatura (classe legal-surface)', () => {
     const { container } = render(
-      <LegalPageLayout titleKey="cookiePolicy.title" sections={[]}>
+      <LegalPageLayout titleKey="cookiePolicy.title" lastUpdatedKey="cookiePolicy.lastUpdated" sections={[]}>
         <p>contenuto</p>
       </LegalPageLayout>,
     )
@@ -43,7 +43,7 @@ describe('LegalPageLayout', () => {
 
   it('renderizza l\'article bianco con id legal-content', () => {
     const { container } = render(
-      <LegalPageLayout titleKey="cookiePolicy.title" sections={[]}>
+      <LegalPageLayout titleKey="cookiePolicy.title" lastUpdatedKey="cookiePolicy.lastUpdated" sections={[]}>
         <p>contenuto</p>
       </LegalPageLayout>,
     )
@@ -52,7 +52,7 @@ describe('LegalPageLayout', () => {
 
   it('espone uno skip link verso il contenuto legale', () => {
     render(
-      <LegalPageLayout titleKey="cookiePolicy.title" sections={[]}>
+      <LegalPageLayout titleKey="cookiePolicy.title" lastUpdatedKey="cookiePolicy.lastUpdated" sections={[]}>
         <p>contenuto</p>
       </LegalPageLayout>,
     )
@@ -62,7 +62,7 @@ describe('LegalPageLayout', () => {
 
   it('footer mostra 6 link (skip + back-to-game + footer nav + credit) e nessun bottone cookie', () => {
     render(
-      <LegalPageLayout titleKey="cookiePolicy.title" sections={[]}>
+      <LegalPageLayout titleKey="cookiePolicy.title" lastUpdatedKey="cookiePolicy.lastUpdated" sections={[]}>
         <p>contenuto</p>
       </LegalPageLayout>,
     )
@@ -74,30 +74,31 @@ describe('LegalPageLayout', () => {
     render(
       <LegalPageLayout
         titleKey="cookiePolicy.title"
+        lastUpdatedKey="cookiePolicy.lastUpdated"
         sections={[
-          { id: 'controller', headingKey: 'cookiePolicy.controller' },
-          { id: 'dpo', headingKey: 'cookiePolicy.dpo' },
+          { id: 'what-are-cookies', headingKey: 'cookiePolicy.whatAreCookies' },
+          { id: 'categories', headingKey: 'cookiePolicy.categories' },
         ]}
       >
-        <section id="controller"><h2 id="controller-heading">Controller</h2></section>
-        <section id="dpo"><h2 id="dpo-heading">DPO</h2></section>
+        <section id="what-are-cookies"><h2 id="what-are-cookies-heading">What Are Cookies</h2></section>
+        <section id="categories"><h2 id="categories-heading">Categories</h2></section>
       </LegalPageLayout>,
     )
     act(() => {
       const cb = (global as any).ioCallback
       if (cb) {
-        cb?.([{ isIntersecting: true, target: { id: 'dpo' } } as unknown as IntersectionObserverEntry], {} as IntersectionObserver)
+        cb?.([{ isIntersecting: true, target: { id: 'categories' } } as unknown as IntersectionObserverEntry], {} as IntersectionObserver)
       }
     })
-    const dpoLink = document.querySelector('a[href="#dpo"]')
-    expect(dpoLink?.classList.contains('is-scrollspy-active')).toBe(true)
-    const controllerLink = document.querySelector('a[href="#controller"]')
-    expect(controllerLink?.classList.contains('is-scrollspy-active')).toBe(false)
+    const categoriesLink = document.querySelector('a[href="#categories"]')
+    expect(categoriesLink?.classList.contains('is-scrollspy-active')).toBe(true)
+    const whatAreCookiesLink = document.querySelector('a[href="#what-are-cookies"]')
+    expect(whatAreCookiesLink?.classList.contains('is-scrollspy-active')).toBe(false)
   })
 
   it('non esiste elemento mobile details nella DOM', () => {
     render(
-      <LegalPageLayout titleKey="cookiePolicy.title" sections={[]}>
+      <LegalPageLayout titleKey="cookiePolicy.title" lastUpdatedKey="cookiePolicy.lastUpdated" sections={[]}>
         <p>contenuto</p>
       </LegalPageLayout>,
     )
