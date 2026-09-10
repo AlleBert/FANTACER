@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import { dictionaries } from '@/i18n'
 import { LegalPageLayout, LegalSection } from '@/components/legal/legal-page-layout'
 import { getLegalLocale, makeLegalT } from '@/lib/legal'
-import type { DictionaryKey } from '@/i18n/dictionary'
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLegalLocale()

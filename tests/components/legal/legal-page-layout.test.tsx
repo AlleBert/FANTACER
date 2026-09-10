@@ -5,12 +5,14 @@ jest.mock('@/lib/LocaleContext', () => ({
   useLocale: () => ({ t: (key: string) => key, locale: 'it' }),
 }))
 
+let ioCallback: IntersectionObserverCallback | null = null
+
 class MockIntersectionObserver implements IntersectionObserver {
   readonly root = null
   readonly rootMargin = ''
   readonly thresholds = [0]
   constructor(cb: IntersectionObserverCallback) {
-    ;(global as any).ioCallback = cb
+    ioCallback = cb
   }
   observe = jest.fn()
   unobserve = jest.fn()
@@ -60,14 +62,14 @@ describe('LegalPageLayout', () => {
     expect(screen.getByRole('link', { name: /salta|skip/i })).toHaveAttribute('href', '#legal-content')
   })
 
-  it('footer mostra 6 link (skip + back-to-game + footer nav + credit) e nessun bottone cookie', () => {
+  it('footer mostra 5 link (skip + back-to-game + 3 footer links) e nessun bottone cookie', () => {
     render(
       <LegalPageLayout titleKey="cookiePolicy.title" lastUpdatedKey="cookiePolicy.lastUpdated" sections={[]}>
         <p>contenuto</p>
       </LegalPageLayout>,
     )
     expect(screen.queryByRole('button', { name: 'footer.cookieConsent' })).not.toBeInTheDocument()
-    expect(screen.getAllByRole('link').length).toBe(6)
+    expect(screen.getAllByRole('link').length).toBe(5)
   })
 
   it('evidenzia la voce indice attiva nello scrollspy desktop (nessun details mobile)', () => {
@@ -85,9 +87,8 @@ describe('LegalPageLayout', () => {
       </LegalPageLayout>,
     )
     act(() => {
-      const cb = (global as any).ioCallback
-      if (cb) {
-        cb?.([{ isIntersecting: true, target: { id: 'categories' } } as unknown as IntersectionObserverEntry], {} as IntersectionObserver)
+      if (ioCallback) {
+        ioCallback?.([{ isIntersecting: true, target: { id: 'categories' } } as unknown as IntersectionObserverEntry], {} as IntersectionObserver)
       }
     })
     const categoriesLink = document.querySelector('a[href="#categories"]')
