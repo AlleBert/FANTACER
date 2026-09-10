@@ -73,9 +73,9 @@ export default async function PrivacyPolicyPage() {
     { id: 'transfers', headingKey: 'privacyPolicy.transfers' },
     { id: 'retention', headingKey: 'privacyPolicy.retention' },
     { id: 'rights', headingKey: 'privacyPolicy.rights' },
-    { id: 'exercise', headingKey: 'privacyPolicy.howToExercise' },
-    { id: 'complaint', headingKey: 'privacyPolicy.complaint' },
-    { id: 'changes', headingKey: 'privacyPolicy.changes' },
+    { id: 'exercise', headingKey: 'privacyPolicy.howToExerciseHeading' },
+    { id: 'complaint', headingKey: 'privacyPolicy.complaintHeading' },
+    { id: 'changes', headingKey: 'privacyPolicy.changesHeading' },
     { id: 'contact', headingKey: 'privacyPolicy.contact' },
   ] as const
 
@@ -87,33 +87,34 @@ export default async function PrivacyPolicyPage() {
       sections={sections}
     >
       <LegalSection id="controller" headingKey="privacyPolicy.controller">
-        <h2 id="controller-heading">{t('privacyPolicy.controller')}</h2>
         <p>{t('privacyPolicy.controllerDetails')}</p>
       </LegalSection>
 
       <LegalSection id="dpo" headingKey="privacyPolicy.dpo">
-        <h2 id="dpo-heading">{t('privacyPolicy.dpo')}</h2>
         <p>{t('privacyPolicy.dpoContact')}</p>
       </LegalSection>
 
       <LegalSection id="data-categories" headingKey="privacyPolicy.dataCategories">
-        <p>{t('privacyPolicy.dataCategories')}</p>
+        <p>{t('privacyPolicy.dataContact')}</p>
+        <p>{t('privacyPolicy.dataVoting')}</p>
+        <p>{t('privacyPolicy.dataAdmin')}</p>
+        <p>{t('privacyPolicy.dataAnalytics')}</p>
+        <p>{t('privacyPolicy.dataTechnical')}</p>
       </LegalSection>
 
       <LegalSection id="purposes" headingKey="privacyPolicy.purposes">
-        <h3>{t('privacyPolicy.purposeContact')}</h3>
         <p>{t('privacyPolicy.purposeContact')}</p>
-        <h3>{t('privacyPolicy.purposeVoting')}</h3>
         <p>{t('privacyPolicy.purposeVoting')}</p>
-        <h3>{t('privacyPolicy.purposeAdmin')}</h3>
         <p>{t('privacyPolicy.purposeAdmin')}</p>
-        <h3>{t('privacyPolicy.purposeAnalytics')}</h3>
         <p>{t('privacyPolicy.purposeAnalytics')}</p>
-        <h3>{t('privacyPolicy.purposeSecurity')}</h3>
         <p>{t('privacyPolicy.purposeSecurity')}</p>
       </LegalSection>
 
       <LegalSection id="legal-bases" headingKey="privacyPolicy.legalBases">
+        <p>
+          Ogni trattamento dei dati è associato a una base giuridica specifica, in modo che il trattamento sia
+          proporzionato e rispetti le finalità del servizio e le esigenze di sicurezza del gioco.
+        </p>
         <ul>
           <li><strong>{t('privacyPolicy.basisConsent')}</strong></li>
           <li><strong>{t('privacyPolicy.basisLegitimate')}</strong></li>
@@ -129,43 +130,41 @@ export default async function PrivacyPolicyPage() {
       </LegalSection>
 
       <LegalSection id="subprocessors" headingKey="privacyPolicy.subprocessors">
-        <h2>{t('privacyPolicy.subprocessors')}</h2>
         <p>{t('privacyPolicy.subprocessorsIntro')}</p>
         <SubprocessorList t={t} />
       </LegalSection>
 
       <LegalSection id="transfers" headingKey="privacyPolicy.transfers">
-        <h2>{t('privacyPolicy.transfers')}</h2>
         <p>{t('privacyPolicy.transfersDesc')}</p>
       </LegalSection>
 
       <LegalSection id="retention" headingKey="privacyPolicy.retention">
+        <p>{t('privacyPolicy.retentionIntro')}</p>
         <RetentionTable t={t} />
       </LegalSection>
 
       <LegalSection id="rights" headingKey="privacyPolicy.rights">
-        <h2>{t('privacyPolicy.rights')}</h2>
+        <p>
+          Gli interessati possono richiedere di verificare, correggere, limitare o cancellare i propri dati, nonché
+          di ottenere una copia in formato portabile o opporsi a trattamenti non necessari.
+        </p>
         <p>{t('privacyPolicy.rightsList')}</p>
       </LegalSection>
 
-      <LegalSection id="exercise" headingKey="privacyPolicy.howToExercise">
-        <h2>{t('privacyPolicy.howToExerciseHeading')}</h2>
+      <LegalSection id="exercise" headingKey="privacyPolicy.howToExerciseHeading">
         <p>{t('privacyPolicy.howToExercise')}</p>
       </LegalSection>
 
       <LegalSection id="complaint" headingKey="privacyPolicy.complaintHeading">
-        <h2>{t('privacyPolicy.complaintHeading')}</h2>
         <p>{t('privacyPolicy.complaint')}</p>
       </LegalSection>
 
       <LegalSection id="changes" headingKey="privacyPolicy.changesHeading">
-        <h2>{t('privacyPolicy.changesHeading')}</h2>
         <p>{t('privacyPolicy.changes')}</p>
       </LegalSection>
 
       <LegalSection id="contact" headingKey="privacyPolicy.contact">
-        <h2>{t('privacyPolicy.contact')}</h2>
-        <p>{t('privacyPolicy.dataContactDesc') || 'team@fantacer.com'}</p>
+        <p>{t('privacyPolicy.contactDetails')}</p>
       </LegalSection>
     </LegalPageLayout>
   )

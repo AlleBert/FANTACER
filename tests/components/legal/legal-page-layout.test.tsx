@@ -1,8 +1,16 @@
-import { render, screen, act, fireEvent } from '@testing-library/react'
-import { LegalPageLayout } from '@/components/legal/legal-page-layout'
+import { render, screen, act } from '@testing-library/react'
+import { LegalPageLayout, LegalSection } from '@/components/legal/legal-page-layout'
+import CookiePolicyPage from '@/app/cookie-policy/page'
+import PrivacyPolicyPage from '@/app/privacy-policy/page'
+import TermsAndConditionsPage from '@/app/terms-and-conditions/page'
 
 jest.mock('@/lib/LocaleContext', () => ({
   useLocale: () => ({ t: (key: string) => key, locale: 'it' }),
+}))
+
+jest.mock('@/lib/legal', () => ({
+  getLegalLocale: jest.fn(async () => 'it'),
+  makeLegalT: () => ((key: string) => key),
 }))
 
 let ioCallback: IntersectionObserverCallback | null = null
@@ -95,6 +103,61 @@ describe('LegalPageLayout', () => {
     expect(categoriesLink?.classList.contains('is-scrollspy-active')).toBe(true)
     const whatAreCookiesLink = document.querySelector('a[href="#what-are-cookies"]')
     expect(whatAreCookiesLink?.classList.contains('is-scrollspy-active')).toBe(false)
+  })
+  it('usa l\'indice come unica fonte di etichetta per la sezione legale', () => {
+    render(
+      <LegalPageLayout
+        titleKey="cookiePolicy.title"
+        lastUpdatedKey="cookiePolicy.lastUpdated"
+        sections={[{ id: 'controller', headingKey: 'privacyPolicy.controller' }]}
+      >
+        <LegalSection id="controller">
+          <p>Contenuto della sezione.</p>
+        </LegalSection>
+      </LegalPageLayout>,
+    )
+
+    expect(screen.getByRole('link', { name: 'privacyPolicy.controller' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'privacyPolicy.controller' })).not.toBeInTheDocument()
+  })
+  it('mantiene paragrafi esplicativi nelle sezioni legali anche quando contengono liste o tabelle', async () => {
+    const { container: cookieContainer } = render(await CookiePolicyPage())
+    const { container: privacyContainer } = render(await PrivacyPolicyPage())
+    const { container: termsContainer } = render(await TermsAndConditionsPage())
+
+    expect(cookieContainer.querySelectorAll('p').length).toBeGreaterThan(0)
+    expect(privacyContainer.querySelectorAll('p').length).toBeGreaterThan(0)
+    expect(termsContainer.querySelectorAll('p').length).toBeGreaterThan(0)
+
+    expect(cookieContainer.querySelector('#what-are-cookies p')).not.toBeNull()
+    expect(privacyContainer.querySelector('#retention p, #retention table')).not.toBeNull()
+    expect(termsContainer.querySelector('#voting-rules p, #voting-rules ul')).not.toBeNull()
+  })
+
+  it('non lascia l\'href nel pathname e scrolla alla sezione corretta', () => {
+    const scrollTo = jest.fn()
+    window.scrollTo = scrollTo as typeof window.scrollTo
+    window.history.replaceState({}, '', '/privacy-policy')
+
+    render(
+      <LegalPageLayout
+        titleKey="privacyPolicy.title"
+        lastUpdatedKey="privacyPolicy.lastUpdated"
+        sections={[
+          { id: 'controller', headingKey: 'privacyPolicy.controller' },
+          { id: 'rights', headingKey: 'privacyPolicy.rights' },
+        ]}
+      >
+        <LegalSection id="controller"><p>Controller</p></LegalSection>
+        <LegalSection id="rights"><p>Rights</p></LegalSection>
+      </LegalPageLayout>,
+    )
+
+    const targetLink = screen.getByRole('link', { name: 'privacyPolicy.rights' })
+    targetLink.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+
+    expect(window.location.hash).toBe('')
+    expect(scrollTo).toHaveBeenCalled()
   })
 
   it('non esiste elemento mobile details nella DOM', () => {

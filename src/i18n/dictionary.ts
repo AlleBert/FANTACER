@@ -205,6 +205,7 @@ export interface Dictionary {
   'privacyPolicy.complaint': string
   'privacyPolicy.changes': string
   'privacyPolicy.contact': string
+  'privacyPolicy.contactDetails': string
   'privacyPolicy.dataContact': string
   'privacyPolicy.dataVoting': string
   'privacyPolicy.dataAdmin': string
@@ -239,6 +240,11 @@ export interface Dictionary {
   'privacyPolicy.recipientsDesc': string
   'privacyPolicy.subprocessorsIntro': string
   'privacyPolicy.legalBasisNote': string
+  'privacyPolicy.retentionIntro': string
+  'privacyPolicy.ipIntro': string
+  'privacyPolicy.limitationIntro': string
+  'privacyPolicy.terminationIntro': string
+  'privacyPolicy.governingLawIntro': string
   'privacyPolicy.retentionTableCategory': string
   'privacyPolicy.retentionTablePeriod': string
   'privacyPolicy.howToExerciseHeading': string
@@ -267,6 +273,10 @@ export interface Dictionary {
   'terms.companyLogos': string
   'terms.voteAttribution': string
   'terms.voteValidity': string
+  'terms.ipIntro': string
+  'terms.limitationIntro': string
+  'terms.terminationIntro': string
+  'terms.governingLawIntro': string
   'terms.userContent': string
   'terms.userContentDesc': string
   'terms.disclaimer': string

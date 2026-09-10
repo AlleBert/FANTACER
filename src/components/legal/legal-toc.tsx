@@ -11,6 +11,17 @@ export interface LegalTocItem {
 export function LegalToc({ items, label }: { items: LegalTocItem[]; label: string }) {
   const [activeId, setActiveId] = useState<string | null>(null)
 
+  const scrollToSection = (id: string) => {
+    const el = document.getElementById(id)
+    if (!el) return
+
+    setActiveId(id)
+    const offset = 96
+    const top = el.getBoundingClientRect().top + window.scrollY - offset
+    window.scrollTo({ top, behavior: 'smooth' })
+    window.history.replaceState(null, '', window.location.pathname + window.location.search)
+  }
+
   useEffect(() => {
     if (typeof IntersectionObserver === 'undefined') return
     const els = items
@@ -55,6 +66,10 @@ export function LegalToc({ items, label }: { items: LegalTocItem[]; label: strin
             <a
               href={`#${item.id}`}
               aria-current={activeId === item.id ? 'location' : undefined}
+              onClick={(event) => {
+                event.preventDefault()
+                scrollToSection(item.id)
+              }}
               className={cn(
                 '-ml-px block border-l-2 py-1.5 pl-3 text-[13px] leading-snug text-ink/60 transition-colors hover:text-ink',
                 activeId === item.id

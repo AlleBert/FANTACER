@@ -79,6 +79,11 @@ export default async function CookiePolicyPage() {
       </LegalSection>
 
       <LegalSection id="categories" headingKey="cookiePolicy.categories">
+        <p>
+          I cookie consentiti sul sito sono divisi in due gruppi principali: quelli strettamente necessari al
+          funzionamento del gioco e quelli legati all’analisi del traffico, attivati solo dopo l’esplicito consenso.
+        </p>
+
         <h3>{t('cookiePolicy.essential')}</h3>
         <p>{t('cookiePolicy.essentialDesc')}</p>
         <CookieTable rows={essentialCookies} t={t} />

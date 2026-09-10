@@ -120,13 +120,18 @@ export function LegalSection({
   children,
 }: {
   id: string
-  headingKey: DictionaryKey
+  headingKey?: DictionaryKey
   children: ReactNode
 }) {
   const { t } = useLocale()
+
   return (
-    <section id={id} aria-labelledby={`${id}-heading`}>
-      <h2 id={`${id}-heading`}>{t(headingKey)}</h2>
+    <section id={id} className="scroll-mt-24">
+      {headingKey && (
+        <h2 className="mb-4 text-[11px] font-black uppercase tracking-[0.14em] text-ink/55">
+          {t(headingKey)}
+        </h2>
+      )}
       {children}
     </section>
   )

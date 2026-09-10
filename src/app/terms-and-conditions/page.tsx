@@ -15,30 +15,11 @@ const VOTING_RULES = [
   { key: 'terms.votingNoTrading', label: 'Nessuna compravendita voti' },
 ] as const
 
-const PRIZE_SECTION_ITEMS = [
-  { key: 'terms.prizeCollection', label: 'Ritiro del premio' },
-  { key: 'terms.prizeDetails', label: 'Dettagli premio' },
-  { key: 'terms.fairDates', label: 'Date fiera' },
-  { key: 'terms.gadget', label: 'Gadget' },
-  { key: 'terms.noCashAlternative', label: 'Nessuna alternativa cash' },
-  { key: 'terms.unclaimedForfeited', label: 'Premi non ritirati' },
-] as const
-
 function VotingRulesList({ t }: { t: ReturnType<typeof makeLegalT> }) {
   return (
     <ul>
       {VOTING_RULES.map((rule) => (
         <li key={rule.key}>{t(rule.key)}</li>
-      ))}
-    </ul>
-  )
-}
-
-function PrizeSectionItems({ t }: { t: ReturnType<typeof makeLegalT> }) {
-  return (
-    <ul>
-      {PRIZE_SECTION_ITEMS.map((item) => (
-        <li key={item.key}>{t(item.key)}</li>
       ))}
     </ul>
   )
@@ -51,16 +32,12 @@ export default async function TermsAndConditionsPage() {
   const sections = [
     { id: 'acceptance', headingKey: 'terms.acceptance' },
     { id: 'service', headingKey: 'terms.serviceDescription' },
-    { id: 'eligibility', headingKey: 'terms.eligibility' },
     { id: 'voting-rules', headingKey: 'terms.votingRules' },
     { id: 'prize', headingKey: 'terms.prizeCollection' },
     { id: 'ip', headingKey: 'terms.intellectualProperty' },
-    { id: 'user-content', headingKey: 'terms.userContent' },
-    { id: 'disclaimer', headingKey: 'terms.disclaimer' },
-    { id: 'limitation', headingKey: 'terms.limitation' },
+    { id: 'responsibility', headingKey: 'terms.limitation' },
     { id: 'termination', headingKey: 'terms.termination' },
     { id: 'governing-law', headingKey: 'terms.governingLaw' },
-    { id: 'changes', headingKey: 'terms.changes' },
     { id: 'contact', headingKey: 'terms.contact' },
   ] as const
 
@@ -71,41 +48,43 @@ export default async function TermsAndConditionsPage() {
       sections={sections}
     >
       <LegalSection id="acceptance" headingKey="terms.acceptance">
-        <h2>{t('terms.acceptance')}</h2>
         <p>{t('terms.acceptanceDesc')}</p>
       </LegalSection>
 
       <LegalSection id="service" headingKey="terms.serviceDescription">
-        <h2>{t('terms.serviceDescription')}</h2>
-        <p>{t('terms.serviceDescription')}</p>
+        <p>
+          Fantacer mette in gioco un’esperienza semplice e partecipativa: il visitatore sceglie le aziende preferite,
+          conferma il voto e raccoglie il premio disponibile durante la fiera.
+        </p>
       </LegalSection>
 
       <LegalSection id="eligibility" headingKey="terms.eligibility">
-        <h2>{t('terms.eligibility')}</h2>
         <p>{t('terms.eligibilityDesc')}</p>
       </LegalSection>
 
       <LegalSection id="voting-rules" headingKey="terms.votingRules">
-        <h2>{t('terms.votingRules')}</h2>
+        <p>
+          Il gioco è pensato per un voto chiaro e verificabile: un solo voto per dispositivo, tre aziende distinte e
+          nessuna forma automatizzata di partecipazione.
+        </p>
         <VotingRulesList t={t} />
         <ul>
           <li><strong>{t('terms.oneVotePerDay')}</strong></li>
           <li><strong>{t('terms.threeCompanies')}</strong></li>
         </ul>
+        <p>{t('terms.voteValidity')}</p>
       </LegalSection>
 
       <LegalSection id="prize" headingKey="terms.prizeCollection">
-        <h2>{t('terms.prizeCollection')}</h2>
         <p>{t('terms.prizeDetails')}</p>
         <p><strong>{t('terms.fairDates')}</strong></p>
         <p>{t('terms.gadget')}</p>
         <p>{t('terms.noCashAlternative')}</p>
-        <PrizeSectionItems t={t} />
         <p>{t('terms.unclaimedForfeited')}</p>
       </LegalSection>
 
       <LegalSection id="ip" headingKey="terms.intellectualProperty">
-        <h2>{t('terms.intellectualProperty')}</h2>
+        <p>{t('terms.ipIntro')}</p>
         <ul>
           <li><strong>{t('terms.brandOwnership')}</strong></li>
           <li><strong>{t('terms.companyLogos')}</strong></li>
@@ -114,17 +93,20 @@ export default async function TermsAndConditionsPage() {
       </LegalSection>
 
       <LegalSection id="user-content" headingKey="terms.userContent">
-        <h2>{t('terms.userContent')}</h2>
+        <p>
+          Tutti i contenuti inseriti dagli utenti devono essere corretti, pertinenti e non lesivi di diritti di terzi.
+          Fantacer non è responsabile del contenuto inviato da chi partecipa ma si riserva di intervenire in caso di
+          uso improprio del servizio.
+        </p>
         <p>{t('terms.userContentDesc')}</p>
       </LegalSection>
 
       <LegalSection id="disclaimer" headingKey="terms.disclaimer">
-        <h2>{t('terms.disclaimer')}</h2>
         <p>{t('terms.disclaimerDesc')}</p>
       </LegalSection>
 
-      <LegalSection id="limitation" headingKey="terms.limitation">
-        <h2>{t('terms.limitation')}</h2>
+      <LegalSection id="responsibility" headingKey="terms.limitation">
+        <p>{t('terms.limitationIntro')}</p>
         <ul>
           <li><strong>{t('terms.maxLiability')}</strong></li>
           <li><strong>{t('terms.noIndirectDamages')}</strong></li>
@@ -132,7 +114,7 @@ export default async function TermsAndConditionsPage() {
       </LegalSection>
 
       <LegalSection id="termination" headingKey="terms.termination">
-        <h2>{t('terms.termination')}</h2>
+        <p>{t('terms.terminationIntro')}</p>
         <ul>
           <li><strong>{t('terms.organizerMayEnd')}</strong></li>
           <li><strong>{t('terms.userMayStop')}</strong></li>
@@ -141,7 +123,7 @@ export default async function TermsAndConditionsPage() {
       </LegalSection>
 
       <LegalSection id="governing-law" headingKey="terms.governingLaw">
-        <h2>{t('terms.governingLaw')}</h2>
+        <p>{t('terms.governingLawIntro')}</p>
         <ul>
           <li><strong>{t('terms.italianLaw')}</strong></li>
           <li><strong>{t('terms.tribunalReggio')}</strong></li>
@@ -149,12 +131,10 @@ export default async function TermsAndConditionsPage() {
       </LegalSection>
 
       <LegalSection id="changes" headingKey="terms.changes">
-        <h2>{t('terms.changes')}</h2>
         <p>{t('terms.changesDesc')}</p>
       </LegalSection>
 
       <LegalSection id="contact" headingKey="terms.contact">
-        <h2>{t('terms.contact')}</h2>
         <p>{t('terms.contactDesc')}</p>
       </LegalSection>
     </LegalPageLayout>
