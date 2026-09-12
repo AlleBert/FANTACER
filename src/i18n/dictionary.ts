@@ -257,49 +257,37 @@ export interface Dictionary {
   'terms.lastUpdated': string
   'terms.acceptance': string
   'terms.acceptanceDesc': string
-  'terms.serviceDescription': string
+  'terms.acceptanceFree': string
+  'terms.acceptanceVoluntary': string
   'terms.eligibility': string
-  'terms.eligibilityDesc': string
-  'terms.votingRules': string
+  'terms.votingTurnstile': string
+  'terms.eligibilityAge': string
   'terms.oneVotePerDay': string
-  'terms.threeCompanies': string
-  'terms.prizeCollection': string
-  'terms.prizeDetails': string
-  'terms.fairDates': string
-  'terms.gadget': string
-  'terms.noCashAlternative': string
-  'terms.unclaimedForfeited': string
+  'terms.participation': string
+  'terms.participationDesc': string
   'terms.intellectualProperty': string
   'terms.brandOwnership': string
   'terms.companyLogos': string
   'terms.voteAttribution': string
-  'terms.voteValidity': string
   'terms.ipIntro': string
-  'terms.limitationIntro': string
-  'terms.terminationIntro': string
-  'terms.governingLawIntro': string
   'terms.userContent': string
+  'terms.userContentIntro': string
   'terms.userContentDesc': string
   'terms.disclaimer': string
   'terms.disclaimerDesc': string
   'terms.limitation': string
-  'terms.maxLiability': string
-  'terms.noIndirectDamages': string
-  'terms.termination': string
+  'terms.limitationFantasy': string
   'terms.organizerMayEnd': string
   'terms.userMayStop': string
   'terms.provisionsSurvive': string
   'terms.governingLaw': string
+  'terms.governingLawIntro': string
   'terms.italianLaw': string
   'terms.tribunalReggio': string
   'terms.changes': string
   'terms.changesDesc': string
   'terms.contact': string
   'terms.contactDesc': string
-  'terms.votingTurnstile': string
-  'terms.votingConfirm': string
-  'terms.votingNoAutomation': string
-  'terms.votingNoTrading': string
 
   // Vote API errors
   'voteError.missingFields': string

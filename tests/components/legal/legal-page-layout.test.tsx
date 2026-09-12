@@ -70,14 +70,14 @@ describe('LegalPageLayout', () => {
     expect(screen.getByRole('link', { name: /salta|skip/i })).toHaveAttribute('href', '#legal-content')
   })
 
-  it('footer mostra 5 link (skip + back-to-game + 3 footer links) e nessun bottone cookie', () => {
+  it('footer mostra 6 link (skip + back-to-game + 3 footer links + archi467) e nessun bottone cookie', () => {
     render(
       <LegalPageLayout titleKey="cookiePolicy.title" lastUpdatedKey="cookiePolicy.lastUpdated" sections={[]}>
         <p>contenuto</p>
       </LegalPageLayout>,
     )
     expect(screen.queryByRole('button', { name: 'footer.cookieConsent' })).not.toBeInTheDocument()
-    expect(screen.getAllByRole('link').length).toBe(5)
+    expect(screen.getAllByRole('link').length).toBe(6)
   })
 
   it('evidenzia la voce indice attiva nello scrollspy desktop (nessun details mobile)', () => {
@@ -131,7 +131,7 @@ describe('LegalPageLayout', () => {
 
     expect(cookieContainer.querySelector('#what-are-cookies p')).not.toBeNull()
     expect(privacyContainer.querySelector('#retention p, #retention table')).not.toBeNull()
-    expect(termsContainer.querySelector('#voting-rules p, #voting-rules ul')).not.toBeNull()
+    expect(termsContainer.querySelector('#participation p')).not.toBeNull()
   })
 
   it('non lascia l\'href nel pathname e scrolla alla sezione corretta', () => {

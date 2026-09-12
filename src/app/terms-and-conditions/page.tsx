@@ -8,18 +8,17 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: `${dictionaries[locale]['terms.title']} — FANTACER` }
 }
 
-const VOTING_RULES = [
-  { key: 'terms.votingTurnstile', label: 'Verifica Turnstile (CAPTCHA)' },
-  { key: 'terms.votingConfirm', label: 'Conferma e schermata premio' },
-  { key: 'terms.votingNoAutomation', label: 'Nessun script o bot' },
-  { key: 'terms.votingNoTrading', label: 'Nessuna compravendita voti' },
+const PARTICIPATION_REQUIREMENTS = [
+  'terms.votingTurnstile',
+  'terms.eligibilityAge',
+  'terms.oneVotePerDay',
 ] as const
 
-function VotingRulesList({ t }: { t: ReturnType<typeof makeLegalT> }) {
+function ParticipationRequirements({ t }: { t: ReturnType<typeof makeLegalT> }) {
   return (
     <ul>
-      {VOTING_RULES.map((rule) => (
-        <li key={rule.key}>{t(rule.key)}</li>
+      {PARTICIPATION_REQUIREMENTS.map((key) => (
+        <li key={key}>{t(key)}</li>
       ))}
     </ul>
   )
@@ -31,13 +30,14 @@ export default async function TermsAndConditionsPage() {
 
   const sections = [
     { id: 'acceptance', headingKey: 'terms.acceptance' },
-    { id: 'service', headingKey: 'terms.serviceDescription' },
-    { id: 'voting-rules', headingKey: 'terms.votingRules' },
-    { id: 'prize', headingKey: 'terms.prizeCollection' },
+    { id: 'eligibility', headingKey: 'terms.eligibility' },
+    { id: 'participation', headingKey: 'terms.participation' },
     { id: 'ip', headingKey: 'terms.intellectualProperty' },
+    { id: 'user-content', headingKey: 'terms.userContent' },
+    { id: 'disclaimer', headingKey: 'terms.disclaimer' },
     { id: 'responsibility', headingKey: 'terms.limitation' },
-    { id: 'termination', headingKey: 'terms.termination' },
     { id: 'governing-law', headingKey: 'terms.governingLaw' },
+    { id: 'changes', headingKey: 'terms.changes' },
     { id: 'contact', headingKey: 'terms.contact' },
   ] as const
 
@@ -49,38 +49,16 @@ export default async function TermsAndConditionsPage() {
     >
       <LegalSection id="acceptance" headingKey="terms.acceptance">
         <p>{t('terms.acceptanceDesc')}</p>
-      </LegalSection>
-
-      <LegalSection id="service" headingKey="terms.serviceDescription">
-        <p>
-          Fantacer mette in gioco un’esperienza semplice e partecipativa: il visitatore sceglie le aziende preferite,
-          conferma il voto e raccoglie il premio disponibile durante la fiera.
-        </p>
+        <p>{t('terms.acceptanceFree')}</p>
+        <p>{t('terms.acceptanceVoluntary')}</p>
       </LegalSection>
 
       <LegalSection id="eligibility" headingKey="terms.eligibility">
-        <p>{t('terms.eligibilityDesc')}</p>
+        <ParticipationRequirements t={t} />
       </LegalSection>
 
-      <LegalSection id="voting-rules" headingKey="terms.votingRules">
-        <p>
-          Il gioco è pensato per un voto chiaro e verificabile: un solo voto per dispositivo, tre aziende distinte e
-          nessuna forma automatizzata di partecipazione.
-        </p>
-        <VotingRulesList t={t} />
-        <ul>
-          <li><strong>{t('terms.oneVotePerDay')}</strong></li>
-          <li><strong>{t('terms.threeCompanies')}</strong></li>
-        </ul>
-        <p>{t('terms.voteValidity')}</p>
-      </LegalSection>
-
-      <LegalSection id="prize" headingKey="terms.prizeCollection">
-        <p>{t('terms.prizeDetails')}</p>
-        <p><strong>{t('terms.fairDates')}</strong></p>
-        <p>{t('terms.gadget')}</p>
-        <p>{t('terms.noCashAlternative')}</p>
-        <p>{t('terms.unclaimedForfeited')}</p>
+      <LegalSection id="participation" headingKey="terms.participation">
+        <p>{t('terms.participationDesc')}</p>
       </LegalSection>
 
       <LegalSection id="ip" headingKey="terms.intellectualProperty">
@@ -93,11 +71,7 @@ export default async function TermsAndConditionsPage() {
       </LegalSection>
 
       <LegalSection id="user-content" headingKey="terms.userContent">
-        <p>
-          Tutti i contenuti inseriti dagli utenti devono essere corretti, pertinenti e non lesivi di diritti di terzi.
-          Fantacer non è responsabile del contenuto inviato da chi partecipa ma si riserva di intervenire in caso di
-          uso improprio del servizio.
-        </p>
+        <p>{t('terms.userContentIntro')}</p>
         <p>{t('terms.userContentDesc')}</p>
       </LegalSection>
 
@@ -106,20 +80,10 @@ export default async function TermsAndConditionsPage() {
       </LegalSection>
 
       <LegalSection id="responsibility" headingKey="terms.limitation">
-        <p>{t('terms.limitationIntro')}</p>
-        <ul>
-          <li><strong>{t('terms.maxLiability')}</strong></li>
-          <li><strong>{t('terms.noIndirectDamages')}</strong></li>
-        </ul>
-      </LegalSection>
-
-      <LegalSection id="termination" headingKey="terms.termination">
-        <p>{t('terms.terminationIntro')}</p>
-        <ul>
-          <li><strong>{t('terms.organizerMayEnd')}</strong></li>
-          <li><strong>{t('terms.userMayStop')}</strong></li>
-          <li><strong>{t('terms.provisionsSurvive')}</strong></li>
-        </ul>
+        <p>{t('terms.limitationFantasy')}</p>
+        <p>{t('terms.organizerMayEnd')}</p>
+        <p>{t('terms.userMayStop')}</p>
+        <p>{t('terms.provisionsSurvive')}</p>
       </LegalSection>
 
       <LegalSection id="governing-law" headingKey="terms.governingLaw">
