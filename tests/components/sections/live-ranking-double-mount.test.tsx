@@ -24,7 +24,7 @@ jest.mock('@/lib/supabase/client', () => ({
     channel: (name: string) => {
       if (!channels.has(name)) {
         const ch: Record<string, unknown> = { joined: false }
-        ch.on = (_e: string, _o: unknown) => {
+        ch.on = () => {
           if (ch.joined) {
             throw new Error(`cannot add \`postgres_changes\` callbacks for realtime:${name} after \`subscribe()\`.`)
           }
