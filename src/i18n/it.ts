@@ -23,7 +23,7 @@ export const it: Dictionary = {
   'playAgain.text': 'puoi giocare una sola volta al giorno',
   'playAgain.dates': 'dal 21 al 25 settembre 2026',
 
-  'prize.title': 'e ritira il tuo gadget qui',
+  'prize.title': 'e ritira il tuo gadget',
   'prize.inside': "all'interno di",
   'prize.venue': 'Cersaie, a Bologna Fiere',
   'prize.dates': 'dal 21 al 25 settembre 2026',
