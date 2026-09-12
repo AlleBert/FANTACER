@@ -293,8 +293,9 @@ export function LiveRankingSection({ showWhenDisabled = false }: LiveRankingSect
                 {t('liveRanking.empty')}
               </p>
             ) : (
-              <div className="w-full max-w-2xl mx-auto bg-white rounded-2xl border-[3px] border-black shadow-[4px_4px_0_#000] p-3 md:p-6 flex flex-col shrink min-h-0 max-h-[60svh]">
-                <div className="no-scrollbar flex flex-col flex-1 overflow-y-auto gap-y-2 md:gap-y-3">
+              <>
+                <div className="w-full max-w-2xl mx-auto bg-white rounded-2xl border-[3px] border-black shadow-[4px_4px_0_#000] p-3 md:p-6 flex flex-col shrink min-h-0 max-h-[60svh]">
+                  <div className="no-scrollbar flex flex-col flex-1 overflow-y-auto gap-y-2 md:gap-y-3">
                   {bands.map(({ cluster, companies: bandCompanies }) => {
                     const def = CLUSTERS[cluster]
                     const isOpen = open[cluster]
@@ -383,8 +384,12 @@ export function LiveRankingSection({ showWhenDisabled = false }: LiveRankingSect
                       </div>
                     )
                   })}
+                  </div>
                 </div>
-              </div>
+                <p className="mt-(--rythm-blk) text-center text-[clamp(0.6875rem,2vw,0.9rem)] font-medium text-white/90 [text-wrap:balance]">
+                  {t('liveRanking.tieBreak')}
+                </p>
+              </>
             )}
           </div>
         </div>

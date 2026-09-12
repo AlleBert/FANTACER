@@ -68,6 +68,7 @@ export const it: Dictionary = {
   'liveRanking.error': 'classifica non disponibile',
   'liveRanking.retry': 'riprova',
   'liveRanking.empty': 'nessun voto ancora — sii il primo!',
+  'liveRanking.tieBreak': 'a parità di punteggio, le aziende sono elencate in ordine alfabetico.',
   'liveRanking.pallets': '{count} pallet',
   'liveRanking.bandCount': '{count} aziende',
   'liveRanking.yourVote': 'il tuo voto',

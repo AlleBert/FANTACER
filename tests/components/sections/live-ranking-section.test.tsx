@@ -13,6 +13,7 @@ const mockT = (key: string, vars?: Record<string, unknown>) => {
     'liveRanking.yourVote': 'your vote',
     'liveRanking.yourVotes': 'your votes',
     'liveRanking.pallets': `${String(vars?.count)} pallets`,
+    'liveRanking.tieBreak': 'tie note',
   }
   return map[key] ?? key
 }
@@ -117,6 +118,7 @@ describe('LiveRankingSection', () => {
   it('mostra la TOP 20 aperta con i punteggi', async () => {
     render(<LiveRankingSection />)
     await screen.findByText('Ceramiche X')
+    expect(screen.getByText('tie note')).toBeInTheDocument()
     expect(screen.getByText('1000 pallets')).toBeInTheDocument()
   })
 

@@ -74,6 +74,7 @@ export interface Dictionary {
   'liveRanking.error': string
   'liveRanking.retry': string
   'liveRanking.empty': string
+  'liveRanking.tieBreak': string
   'liveRanking.pallets': string
 
   // Live ranking — fasce
