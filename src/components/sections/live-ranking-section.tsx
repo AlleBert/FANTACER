@@ -316,7 +316,10 @@ export function LiveRankingSection({ showWhenDisabled = false }: LiveRankingSect
                           )}
                         >
                           <span className="flex items-center gap-2 min-w-0">
-                            <span className="truncate">{def.label} · {def.min}-{def.max}</span>
+                            <span className={cn('truncate', def.showScore && 'text-lg md:text-xl leading-none')}>
+                              {def.label}
+                              {!def.showScore && ` · ${def.min}-${def.max}`}
+                            </span>
                             {!def.showScore && (
                               <span className="text-xs font-bold text-gray-600 whitespace-nowrap">
                                 {t('liveRanking.bandCount', { count: bandCompanies.length })}
