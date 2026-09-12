@@ -132,7 +132,7 @@ export const it: Dictionary = {
   'footer.privacyPolicy': 'Privacy Policy',
   'footer.terms': 'Termini e condizioni',
   'footer.madeBy': 'FANTACER — Ceramica Experience',
-  'footer.formatBy.before': 'FANTACER è un format',
+  'footer.formatBy.before': 'FANTACER è un concept',
   'footer.formatBy.after': '',
 
   'legal.backToGame': '← torna al gioco',

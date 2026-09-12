@@ -3,6 +3,11 @@ import { SiteFooter } from '@/components/layout/site-footer'
 
 jest.mock('@/lib/LocaleContext', () => ({ useLocale: () => ({ t: (key: string) => key }) }))
 
+jest.mock('next/image', () => ({
+  __esModule: true,
+  default: (props: { src: string; alt: string }) => <img src={props.src} alt={props.alt} />,
+}))
+
 describe('SiteFooter', () => {
   it('renderizza il bottone preferenze cookie di default (variant dark)', () => {
     render(<SiteFooter />)
@@ -31,5 +36,11 @@ describe('SiteFooter', () => {
       expect(l.getAttribute('target')).toBe('_blank')
       expect(l.getAttribute('rel')).toContain('noopener')
     }
+  })
+
+  it('mostra il credito archi467 con logo', () => {
+    render(<SiteFooter />)
+    expect(screen.getByText('footer.formatBy.before')).toBeInTheDocument()
+    expect(screen.getByAltText('archi467')).toHaveAttribute('src', '/brand/archi467-nopayoff.webp')
   })
 })

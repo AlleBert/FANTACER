@@ -3,6 +3,7 @@
 import { useLocale } from '@/lib/LocaleContext'
 import { OPEN_COOKIE_PREFERENCES_EVENT } from '@/components/cookie-consent'
 import { cn } from '@/lib/utils'
+import Image from 'next/image'
 
 const FOOTER_LINKS = {
   cookiePolicy: '/cookie-policy',
@@ -54,6 +55,20 @@ export function SiteFooter({ variant = 'dark', showCookieButton = true }: SiteFo
         <a href={FOOTER_LINKS.terms} target={target} rel={rel} className={linkCls}>
           {t('footer.terms')}
         </a>
+      </div>
+      <div className="safe-px mx-auto mt-[clamp(0.25rem,1vw,0.75rem)] flex w-full max-w-[min(95vw,900px)] flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center">
+        <span className={cn('text-[10px] font-bold uppercase tracking-wider', variant === 'dark' ? 'text-white/70' : 'text-ink/60')}>
+          {t('footer.formatBy.before')}
+        </span>
+        <span className="inline-flex items-center rounded-[4px] bg-white p-[2px]">
+          <Image
+            src="/brand/archi467-nopayoff.webp"
+            alt="archi467"
+            width={2844}
+            height={933}
+            className="h-[clamp(0.75rem,3vw,1.125rem)] w-auto"
+          />
+        </span>
       </div>
     </footer>
   )
