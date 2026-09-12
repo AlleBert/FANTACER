@@ -9,7 +9,7 @@ import { useLocale } from '@/lib/LocaleContext'
 
 interface Step {
   icon: ReactNode
-  labelKey: 'howItWorks.step.vote' | 'howItWorks.step.share' | 'howItWorks.step.rank'
+  labelKey: 'howItWorks.step.vote' | 'howItWorks.step.share' | 'howItWorks.step.ranking'
 }
 
 const cardSizeClasses = 'w-(--card-size) aspect-square'
@@ -38,7 +38,7 @@ const steps: Step[] = [
     icon: (
       <TrendingUp className={`${iconSizeClasses[2]} stroke-black stroke-[1.5] hover:-translate-y-2 transition-transform duration-300 relative z-10`} />
     ),
-    labelKey: 'howItWorks.step.rank'
+    labelKey: 'howItWorks.step.ranking'
   },
 ]
 
@@ -48,9 +48,9 @@ export function HowItWorksSection() {
     <SectionFrame theme="how-it-works" className="text-white flex flex-col">
       <SafeCenterSection scrollable={false} gap="var(--rythm-blk)" className="max-w-7xl mx-auto py-(--section-pad)">
         <h2 className="text-(length:--fs-headline-tight) font-[900] text-center mb-(--rythm-blk) tracking-tighter lowercase leading-(--lh-headline) flex flex-wrap xl:flex-nowrap justify-center items-center gap-x-2 md:gap-x-4 w-full [text-wrap:balance] flex-shrink-0">
-          <span className="whitespace-nowrap">{t('howItWorks.title.simple')}</span>
+          <span className="whitespace-nowrap">{t('howItWorks.title.line1')}</span>
           <span className="whitespace-nowrap flex items-center">
-            {t('howItWorks.title.win')}
+            {t('howItWorks.title.line2')}
 
             <span className="relative grid grid-cols-[1.1rem_0.9rem] items-end justify-items-center ml-2 md:ml-4 -mt-2">
               <Image

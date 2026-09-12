@@ -15,11 +15,11 @@ export interface Dictionary {
   'intro.discover': string
 
   // How it works
-  'howItWorks.title.simple': string
-  'howItWorks.title.win': string
+  'howItWorks.title.line1': string
+  'howItWorks.title.line2': string
   'howItWorks.step.vote': string
   'howItWorks.step.share': string
-  'howItWorks.step.rank': string
+  'howItWorks.step.ranking': string
 
   // Play again
   'playAgain.text': string

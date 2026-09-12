@@ -14,11 +14,11 @@ export const it: Dictionary = {
   'intro.subtitle': 'usa il cellulare per qualcosa di davvero importante!',
   'intro.discover': 'scopri',
 
-  'howItWorks.title.simple': 'fai sentire',
-  'howItWorks.title.win': 'la tua voce',
+  'howItWorks.title.line1': 'fai sentire',
+  'howItWorks.title.line2': 'la tua voce',
   'howItWorks.step.vote': 'vota le tue aziende preferite',
   'howItWorks.step.share': 'condividi il tuo voto taggando @fanta.cer',
-  'howItWorks.step.rank': 'controlla la classifica aggiornata con il tuo voto e, se vuoi, torna domani!',
+  'howItWorks.step.ranking': 'controlla la classifica aggiornata con il tuo voto e, se vuoi, torna domani!',
 
   'playAgain.text': 'puoi giocare una sola volta al giorno',
   'playAgain.dates': 'dal 21 al 25 settembre 2026',

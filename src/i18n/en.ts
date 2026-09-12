@@ -14,11 +14,11 @@ export const en: Dictionary = {
   'intro.subtitle': 'use your phone for something truly important!',
   'intro.discover': 'discover',
 
-  'howItWorks.title.simple': 'make your voice',
-  'howItWorks.title.win': 'be heard',
+  'howItWorks.title.line1': 'make your voice',
+  'howItWorks.title.line2': 'be heard',
   'howItWorks.step.vote': 'vote for your favourite companies',
   'howItWorks.step.share': 'share your vote tagging @fanta.cer',
-  'howItWorks.step.rank': 'check the updated ranking with your vote and, if you like, come back tomorrow!',
+  'howItWorks.step.ranking': 'check the updated ranking with your vote and, if you like, come back tomorrow!',
 
   'playAgain.text': 'you can play only once a day',
   'playAgain.dates': 'from 21 to 25 September 2026',
