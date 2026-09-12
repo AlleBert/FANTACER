@@ -11,6 +11,8 @@ const FOOTER_LINKS = {
   terms: '/terms-and-conditions',
 } as const
 
+const ARCHI467_INSTAGRAM = 'https://www.instagram.com/archi467_lab/'
+
 interface SiteFooterProps {
   /** dark = sfondo scuro (ContactSection homepage); light = superficie chiara (legal pages) */
   variant?: 'dark' | 'light'
@@ -60,7 +62,12 @@ export function SiteFooter({ variant = 'dark', showCookieButton = true }: SiteFo
         <span className={cn('text-[10px] font-bold uppercase tracking-wider', variant === 'dark' ? 'text-white/70' : 'text-ink/60')}>
           {t('footer.formatBy.before')}
         </span>
-        <span className="inline-flex items-center rounded-[4px] bg-white p-[2px]">
+        <a
+          href={ARCHI467_INSTAGRAM}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center rounded-[4px] bg-white p-[2px] transition-transform hover:-translate-y-0.5"
+        >
           <Image
             src="/brand/archi467-nopayoff.webp"
             alt="archi467"
@@ -68,7 +75,7 @@ export function SiteFooter({ variant = 'dark', showCookieButton = true }: SiteFo
             height={933}
             className="h-[clamp(0.75rem,3vw,1.125rem)] w-auto"
           />
-        </span>
+        </a>
       </div>
     </footer>
   )
