@@ -30,7 +30,7 @@ export const it: Dictionary = {
 
   'search.title': 'VOTA LE TUE AZIENDE PREFERITE',
   'search.instructions':
-    'assegna da 1 a 4 pallet-points ai 3 brand che preferisci per fare scalare loro la classifica',
+    'assegna da 1 a 4 pallet-points ai 3 brands che preferisci per fare scalare loro la classifica',
   'search.progress': '{count} di 3',
   'search.placeholder': 'Cerca azienda...',
   'search.alreadySelected': '(già selezionata)',
