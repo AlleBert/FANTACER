@@ -3,7 +3,6 @@
 import { useEffect } from 'react'
 import { useVote } from '@/lib/VoteContext'
 import confetti from 'canvas-confetti'
-import { SponsorCards } from '@/components/sponsor/sponsor-cards'
 import { SectionFrame } from '@/components/layout/section-frame'
 import { useLocale } from '@/lib/LocaleContext'
 import { VoteReceipt } from '@/components/sections/vote-receipt'
@@ -74,18 +73,9 @@ export function SuccessSection() {
               </div>
             </div>
 
-            {/* Right Column: Vote Receipt + Prizes */}
+            {/* Right Column: Vote Receipt */}
             <div className="success-grid-col-2 flex flex-col gap-(--space-lg)">
-              {/* Vote Receipt */}
               <VoteReceipt companies={selectedCompanies} />
-
-              {/* Prizes Section */}
-              <div className="flex flex-col items-center gap-(--space-md)">
-                <h3 className="text-(length:--fs-label) font-black uppercase tracking-[0.02em] text-ink text-center">
-                  {t('success.redeemPrize')}
-                </h3>
-                <SponsorCards standOnly />
-              </div>
             </div>
           </div>
         </div>
