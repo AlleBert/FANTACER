@@ -41,8 +41,8 @@ function RetentionTable({ t }: { t: ReturnType<typeof makeLegalT> }) {
       <table className="table-card-mobile">
         <thead>
           <tr>
-            <th data-label="Categoria">{t('privacyPolicy.retentionTableCategory')}</th>
-            <th data-label="Periodo">{t('privacyPolicy.retentionTablePeriod')}</th>
+            <th data-label={t('privacyPolicy.retentionTableCategory')}>{t('privacyPolicy.retentionTableCategory')}</th>
+            <th data-label={t('privacyPolicy.retentionTablePeriod')}>{t('privacyPolicy.retentionTablePeriod')}</th>
           </tr>
         </thead>
         <tbody>
@@ -111,10 +111,7 @@ export default async function PrivacyPolicyPage() {
       </LegalSection>
 
       <LegalSection id="legal-bases" headingKey="privacyPolicy.legalBases">
-        <p>
-          Ogni trattamento dei dati è associato a una base giuridica specifica, in modo che il trattamento sia
-          proporzionato e rispetti le finalità del servizio e le esigenze di sicurezza del gioco.
-        </p>
+        <p>{t('privacyPolicy.legalBasesIntro')}</p>
         <ul>
           <li><strong>{t('privacyPolicy.basisConsent')}</strong></li>
           <li><strong>{t('privacyPolicy.basisLegitimate')}</strong></li>
@@ -144,10 +141,7 @@ export default async function PrivacyPolicyPage() {
       </LegalSection>
 
       <LegalSection id="rights" headingKey="privacyPolicy.rights">
-        <p>
-          Gli interessati possono richiedere di verificare, correggere, limitare o cancellare i propri dati, nonché
-          di ottenere una copia in formato portabile o opporsi a trattamenti non necessari.
-        </p>
+        <p>{t('privacyPolicy.rightsIntro')}</p>
         <p>{t('privacyPolicy.rightsList')}</p>
       </LegalSection>
 

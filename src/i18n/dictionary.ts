@@ -158,12 +158,17 @@ export interface Dictionary {
   'cookiePolicy.whatAreCookies': string
   'cookiePolicy.whatAreCookiesDesc': string
   'cookiePolicy.categories': string
+  'cookiePolicy.categoriesIntro': string
   'cookiePolicy.essential': string
   'cookiePolicy.essentialDesc': string
   'cookiePolicy.analytics': string
   'cookiePolicy.analyticsDesc': string
   'cookiePolicy.thirdParty': string
   'cookiePolicy.thirdPartyDesc': string
+  'cookiePolicy.linkSupabase': string
+  'cookiePolicy.linkResend': string
+  'cookiePolicy.linkCloudflare': string
+  'cookiePolicy.linkGoogle': string
   'cookiePolicy.howToManage': string
   'cookiePolicy.browserSettings': string
   'cookiePolicy.contact': string
@@ -188,6 +193,7 @@ export interface Dictionary {
   'privacyPolicy.dataCategories': string
   'privacyPolicy.purposes': string
   'privacyPolicy.legalBases': string
+  'privacyPolicy.legalBasesIntro': string
   'privacyPolicy.recipients': string
   'privacyPolicy.subprocessors': string
   'privacyPolicy.supabase': string
@@ -227,6 +233,7 @@ export interface Dictionary {
   'privacyPolicy.retentionLogs': string
   'privacyPolicy.retentionAnalytics': string
   'privacyPolicy.rightsList': string
+  'privacyPolicy.rightsIntro': string
   'privacyPolicy.lead': string
   'privacyPolicy.dataContactLabel': string
   'privacyPolicy.dataContactDesc': string
