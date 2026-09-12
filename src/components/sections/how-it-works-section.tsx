@@ -2,14 +2,14 @@
 
 import Image from 'next/image'
 import type { ReactNode } from 'react'
-import { Heart, Smartphone, AtSign, Gift } from 'lucide-react'
+import { Heart, Smartphone, AtSign, TrendingUp } from 'lucide-react'
 import { SectionFrame } from '@/components/layout/section-frame'
 import { SafeCenterSection } from '@/components/layout/safe-center-section'
 import { useLocale } from '@/lib/LocaleContext'
 
 interface Step {
   icon: ReactNode
-  labelKey: 'howItWorks.step.vote' | 'howItWorks.step.share' | 'howItWorks.step.collect'
+  labelKey: 'howItWorks.step.vote' | 'howItWorks.step.share' | 'howItWorks.step.rank'
 }
 
 const cardSizeClasses = 'w-(--card-size) aspect-square'
@@ -36,9 +36,9 @@ const steps: Step[] = [
   },
   {
     icon: (
-      <Gift className={`${iconSizeClasses[2]} stroke-black stroke-[1.5] hover:-translate-y-2 transition-transform duration-300 relative z-10`} />
+      <TrendingUp className={`${iconSizeClasses[2]} stroke-black stroke-[1.5] hover:-translate-y-2 transition-transform duration-300 relative z-10`} />
     ),
-    labelKey: 'howItWorks.step.collect'
+    labelKey: 'howItWorks.step.rank'
   },
 ]
 

@@ -19,7 +19,7 @@ export interface Dictionary {
   'howItWorks.title.win': string
   'howItWorks.step.vote': string
   'howItWorks.step.share': string
-  'howItWorks.step.collect': string
+  'howItWorks.step.rank': string
 
   // Play again
   'playAgain.text': string
