@@ -8,27 +8,29 @@ jest.mock('next/image', () => ({
 jest.mock('@/lib/LocaleContext', () => ({ useLocale: () => ({ t: (key: string) => key }) }))
 
 describe('ContactSection', () => {
-  it('mostra label visibili associate ai campi', () => {
+  it('espone i campi con nome accessibile', () => {
     render(<ContactSection />)
     expect(screen.getByLabelText('contact.nameLabel')).toBeInTheDocument()
     expect(screen.getByLabelText('contact.emailLabel')).toBeInTheDocument()
     expect(screen.getByLabelText('contact.messageLabel')).toBeInTheDocument()
   })
 
-  it('espone i contatti come link mailto / tel / website', () => {
+  it("rivela il dato cliccando l'icona e lo espone come link", () => {
     render(<ContactSection />)
+    fireEvent.click(screen.getByRole('button', { name: 'team@fantacer.com' }))
     expect(screen.getByRole('link', { name: 'team@fantacer.com' })).toHaveAttribute(
       'href',
       'mailto:team@fantacer.com',
     )
+    fireEvent.click(screen.getByRole('button', { name: '+39 333 138 5574' }))
     expect(screen.getByRole('link', { name: '+39 333 138 5574' })).toHaveAttribute(
       'href',
       'tel:+393331385574',
     )
-    expect(screen.getByRole('link', { name: 'www.fantacer.com' })).toHaveAttribute(
-      'href',
-      'https://www.fantacer.com',
-    )
+    fireEvent.click(screen.getByRole('button', { name: 'www.fantacer.com' }))
+    const site = screen.getByRole('link', { name: 'www.fantacer.com' })
+    expect(site).toHaveAttribute('href', 'https://www.fantacer.com')
+    expect(site).toHaveAttribute('target', '_blank')
   })
 
   it('tiene la CTA attiva e valida al submit', () => {

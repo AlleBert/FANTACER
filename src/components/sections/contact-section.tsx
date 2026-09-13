@@ -2,13 +2,58 @@
 
 import { useState, useEffect, useId } from 'react'
 import { Button } from '@/components/ui/button'
-import { Loader2, Mail, Phone, Globe } from 'lucide-react'
+import { Loader2, Mail, Phone, Globe, type LucideIcon } from 'lucide-react'
 import { SectionFrame } from '@/components/layout/section-frame'
 import { useLocale } from '@/lib/LocaleContext'
 import { SiteFooter } from '@/components/layout/site-footer'
 import { CONTACT_NAME_MAX, CONTACT_EMAIL_MAX, CONTACT_MESSAGE_MIN, CONTACT_MESSAGE_MAX } from '@/lib/contact'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+type ContactMethodKey = 'email' | 'phone' | 'site'
+
+interface ContactMethod {
+  key: ContactMethodKey
+  href: string
+  value: string
+  icon: LucideIcon
+  chip: string
+  external?: boolean
+}
+
+const CONTACT_METHODS: ContactMethod[] = [
+  { key: 'email', href: 'mailto:team@fantacer.com', value: 'team@fantacer.com', icon: Mail, chip: 'bg-white text-black -rotate-2' },
+  { key: 'phone', href: 'tel:+393331385574', value: '+39 333 138 5574', icon: Phone, chip: 'bg-bright text-black rotate-2' },
+  { key: 'site', href: 'https://www.fantacer.com', value: 'www.fantacer.com', icon: Globe, chip: 'bg-white text-purple -rotate-1', external: true },
+]
+
+function ContactChip({ method, open, onToggle }: { method: ContactMethod; open: boolean; onToggle: () => void }) {
+  const Icon = method.icon
+  return (
+    <div className="relative" data-contact-chip>
+      <button
+        type="button"
+        aria-label={method.value}
+        aria-haspopup="true"
+        aria-expanded={open}
+        onClick={onToggle}
+        className={`inline-flex items-center justify-center min-h-11 min-w-11 px-3 rounded-full border-[3px] border-ink shadow-[3px_3px_0_#000] transition-transform motion-reduce:transition-none hover:rotate-0 hover:-translate-y-0.5 ${method.chip} ${open ? 'rotate-0 -translate-y-0.5' : ''}`}
+      >
+        <Icon className="size-5" aria-hidden="true" />
+      </button>
+      {open && (
+        <a
+          href={method.href}
+          target={method.external ? '_blank' : undefined}
+          rel={method.external ? 'noopener noreferrer' : undefined}
+          className="absolute left-1/2 bottom-[calc(100%+0.5rem)] z-20 -translate-x-1/2 max-w-[80vw] whitespace-nowrap rounded-full border-[3px] border-ink bg-white px-3 py-2 text-sm font-black text-black shadow-[3px_3px_0_#000] transition-colors hover:text-purple"
+        >
+          {method.value}
+        </a>
+      )}
+    </div>
+  )
+}
 
 export function ContactSection() {
   const { t } = useLocale()
@@ -18,6 +63,7 @@ export function ContactSection() {
   const [website, setWebsite] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [errors, setErrors] = useState<{ name?: string; email?: string; message?: string }>({})
+  const [openMethod, setOpenMethod] = useState<ContactMethodKey | null>(null)
 
   const uid = useId()
   const nameId = `${uid}-name`
@@ -29,6 +75,22 @@ export function ContactSection() {
     const timer = setTimeout(() => setStatus('idle'), 5000)
     return () => clearTimeout(timer)
   }, [status])
+
+  useEffect(() => {
+    if (!openMethod) return
+    const onDoc = (e: MouseEvent) => {
+      if (!(e.target as Element).closest('[data-contact-chip]')) setOpenMethod(null)
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpenMethod(null)
+    }
+    document.addEventListener('mousedown', onDoc)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDoc)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [openMethod])
 
   const validate = () => {
     const next: typeof errors = {}
@@ -67,7 +129,6 @@ export function ContactSection() {
 
   const fieldCls =
     'w-full px-4 md:px-5 py-[clamp(0.375rem,1vw,0.5rem)] text-base bg-white text-black font-bold rounded-full border-[3px] border-ink focus:outline-none focus:shadow-[4px_4px_0_#000] focus:-translate-y-0.5 shadow-[2px_2px_0_#000] transition-all min-h-11 box-border motion-reduce:transition-none motion-reduce:focus:translate-y-0'
-  const labelCls = 'text-(length:--fs-label) font-black uppercase tracking-wide text-black text-left'
   const errorCls = 'text-[clamp(0.6875rem,1.6vw,0.8125rem)] font-bold text-red-600 text-left normal-case'
 
   return (
@@ -117,7 +178,6 @@ export function ContactSection() {
 
                 <div className="contact-fields-row">
                   <div className="contact-field">
-                    <label htmlFor={nameId} className={labelCls}>{t('contact.nameLabel')}</label>
                     <input
                       id={nameId}
                       type="text"
@@ -126,6 +186,7 @@ export function ContactSection() {
                       autoComplete="name"
                       maxLength={CONTACT_NAME_MAX}
                       placeholder={t('contact.namePlaceholder')}
+                      aria-label={t('contact.nameLabel')}
                       value={name}
                       onChange={(e) => { setName(e.target.value); if (errors.name) setErrors((p) => ({ ...p, name: undefined })) }}
                       aria-invalid={errors.name ? true : undefined}
@@ -135,7 +196,6 @@ export function ContactSection() {
                     {errors.name && <p id={`${nameId}-error`} role="alert" className={errorCls}>{errors.name}</p>}
                   </div>
                   <div className="contact-field">
-                    <label htmlFor={emailId} className={labelCls}>{t('contact.emailLabel')}</label>
                     <input
                       id={emailId}
                       type="email"
@@ -145,6 +205,7 @@ export function ContactSection() {
                       inputMode="email"
                       maxLength={CONTACT_EMAIL_MAX}
                       placeholder={t('contact.emailPlaceholder')}
+                      aria-label={t('contact.emailLabel')}
                       value={email}
                       onChange={(e) => { setEmail(e.target.value); if (errors.email) setErrors((p) => ({ ...p, email: undefined })) }}
                       aria-invalid={errors.email ? true : undefined}
@@ -156,13 +217,13 @@ export function ContactSection() {
                 </div>
 
                 <div className="contact-field contact-field--grow">
-                  <label htmlFor={messageId} className={labelCls}>{t('contact.messageLabel')}</label>
                   <textarea
                     id={messageId}
                     name="messaggio"
                     required
                     maxLength={CONTACT_MESSAGE_MAX}
                     placeholder={t('contact.messagePlaceholder')}
+                    aria-label={t('contact.messageLabel')}
                     value={message}
                     onChange={(e) => { setMessage(e.target.value); if (errors.message) setErrors((p) => ({ ...p, message: undefined })) }}
                     aria-invalid={errors.message ? true : undefined}
@@ -190,32 +251,14 @@ export function ContactSection() {
             </div>
 
             <div className="contact-methods">
-              <a
-                href="mailto:team@fantacer.com"
-                aria-label="team@fantacer.com"
-                className="inline-flex items-center justify-center gap-1.5 min-h-11 min-w-11 px-3 rounded-full border-[3px] border-ink bg-white text-black font-black shadow-[3px_3px_0_#000] -rotate-2 hover:rotate-0 hover:-translate-y-0.5 transition-transform motion-reduce:transition-none motion-reduce:hover:translate-y-0"
-              >
-                <Mail className="size-5" aria-hidden="true" />
-                <span className="contact-method-label">team@fantacer.com</span>
-              </a>
-              <a
-                href="tel:+393331385574"
-                aria-label="+39 333 138 5574"
-                className="inline-flex items-center justify-center gap-1.5 min-h-11 min-w-11 px-3 rounded-full border-[3px] border-ink bg-bright text-black font-black shadow-[3px_3px_0_#000] rotate-2 hover:rotate-0 hover:-translate-y-0.5 transition-transform motion-reduce:transition-none motion-reduce:hover:translate-y-0"
-              >
-                <Phone className="size-5" aria-hidden="true" />
-                <span className="contact-method-label">+39 333 138 5574</span>
-              </a>
-              <a
-                href="https://www.fantacer.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="www.fantacer.com"
-                className="inline-flex items-center justify-center gap-1.5 min-h-11 min-w-11 px-3 rounded-full border-[3px] border-ink bg-white text-purple font-black shadow-[3px_3px_0_#000] -rotate-1 hover:rotate-0 hover:-translate-y-0.5 transition-transform motion-reduce:transition-none motion-reduce:hover:translate-y-0"
-              >
-                <Globe className="size-5" aria-hidden="true" />
-                <span className="contact-method-label">www.fantacer.com</span>
-              </a>
+              {CONTACT_METHODS.map((method) => (
+                <ContactChip
+                  key={method.key}
+                  method={method}
+                  open={openMethod === method.key}
+                  onToggle={() => setOpenMethod((p) => (p === method.key ? null : method.key))}
+                />
+              ))}
             </div>
           </div>
         </div>

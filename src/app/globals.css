@@ -575,14 +575,6 @@ textarea::-webkit-scrollbar {
     gap: var(--rythm-blk);
     width: 100%;
   }
-  .contact-method-label {
-    display: none;
-  }
-  @container (min-width: 30rem) {
-    .contact-method-label {
-      display: inline;
-    }
-  }
 
   /* 2 colonne: form a sinistra, info a destra (50/50). */
   @container (min-width: 60rem) {
