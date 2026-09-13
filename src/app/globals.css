@@ -578,24 +578,33 @@ textarea::-webkit-scrollbar {
   }
 
   /* Chip compatta (solo icona): il dato si apre/chiude con una transizione
-     morbida invece di apparire di scatto. */
+     morbida e simmetrica. Grid 0fr↔1fr: il collasso parte subito (a differenza
+     di max-width, che si muove solo quando il cap scende sotto il contenuto),
+     evitando l'overflow transitorio che faceva andare a capo la riga. */
   .contact-chip__link {
-    max-width: 0;
+    display: inline-grid;
+    grid-template-columns: 0fr;
     opacity: 0;
-    overflow: hidden;
+    padding-left: 0;
     padding-right: 0;
-    transform: translateX(-0.25rem);
+    transform: translateX(-0.2rem);
     transition:
-      max-width 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+      grid-template-columns 0.4s cubic-bezier(0.22, 1, 0.36, 1),
       opacity 0.28s ease,
       transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+      padding-left 0.4s cubic-bezier(0.22, 1, 0.36, 1),
       padding-right 0.4s cubic-bezier(0.22, 1, 0.36, 1);
   }
   .contact-chip__link[data-open='true'] {
-    max-width: 16rem;
+    grid-template-columns: 1fr;
     opacity: 1;
     transform: translateX(0);
+    padding-left: 0.5rem;
     padding-right: 0.75rem;
+  }
+  .contact-chip__text {
+    overflow: hidden;
+    white-space: nowrap;
   }
   @media (prefers-reduced-motion: reduce) {
     .contact-chip__link {
@@ -722,6 +731,20 @@ textarea::-webkit-scrollbar {
     min-height: 2.75rem;
     max-height: 3.5rem;
   }
+}
+
+/* Chip contatti su container larghi (≥30rem, stessa soglia di isWide):
+   stack verticale di chip "fit-content" (ognuna racchiude il proprio testo),
+   allineate a sinistra, con tilt giocoso. Fuori da @layer components per
+   battere le utility. */
+.contact-methods[data-wide='true'] {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: var(--space-sm);
+}
+.contact-methods[data-wide='true'] .contact-chip {
+  min-height: 3rem;
 }
 
 /* BackgroundLayer crossfade: il nuovo layer monta sopra con fade-in CSS.

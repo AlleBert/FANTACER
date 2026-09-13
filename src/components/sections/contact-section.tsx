@@ -17,28 +17,27 @@ interface ContactMethod {
   href: string
   value: string
   icon: LucideIcon
-  chip: string
+  bg: string
+  tilt: string
   external?: boolean
 }
 
 const CONTACT_METHODS: ContactMethod[] = [
-  { key: 'email', href: 'mailto:team@fantacer.com', value: 'team@fantacer.com', icon: Mail, chip: 'bg-white text-black -rotate-2' },
-  { key: 'phone', href: 'tel:+393331385574', value: '+39 333 138 5574', icon: Phone, chip: 'bg-bright text-black rotate-2' },
-  { key: 'site', href: 'https://www.fantacer.com', value: 'www.fantacer.com', icon: Globe, chip: 'bg-white text-purple -rotate-1', external: true },
+  { key: 'email', href: 'mailto:team@fantacer.com', value: 'team@fantacer.com', icon: Mail, bg: 'bg-white text-black', tilt: '-rotate-2' },
+  { key: 'phone', href: 'tel:+393331385574', value: '+39 333 138 5574', icon: Phone, bg: 'bg-bright text-black', tilt: 'rotate-2' },
+  { key: 'site', href: 'https://www.fantacer.com', value: 'www.fantacer.com', icon: Globe, bg: 'bg-white text-purple', tilt: '-rotate-1', external: true },
 ]
 
-function useIsWide(ref: React.RefObject<HTMLElement | null>) {
+function useIsWide() {
   const [wide, setWide] = useState(false)
   useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const update = () => setWide(el.clientWidth >= 480)
+    if (typeof window === 'undefined' || !window.matchMedia) return
+    const mq = window.matchMedia('(min-width: 32rem)')
+    const update = () => setWide(mq.matches)
     update()
-    if (typeof ResizeObserver === 'undefined') return
-    const ro = new ResizeObserver(update)
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [ref])
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
   return wide
 }
 
@@ -52,7 +51,7 @@ function ContactMethodLink({ method }: { method: ContactMethod }) {
       href={method.href}
       target={method.external ? '_blank' : undefined}
       rel={method.external ? 'noopener noreferrer' : undefined}
-      className={`${chipShell} ${method.chip} inline-flex items-center justify-center gap-2 px-4 text-sm font-black`}
+      className={`${chipShell} ${method.bg} ${method.tilt} contact-chip inline-flex items-center gap-2.5 px-5 text-base font-black tracking-wide`}
     >
       <Icon className="size-5" aria-hidden="true" />
       <span className="whitespace-nowrap">{method.value}</span>
@@ -63,7 +62,7 @@ function ContactMethodLink({ method }: { method: ContactMethod }) {
 function ContactChip({ method, open, onToggle }: { method: ContactMethod; open: boolean; onToggle: () => void }) {
   const Icon = method.icon
   return (
-    <span className={`${chipShell} ${method.chip} inline-flex items-center ${open ? 'rotate-0' : ''}`} data-contact-chip>
+    <span className={`${chipShell} ${method.bg} ${method.tilt} contact-chip inline-flex items-center ${open ? 'rotate-0' : ''}`} data-contact-chip>
       <button
         type="button"
         aria-label={method.value}
@@ -82,7 +81,7 @@ function ContactChip({ method, open, onToggle }: { method: ContactMethod; open: 
         tabIndex={open ? 0 : -1}
         className="contact-chip__link whitespace-nowrap text-sm font-black"
       >
-        {method.value}
+        <span className="contact-chip__text">{method.value}</span>
       </a>
     </span>
   )
@@ -98,8 +97,7 @@ export function ContactSection() {
   const [errors, setErrors] = useState<{ name?: string; email?: string; message?: string }>({})
   const [openMethod, setOpenMethod] = useState<ContactMethodKey | null>(null)
   const messageRef = useRef<HTMLTextAreaElement>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const isWide = useIsWide(containerRef)
+  const isWide = useIsWide()
 
   const uid = useId()
   const nameId = `${uid}-name`
@@ -178,7 +176,7 @@ export function ContactSection() {
 
   return (
     <SectionFrame theme="contact" id="contact-section" className="flex flex-col">
-      <div ref={containerRef} className="safe-shell content-max flex flex-1 flex-col min-h-0">
+      <div className="safe-shell content-max flex flex-1 flex-col min-h-0">
         <div className="contact-region">
           <div className="contact-layout">
             <h2 className="contact-info-title font-[900] text-white tracking-tighter uppercase leading-(--lh-headline)">
@@ -297,7 +295,7 @@ export function ContactSection() {
               </form>
             </div>
 
-            <div className="contact-methods">
+            <div className="contact-methods" data-wide={isWide}>
               {CONTACT_METHODS.map((method) =>
                 isWide ? (
                   <ContactMethodLink key={method.key} method={method} />
