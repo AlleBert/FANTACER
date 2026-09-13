@@ -733,18 +733,34 @@ textarea::-webkit-scrollbar {
   }
 }
 
-/* Chip contatti su container larghi (≥30rem, stessa soglia di isWide):
+/* Chip contatti su container larghi (≥32rem, stessa soglia di isWide):
    stack verticale di chip "fit-content" (ognuna racchiude il proprio testo),
-   allineate a sinistra, con tilt giocoso. Fuori da @layer components per
+   con tilt giocoso. Nel layout stacked restano centrate come titolo e form;
+   solo nei layout a 2 colonne (container desktop o landscape basso) si
+   allineano a sinistra della colonna info. Fuori da @layer components per
    battere le utility. */
 .contact-methods[data-wide='true'] {
   flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-start;
+  align-items: center;
+  justify-content: center;
   gap: var(--space-sm);
 }
 .contact-methods[data-wide='true'] .contact-chip {
   min-height: 3rem;
+}
+
+@container (min-width: 60rem) {
+  .contact-methods[data-wide='true'] {
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-height: 34rem) and (orientation: landscape) {
+  .contact-methods[data-wide='true'] {
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
 }
 
 /* BackgroundLayer crossfade: il nuovo layer monta sopra con fade-in CSS.
