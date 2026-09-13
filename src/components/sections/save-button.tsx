@@ -44,7 +44,7 @@ export function SaveButton({ companies }: SaveButtonProps) {
 
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
-      link.download = 'fantacer-voto.png'
+      link.download = 'fantacer-story.png'
       link.href = url
       link.click()
       URL.revokeObjectURL(url)

@@ -61,7 +61,6 @@ export interface Dictionary {
   'success.shareButton': string
   'success.shareCta': string
   'success.shareCopied': string
-  'success.redeemPrize': string
   'success.saveCta': string
   'success.saveDone': string
 

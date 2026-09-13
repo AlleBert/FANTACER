@@ -57,7 +57,6 @@ export const it: Dictionary = {
   'success.shareButton': 'Condividi',
   'success.shareCta': 'Condividi',
   'success.shareCopied': 'Copiato!',
-  'success.redeemPrize': 'Ritira il tuo premio',
   'success.saveCta': 'Salva',
   'success.saveDone': 'Salvato!',
 
