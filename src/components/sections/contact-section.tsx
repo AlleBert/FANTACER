@@ -50,26 +50,26 @@ export function ContactSection() {
       className="flex flex-col"
     >
       <div className="safe-shell content-max flex flex-1 flex-col min-h-0">
-        <div className="flex-1 flex w-full flex-col items-center justify-center-safe gap-(--rythm-sec) lg:flex-row-reverse lg:gap-10 min-h-0 overflow-y-auto">
+        <div className="flex-1 flex w-full flex-col items-safe-center justify-center-safe gap-(--rythm-sec) lg:flex-row-reverse lg:gap-10 min-h-0 overflow-y-auto">
 
           {/* Info section */}
-          <div className="flex w-full flex-col items-center gap-(--rythm-sec) text-center lg:w-1/2 lg:items-start lg:text-left shrink-0">
+          <div className="flex w-full flex-col items-center gap-(--rythm-sec) text-center lg:w-1/2 lg:items-start lg:text-left shrink-0 lg:shrink">
             <h2 className="text-(length:--fs-headline) font-[900] text-white tracking-tighter uppercase leading-(--lh-headline)">
               {t('contact.title1')}<br className="sm:hidden"/>
               <span className="hidden sm:inline"> </span>{t('contact.title2')}
             </h2>
 
             <div className="flex w-full flex-col items-center gap-(--rythm-blk) sm:flex-row sm:flex-wrap sm:justify-center lg:gap-4 lg:items-start">
-              <div className="bg-white px-[clamp(1rem,min(3vw,5svh),1.5rem)] py-[clamp(0.375rem,1vw,0.75rem)] lg:py-4 rounded-full border-2 border-ink shadow-[3px_3px_0_#000] -rotate-2 hover:rotate-0 transition-transform cursor-default">
-                <a
-                  href="mailto:team@fantacer.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline underline-offset-2 text-[clamp(0.75rem,min(2vw,3svh),1.25rem)] font-black text-black lowercase hover:text-purple transition-colors"
-                >
+              <a
+                href="mailto:team@fantacer.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block bg-white px-[clamp(1rem,min(3vw,5svh),1.5rem)] py-[clamp(0.375rem,1vw,0.75rem)] lg:py-4 rounded-full border-2 border-ink shadow-[3px_3px_0_#000] -rotate-2 hover:rotate-0 hover:-translate-y-0.5 transition-transform"
+              >
+                <span className="underline underline-offset-2 text-[clamp(0.75rem,min(2vw,3svh),1.25rem)] font-black text-black lowercase hover:text-purple transition-colors">
                   team@fantacer.com
-                </a>
-              </div>
+                </span>
+              </a>
               <div className="bg-bright px-[clamp(1rem,min(3vw,5svh),1.5rem)] py-[clamp(0.375rem,1vw,0.75rem)] lg:py-4 rounded-full border-2 border-ink shadow-[3px_3px_0_#000] rotate-2 hover:rotate-0 transition-transform cursor-default">
                 <p className="text-[clamp(0.75rem,min(2vw,3svh),1.25rem)] font-black text-black tracking-wider">+39 333 138 5574</p>
               </div>
@@ -98,7 +98,7 @@ export function ContactSection() {
             )}
 
             <form className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,13rem),1fr))] gap-(--rythm-blk) flex-1 min-h-0 w-full box-border content-start items-stretch" onSubmit={handleSubmit}>
-              <div aria-hidden="true" className="absolute left-[-9999px] top-auto h-px w-px overflow-hidden">
+              <div aria-hidden="true" className="absolute left-[-9999px] top-auto h-0 w-0 overflow-hidden">
                 <input
                   type="text"
                   name="website"
@@ -106,6 +106,7 @@ export function ContactSection() {
                   autoComplete="off"
                   value={website}
                   onChange={(e) => setWebsite(e.target.value)}
+                  className="h-0 w-0 opacity-0"
                 />
               </div>
               <input
