@@ -501,6 +501,250 @@ textarea::-webkit-scrollbar {
       margin-inline: 0;
     }
   }
+
+  /* ---- Contact section: fit-to-screen, zero scroll a riposo ---- */
+  /* Regione contenuto: nessuno scroll a riposo. Con un campo focalizzato
+     (tastiera mobile aperta) diventa scrollabile così il campo attivo non
+     resta coperto. Unica scrollbar a riposo ammessa: la textarea messaggio. */
+  .contact-region {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    gap: var(--rythm-sec);
+  }
+  .contact-region:focus-within {
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    scroll-padding-block: var(--safe-top-offset) var(--safe-bottom-offset);
+  }
+
+  /* Stacked (mobile-first): titolo → form → chip. */
+  .contact-layout {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    align-items: safe center;
+    justify-content: safe center;
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    gap: var(--rythm-sec);
+  }
+  .contact-form-card {
+    display: flex;
+    flex-direction: column;
+    flex: 0 0 auto;
+    min-height: 0;
+    width: 100%;
+  }
+
+  /* Form: campi affiancati quando c'è spazio (intrinseco, senza breakpoint). */
+  .contact-fields-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--rythm-blk);
+  }
+  .contact-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1 1 20ch;
+    min-width: 0;
+  }
+  .contact-field--grow {
+    flex: 0 0 auto;
+    min-height: 0;
+  }
+
+  /* Info column: titolo + chip. NB: le utility Tailwind sullo stesso elemento
+     vincono su queste dichiarazioni (layer utilities dopo components), quindi
+     text-align/justify-content restano sulle classi .contact-*. */
+  .contact-info-title {
+    width: 100%;
+    text-align: center;
+    font-size: var(--fs-headline);
+  }
+  .contact-methods {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    justify-content: safe center;
+    gap: var(--rythm-blk);
+    width: 100%;
+  }
+
+  /* Chip compatta (solo icona): il dato si apre/chiude con una transizione
+     morbida e simmetrica. Grid 0fr↔1fr: il collasso parte subito (a differenza
+     di max-width, che si muove solo quando il cap scende sotto il contenuto),
+     evitando l'overflow transitorio che faceva andare a capo la riga. */
+  .contact-chip__link {
+    display: inline-grid;
+    grid-template-columns: 0fr;
+    opacity: 0;
+    padding-left: 0;
+    padding-right: 0;
+    transform: translateX(-0.2rem);
+    transition:
+      grid-template-columns 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.28s ease,
+      transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+      padding-left 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+      padding-right 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .contact-chip__link[data-open='true'] {
+    grid-template-columns: 1fr;
+    opacity: 1;
+    transform: translateX(0);
+    padding-left: 0.5rem;
+    padding-right: 0.75rem;
+  }
+  .contact-chip__text {
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .contact-chip__link {
+      transition: none;
+    }
+  }
+
+  /* 2 colonne: form a sinistra, info a destra (50/50). */
+  @container (min-width: 60rem) {
+    .contact-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-rows: auto auto;
+      column-gap: clamp(2rem, 5vw, 4rem);
+      row-gap: var(--space-lg);
+      align-content: center;
+      align-content: safe center;
+      align-items: center;
+      justify-content: normal;
+    }
+    .contact-form-card {
+      grid-column: 1;
+      grid-row: 1 / span 2;
+    }
+    .contact-info-title {
+      grid-column: 2;
+      grid-row: 1;
+      text-align: left;
+    }
+    .contact-methods {
+      grid-column: 2;
+      grid-row: 2;
+      justify-content: flex-start;
+    }
+  }
+
+  /* Landscape phone basso: stessa griglia anche sotto i 60rem di contenuto. */
+  @media (max-height: 34rem) and (orientation: landscape) {
+    .contact-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-rows: auto auto;
+      column-gap: var(--space-lg);
+      row-gap: var(--rythm-blk);
+      align-content: center;
+      align-content: safe center;
+      align-items: start;
+      justify-content: normal;
+    }
+    .contact-form-card {
+      grid-column: 1;
+      grid-row: 1 / span 2;
+    }
+    .contact-info-title {
+      grid-column: 2;
+      grid-row: 1;
+      text-align: left;
+    }
+    .contact-methods {
+      grid-column: 2;
+      grid-row: 2;
+      justify-content: flex-start;
+    }
+  }
+
+}
+
+/* Tuning schermi bassi: compatta il layout per garantire zero scroll
+   (landscape phone e viewport corte). Fuori da @layer components: le utility
+   Tailwind (layer successivo) vincerebbero sulle regole in components. */
+/* Base textarea (1 riga, auto-grow fino al cap, poi scroll): prima delle media
+   sotto, così i cap per-viewport la sovrascrivono per ordine di sorgente. */
+.contact-textarea {
+  min-height: 2.75rem;
+  max-height: clamp(4rem, 30svh, 11rem);
+}
+@media (max-height: 40rem) {
+  .contact-region,
+  .contact-layout {
+    gap: var(--rythm-blk);
+  }
+  .contact-info-title {
+    font-size: clamp(1.1rem, min(5vw, 6svh), 2rem);
+  }
+  .contact-form-card {
+    padding: 0.75rem;
+  }
+  .contact-textarea {
+    max-height: clamp(3rem, 20svh, 9rem);
+  }
+}
+@media (max-height: 34rem) and (orientation: landscape) {
+  section[data-section='contact'] .safe-shell {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  .contact-region,
+  .contact-layout {
+    gap: var(--rythm-blk);
+  }
+  .contact-fields-row {
+    flex-wrap: nowrap;
+  }
+  .contact-field {
+    flex: 1 1 0;
+  }
+  .contact-form-card {
+    min-height: auto;
+    padding: 0.5rem;
+  }
+  .contact-form-card form {
+    flex: 0 0 auto;
+    gap: 0.25rem;
+  }
+  .contact-field--grow {
+    flex: 0 0 auto;
+  }
+  .contact-form-card h3 {
+    display: none;
+  }
+}
+@media (max-height: 34rem) and (orientation: landscape) and (max-width: 60rem) {
+  .contact-textarea {
+    min-height: 2.75rem;
+    max-height: 3.5rem;
+  }
+}
+
+/* Chip contatti su container larghi (≥30rem, stessa soglia di isWide):
+   stack verticale di chip "fit-content" (ognuna racchiude il proprio testo),
+   allineate a sinistra, con tilt giocoso. Fuori da @layer components per
+   battere le utility. */
+.contact-methods[data-wide='true'] {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: var(--space-sm);
+}
+.contact-methods[data-wide='true'] .contact-chip {
+  min-height: 3rem;
 }
 
 /* BackgroundLayer crossfade: il nuovo layer monta sopra con fade-in CSS.

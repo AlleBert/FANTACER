@@ -8,7 +8,8 @@ import type { Locale } from '@/lib/locale'
 
 export const runtime = 'nodejs'
 
-const SIZE = { width: 1080, height: 1350 }
+// 9:16 — formato IG Story
+const SIZE = { width: 1080, height: 1920 }
 
 const BRAND = {
   ink: '#231f20',
@@ -21,7 +22,6 @@ const BRAND = {
 const SUCCESS_BG = 'linear-gradient(to bottom, #FFFFFF 0%, #FF2FB2 45%, #ff8a26 75%)'
 
 const FONT_800 = 'src/app/og/fonts/open-sauce-one-latin-800-normal.ttf'
-const FONT_400 = 'src/app/og/fonts/open-sauce-one-latin-400-normal.ttf'
 
 function asset(rel: string): Buffer {
   return readFileSync(path.join(process.cwd(), rel))
@@ -36,13 +36,6 @@ const PALLET_BG: Record<number, string> = {
 interface Company {
   id: string
   name: string
-}
-
-interface Sponsor {
-  id: string
-  name: string
-  image_url: string | null
-  has_stand: boolean
 }
 
 export async function GET(request: Request) {
@@ -60,24 +53,13 @@ export async function GET(request: Request) {
   }
 
   let companies: Company[]
-  let standSponsors: Sponsor[]
   try {
     const supabase = createAdminClient()
-
-    const { data: cData } = await supabase.from('companies').select('id, name').in('id', ids as string[])
-    if (!cData || cData.length !== 3) {
+    const { data } = await supabase.from('companies').select('id, name').in('id', ids as string[])
+    if (!data || data.length !== 3) {
       return NextResponse.json({ error: 'Aziende non trovate' }, { status: 400 })
     }
-    companies = cData
-
-    // Sponsor con stand (stessa logica di SponsorCards standOnly nella sezione success).
-    const { data: sponsors } = await supabase
-      .from('sponsors')
-      .select('id, name, image_url, has_stand')
-      .eq('is_active', true)
-      .eq('has_stand', true)
-
-    standSponsors = (sponsors || []).filter((s) => s.has_stand)
+    companies = data
   } catch (err) {
     console.error('[share/vote] fetch error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -87,7 +69,6 @@ export async function GET(request: Request) {
   const rows = ids.map((id, i) => ({ company: byId.get(id as string), pallet: pallets[i] }))
 
   const blackData = asset(FONT_800)
-  const regularData = asset(FONT_400)
   const logoUri = `data:image/png;base64,${asset('public/brand/foto-profilo.png').toString('base64')}`
 
   return new ImageResponse(
@@ -100,54 +81,85 @@ export async function GET(request: Request) {
           flexDirection: 'column',
           background: SUCCESS_BG,
           fontFamily: 'OpenSauce',
-          padding: '72px 84px',
+          // Il padding tiene i contenuti dentro la safe zone della story IG.
+          padding: '180px 88px 300px',
           boxSizing: 'border-box',
         }}
       >
-        {/* Header: brand + "Hai votato!" */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
+        {/* Brand */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 30 }}>
           <img
             src={logoUri}
             alt="FANTACER"
-            width={96}
-            height={96}
-            style={{ borderRadius: 20, border: `5px solid ${BRAND.purple}` }}
+            width={132}
+            height={132}
+            style={{ borderRadius: 30, border: `7px solid ${BRAND.purple}`, background: BRAND.white }}
           />
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <div style={{ fontSize: 56, fontWeight: 800, color: BRAND.ink, letterSpacing: '-2px', lineHeight: 1 }}>
-              FANTACER
-            </div>
-            <div style={{ fontSize: 30, fontWeight: 800, color: BRAND.purple, marginTop: 6 }}>
-              {translate(lang, 'success.voted')}
-            </div>
+          <div
+            style={{
+              display: 'flex',
+              fontSize: 84,
+              fontWeight: 800,
+              color: BRAND.ink,
+              letterSpacing: '-4px',
+              lineHeight: 1,
+            }}
+          >
+            FANTACER
           </div>
         </div>
 
-        {/* Receipt: il tuo voto */}
+        {/* Hero */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 76 }}>
+          <div
+            style={{
+              display: 'flex',
+              transform: 'rotate(-2deg)',
+              background: BRAND.bright,
+              border: `7px solid ${BRAND.ink}`,
+              boxShadow: '12px 12px 0 #000',
+              borderRadius: 32,
+              padding: '20px 52px',
+              fontSize: 76,
+              fontWeight: 800,
+              color: BRAND.ink,
+              letterSpacing: '-2px',
+              textTransform: 'uppercase',
+            }}
+          >
+            {translate(lang, 'success.voted')}
+          </div>
+        </div>
+
+        {/* Ricevuta del voto */}
         <div
           style={{
-            marginTop: 48,
             display: 'flex',
             flexDirection: 'column',
+            marginTop: 72,
             background: BRAND.white,
-            borderRadius: 28,
-            border: `6px solid ${BRAND.ink}`,
-            boxShadow: '14px 14px 0 #000',
-            padding: '40px 44px',
+            borderRadius: 44,
+            border: `8px solid ${BRAND.ink}`,
+            boxShadow: '20px 20px 0 #000',
+            padding: '52px 56px',
           }}
         >
           <div
             style={{
               display: 'flex',
-              borderBottom: `4px dashed ${BRAND.ink}33`,
-              paddingBottom: 24,
-              marginBottom: 16,
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              borderBottom: `6px dashed ${BRAND.ink}33`,
+              paddingBottom: 30,
+              marginBottom: 10,
             }}
           >
-            <div style={{ fontSize: 34, fontWeight: 800, color: BRAND.purple }}>
+            <div style={{ display: 'flex', fontSize: 46, fontWeight: 800, color: BRAND.purple, textTransform: 'uppercase' }}>
               {translate(lang, 'success.receiptTitle')}
             </div>
+            <div style={{ display: 'flex', fontSize: 34, fontWeight: 800, color: BRAND.coral }}>3/3</div>
           </div>
+
           {rows.map((row, i) => (
             <div
               key={i}
@@ -156,21 +168,30 @@ export async function GET(request: Request) {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 gap: 24,
-                padding: '14px 0',
+                padding: '26px 0',
+                borderBottom: i < rows.length - 1 ? `4px dashed ${BRAND.ink}1f` : 'none',
               }}
             >
-              <div style={{ fontSize: 38, fontWeight: 800, color: BRAND.ink }}>{row.company?.name}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 22, flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', fontSize: 34, fontWeight: 800, color: BRAND.purple, width: 56 }}>
+                  {`#${i + 1}`}
+                </div>
+                <div style={{ display: 'flex', fontSize: 54, fontWeight: 800, color: BRAND.ink, lineHeight: 1.05 }}>
+                  {row.company?.name}
+                </div>
+              </div>
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  width: 64,
-                  height: 64,
+                  width: 96,
+                  height: 96,
                   borderRadius: '50%',
+                  border: `5px solid ${BRAND.ink}`,
                   background: PALLET_BG[row.pallet] ?? BRAND.purple,
                   color: BRAND.white,
-                  fontSize: 34,
+                  fontSize: 48,
                   fontWeight: 800,
                 }}
               >
@@ -180,69 +201,40 @@ export async function GET(request: Request) {
           ))}
         </div>
 
-        {/* Sponsor: ritira il premio */}
-        {standSponsors.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', marginTop: 48 }}>
-            <div style={{ fontSize: 30, fontWeight: 800, color: BRAND.ink, textAlign: 'center', marginBottom: 24 }}>
-              {translate(lang, 'success.redeemPrize')}
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 32, flexWrap: 'wrap' }}>
-              {standSponsors.slice(0, 4).map((s) => (
-                <div
-                  key={s.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 160,
-                    height: 160,
-                    borderRadius: 24,
-                    background: BRAND.white,
-                    border: `4px solid ${BRAND.ink}`,
-                    boxShadow: '6px 6px 0 #000',
-                    overflow: 'hidden',
-                  }}
-                >
-                  {s.image_url ? (
-                    // Satori fetcha le immagini remote server-side: nessun problema CORS.
-                    <img src={s.image_url} alt={s.name} width={160} height={160} style={{ objectFit: 'contain' }} />
-                  ) : (
-                    <div style={{ fontSize: 22, fontWeight: 800, color: BRAND.ink, textAlign: 'center', padding: 12 }}>
-                      {s.name}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Footer tagline */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 'auto', paddingTop: 48 }}>
+        {/* Footer: handle + sito */}
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 24,
+            marginTop: 'auto',
+          }}
+        >
           <div
             style={{
               display: 'flex',
-              flexWrap: 'wrap',
-              justifyContent: 'center',
-              fontSize: 26,
-              fontWeight: 400,
-              color: BRAND.ink,
-              textAlign: 'center',
+              transform: 'rotate(1.5deg)',
+              background: BRAND.purple,
+              color: BRAND.white,
+              borderRadius: 999,
+              padding: '18px 52px',
+              fontSize: 58,
+              fontWeight: 800,
+              letterSpacing: '-1px',
             }}
           >
-            {translate(lang, 'success.shareTaglinePre')}{' '}
-            <span style={{ fontWeight: 800, color: BRAND.purple }}>@fanta.cer</span>{' '}
-            {translate(lang, 'success.shareTaglinePost')}
+            @fanta.cer
+          </div>
+          <div style={{ display: 'flex', fontSize: 46, fontWeight: 800, color: BRAND.ink }}>
+            www.fantacer.com
           </div>
         </div>
       </div>
     ),
     {
       ...SIZE,
-      fonts: [
-        { name: 'OpenSauce', data: blackData, weight: 800, style: 'normal' },
-        { name: 'OpenSauce', data: regularData, weight: 400, style: 'normal' },
-      ],
+      fonts: [{ name: 'OpenSauce', data: blackData, weight: 800, style: 'normal' }],
     }
   )
 }

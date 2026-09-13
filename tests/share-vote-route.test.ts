@@ -31,23 +31,12 @@ const COMPANIES = [
   { id: 'c3', name: 'Gamma SAS' },
 ]
 
-const SPONSORS = [
-  { id: 's1', name: 'Sponsor A', image_url: 'https://cdn.it/a.png', has_stand: true },
-  { id: 's2', name: 'Sponsor B', image_url: 'https://cdn.it/b.png', has_stand: true },
-]
-
 function buildSupabase() {
   const companiesChain = {
     select: jest.fn(() => ({ in: jest.fn(async () => ({ data: COMPANIES, error: null })) })),
   }
-  const sponsorsChain = {
-    select: jest.fn(() => ({
-      eq: jest.fn(() => ({ eq: jest.fn(async () => ({ data: SPONSORS, error: null })) })),
-    })),
-  }
-  return {
-    from: jest.fn((table: string) => (table === 'companies' ? companiesChain : sponsorsChain)),
-  }
+  const from = jest.fn(() => companiesChain)
+  return { from }
 }
 
 function req(query: string): Request {
@@ -83,7 +72,9 @@ describe('GET /api/share/vote', () => {
     expect(res.status).toBe(400)
   })
 
-  it('genera l\'immagine 1080×1350 con aziende e sponsor', async () => {
+  it("genera l'immagine 1080×1920 (9:16) con le aziende e i pallet, senza sponsor", async () => {
+    const supabase = buildSupabase()
+    mockCreateAdminClient.mockReturnValue(supabase)
     const res = await GET(req('?c1=c1&c2=c2&c3=c3&p1=4&p2=2&p3=1&lang=it'))
 
     expect(res.status).toBe(200)
@@ -92,10 +83,10 @@ describe('GET /api/share/vote', () => {
     // ImageResponse invocato con (jsx, options)
     const [, options] = mockImageResponseMock.mock.calls[0]
     expect(options.width).toBe(1080)
-    expect(options.height).toBe(1350)
+    expect(options.height).toBe(1920)
     expect(options.fonts.length).toBeGreaterThanOrEqual(1)
 
-    // Il JSX contiene i nomi aziende, i pallet e i loghi sponsor
+    // Il JSX contiene i nomi aziende e i pallet
     const jsx = mockImageResponseMock.mock.calls[0][0]
     const str = JSON.stringify(jsx)
     expect(str).toContain('Alpha SRL')
@@ -104,7 +95,10 @@ describe('GET /api/share/vote', () => {
     expect(str).toContain('4')
     expect(str).toContain('2')
     expect(str).toContain('1')
-    expect(str).toContain('https://cdn.it/a.png')
+
+    // Alleggerita: nessuna query alla tabella sponsors
+    expect(supabase.from).toHaveBeenCalledWith('companies')
+    expect(supabase.from).not.toHaveBeenCalledWith('sponsors')
   })
 
   it('usa il copy localizzato (it/en)', async () => {

@@ -79,10 +79,7 @@ export default async function CookiePolicyPage() {
       </LegalSection>
 
       <LegalSection id="categories" headingKey="cookiePolicy.categories">
-        <p>
-          I cookie consentiti sul sito sono divisi in due gruppi principali: quelli strettamente necessari al
-          funzionamento del gioco e quelli legati all’analisi del traffico, attivati solo dopo l’esplicito consenso.
-        </p>
+        <p>{t('cookiePolicy.categoriesIntro')}</p>
 
         <h3>{t('cookiePolicy.essential')}</h3>
         <p>{t('cookiePolicy.essentialDesc')}</p>
@@ -97,10 +94,10 @@ export default async function CookiePolicyPage() {
       <LegalSection id="third-party" headingKey="cookiePolicy.thirdParty">
         <p className="muted">{t('cookiePolicy.thirdPartyDesc')}</p>
         <ul>
-          <li><a href="https://supabase.com/privacy" target="_blank" rel="noopener noreferrer">Supabase Privacy Policy</a></li>
-          <li><a href="https://resend.com/privacy" target="_blank" rel="noopener noreferrer">Resend Privacy Policy</a></li>
-          <li><a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer">Cloudflare Privacy Policy</a></li>
-          <li><a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google Privacy Policy</a></li>
+          <li><a href="https://supabase.com/privacy" target="_blank" rel="noopener noreferrer">{t('cookiePolicy.linkSupabase')}</a></li>
+          <li><a href="https://resend.com/privacy" target="_blank" rel="noopener noreferrer">{t('cookiePolicy.linkResend')}</a></li>
+          <li><a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer">{t('cookiePolicy.linkCloudflare')}</a></li>
+          <li><a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">{t('cookiePolicy.linkGoogle')}</a></li>
         </ul>
       </LegalSection>
 

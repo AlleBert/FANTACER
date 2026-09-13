@@ -15,11 +15,11 @@ export interface Dictionary {
   'intro.discover': string
 
   // How it works
-  'howItWorks.title.simple': string
-  'howItWorks.title.win': string
+  'howItWorks.title.line1': string
+  'howItWorks.title.line2': string
   'howItWorks.step.vote': string
   'howItWorks.step.share': string
-  'howItWorks.step.collect': string
+  'howItWorks.step.ranking': string
 
   // Play again
   'playAgain.text': string
@@ -61,7 +61,6 @@ export interface Dictionary {
   'success.shareButton': string
   'success.shareCta': string
   'success.shareCopied': string
-  'success.redeemPrize': string
   'success.saveCta': string
   'success.saveDone': string
 
@@ -74,6 +73,7 @@ export interface Dictionary {
   'liveRanking.error': string
   'liveRanking.retry': string
   'liveRanking.empty': string
+  'liveRanking.tieBreak': string
   'liveRanking.pallets': string
 
   // Live ranking — fasce
@@ -93,6 +93,10 @@ export interface Dictionary {
   'contact.nameLabel': string
   'contact.emailLabel': string
   'contact.messageLabel': string
+  'contact.errorNameRequired': string
+  'contact.errorEmailInvalid': string
+  'contact.errorMessageRequired': string
+  'contact.errorMessageTooShort': string
   'contact.sending': string
   'contact.submit': string
   'contact.emailSubject': string
@@ -157,12 +161,17 @@ export interface Dictionary {
   'cookiePolicy.whatAreCookies': string
   'cookiePolicy.whatAreCookiesDesc': string
   'cookiePolicy.categories': string
+  'cookiePolicy.categoriesIntro': string
   'cookiePolicy.essential': string
   'cookiePolicy.essentialDesc': string
   'cookiePolicy.analytics': string
   'cookiePolicy.analyticsDesc': string
   'cookiePolicy.thirdParty': string
   'cookiePolicy.thirdPartyDesc': string
+  'cookiePolicy.linkSupabase': string
+  'cookiePolicy.linkResend': string
+  'cookiePolicy.linkCloudflare': string
+  'cookiePolicy.linkGoogle': string
   'cookiePolicy.howToManage': string
   'cookiePolicy.browserSettings': string
   'cookiePolicy.contact': string
@@ -187,6 +196,7 @@ export interface Dictionary {
   'privacyPolicy.dataCategories': string
   'privacyPolicy.purposes': string
   'privacyPolicy.legalBases': string
+  'privacyPolicy.legalBasesIntro': string
   'privacyPolicy.recipients': string
   'privacyPolicy.subprocessors': string
   'privacyPolicy.supabase': string
@@ -226,6 +236,7 @@ export interface Dictionary {
   'privacyPolicy.retentionLogs': string
   'privacyPolicy.retentionAnalytics': string
   'privacyPolicy.rightsList': string
+  'privacyPolicy.rightsIntro': string
   'privacyPolicy.lead': string
   'privacyPolicy.dataContactLabel': string
   'privacyPolicy.dataContactDesc': string
@@ -256,49 +267,37 @@ export interface Dictionary {
   'terms.lastUpdated': string
   'terms.acceptance': string
   'terms.acceptanceDesc': string
-  'terms.serviceDescription': string
+  'terms.acceptanceFree': string
+  'terms.acceptanceVoluntary': string
   'terms.eligibility': string
-  'terms.eligibilityDesc': string
-  'terms.votingRules': string
+  'terms.votingTurnstile': string
+  'terms.eligibilityAge': string
   'terms.oneVotePerDay': string
-  'terms.threeCompanies': string
-  'terms.prizeCollection': string
-  'terms.prizeDetails': string
-  'terms.fairDates': string
-  'terms.gadget': string
-  'terms.noCashAlternative': string
-  'terms.unclaimedForfeited': string
+  'terms.participation': string
+  'terms.participationDesc': string
   'terms.intellectualProperty': string
   'terms.brandOwnership': string
   'terms.companyLogos': string
   'terms.voteAttribution': string
-  'terms.voteValidity': string
   'terms.ipIntro': string
-  'terms.limitationIntro': string
-  'terms.terminationIntro': string
-  'terms.governingLawIntro': string
   'terms.userContent': string
+  'terms.userContentIntro': string
   'terms.userContentDesc': string
   'terms.disclaimer': string
   'terms.disclaimerDesc': string
   'terms.limitation': string
-  'terms.maxLiability': string
-  'terms.noIndirectDamages': string
-  'terms.termination': string
+  'terms.limitationFantasy': string
   'terms.organizerMayEnd': string
   'terms.userMayStop': string
   'terms.provisionsSurvive': string
   'terms.governingLaw': string
+  'terms.governingLawIntro': string
   'terms.italianLaw': string
   'terms.tribunalReggio': string
   'terms.changes': string
   'terms.changesDesc': string
   'terms.contact': string
   'terms.contactDesc': string
-  'terms.votingTurnstile': string
-  'terms.votingConfirm': string
-  'terms.votingNoAutomation': string
-  'terms.votingNoTrading': string
 
   // Vote API errors
   'voteError.missingFields': string
