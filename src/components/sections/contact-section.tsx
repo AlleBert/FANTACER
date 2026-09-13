@@ -27,17 +27,49 @@ const CONTACT_METHODS: ContactMethod[] = [
   { key: 'site', href: 'https://www.fantacer.com', value: 'www.fantacer.com', icon: Globe, chip: 'bg-white text-purple -rotate-1', external: true },
 ]
 
+function useIsWide(ref: React.RefObject<HTMLElement | null>) {
+  const [wide, setWide] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const update = () => setWide(el.clientWidth >= 480)
+    update()
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [ref])
+  return wide
+}
+
+const chipShell =
+  'min-h-11 rounded-full border-[3px] border-ink shadow-[3px_3px_0_#000] transition-transform motion-reduce:transition-none hover:rotate-0 hover:-translate-y-0.5'
+
+function ContactMethodLink({ method }: { method: ContactMethod }) {
+  const Icon = method.icon
+  return (
+    <a
+      href={method.href}
+      target={method.external ? '_blank' : undefined}
+      rel={method.external ? 'noopener noreferrer' : undefined}
+      className={`${chipShell} ${method.chip} inline-flex items-center justify-center gap-2 px-4 text-sm font-black`}
+    >
+      <Icon className="size-5" aria-hidden="true" />
+      <span className="whitespace-nowrap">{method.value}</span>
+    </a>
+  )
+}
+
 function ContactChip({ method, open, onToggle }: { method: ContactMethod; open: boolean; onToggle: () => void }) {
   const Icon = method.icon
   return (
-    <div className="relative" data-contact-chip>
+    <span className={`${chipShell} ${method.chip} inline-flex items-center ${open ? 'rotate-0' : ''}`} data-contact-chip>
       <button
         type="button"
         aria-label={method.value}
-        aria-haspopup="true"
         aria-expanded={open}
         onClick={onToggle}
-        className={`inline-flex items-center justify-center min-h-11 min-w-11 px-3 rounded-full border-[3px] border-ink shadow-[3px_3px_0_#000] transition-transform motion-reduce:transition-none hover:rotate-0 hover:-translate-y-0.5 ${method.chip} ${open ? 'rotate-0 -translate-y-0.5' : ''}`}
+        className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full"
       >
         <Icon className="size-5" aria-hidden="true" />
       </button>
@@ -46,12 +78,12 @@ function ContactChip({ method, open, onToggle }: { method: ContactMethod; open: 
           href={method.href}
           target={method.external ? '_blank' : undefined}
           rel={method.external ? 'noopener noreferrer' : undefined}
-          className="absolute left-1/2 bottom-[calc(100%+0.5rem)] z-20 -translate-x-1/2 max-w-[80vw] whitespace-nowrap rounded-full border-[3px] border-ink bg-white px-3 py-2 text-sm font-black text-black shadow-[3px_3px_0_#000] transition-colors hover:text-purple"
+          className="whitespace-nowrap pr-3 text-sm font-black"
         >
           {method.value}
         </a>
       )}
-    </div>
+    </span>
   )
 }
 
@@ -65,6 +97,8 @@ export function ContactSection() {
   const [errors, setErrors] = useState<{ name?: string; email?: string; message?: string }>({})
   const [openMethod, setOpenMethod] = useState<ContactMethodKey | null>(null)
   const messageRef = useRef<HTMLTextAreaElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const isWide = useIsWide(containerRef)
 
   const uid = useId()
   const nameId = `${uid}-name`
@@ -143,7 +177,7 @@ export function ContactSection() {
 
   return (
     <SectionFrame theme="contact" id="contact-section" className="flex flex-col">
-      <div className="safe-shell content-max flex flex-1 flex-col min-h-0">
+      <div ref={containerRef} className="safe-shell content-max flex flex-1 flex-col min-h-0">
         <div className="contact-region">
           <div className="contact-layout">
             <h2 className="contact-info-title font-[900] text-white tracking-tighter uppercase leading-(--lh-headline)">
@@ -263,14 +297,18 @@ export function ContactSection() {
             </div>
 
             <div className="contact-methods">
-              {CONTACT_METHODS.map((method) => (
-                <ContactChip
-                  key={method.key}
-                  method={method}
-                  open={openMethod === method.key}
-                  onToggle={() => setOpenMethod((p) => (p === method.key ? null : method.key))}
-                />
-              ))}
+              {CONTACT_METHODS.map((method) =>
+                isWide ? (
+                  <ContactMethodLink key={method.key} method={method} />
+                ) : (
+                  <ContactChip
+                    key={method.key}
+                    method={method}
+                    open={openMethod === method.key}
+                    onToggle={() => setOpenMethod((p) => (p === method.key ? null : method.key))}
+                  />
+                ),
+              )}
             </div>
           </div>
         </div>

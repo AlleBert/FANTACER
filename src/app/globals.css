@@ -583,11 +583,11 @@ textarea::-webkit-scrollbar {
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       grid-template-rows: auto auto;
-      column-gap: var(--space-xl);
-      row-gap: var(--rythm-sec);
+      column-gap: clamp(2rem, 5vw, 4rem);
+      row-gap: var(--space-lg);
       align-content: center;
       align-content: safe center;
-      align-items: start;
+      align-items: center;
       justify-content: normal;
     }
     .contact-form-card {
