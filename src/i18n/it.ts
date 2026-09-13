@@ -1,9 +1,9 @@
 import type { Dictionary } from './dictionary'
 
 export const it: Dictionary = {
-  'meta.title': 'FANTACER — Il gioco del distretto ceramico: vota e vinci',
+  'meta.title': 'FANTACER — Il gioco del distretto ceramico: vota e fai sentire la tua voce',
   'meta.description':
-    'Vota la tua azienda preferita del distretto ceramico a Cersaie, Bologna. Un voto al giorno, condividi e ritira il tuo gadget: qui si vince sempre!',
+    'Vota la tua azienda preferita del distretto ceramico a Cersaie, Bologna. Un voto al giorno, condividi e fai sentire la tua voce: qui si vince sempre!',
 
   'hero.play': 'GIOCA',
   'hero.scroll': 'scorri e scopri di più',

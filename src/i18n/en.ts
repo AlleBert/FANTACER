@@ -1,9 +1,9 @@
 import type { Dictionary } from './dictionary'
 
 export const en: Dictionary = {
-  'meta.title': 'FANTACER — The ceramic district game: vote and win',
+  'meta.title': 'FANTACER — The ceramic district game: vote and make your voice heard',
   'meta.description':
-    'Vote for your favorite ceramic company at Cersaie, Bologna. One vote a day — share it and collect your gadget: everyone wins!',
+    'Vote for your favorite ceramic company at Cersaie, Bologna. One vote a day — share it and make your voice heard: everyone wins!',
 
   'hero.play': 'PLAY',
   'hero.scroll': 'scroll to discover more',
