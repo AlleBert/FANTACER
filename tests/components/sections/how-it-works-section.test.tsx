@@ -10,8 +10,9 @@ jest.mock('@/lib/LocaleContext', () => ({ useLocale: () => ({ t: (key: string) =
 describe('HowItWorksSection', () => {
   it('mostra il nuovo titolo e la card classifica', () => {
     const { container } = render(<HowItWorksSection />)
-    expect(screen.getByText('howItWorks.title.line1')).toBeInTheDocument()
-    expect(screen.getByText('howItWorks.title.line2')).toBeInTheDocument()
+    const h2 = screen.getByRole('heading', { level: 2 })
+    expect(h2).toHaveTextContent('howItWorks.title.line1')
+    expect(h2).toHaveTextContent('howItWorks.title.line2')
     expect(screen.getByText('howItWorks.step.ranking')).toBeInTheDocument()
     expect(screen.queryByText('howItWorks.step.collect')).not.toBeInTheDocument()
     expect(container.querySelector('.lucide-trending-up')).not.toBeNull()
