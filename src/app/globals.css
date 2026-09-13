@@ -526,6 +526,7 @@ textarea::-webkit-scrollbar {
     display: flex;
     flex-direction: column;
     align-items: center;
+    align-items: safe center;
     flex: 1;
     width: 100%;
     min-height: 0;
@@ -557,7 +558,9 @@ textarea::-webkit-scrollbar {
     min-height: 0;
   }
 
-  /* Info column: titolo + chip. */
+  /* Info column: titolo + chip. NB: le utility Tailwind sullo stesso elemento
+     vincono su queste dichiarazioni (layer utilities dopo components), quindi
+     text-align/justify-content restano sulle classi .contact-*. */
   .contact-info-title {
     width: 100%;
     text-align: center;
@@ -567,6 +570,7 @@ textarea::-webkit-scrollbar {
     flex-wrap: wrap;
     align-items: center;
     justify-content: center;
+    justify-content: safe center;
     gap: var(--rythm-blk);
     width: 100%;
   }
@@ -587,6 +591,7 @@ textarea::-webkit-scrollbar {
       grid-template-rows: auto auto;
       column-gap: var(--space-xl);
       row-gap: var(--rythm-sec);
+      align-content: center;
       align-content: safe center;
       align-items: start;
       justify-content: normal;
@@ -615,6 +620,7 @@ textarea::-webkit-scrollbar {
       grid-template-rows: auto auto;
       column-gap: var(--space-lg);
       row-gap: var(--rythm-blk);
+      align-content: center;
       align-content: safe center;
       align-items: start;
       justify-content: normal;
