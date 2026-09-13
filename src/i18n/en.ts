@@ -88,6 +88,7 @@ export const en: Dictionary = {
   'contact.errorNameRequired': 'Enter your name',
   'contact.errorEmailInvalid': 'Enter a valid email address',
   'contact.errorMessageRequired': 'Write a message',
+  'contact.errorMessageTooShort': 'Message is too short (minimum 10 characters)',
   'contact.sending': 'SENDING...',
   'contact.submit': 'SEND',
   'contact.emailSubject': 'New message from the site - {name}',

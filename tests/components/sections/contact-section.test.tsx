@@ -40,4 +40,34 @@ describe('ContactSection', () => {
     expect(screen.getByText('contact.errorEmailInvalid')).toBeInTheDocument()
     expect(screen.getByText('contact.errorMessageRequired')).toBeInTheDocument()
   })
+
+  it('segnala email non valida ma non vuota', () => {
+    render(<ContactSection />)
+    fireEvent.change(screen.getByLabelText('contact.nameLabel'), { target: { value: 'Ada' } })
+    fireEvent.change(screen.getByLabelText('contact.emailLabel'), { target: { value: 'not-an-email' } })
+    fireEvent.change(screen.getByLabelText('contact.messageLabel'), { target: { value: 'Ciao, come state?' } })
+    fireEvent.click(screen.getByRole('button', { name: 'contact.submit' }))
+    expect(screen.getByText('contact.errorEmailInvalid')).toBeInTheDocument()
+    expect(screen.queryByText('contact.errorNameRequired')).not.toBeInTheDocument()
+    expect(screen.queryByText('contact.errorMessageRequired')).not.toBeInTheDocument()
+  })
+
+  it('rifiuta un messaggio troppo corto', () => {
+    render(<ContactSection />)
+    fireEvent.change(screen.getByLabelText('contact.nameLabel'), { target: { value: 'Ada' } })
+    fireEvent.change(screen.getByLabelText('contact.emailLabel'), { target: { value: 'ada@example.com' } })
+    fireEvent.change(screen.getByLabelText('contact.messageLabel'), { target: { value: 'ciao' } })
+    fireEvent.click(screen.getByRole('button', { name: 'contact.submit' }))
+    expect(screen.getByText('contact.errorMessageTooShort')).toBeInTheDocument()
+  })
+
+  it('rimuove l\'errore quando il campo viene corretto', () => {
+    render(<ContactSection />)
+    fireEvent.click(screen.getByRole('button', { name: 'contact.submit' }))
+    const nameInput = screen.getByLabelText('contact.nameLabel')
+    expect(nameInput).toHaveAttribute('aria-invalid', 'true')
+    fireEvent.change(nameInput, { target: { value: 'Ada' } })
+    expect(nameInput).not.toHaveAttribute('aria-invalid')
+    expect(screen.queryByText('contact.errorNameRequired')).not.toBeInTheDocument()
+  })
 })

@@ -97,6 +97,7 @@ export interface Dictionary {
   'contact.errorNameRequired': string
   'contact.errorEmailInvalid': string
   'contact.errorMessageRequired': string
+  'contact.errorMessageTooShort': string
   'contact.sending': string
   'contact.submit': string
   'contact.emailSubject': string

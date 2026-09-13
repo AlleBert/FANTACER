@@ -6,6 +6,7 @@ import { Loader2, Mail, Phone, Globe } from 'lucide-react'
 import { SectionFrame } from '@/components/layout/section-frame'
 import { useLocale } from '@/lib/LocaleContext'
 import { SiteFooter } from '@/components/layout/site-footer'
+import { CONTACT_NAME_MAX, CONTACT_EMAIL_MAX, CONTACT_MESSAGE_MIN, CONTACT_MESSAGE_MAX } from '@/lib/contact'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -33,12 +34,15 @@ export function ContactSection() {
     const next: typeof errors = {}
     if (!name.trim()) next.name = t('contact.errorNameRequired')
     if (!email.trim() || !EMAIL_RE.test(email.trim())) next.email = t('contact.errorEmailInvalid')
-    if (!message.trim()) next.message = t('contact.errorMessageRequired')
+    const trimmedMessage = message.trim()
+    if (!trimmedMessage) next.message = t('contact.errorMessageRequired')
+    else if (trimmedMessage.length < CONTACT_MESSAGE_MIN) next.message = t('contact.errorMessageTooShort')
     return next
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (status === 'loading') return
     const next = validate()
     setErrors(next)
     if (Object.keys(next).length > 0) return
@@ -84,12 +88,12 @@ export function ContactSection() {
               </h3>
 
               {status === 'success' && (
-                <div role="alert" aria-live="polite" className="mb-2 md:mb-3 px-3 py-2 bg-green-100 text-green-900 font-bold text-xs md:text-sm rounded-xl border-2 border-green-500 text-center shrink-0">
+                <div role="status" aria-live="polite" className="mb-2 md:mb-3 px-3 py-2 bg-green-100 text-green-900 font-bold text-xs md:text-sm rounded-xl border-2 border-green-500 text-center shrink-0">
                   {t('contact.success')}
                 </div>
               )}
               {status === 'error' && (
-                <div role="alert" aria-live="polite" className="mb-2 md:mb-3 px-3 py-2 bg-red-100 text-red-900 font-bold text-xs md:text-sm rounded-xl border-2 border-red-400 text-center shrink-0">
+                <div role="alert" className="mb-2 md:mb-3 px-3 py-2 bg-red-100 text-red-900 font-bold text-xs md:text-sm rounded-xl border-2 border-red-400 text-center shrink-0">
                   {t('contact.error')}
                 </div>
               )}
@@ -120,14 +124,15 @@ export function ContactSection() {
                       name="nome"
                       required
                       autoComplete="name"
+                      maxLength={CONTACT_NAME_MAX}
                       placeholder={t('contact.namePlaceholder')}
                       value={name}
-                      onChange={(e) => setName(e.target.value)}
+                      onChange={(e) => { setName(e.target.value); if (errors.name) setErrors((p) => ({ ...p, name: undefined })) }}
                       aria-invalid={errors.name ? true : undefined}
                       aria-describedby={errors.name ? `${nameId}-error` : undefined}
                       className={fieldCls}
                     />
-                    {errors.name && <p id={`${nameId}-error`} className={errorCls}>{errors.name}</p>}
+                    {errors.name && <p id={`${nameId}-error`} role="alert" className={errorCls}>{errors.name}</p>}
                   </div>
                   <div className="contact-field">
                     <label htmlFor={emailId} className={labelCls}>{t('contact.emailLabel')}</label>
@@ -138,14 +143,15 @@ export function ContactSection() {
                       required
                       autoComplete="email"
                       inputMode="email"
+                      maxLength={CONTACT_EMAIL_MAX}
                       placeholder={t('contact.emailPlaceholder')}
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => { setEmail(e.target.value); if (errors.email) setErrors((p) => ({ ...p, email: undefined })) }}
                       aria-invalid={errors.email ? true : undefined}
                       aria-describedby={errors.email ? `${emailId}-error` : undefined}
                       className={fieldCls}
                     />
-                    {errors.email && <p id={`${emailId}-error`} className={errorCls}>{errors.email}</p>}
+                    {errors.email && <p id={`${emailId}-error`} role="alert" className={errorCls}>{errors.email}</p>}
                   </div>
                 </div>
 
@@ -155,14 +161,15 @@ export function ContactSection() {
                     id={messageId}
                     name="messaggio"
                     required
+                    maxLength={CONTACT_MESSAGE_MAX}
                     placeholder={t('contact.messagePlaceholder')}
                     value={message}
-                    onChange={(e) => setMessage(e.target.value)}
+                    onChange={(e) => { setMessage(e.target.value); if (errors.message) setErrors((p) => ({ ...p, message: undefined })) }}
                     aria-invalid={errors.message ? true : undefined}
                     aria-describedby={errors.message ? `${messageId}-error` : undefined}
                     className="w-full flex-1 min-h-[3rem] px-4 md:px-5 py-[clamp(0.375rem,1vw,0.5rem)] text-base bg-white text-black font-bold rounded-2xl border-[3px] border-ink focus:outline-none focus:shadow-[4px_4px_0_#000] focus:-translate-y-0.5 shadow-[2px_2px_0_#000] transition-all resize-none overflow-y-auto box-border"
                   />
-                  {errors.message && <p id={`${messageId}-error`} className={errorCls}>{errors.message}</p>}
+                  {errors.message && <p id={`${messageId}-error`} role="alert" className={errorCls}>{errors.message}</p>}
                 </div>
 
                 <Button
@@ -172,7 +179,7 @@ export function ContactSection() {
                 >
                   {status === 'loading' ? (
                     <span className="flex items-center justify-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin motion-reduce:animate-none" />
                       {t('contact.sending')}
                     </span>
                   ) : (

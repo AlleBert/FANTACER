@@ -88,6 +88,7 @@ export const it: Dictionary = {
   'contact.errorNameRequired': 'Inserisci il tuo nome',
   'contact.errorEmailInvalid': 'Inserisci un indirizzo email valido',
   'contact.errorMessageRequired': 'Scrivi un messaggio',
+  'contact.errorMessageTooShort': 'Il messaggio è troppo corto (minimo 10 caratteri)',
   'contact.sending': 'INVIO...',
   'contact.submit': 'INVIA',
   'contact.emailSubject': 'Nuovo messaggio dal sito - {name}',
