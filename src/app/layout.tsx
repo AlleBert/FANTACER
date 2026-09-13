@@ -114,10 +114,16 @@ export default async function RootLayout({
         className="flex flex-col text-black font-['Open_Sauce_One',_sans-serif]"
       >
         {process.env.NODE_ENV === "development" && (
-          // react-scan deve girare PRIMA di React per tracciare i re-render:
-          // serve un blocco sincrono, async/defer renderebbero l'instrumentazione inutile.
-          // eslint-disable-next-line @next/next/no-sync-scripts
-          <script src="https://unpkg.com/react-scan/dist/auto.global.js" crossOrigin="anonymous" />
+          <>
+            {/* react-scan e react-grab devono girare PRIMA di React per tracciare i re-render:
+                serve un blocco sincrono, async/defer renderebbero l'instrumentazione inutile.
+                react-grab 0.2.0 va caricato per primo: react-scan rileva window.__REACT_GRAB__
+                e usa questa versione, evitando il warning "react-grab outdated". */}
+            {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+            <script src="https://unpkg.com/react-grab@0.2.0/dist/index.global.js" crossOrigin="anonymous" />
+            {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+            <script src="https://unpkg.com/react-scan/dist/auto.global.js" crossOrigin="anonymous" />
+          </>
         )}
         <Providers locale={locale}>{children}</Providers>
         <script
