@@ -94,6 +94,9 @@ export interface Dictionary {
   'contact.nameLabel': string
   'contact.emailLabel': string
   'contact.messageLabel': string
+  'contact.errorNameRequired': string
+  'contact.errorEmailInvalid': string
+  'contact.errorMessageRequired': string
   'contact.sending': string
   'contact.submit': string
   'contact.emailSubject': string
