@@ -75,7 +75,7 @@ export function ContactSection() {
       <div className="safe-shell content-max flex flex-1 flex-col min-h-0">
         <div className="contact-region">
           <div className="contact-layout">
-            <h2 className="contact-info-title text-(length:--fs-headline) font-[900] text-white tracking-tighter uppercase leading-(--lh-headline)">
+            <h2 className="contact-info-title font-[900] text-white tracking-tighter uppercase leading-(--lh-headline)">
               {t('contact.title1')}
               <span className="hidden sm:inline"> </span>
               <br className="sm:hidden" />
@@ -167,7 +167,7 @@ export function ContactSection() {
                     onChange={(e) => { setMessage(e.target.value); if (errors.message) setErrors((p) => ({ ...p, message: undefined })) }}
                     aria-invalid={errors.message ? true : undefined}
                     aria-describedby={errors.message ? `${messageId}-error` : undefined}
-                    className="w-full flex-1 min-h-[3rem] px-4 md:px-5 py-[clamp(0.375rem,1vw,0.5rem)] text-base bg-white text-black font-bold rounded-2xl border-[3px] border-ink focus:outline-none focus:shadow-[4px_4px_0_#000] focus:-translate-y-0.5 shadow-[2px_2px_0_#000] transition-all resize-none overflow-y-auto box-border"
+                    className="contact-textarea w-full flex-1 px-4 md:px-5 py-[clamp(0.375rem,1vw,0.5rem)] text-base bg-white text-black font-bold rounded-2xl border-[3px] border-ink focus:outline-none focus:shadow-[4px_4px_0_#000] focus:-translate-y-0.5 shadow-[2px_2px_0_#000] transition-all resize-none overflow-y-auto box-border"
                   />
                   {errors.message && <p id={`${messageId}-error`} role="alert" className={errorCls}>{errors.message}</p>}
                 </div>

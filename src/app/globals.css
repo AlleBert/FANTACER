@@ -564,6 +564,7 @@ textarea::-webkit-scrollbar {
   .contact-info-title {
     width: 100%;
     text-align: center;
+    font-size: var(--fs-headline);
   }
   .contact-methods {
     display: flex;
@@ -640,6 +641,61 @@ textarea::-webkit-scrollbar {
       justify-content: flex-start;
     }
   }
+
+}
+
+/* Tuning schermi bassi: compatta il layout per garantire zero scroll
+   (landscape phone e viewport corte). Fuori da @layer components: le utility
+   Tailwind (layer successivo) vincerebbero sulle regole in components. */
+@media (max-height: 40rem) {
+  .contact-region,
+  .contact-layout {
+    gap: var(--rythm-blk);
+  }
+  .contact-info-title {
+    font-size: clamp(1.1rem, min(5vw, 6svh), 2rem);
+  }
+  .contact-form-card {
+    padding: 0.75rem;
+  }
+}
+@media (max-height: 34rem) and (orientation: landscape) {
+  section[data-section='contact'] .safe-shell {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  .contact-region,
+  .contact-layout {
+    gap: var(--rythm-blk);
+  }
+  .contact-fields-row {
+    flex-wrap: nowrap;
+  }
+  .contact-field {
+    flex: 1 1 0;
+  }
+  .contact-form-card {
+    min-height: auto;
+    padding: 0.5rem;
+  }
+  .contact-form-card form {
+    flex: 0 0 auto;
+    gap: 0.25rem;
+  }
+  .contact-field--grow {
+    flex: 0 0 auto;
+  }
+  .contact-form-card h3 {
+    display: none;
+  }
+  .contact-textarea {
+    flex: 0 0 auto;
+    min-height: 1.75rem;
+    height: 1.75rem;
+  }
+}
+.contact-textarea {
+  min-height: clamp(2.25rem, 10svh, 3rem);
 }
 
 /* BackgroundLayer crossfade: il nuovo layer monta sopra con fade-in CSS.
