@@ -577,6 +577,32 @@ textarea::-webkit-scrollbar {
     width: 100%;
   }
 
+  /* Chip compatta (solo icona): il dato si apre/chiude con una transizione
+     morbida invece di apparire di scatto. */
+  .contact-chip__link {
+    max-width: 0;
+    opacity: 0;
+    overflow: hidden;
+    padding-right: 0;
+    transform: translateX(-0.25rem);
+    transition:
+      max-width 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.28s ease,
+      transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+      padding-right 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .contact-chip__link[data-open='true'] {
+    max-width: 16rem;
+    opacity: 1;
+    transform: translateX(0);
+    padding-right: 0.75rem;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .contact-chip__link {
+      transition: none;
+    }
+  }
+
   /* 2 colonne: form a sinistra, info a destra (50/50). */
   @container (min-width: 60rem) {
     .contact-layout {

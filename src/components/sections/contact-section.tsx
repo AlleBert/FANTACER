@@ -73,16 +73,17 @@ function ContactChip({ method, open, onToggle }: { method: ContactMethod; open: 
       >
         <Icon className="size-5" aria-hidden="true" />
       </button>
-      {open && (
-        <a
-          href={method.href}
-          target={method.external ? '_blank' : undefined}
-          rel={method.external ? 'noopener noreferrer' : undefined}
-          className="whitespace-nowrap pr-3 text-sm font-black"
-        >
-          {method.value}
-        </a>
-      )}
+      <a
+        href={method.href}
+        target={method.external ? '_blank' : undefined}
+        rel={method.external ? 'noopener noreferrer' : undefined}
+        data-open={open}
+        aria-hidden={!open}
+        tabIndex={open ? 0 : -1}
+        className="contact-chip__link whitespace-nowrap text-sm font-black"
+      >
+        {method.value}
+      </a>
     </span>
   )
 }
