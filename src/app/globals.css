@@ -501,6 +501,139 @@ textarea::-webkit-scrollbar {
       margin-inline: 0;
     }
   }
+
+  /* ---- Contact section: fit-to-screen, zero scroll a riposo ---- */
+  /* Regione contenuto: nessuno scroll a riposo. Con un campo focalizzato
+     (tastiera mobile aperta) diventa scrollabile così il campo attivo non
+     resta coperto. Unica scrollbar a riposo ammessa: la textarea messaggio. */
+  .contact-region {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    gap: var(--rythm-sec);
+  }
+  .contact-region:focus-within {
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    scroll-padding-block: var(--safe-top-offset) var(--safe-bottom-offset);
+  }
+
+  /* Stacked (mobile-first): titolo → form → chip. */
+  .contact-layout {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    gap: var(--rythm-sec);
+  }
+  .contact-form-card {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+  }
+
+  /* Form: campi affiancati quando c'è spazio (intrinseco, senza breakpoint). */
+  .contact-fields-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--rythm-blk);
+  }
+  .contact-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1 1 20ch;
+    min-width: 0;
+  }
+  .contact-field--grow {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  /* Info column: titolo + chip. */
+  .contact-info-title {
+    width: 100%;
+    text-align: center;
+  }
+  .contact-methods {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--rythm-blk);
+    width: 100%;
+  }
+  .contact-method-label {
+    display: none;
+  }
+  @container (min-width: 30rem) {
+    .contact-method-label {
+      display: inline;
+    }
+  }
+
+  /* 2 colonne: form a sinistra, info a destra (50/50). */
+  @container (min-width: 60rem) {
+    .contact-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-rows: auto auto;
+      column-gap: var(--space-xl);
+      row-gap: var(--rythm-sec);
+      align-content: safe center;
+      align-items: start;
+      justify-content: normal;
+    }
+    .contact-form-card {
+      grid-column: 1;
+      grid-row: 1 / span 2;
+    }
+    .contact-info-title {
+      grid-column: 2;
+      grid-row: 1;
+      text-align: left;
+    }
+    .contact-methods {
+      grid-column: 2;
+      grid-row: 2;
+      justify-content: flex-start;
+    }
+  }
+
+  /* Landscape phone basso: stessa griglia anche sotto i 60rem di contenuto. */
+  @media (max-height: 34rem) and (orientation: landscape) {
+    .contact-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-rows: auto auto;
+      column-gap: var(--space-lg);
+      row-gap: var(--rythm-blk);
+      align-content: safe center;
+      align-items: start;
+      justify-content: normal;
+    }
+    .contact-form-card {
+      grid-column: 1;
+      grid-row: 1 / span 2;
+    }
+    .contact-info-title {
+      grid-column: 2;
+      grid-row: 1;
+      text-align: left;
+    }
+    .contact-methods {
+      grid-column: 2;
+      grid-row: 2;
+      justify-content: flex-start;
+    }
+  }
 }
 
 /* BackgroundLayer crossfade: il nuovo layer monta sopra con fade-in CSS.
