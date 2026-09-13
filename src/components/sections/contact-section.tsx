@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useId } from 'react'
+import { useState, useEffect, useId, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Loader2, Mail, Phone, Globe, type LucideIcon } from 'lucide-react'
 import { SectionFrame } from '@/components/layout/section-frame'
@@ -64,6 +64,7 @@ export function ContactSection() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [errors, setErrors] = useState<{ name?: string; email?: string; message?: string }>({})
   const [openMethod, setOpenMethod] = useState<ContactMethodKey | null>(null)
+  const messageRef = useRef<HTMLTextAreaElement>(null)
 
   const uid = useId()
   const nameId = `${uid}-name`
@@ -75,6 +76,15 @@ export function ContactSection() {
     const timer = setTimeout(() => setStatus('idle'), 5000)
     return () => clearTimeout(timer)
   }, [status])
+
+  // Auto-grow della textarea: parte da 1 riga, cresce col contenuto fino al
+  // max-height definito in CSS, poi scrolla internamente (unica scrollbar ammessa).
+  useEffect(() => {
+    const ta = messageRef.current
+    if (!ta) return
+    ta.style.height = 'auto'
+    ta.style.height = `${ta.scrollHeight}px`
+  }, [message])
 
   useEffect(() => {
     if (!openMethod) return
@@ -219,7 +229,9 @@ export function ContactSection() {
                 <div className="contact-field contact-field--grow">
                   <textarea
                     id={messageId}
+                    ref={messageRef}
                     name="messaggio"
+                    rows={1}
                     required
                     maxLength={CONTACT_MESSAGE_MAX}
                     placeholder={t('contact.messagePlaceholder')}
@@ -228,7 +240,7 @@ export function ContactSection() {
                     onChange={(e) => { setMessage(e.target.value); if (errors.message) setErrors((p) => ({ ...p, message: undefined })) }}
                     aria-invalid={errors.message ? true : undefined}
                     aria-describedby={errors.message ? `${messageId}-error` : undefined}
-                    className="contact-textarea w-full flex-1 px-4 md:px-5 py-[clamp(0.375rem,1vw,0.5rem)] text-base bg-white text-black font-bold rounded-2xl border-[3px] border-ink focus:outline-none focus:shadow-[4px_4px_0_#000] focus:-translate-y-0.5 shadow-[2px_2px_0_#000] transition-all resize-none overflow-y-auto box-border"
+                    className="contact-textarea w-full px-4 md:px-5 py-[clamp(0.375rem,1vw,0.5rem)] text-base bg-white text-black font-bold rounded-2xl border-[3px] border-ink focus:outline-none focus:shadow-[4px_4px_0_#000] focus:-translate-y-0.5 shadow-[2px_2px_0_#000] transition-all resize-none overflow-y-auto box-border"
                   />
                   {errors.message && <p id={`${messageId}-error`} role="alert" className={errorCls}>{errors.message}</p>}
                 </div>
