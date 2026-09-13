@@ -40,11 +40,10 @@ const SECTIONS: SectionDef[] = [
   { name: 'intro', selector: 'main > section:nth-child(2)' },
   { name: 'how-it-works', selector: 'main > section:nth-child(3)' },
   { name: 'play-again', selector: 'main > section:nth-child(4)' },
-  { name: 'prize-location', selector: 'main > section:nth-child(5)' },
-  { name: 'search', selector: 'main > section:nth-child(6)' },
-  { name: 'public-ranking', selector: 'main > section:nth-child(7)' },
-  { name: 'live-ranking', selector: 'main > section:nth-child(8)' },
-  { name: 'contact', selector: 'main > section:nth-child(9)' },
+  { name: 'search', selector: 'main > section:nth-child(5)' },
+  { name: 'public-ranking', selector: 'main > section:nth-child(6)' },
+  { name: 'live-ranking', selector: 'main > section:nth-child(7)' },
+  { name: 'contact', selector: 'main > section:nth-child(8)' },
 ];
 
 interface HomepageRouteReport extends RouteReport {

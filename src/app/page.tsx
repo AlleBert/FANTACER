@@ -5,7 +5,6 @@ import { HeroSection } from '@/components/sections/hero-section'
 import { IntroSection } from '@/components/sections/intro-section'
 import { HowItWorksSection } from '@/components/sections/how-it-works-section'
 import { PlayAgainSection } from '@/components/sections/play-again-section'
-import { PrizeLocationSection } from '@/components/sections/prize-location-section'
 import { SearchSection } from '@/components/sections/search-section'
 import { PublicRankingSection } from '@/components/sections/public-ranking-section'
 import { LiveRankingSection } from '@/components/sections/live-ranking-section'
@@ -31,7 +30,6 @@ function PageContent() {
       <IntroSection />
       <HowItWorksSection />
       <PlayAgainSection />
-      <PrizeLocationSection />
       <SearchSection />
       {gameUnlock.success && <SuccessSection />}
       <PublicRankingSection />

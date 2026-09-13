@@ -74,7 +74,7 @@ Audit Playwright (`tests/e2e/`):
 | Comando | Cosa copre | Gate CI |
 |---|---|---|
 | `npm run test:e2e` | `responsive-structural.spec.ts`: per ogni sezione, micro-scroll, overflow, altezza vs viewport, box nel viewport (chromium + mobile-webkit, 6 viewport) | sì |
-| `npm run visual:audit:homepage` | 6 viewport × 9 sezioni + sub-elementi + score | no (decisionale) |
+| `npm run visual:audit:homepage` | 6 viewport × 8 sezioni + sub-elementi + score | no (decisionale) |
 | `npm run visual:audit:ios` | homepage su 7 device WebKit (`--workers=1`) | no |
 | `npm run visual:audit:ios:safearea` | safe-area simulata (notch/Dynamic Island/home indicator) su 7 device WebKit | no |
 | `npm run visual:audit:ios:chrome` | viewport/chrome stress (URL bar, viewport basse/strette) su 7 device WebKit | no |

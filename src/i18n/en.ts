@@ -23,11 +23,6 @@ export const en: Dictionary = {
   'playAgain.text': 'you can play only once a day',
   'playAgain.dates': 'from 21 to 25 September 2026',
 
-  'prize.title': 'and collect your gadget',
-  'prize.inside': 'inside',
-  'prize.venue': 'Cersaie, at Bologna Fiere',
-  'prize.dates': 'from 21 to 25 September 2026',
-
   'search.title': 'VOTE FOR YOUR FAVOURITE COMPANIES',
   'search.instructions':
     'assign 1 to 4 pallets to the 3 brands you prefer and help them climb the ranking',
@@ -53,7 +48,6 @@ export const en: Dictionary = {
   'success.youRock': 'you rock!',
   'success.receiptTitle': 'Your vote',
   'success.shareTaglinePre': 'Share your vote tagging',
-  'success.shareTaglinePost': 'and pick up your prize',
   'success.shareButton': 'Share',
   'success.shareCta': 'Share',
   'success.shareCopied': 'Copied!',

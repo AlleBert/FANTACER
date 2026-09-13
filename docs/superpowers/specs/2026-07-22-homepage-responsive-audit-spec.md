@@ -21,7 +21,7 @@ Niente admin, niente coming-soon, niente login.
 | `desktop` | 1440 | 900 | Monitor standard |
 | `desktop-wide` | 1920 | 1080 | Wide monitor |
 
-## 4. Sezioni Homepage (9)
+## 4. Sezioni Homepage (8)
 
 | # | Name | Selector |
 |---|---|---|
@@ -29,11 +29,10 @@ Niente admin, niente coming-soon, niente login.
 | 2 | intro | `main > section:nth-child(2)` |
 | 3 | how-it-works | `main > section:nth-child(3)` |
 | 4 | play-again | `main > section:nth-child(4)` |
-| 5 | prize-location | `main > section:nth-child(5)` |
-| 6 | search | `main > section:nth-child(6)` |
-| 7 | public-ranking | `main > section:nth-child(7)` |
-| 8 | live-ranking | `main > section:nth-child(8)` |
-| 9 | contact | `main > section:nth-child(9)` |
+| 5 | search | `main > section:nth-child(5)` |
+| 6 | public-ranking | `main > section:nth-child(6)` |
+| 7 | live-ranking | `main > section:nth-child(7)` |
+| 8 | contact | `main > section:nth-child(8)` |
 
 ## 5. Metriche per sezione
 

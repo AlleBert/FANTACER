@@ -38,7 +38,7 @@ export function SuccessSection() {
     return () => clearTimeout(timer)
   }, [])
 
-  const shareText = `${t('success.shareTaglinePre')} @fanta.cer ${t('success.shareTaglinePost')}`
+  const shareText = `${t('success.shareTaglinePre')} @fanta.cer`
   const shareUrl = typeof window !== 'undefined' ? window.location.href : ''
 
   return (
@@ -66,8 +66,7 @@ export function SuccessSection() {
                   {t('success.shareTaglinePre')}{' '}
                   <span className="inline-block rotate-1 rounded-(--rounded-sm) border-2 border-ink bg-bright px-(--space-sm) py-1 font-black shadow-[2px_2px_0_#000]">
                     @fanta.cer
-                  </span>{' '}
-                  {t('success.shareTaglinePost')}
+                  </span>
                 </p>
                 <ActionBar companies={selectedCompanies} text={shareText} url={shareUrl} />
               </div>

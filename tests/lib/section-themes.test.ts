@@ -4,8 +4,7 @@ const originalBackgrounds = {
   hero: 'linear-gradient(180deg, #FF8C23 0%, #4B00AB 100%)',
   intro: 'linear-gradient(to bottom, #FF8C23 0%, #FF8C23 12%, #FF2FB2 50%, #4B00AB 100%)',
   'how-it-works': 'linear-gradient(to bottom, #4B00AB 0%, #ff8a26 35%, #FF2FB2 100%)',
-  'play-again': 'linear-gradient(to bottom, #FF2FB2 0%, #4B00AB 60%, #4B00AB 100%)',
-  'prize-location': 'linear-gradient(to bottom, #4B00AB 0%, #4B00AB 30%, #8A2BE2 60%, #E0B0FF 85%, #FFFFFF 100%)',
+  'play-again': 'linear-gradient(to bottom, #FF2FB2 0%, #4B00AB 55%, #4B00AB 78%, #FFFFFF 100%)',
   search: '#FFFFFF',
   'public-ranking': 'linear-gradient(to bottom, #FFFFFF 0%, #ff8a26 30%, #FF2FB2 100%)',
   'live-ranking': 'linear-gradient(to bottom, #ff8a26 0%, #ff8a26 50%, #FF2FB2 100%)',
@@ -20,7 +19,6 @@ describe('sectionThemes', () => {
     'intro',
     'how-it-works',
     'play-again',
-    'prize-location',
     'search',
     'public-ranking',
     'live-ranking',
@@ -60,7 +58,6 @@ describe('sectionThemes', () => {
     expect(map.get('intro')).toBe('#FF8C23')
     expect(map.get('how-it-works')).toBe('#4B00AB')
     expect(map.get('play-again')).toBe('#FF2FB2')
-    expect(map.get('prize-location')).toBe('#4B00AB')
     expect(map.get('search')).toBe('#FFFFFF')
     expect(map.get('public-ranking')).toBe('#FFFFFF')
     expect(map.get('live-ranking')).toBe('#ff8a26')
@@ -98,7 +95,7 @@ describe('sectionThemes', () => {
     }
     expect(startOf('how-it-works')).toBe(endOf('intro'))
     expect(startOf('play-again')).toBe(endOf('how-it-works'))
-    expect(startOf('prize-location')).toBe(endOf('play-again'))
+    expect(endOf('play-again')).toBe(endOf('search'))
     expect(startOf('public-ranking')).toBe(endOf('search'))
     expect(startOf('success')).toBe(endOf('search'))
     expect(startOf('contact')).toBe(endOf('live-ranking'))

@@ -271,7 +271,7 @@ const SUITES = [
   },
   {
     id: 'visual-audit-homepage',
-    label: 'Audit homepage responsive (6 viewport × 9 sezioni + score)',
+    label: 'Audit homepage responsive (6 viewport × 8 sezioni + score)',
     command: 'npm run visual:audit:homepage',
     pattern: 'tests/e2e/visual-audit-homepage/report.json',
     normalize: (report) => ({

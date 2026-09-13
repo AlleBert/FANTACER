@@ -30,12 +30,8 @@ export const sectionThemes = {
     themeColor: '#4B00AB',
   },
   'play-again': {
-    background: 'linear-gradient(to bottom, #FF2FB2 0%, #4B00AB 60%, #4B00AB 100%)',
+    background: 'linear-gradient(to bottom, #FF2FB2 0%, #4B00AB 55%, #4B00AB 78%, #FFFFFF 100%)',
     themeColor: '#FF2FB2',
-  },
-  'prize-location': {
-    background: 'linear-gradient(to bottom, #4B00AB 0%, #4B00AB 30%, #8A2BE2 60%, #E0B0FF 85%, #FFFFFF 100%)',
-    themeColor: '#4B00AB',
   },
   search: {
     background: '#FFFFFF',

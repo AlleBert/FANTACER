@@ -25,12 +25,6 @@ export interface Dictionary {
   'playAgain.text': string
   'playAgain.dates': string
 
-  // Prize location
-  'prize.title': string
-  'prize.inside': string
-  'prize.venue': string
-  'prize.dates': string
-
   // Search / vote
   'search.title': string
   'search.instructions': string
@@ -57,7 +51,6 @@ export interface Dictionary {
   'success.youRock': string
   'success.receiptTitle': string
   'success.shareTaglinePre': string
-  'success.shareTaglinePost': string
   'success.shareButton': string
   'success.shareCta': string
   'success.shareCopied': string

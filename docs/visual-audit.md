@@ -41,7 +41,7 @@ npm run visual:audit
 
 | Route | Sezioni |
 |-------|---------|
-| `/` | hero, intro, how-it-works, play-again, prize-location, search, public-ranking, live-ranking, contact |
+| `/` | hero, intro, how-it-works, play-again, search, public-ranking, live-ranking, contact |
 | `/coming-soon` | hero |
 | `/admin/login` | login-card |
 | `/admin/dashboard/panoramica` | page-header, stat-cards, chart-area |
@@ -112,9 +112,9 @@ npm run visual:audit:homepage
 
 ### Sezioni analizzate
 
-Le 9 sezioni della homepage (`main > section:nth-child(1..9)`): hero, intro, how-it-works, play-again, prize-location, search, public-ranking, live-ranking, contact.
+Le 8 sezioni della homepage (`main > section:nth-child(1..8)`): hero, intro, how-it-works, play-again, search, public-ranking, live-ranking, contact.
 
-Nota: con `voting_enabled=false` (pre-fiera, fuori progetto E2E) la sezione `live-ranking` non è renderizzata → le sezioni diventano 8 e gli indici `nth-child` slittano. Negli audit E2E il flag è `true` (default) quindi la lista resta valida.
+Nota: con `voting_enabled=false` (pre-fiera, fuori progetto E2E) la sezione `live-ranking` non è renderizzata → le sezioni diventano 7 e gli indici `nth-child` slittano. Negli audit E2E il flag è `true` (default) quindi la lista resta valida.
 
 ### Viewport testati
 
