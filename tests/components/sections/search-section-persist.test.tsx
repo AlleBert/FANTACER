@@ -84,5 +84,35 @@ describe('SearchSection — persistenza voto', () => {
 
     await waitFor(() => expect(setStoredVoterIdMock).toHaveBeenCalledWith('v1'))
     expect(mockVote.unlockGameStep).toHaveBeenCalledWith('success')
+    expect(setStoredVoterIdMock.mock.invocationCallOrder[0]).toBeLessThan(
+      mockVote.unlockGameStep.mock.invocationCallOrder[0],
+    )
+  })
+
+  it('non salva il visitorId se il voto fallisce', async () => {
+    ;(global.fetch as jest.Mock).mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('/api/public/batch')) {
+        return Promise.resolve({ json: async () => ({ activeBatch: 'B1' }) })
+      }
+      if (url.includes('/api/public/flag/voting')) {
+        return Promise.resolve({ json: async () => ({ enabled: true }) })
+      }
+      if (url.includes('/api/vota')) {
+        return Promise.resolve({ ok: false, json: async () => ({ success: false, error: 'no' }) })
+      }
+      return Promise.resolve({ json: async () => ({}) })
+    })
+
+    render(<SearchSection />)
+
+    fireEvent.click(screen.getByText('submit'))
+    fireEvent.click(await screen.findByText('turnstile-ok'))
+
+    // attende che l'errore sia stato gestito (overlay con il messaggio del server)
+    await screen.findByText('no')
+
+    expect(setStoredVoterIdMock).not.toHaveBeenCalled()
+    expect(mockVote.unlockGameStep).not.toHaveBeenCalled()
   })
 })
