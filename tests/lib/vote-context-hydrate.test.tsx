@@ -19,7 +19,13 @@ function Harness() {
         hydrate
       </button>
       <button
-        onClick={() => vote.hydrateVote([{ company: { id: 'w', name: 'W' }, pallet: 4 }])}
+        onClick={() =>
+          vote.hydrateVote([
+            { company: { id: 'w1', name: 'W1' }, pallet: 4 },
+            { company: { id: 'w2', name: 'W2' }, pallet: 2 },
+            { company: { id: 'w3', name: 'W3' }, pallet: 1 },
+          ])
+        }
       >
         rehydrate
       </button>
