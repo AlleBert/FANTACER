@@ -1199,11 +1199,16 @@ main[data-input-focused='true'] {
 }
 
 /* Le regioni scrollabili su focus non mostrano la barra (iOS la nasconde
-   nativamente): scroll fluido, indicatore assente. */
+   nativamente): scroll fluido, indicatore assente.
+   Il padding-inline crea lo spazio per l'ombra nera offset a destra di
+   input/card: senza di esso l'`overflow-x: hidden` attivo su focus taglierebbe
+   il bordo/ombra destra proprio quando il campo viene cliccato. Applicato
+   sempre (non solo su focus) così la larghezza non cambia al focus. */
 .search-region,
 .contact-region {
   scrollbar-width: none;
   -ms-overflow-style: none;
+  padding-inline: 0.75rem;
 }
 .search-region::-webkit-scrollbar,
 .contact-region::-webkit-scrollbar {
