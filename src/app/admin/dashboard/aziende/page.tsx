@@ -44,7 +44,7 @@ export default function AziendePage() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'companies' }, () => {
         loadCompanies()
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'vote_sessions' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ranking_tick' }, () => {
         loadCompanies()
       })
     safeSubscribe(channel)

@@ -107,7 +107,7 @@ export default function PanoramicaPage() {
     const supabase = createClient()
     const channel = supabase
       .channel('panoramica-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'vote_sessions' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ranking_tick' }, () => {
         loadData()
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'companies' }, () => {
