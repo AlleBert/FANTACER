@@ -26,30 +26,31 @@ export async function GET(request: NextRequest) {
     batchMap.get(c.batch)!.companyIds.push(c.id)
   }
 
-  const allCompanyIds = companies?.map(c => c.id) || []
-  const voteCountByCompany = new Map<string, number>()
+  // Una sessione conta UN voto per batch (prima veniva contata una volta per
+  // ciascuna delle 3 company, gonfiando il totale di 3x).
+  const companyBatch = new Map<string, string>()
+  for (const c of companies || []) companyBatch.set(c.id, c.batch)
 
-  if (allCompanyIds.length > 0) {
-    const { data: sessions } = await supabase
-      .from('vote_sessions')
-      .select('company1_id, company2_id, company3_id')
+  const sessionCountByBatch = new Map<string, number>()
+  const { data: sessions } = await supabase
+    .from('vote_sessions')
+    .select('company1_id, company2_id, company3_id')
 
-    for (const s of sessions || []) {
-      for (const cId of [s.company1_id, s.company2_id, s.company3_id]) {
-        if (allCompanyIds.includes(cId)) {
-          voteCountByCompany.set(cId, (voteCountByCompany.get(cId) || 0) + 1)
-        }
-      }
+  for (const s of sessions || []) {
+    const batch =
+      companyBatch.get(s.company1_id) ??
+      companyBatch.get(s.company2_id) ??
+      companyBatch.get(s.company3_id)
+    if (batch) {
+      sessionCountByBatch.set(batch, (sessionCountByBatch.get(batch) || 0) + 1)
     }
   }
 
-  const uniqueBatches = Array.from(batchMap.entries()).map(([name, { companyIds }]) => {
-    let voteCount = 0
-    for (const id of companyIds) {
-      voteCount += voteCountByCompany.get(id) || 0
-    }
-    return { name, companyCount: companyIds.length, voteCount }
-  })
+  const uniqueBatches = Array.from(batchMap.entries()).map(([name, { companyIds }]) => ({
+    name,
+    companyCount: companyIds.length,
+    voteCount: sessionCountByBatch.get(name) || 0,
+  }))
 
   return NextResponse.json({
     activeBatch: settings?.active_batch || 'TEST',
@@ -144,9 +145,18 @@ export async function DELETE(request: NextRequest) {
       .single()
 
     if (settings?.active_batch === batchName) {
+      // Passa a un altro batch esistente se disponibile, altrimenti 'TEST'.
+      const { data: remaining } = await supabase
+        .from('companies')
+        .select('batch')
+        .not('batch', 'is', null)
+        .limit(1)
+
+      const nextBatch = remaining?.[0]?.batch || 'TEST'
+
       await supabase
         .from('batch_settings')
-        .update({ active_batch: 'TEST', updated_at: new Date().toISOString() })
+        .update({ active_batch: nextBatch, updated_at: new Date().toISOString() })
         .eq('id', 'default')
     }
 

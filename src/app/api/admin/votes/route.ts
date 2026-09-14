@@ -2,32 +2,79 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin, toAdminError } from '@/lib/admin-auth'
 
+interface VoteSessionRow {
+  id: string
+  fingerprint: string | null
+  user_agent: string | null
+  country: string | null
+  company1_id: string
+  company2_id: string
+  company3_id: string
+  pallet1: number
+  pallet2: number
+  pallet3: number
+  created_at: string
+}
+
+const touchesAny = (
+  session: Pick<VoteSessionRow, 'company1_id' | 'company2_id' | 'company3_id'>,
+  ids: Set<string>,
+): boolean =>
+  ids.has(session.company1_id) ||
+  ids.has(session.company2_id) ||
+  ids.has(session.company3_id)
+
 export async function GET(request: NextRequest) {
   try {
     await requireAdmin(request)
     const supabase = createAdminClient()
     const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '25')
-    const search = searchParams.get('search') || ''
-
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '25')))
+    const search = (searchParams.get('search') || '').trim()
+    const batch = searchParams.get('batch')
     const offset = (page - 1) * limit
 
-    // Get companies for name resolution
-    const { data: companies } = await supabase.from('companies').select('id, name')
-    const companyMap = new Map((companies || []).map(c => [c.id, c.name]))
+    const { data: companies } = await supabase.from('companies').select('id, name, batch')
+    const companyMap = new Map(
+      (companies || []).map((c: { id: string; name: string }) => [c.id, c.name]),
+    )
 
-    const query = supabase
+    // Filtro batch e ricerca risolti PRIMA della paginazione, così `total` e
+    // `pages` sono corretti (prima il range veniva applicato e la ricerca
+    // filtrava solo i 25 record della pagina corrente).
+    const searchLower = search.toLowerCase()
+    const searchIds = search
+      ? new Set(
+          (companies || [])
+            .filter((c: { name: string }) => c.name.toLowerCase().includes(searchLower))
+            .map((c: { id: string }) => c.id),
+        )
+      : null
+    const batchIds =
+      batch && batch !== 'all'
+        ? new Set(
+            (companies || [])
+              .filter((c: { batch: string | null }) => c.batch === batch)
+              .map((c: { id: string }) => c.id),
+          )
+        : null
+
+    const { data: sessions, error } = await supabase
       .from('vote_sessions')
-      .select('id, fingerprint, ip_hash, user_agent, country, company1_id, company2_id, company3_id, pallet1, pallet2, pallet3, created_at', { count: 'exact' })
-
-    // Search filtering is done in-memory after fetch for simplicity
-
-    const { data: sessions, error, count } = await query
+      .select(
+        'id, fingerprint, user_agent, country, company1_id, company2_id, company3_id, pallet1, pallet2, pallet3, created_at',
+      )
       .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    let filtered = (sessions || []) as VoteSessionRow[]
+    if (batchIds) filtered = filtered.filter((s) => touchesAny(s, batchIds))
+    if (searchIds) filtered = filtered.filter((s) => touchesAny(s, searchIds))
+
+    const total = filtered.length
+    const pageSessions = filtered.slice(offset, offset + limit)
 
     const parseDevice = (ua: string | null): string => {
       if (!ua) return '-'
@@ -40,7 +87,7 @@ export async function GET(request: NextRequest) {
       return ua.substring(0, 20)
     }
 
-    let result = (sessions || []).map(v => ({
+    const result = pageSessions.map((v) => ({
       id: v.id,
       timestamp: v.created_at,
       fingerprint: v.fingerprint ? v.fingerprint.slice(0, 8) + '...' : '-',
@@ -53,23 +100,14 @@ export async function GET(request: NextRequest) {
       ],
     }))
 
-    if (search) {
-      const searchLower = search.toLowerCase()
-      result = result.filter(v =>
-        v.pallets.some(p => p.company.toLowerCase().includes(searchLower))
-      )
-    }
-
-    const total = search ? result.length : (count || 0)
-
     return NextResponse.json({
       data: result,
       pagination: {
         page,
         limit,
         total,
-        pages: Math.ceil(total / limit)
-      }
+        pages: Math.ceil(total / limit),
+      },
     })
   } catch (e) {
     const status = toAdminError(e)
