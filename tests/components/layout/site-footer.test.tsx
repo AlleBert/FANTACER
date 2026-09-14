@@ -51,7 +51,7 @@ describe('SiteFooter', () => {
   it('rende il logo archi467 cliccabile verso Instagram', () => {
     render(<SiteFooter />)
     const archi = screen.getByRole('link', { name: 'archi467' })
-    expect(archi).toHaveAttribute('href', 'https://www.instagram.com/archi467_lab/')
+    expect(archi).toHaveAttribute('href', 'https://www.instagram.com/archi.467/')
     expect(archi).toHaveAttribute('target', '_blank')
     expect(archi.getAttribute('rel')).toContain('noopener')
   })

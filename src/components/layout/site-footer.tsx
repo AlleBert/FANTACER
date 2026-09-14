@@ -11,7 +11,7 @@ const FOOTER_LINKS = {
   terms: '/terms-and-conditions',
 } as const
 
-const ARCHI467_INSTAGRAM = 'https://www.instagram.com/archi467_lab/'
+const ARCHI467_INSTAGRAM = 'https://www.instagram.com/archi.467/'
 
 interface SiteFooterProps {
   /** dark = sfondo scuro (ContactSection homepage); light = superficie chiara (legal pages) */
