@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useVote } from '@/lib/VoteContext';
 import { createClient } from '@/lib/supabase/client';
 import { safeSubscribe } from '@/lib/supabase/realtime';
@@ -39,6 +39,7 @@ export function SearchSection() {
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'warning'; text: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [votingEnabled, setVotingEnabled] = useState(true);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetch('/api/public/batch')
@@ -100,6 +101,9 @@ export function SearchSection() {
     const available = PALLET_OPTIONS.filter((p) => !used.includes(p));
     if (available.length === 0 || selectedCompanies.length >= 3) return;
 
+    // Chiude la tastiera prima di aprire il modal: altrimenti il focus trap
+    // ripristinerebbe il focus sull'input alla chiusura, riaprendo la tastiera.
+    inputRef.current?.blur();
     setPendingCompany(company);
     setSelectedPallet(available[0]);
     setShowPalletPicker(true);
@@ -121,6 +125,7 @@ export function SearchSection() {
 
   const handleEditPallet = (index: number) => {
     const item = selectedCompanies[index];
+    inputRef.current?.blur();
     setEditingIndex(index);
     setSelectedPallet(item.pallet);
     setShowPalletPicker(true);
@@ -157,7 +162,13 @@ export function SearchSection() {
       setTimeout(() => {
         const main = document.querySelector('main');
         const target = main?.querySelector('[data-section="success"]') as HTMLElement | undefined;
-        if (main && target) {
+        if (!main) return;
+        // Reset di eventuali offset residui (pan orizzontale Android con la
+        // tastiera) prima di centrare la success, altrimenti appare spostata.
+        (document.activeElement as HTMLElement | null)?.blur?.();
+        main.scrollLeft = 0;
+        window.scrollTo(0, 0);
+        if (target) {
           main.scrollTo({ top: target.offsetTop, behavior: 'smooth' });
         }
       }, 100);
@@ -187,7 +198,7 @@ export function SearchSection() {
           </div>
 
           {!votingEnabled ? (
-            <div className="flex-1 flex flex-col items-center justify-center w-full max-w-2xl mx-auto gap-(--rythm-sec) py-8">
+            <div className="flex-1 flex flex-col items-center justify-safe-center w-full max-w-2xl mx-auto gap-(--rythm-sec) py-8">
               <div className="bg-white rounded-3xl border-[3px] md:border-[4px] border-ink shadow-[6px_6px_0_#000] p-6 md:p-10 text-center max-w-lg">
                 <h3 className="text-[clamp(1.5rem,4vw,2.5rem)] font-[900] text-purple mb-4 leading-tight">
                   Quanta fretta!
@@ -209,12 +220,19 @@ export function SearchSection() {
               </div>
             </div>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center w-full max-w-2xl mx-auto gap-(--rythm-sec)">
+            <div className="search-region flex-1 min-h-0 flex flex-col items-center justify-safe-center w-full max-w-2xl mx-auto gap-(--rythm-sec)">
 
               <div className="relative w-full flex flex-col items-center">
               <div className="relative w-full">
                 <input
+                  ref={inputRef}
                   type="text"
+                  inputMode="search"
+                  enterKeyHint="search"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
                   value={searchTerm}
                   onChange={handleSearchChange}
                   placeholder={t('search.placeholder')}
@@ -235,26 +253,32 @@ export function SearchSection() {
                   {results.map((company) => {
                     const alreadySelected = selectedCompanies.some((c) => c.company.id === company.id);
                     return (
-                      <li
-                        key={company.id}
-                        onClick={() => !alreadySelected && handleSelectCompany(company)}
-                        className={`p-3 border-b-2 border-ink last:border-b-0 transition-colors ${
-                          alreadySelected
-                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            : 'hover:bg-question-blue cursor-pointer'
-                        }`}
-                      >
-                        {company.name}
-                        {alreadySelected && <span className="ml-2 text-sm">{t('search.alreadySelected')}</span>}
+                      <li key={company.id} className="border-b-2 border-ink last:border-b-0">
+                        <button
+                          type="button"
+                          onClick={() => handleSelectCompany(company)}
+                          disabled={alreadySelected}
+                          className={`w-full text-left p-3 transition-colors ${
+                            alreadySelected
+                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                              : 'hover:bg-question-blue cursor-pointer'
+                          }`}
+                        >
+                          {company.name}
+                          {alreadySelected && <span className="ml-2 text-sm">{t('search.alreadySelected')}</span>}
+                        </button>
                       </li>
                     );
                   })}
                   {!showAll && results.length >= 4 && (
-                    <li
-                      onClick={() => { setShowAll(true); fetchCompanies(searchTerm); }}
-                      className="p-3 text-purple cursor-pointer font-[700] text-center hover:bg-question-blue transition-colors"
-                    >
-                      {t('search.viewAll')}
+                    <li className="border-b-2 border-ink last:border-b-0">
+                      <button
+                        type="button"
+                        onClick={() => { setShowAll(true); fetchCompanies(searchTerm); }}
+                        className="w-full text-purple cursor-pointer font-[700] text-center p-3 hover:bg-question-blue transition-colors"
+                      >
+                        {t('search.viewAll')}
+                      </button>
                     </li>
                   )}
                 </ul>

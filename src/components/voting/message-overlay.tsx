@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Star, X } from 'lucide-react'
 import { useLocale } from '@/lib/LocaleContext'
+import { useScrollLock } from '@/lib/use-scroll-lock'
 
 type MessageType = 'success' | 'error' | 'warning' | 'info'
 
@@ -61,17 +62,10 @@ export function MessageOverlay({
 
   const styles = typeStyles[type]
 
+  useScrollLock(isVisible || isClosing)
+
   useEffect(() => {
-    if (isVisible) {
-      document.body.style.overflow = 'hidden'
-      queueMicrotask(() => setIsClosing(false))
-    } else {
-      document.body.style.overflow = 'unset'
-      queueMicrotask(() => setIsClosing(false))
-    }
-    return () => {
-      document.body.style.overflow = 'unset'
-    }
+    queueMicrotask(() => setIsClosing(false))
   }, [isVisible])
 
   const handleClose = () => {

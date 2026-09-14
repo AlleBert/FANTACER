@@ -232,6 +232,15 @@ input, textarea {
     width: 100%;
     background-color: #4f03aa;
   }
+
+  /* Nessuno scroll orizzontale residuo (es. pan del browser Android con la
+     tastiera): `clip` non crea un scroll container, quindi non rompe gli
+     `position: sticky` (header legal). */
+  html,
+  body {
+    overflow-x: clip;
+    overscroll-behavior-x: none;
+  }
 }
 
 @layer components {
@@ -1170,4 +1179,21 @@ textarea::-webkit-scrollbar {
     padding: 0 !important;
     border: none !important;
   }
+}
+
+/* ---- Soft-keyboard (Android) ----
+   Unlayered di proposito: le utility Tailwind (layer successivo) altrimenti
+   vincerebbero su `scroll-snap-type`/`scroll-behavior` di `main`. */
+main[data-input-focused='true'] {
+  scroll-snap-type: none;
+  scroll-behavior: auto;
+}
+
+/* Regione search: come `.contact-region`, diventa scrollabile solo con un campo
+   focalizzato (tastiera aperta), così input/risultati non restano clippati. */
+.search-region:focus-within {
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scroll-padding-block: var(--safe-top-offset) var(--safe-bottom-offset);
 }
