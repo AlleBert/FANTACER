@@ -73,6 +73,9 @@ describe('SearchSection — tastiera input', () => {
     expect(input).toHaveAttribute('autocomplete', 'off')
     expect(input).toHaveAttribute('autocorrect', 'off')
     expect(input).toHaveAttribute('autocapitalize', 'none')
+    expect(input).toHaveAttribute('role', 'combobox')
+    expect(input).toHaveAttribute('aria-autocomplete', 'list')
+    expect(input).toHaveAttribute('aria-haspopup', 'listbox')
   })
 
   it('al select di un risultato fa blur dell\'input e apre il pallet picker', async () => {
@@ -85,11 +88,33 @@ describe('SearchSection — tastiera input', () => {
     fireEvent.change(input, { target: { value: 'Al' } })
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Alpha' })).toBeInTheDocument()
+      expect(screen.getByRole('option', { name: 'Alpha' })).toBeInTheDocument()
     })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Alpha' }))
+    expect(input).toHaveAttribute('aria-expanded', 'true')
 
+    fireEvent.click(screen.getByRole('option', { name: 'Alpha' }))
+
+    expect(document.activeElement).not.toBe(input)
+    expect(await screen.findByText('search.assignPallet')).toBeInTheDocument()
+  })
+
+  it('naviga i risultati con le frecce e seleziona con Enter', async () => {
+    render(<SearchSection />)
+    const input = screen.getByLabelText('search.placeholder') as HTMLInputElement
+
+    input.focus()
+    fireEvent.change(input, { target: { value: 'Al' } })
+
+    await waitFor(() => {
+      expect(screen.getByRole('option', { name: 'Alpha' })).toBeInTheDocument()
+    })
+
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+    expect(screen.getByRole('option', { name: 'Alpha' })).toHaveAttribute('aria-selected', 'true')
+    expect(input.getAttribute('aria-activedescendant')).toContain('-opt-0')
+
+    fireEvent.keyDown(input, { key: 'Enter' })
     expect(document.activeElement).not.toBe(input)
     expect(await screen.findByText('search.assignPallet')).toBeInTheDocument()
   })

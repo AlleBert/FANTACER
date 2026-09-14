@@ -227,6 +227,7 @@ export function ContactSection() {
                       name="nome"
                       required
                       autoComplete="name"
+                      enterKeyHint="next"
                       maxLength={CONTACT_NAME_MAX}
                       placeholder={t('contact.namePlaceholder')}
                       aria-label={t('contact.nameLabel')}
@@ -246,6 +247,7 @@ export function ContactSection() {
                       required
                       autoComplete="email"
                       inputMode="email"
+                      enterKeyHint="next"
                       maxLength={CONTACT_EMAIL_MAX}
                       placeholder={t('contact.emailPlaceholder')}
                       aria-label={t('contact.emailLabel')}
@@ -266,6 +268,7 @@ export function ContactSection() {
                     name="messaggio"
                     rows={1}
                     required
+                    enterKeyHint="send"
                     maxLength={CONTACT_MESSAGE_MAX}
                     placeholder={t('contact.messagePlaceholder')}
                     aria-label={t('contact.messageLabel')}

@@ -1197,3 +1197,23 @@ main[data-input-focused='true'] {
   overscroll-behavior: contain;
   scroll-padding-block: var(--safe-top-offset) var(--safe-bottom-offset);
 }
+
+/* Le regioni scrollabili su focus non mostrano la barra (iOS la nasconde
+   nativamente): scroll fluido, indicatore assente. */
+.search-region,
+.contact-region {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.search-region::-webkit-scrollbar,
+.contact-region::-webkit-scrollbar {
+  display: none;
+}
+
+/* Il campo focalizzato deve poter stare sopra la tastiera quando il browser lo
+   porta in vista (stesso comportamento su iOS/Android). */
+section[data-section='search'] input,
+section[data-section='contact'] input,
+section[data-section='contact'] textarea {
+  scroll-margin-block: var(--safe-top-offset) var(--safe-bottom-offset);
+}

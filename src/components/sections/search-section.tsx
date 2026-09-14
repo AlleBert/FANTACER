@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useId, type KeyboardEvent } from 'react';
 import { useVote } from '@/lib/VoteContext';
 import { createClient } from '@/lib/supabase/client';
 import { safeSubscribe } from '@/lib/supabase/realtime';
@@ -39,7 +39,9 @@ export function SearchSection() {
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'warning'; text: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [votingEnabled, setVotingEnabled] = useState(true);
+  const [activeIndex, setActiveIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
+  const listboxId = useId();
 
   useEffect(() => {
     fetch('/api/public/batch')
@@ -80,6 +82,7 @@ export function SearchSection() {
       .ilike('name', `%${term}%`)
       .limit(showAll ? 50 : 4);
     setResults(data || []);
+    setActiveIndex(-1);
     setSearchLoading(false);
   }, 300);
 
@@ -92,6 +95,7 @@ export function SearchSection() {
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const term = e.target.value;
     setSearchTerm(term);
+    setActiveIndex(-1);
     fetchCompanies(term);
   };
 
@@ -108,7 +112,28 @@ export function SearchSection() {
     setSelectedPallet(available[0]);
     setShowPalletPicker(true);
     setResults([]);
+    setActiveIndex(-1);
     setSearchTerm('');
+  };
+
+  const handleSearchKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (results.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIndex((i) => (i + 1 >= results.length ? 0 : i + 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIndex((i) => (i <= 0 ? results.length - 1 : i - 1));
+    } else if (e.key === 'Enter') {
+      if (activeIndex >= 0 && activeIndex < results.length) {
+        e.preventDefault();
+        handleSelectCompany(results[activeIndex]);
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setResults([]);
+      setActiveIndex(-1);
+    }
   };
 
   const handleConfirmPallet = () => {
@@ -182,6 +207,8 @@ export function SearchSection() {
   const used = usedPallets();
   const availablePallets = PALLET_OPTIONS.filter((p) => !used.includes(p) || editingIndex !== null);
   const hasVoted = gameUnlock.success;
+  const listOpen = results.length > 0;
+  const activeOption = activeIndex >= 0 && activeIndex < results.length ? activeIndex : -1;
 
   return (
     <SectionFrame theme="search" grow className="text-purple">
@@ -235,8 +262,15 @@ export function SearchSection() {
                   spellCheck={false}
                   value={searchTerm}
                   onChange={handleSearchChange}
+                  onKeyDown={handleSearchKeyDown}
                   placeholder={t('search.placeholder')}
                   aria-label={t('search.placeholder')}
+                  role="combobox"
+                  aria-expanded={listOpen}
+                  aria-controls={listOpen ? listboxId : undefined}
+                  aria-autocomplete="list"
+                  aria-haspopup="listbox"
+                  aria-activedescendant={activeOption >= 0 ? `${listboxId}-opt-${activeOption}` : undefined}
                   className="w-full bg-question-blue border-[3px] md:border-[4px] border-ink rounded-full pl-8 pr-16 md:pr-24 h-[clamp(2.75rem,12svh,5rem)] md:h-[clamp(3rem,12svh,6rem)] text-[clamp(1rem,3.5vw,2rem)] md:text-[40px] font-[900] text-left shadow-[6px_6px_0_#000] placeholder:text-black/40 focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all duration-300 focus:bg-white focus:shadow-[8px_8px_0_#000] focus:-translate-y-1"
                 />
                 <div className="absolute right-6 md:right-8 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
@@ -246,43 +280,55 @@ export function SearchSection() {
                     <Search className="w-[clamp(1.5rem,4svh,3rem)] h-[clamp(1.5rem,4svh,3rem)] md:w-12 md:h-12 stroke-ink stroke-[3px]" />
                   )}
                 </div>
-              </div>
 
-              {results.length > 0 && (
-                <ul className="mt-2 w-full max-w-2xl bg-white border-2 border-ink rounded-2xl shadow-[4px_4px_0_#000] max-h-[clamp(8rem,30svh,16rem)] overflow-y-auto">
-                  {results.map((company) => {
-                    const alreadySelected = selectedCompanies.some((c) => c.company.id === company.id);
-                    return (
-                      <li key={company.id} className="border-b-2 border-ink last:border-b-0">
-                        <button
-                          type="button"
-                          onClick={() => handleSelectCompany(company)}
-                          disabled={alreadySelected}
-                          className={`w-full text-left p-3 transition-colors ${
-                            alreadySelected
-                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                              : 'hover:bg-question-blue cursor-pointer'
-                          }`}
-                        >
-                          {company.name}
-                          {alreadySelected && <span className="ml-2 text-sm">{t('search.alreadySelected')}</span>}
-                        </button>
-                      </li>
-                    );
-                  })}
-                  {!showAll && results.length >= 4 && (
-                    <li className="border-b-2 border-ink last:border-b-0">
+                {listOpen && (
+                  <div className="mt-2 w-full bg-white border-2 border-ink rounded-2xl shadow-[4px_4px_0_#000] overflow-hidden">
+                    <ul
+                      id={listboxId}
+                      role="listbox"
+                      aria-label={t('search.placeholder')}
+                      className="max-h-[clamp(8rem,30svh,16rem)] overflow-y-auto no-scrollbar"
+                    >
+                      {results.map((company, index) => {
+                        const alreadySelected = selectedCompanies.some((c) => c.company.id === company.id);
+                        const active = index === activeOption;
+                        return (
+                          <li
+                            key={company.id}
+                            id={`${listboxId}-opt-${index}`}
+                            role="option"
+                            aria-selected={active}
+                            aria-disabled={alreadySelected}
+                            onMouseDown={(e) => e.preventDefault()}
+                            onMouseEnter={() => setActiveIndex(index)}
+                            onClick={() => !alreadySelected && handleSelectCompany(company)}
+                            className={`p-3 border-b-2 border-ink last:border-b-0 transition-colors cursor-pointer ${
+                              alreadySelected
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                : active
+                                  ? 'bg-question-blue'
+                                  : ''
+                            }`}
+                          >
+                            {company.name}
+                            {alreadySelected && <span className="ml-2 text-sm">{t('search.alreadySelected')}</span>}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    {!showAll && results.length >= 4 && (
                       <button
                         type="button"
+                        onMouseDown={(e) => e.preventDefault()}
                         onClick={() => { setShowAll(true); fetchCompanies(searchTerm); }}
-                        className="w-full text-purple cursor-pointer font-[700] text-center p-3 hover:bg-question-blue transition-colors"
+                        className="w-full text-purple cursor-pointer font-[700] text-center p-3 border-t-2 border-ink hover:bg-question-blue transition-colors"
                       >
                         {t('search.viewAll')}
                       </button>
-                    </li>
-                  )}
-                </ul>
-              )}
+                    )}
+                  </div>
+                )}
+              </div>
 
               <ModalShell
                 open={showPalletPicker && pendingCompany !== null}
