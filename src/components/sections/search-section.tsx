@@ -13,6 +13,7 @@ import { MessageOverlay } from '@/components/voting/message-overlay';
 import { ModalShell } from '@/components/ui/modal-shell';
 import { SectionFrame } from '@/components/layout/section-frame';
 import { useLocale } from '@/lib/LocaleContext';
+import { setStoredVoterId } from '@/lib/vote-persistence';
 
 const supabase = createClient();
 
@@ -183,6 +184,7 @@ export function SearchSection() {
       if (!res.ok || !data.success) {
         throw new Error(data.error || t('search.errVote'));
       }
+      setStoredVoterId(security.visitorId);
       unlockGameStep('success');
       setTimeout(() => {
         const main = document.querySelector('main');

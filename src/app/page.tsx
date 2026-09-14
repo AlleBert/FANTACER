@@ -14,6 +14,7 @@ import { VoteProvider, useVote } from '@/lib/VoteContext'
 import { DevSuccessPreview } from '@/components/dev/dev-success-preview'
 import { getOrCreateDeviceId } from '@/lib/device'
 import { AppShell } from '@/components/layout/app-shell'
+import { VoteStatusRestore } from '@/components/vote-status-restore'
 
 function PageContent() {
   const { gameUnlock } = useVote();
@@ -59,6 +60,7 @@ export default function Page() {
 
   return (
     <VoteProvider>
+      <VoteStatusRestore />
       <PageContent />
     </VoteProvider>
   )
