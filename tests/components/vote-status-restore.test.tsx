@@ -66,4 +66,37 @@ describe('VoteStatusRestore', () => {
 
     await waitFor(() => expect(localStorage.getItem('fantacer_voter_id')).toBeNull())
   })
+
+  it('risposta non-ok preserva il visitorId salvato', async () => {
+    setStoredVoterId('v1')
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      json: async () => ({ voted: false }),
+    }) as unknown as typeof fetch
+
+    renderRestore()
+
+    await waitFor(() => expect(fetch).toHaveBeenCalled())
+    expect(localStorage.getItem('fantacer_voter_id')).toBe('v1')
+    expect(screen.getByTestId('success')).toHaveTextContent('no')
+  })
+
+  it('voted:true con meno di 3 aziende è un no-op', async () => {
+    setStoredVoterId('v1')
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        voted: true,
+        companies: [{ id: 'c1', name: 'Alpha', pallet: 4 }],
+      }),
+    }) as unknown as typeof fetch
+
+    renderRestore()
+
+    await waitFor(() => expect(fetch).toHaveBeenCalled())
+    await waitFor(() => {
+      expect(localStorage.getItem('fantacer_voter_id')).toBe('v1')
+      expect(screen.getByTestId('success')).toHaveTextContent('no')
+    })
+  })
 })

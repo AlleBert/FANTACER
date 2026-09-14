@@ -43,7 +43,7 @@ export function VoteStatusRestore() {
             pallet: c.pallet,
           }))
           hydrateVote(restored)
-        } else if (!data.voted) {
+        } else if (data.voted === false) {
           clearStoredVoterId()
         }
       })
