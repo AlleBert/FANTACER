@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useReducer, useMemo, type ReactNode } from 'react';
+import { createContext, useContext, useReducer, useMemo, useCallback, type ReactNode } from 'react';
 
 export interface SelectedCompany {
   company: { id: string; name: string };
@@ -37,14 +37,18 @@ function voteReducer(state: VoteState, action: VoteAction): VoteState {
   // pallet) è ignorata, così la scheda di successo e l'evidenziazione in
   // classifica restano congelate e coerenti con il voto effettivamente
   // registrato. Il voto non può più essere ritoccato in questa sessione.
-  if (state.gameUnlock.success) {
-    if (action.type === 'SET_COMPANY' || action.type === 'REMOVE_COMPANY' || action.type === 'SET_PALLET') {
-      return state;
-    }
+  if (
+    state.gameUnlock.success &&
+    (action.type === 'SET_COMPANY' ||
+      action.type === 'REMOVE_COMPANY' ||
+      action.type === 'SET_PALLET' ||
+      action.type === 'HYDRATE')
+  ) {
+    return state;
   }
   switch (action.type) {
     case 'HYDRATE':
-      if (state.gameUnlock.success) return state;
+      if (action.payload.selectedCompanies.length !== 3) return state;
       return {
         ...state,
         selectedCompanies: action.payload.selectedCompanies,
@@ -92,6 +96,12 @@ const VoteContext = createContext<VoteContextType | undefined>(undefined);
 export function VoteProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(voteReducer, initialState);
 
+  const hydrateVote = useCallback(
+    (selectedCompanies: SelectedCompany[]) =>
+      dispatch({ type: 'HYDRATE', payload: { selectedCompanies } }),
+    [],
+  );
+
   const value = useMemo<VoteContextType>(() => ({
     selectedCompanies: state.selectedCompanies,
     currentSection: state.currentSection,
@@ -99,11 +109,11 @@ export function VoteProvider({ children }: { children: ReactNode }) {
     setCompany: (company, pallet) => dispatch({ type: 'SET_COMPANY', payload: { company, pallet } }),
     removeCompany: (index) => dispatch({ type: 'REMOVE_COMPANY', payload: index }),
     setPallet: (index, pallet) => dispatch({ type: 'SET_PALLET', payload: { index, pallet } }),
-    hydrateVote: (selectedCompanies) => dispatch({ type: 'HYDRATE', payload: { selectedCompanies } }),
+    hydrateVote,
     unlockGameStep: (step) => dispatch({ type: 'UNLOCK_GAME_STEP', payload: step }),
     resetVote: () => dispatch({ type: 'RESET' }),
     usedPallets: () => state.selectedCompanies.map((c) => c.pallet),
-  }), [state]);
+  }), [state, hydrateVote]);
 
   return <VoteContext.Provider value={value}>{children}</VoteContext.Provider>;
 }
