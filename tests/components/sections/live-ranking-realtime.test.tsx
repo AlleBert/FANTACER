@@ -239,7 +239,7 @@ describe('LiveRankingSection realtime', () => {
 
   it('mostra il pulse sul badge della fascia chiusa al cambio di posizione', async () => {
     ;(useVote as jest.Mock).mockReturnValue({
-      gameUnlock: { success: false },
+      gameUnlock: { success: true },
       selectedCompanies: [{ company: { id: 'c04', name: 'Marmo W' }, pallet: 4 }],
     })
     let pallets = goldPallets()
@@ -277,7 +277,7 @@ describe('LiveRankingSection realtime', () => {
       value: jest.fn().mockReturnValue({ matches: true }),
     })
     ;(useVote as jest.Mock).mockReturnValue({
-      gameUnlock: { success: false },
+      gameUnlock: { success: true },
       selectedCompanies: [{ company: { id: 'c04', name: 'Marmo W' }, pallet: 4 }],
     })
     let pallets = goldPallets()
@@ -309,5 +309,19 @@ describe('LiveRankingSection realtime', () => {
 
     const badge = container.querySelector('[class*="animate-pulse"]')
     expect(badge).not.toBeNull()
+  })
+
+  it('non evidenzia le selezioni non confermate (success: false)', async () => {
+    ;(useVote as jest.Mock).mockReturnValue({
+      gameUnlock: { success: false },
+      selectedCompanies: [{ company: { id: 'c04', name: 'Marmo W' }, pallet: 4 }],
+    })
+    render(<LiveRankingSection />)
+    await act(async () => {})
+    const io = MockIntersectionObserver.instances[0]
+    await act(async () => { io.fire(true) })
+
+    await screen.findAllByText('Marmo W')
+    expect(screen.queryByText('your vote')).toBeNull()
   })
 })

@@ -52,7 +52,7 @@ interface LiveRankingSectionProps {
 
 export function LiveRankingSection({ showWhenDisabled = false }: LiveRankingSectionProps) {
   const { t } = useLocale()
-  const { selectedCompanies } = useVote()
+  const { selectedCompanies, gameUnlock } = useVote()
   const maxItems = useSponsorMaxItems()
   const [companies, setCompanies] = useState<RankingCompany[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -68,7 +68,10 @@ export function LiveRankingSection({ showWhenDisabled = false }: LiveRankingSect
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const prevBandSig = useRef<Record<Cluster, string>>({ TOP20: '', GOLD: '', SILVER: '', BRONZE: '' })
 
-  const votedIds = useMemo(() => new Set(selectedCompanies.map((s) => s.company.id)), [selectedCompanies])
+  const votedIds = useMemo(
+    () => new Set(gameUnlock.success ? selectedCompanies.map((s) => s.company.id) : []),
+    [selectedCompanies, gameUnlock.success],
+  )
 
   const fetchRanking = useCallback(async (showLoader = true) => {
     if (showLoader) setIsLoading(true)
