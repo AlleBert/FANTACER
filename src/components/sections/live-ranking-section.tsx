@@ -320,11 +320,6 @@ export function LiveRankingSection({ showWhenDisabled = false }: LiveRankingSect
                               {def.label}
                               {!def.showScore && ` · ${def.min}-${def.max}`}
                             </span>
-                            {!def.showScore && (
-                              <span className="text-xs font-bold text-gray-600 whitespace-nowrap">
-                                {t('liveRanking.bandCount', { count: bandCompanies.length })}
-                              </span>
-                            )}
                           </span>
                           <span className="flex items-center gap-2 shrink-0">
                             {badge && (
