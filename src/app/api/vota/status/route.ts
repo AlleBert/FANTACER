@@ -12,7 +12,7 @@ interface VoteSessionRow {
 }
 
 /** Confine giornata UTC, coerente con `created_at::date = current_date` della dedup voto. */
-function utcDayBounds(now = new Date()): { start: string; end: string } {
+export function utcDayBounds(now = new Date()): { start: string; end: string } {
   const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
   const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1))
   return { start: start.toISOString(), end: end.toISOString() }
@@ -22,15 +22,21 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => null)
     const visitorId = body?.visitorId
-    if (!visitorId || typeof visitorId !== 'string') {
-      return NextResponse.json({ error: 'visitorId is required' }, { status: 400 })
+    if (!visitorId || typeof visitorId !== 'string' || visitorId.length > 128) {
+      return NextResponse.json(
+        { error: 'visitorId is required' },
+        { status: 400, headers: { 'Cache-Control': 'no-store' } },
+      )
     }
 
     const supabase = createAdminClient()
+    // Nota dev-only: con DEV_BYPASS_VOTE_LIMIT=1 `resolveFingerprint` restituisce un id
+    // casuale a ogni chiamata, quindi lo status restituisce sempre voted:false e cancella
+    // l'id memorizzato. Comportamento atteso in dev, non un bug.
     const fingerprint = resolveFingerprint(visitorId)
     const { start, end } = utcDayBounds()
 
-    const { data: session } = await supabase
+    const { data: session, error } = await supabase
       .from('vote_sessions')
       .select('company1_id, company2_id, company3_id, pallet1, pallet2, pallet3')
       .eq('fingerprint', fingerprint)
@@ -39,13 +45,31 @@ export async function POST(request: NextRequest) {
       .limit(1)
       .maybeSingle()
 
+    if (error) {
+      return NextResponse.json(
+        { error: 'Internal server error' },
+        { status: 500, headers: { 'Cache-Control': 'no-store' } },
+      )
+    }
+
     if (!session) {
       return NextResponse.json({ voted: false }, { headers: { 'Cache-Control': 'no-store' } })
     }
 
     const row = session as VoteSessionRow
     const ids = [row.company1_id, row.company2_id, row.company3_id]
-    const { data: companies } = await supabase.from('companies').select('id, name').in('id', ids)
+    const { data: companies, error: companiesError } = await supabase
+      .from('companies')
+      .select('id, name')
+      .in('id', ids)
+
+    if (companiesError) {
+      return NextResponse.json(
+        { error: 'Internal server error' },
+        { status: 500, headers: { 'Cache-Control': 'no-store' } },
+      )
+    }
+
     const nameById = new Map(
       (companies || []).map((c: { id: string; name: string }) => [c.id, c.name]),
     )
