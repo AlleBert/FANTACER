@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useReducer, useMemo, type ReactNode } from 'react';
+import { createContext, useContext, useReducer, useMemo, useCallback, type ReactNode } from 'react';
 
 export interface SelectedCompany {
   company: { id: string; name: string };
@@ -13,12 +13,19 @@ export interface VoteState {
   gameUnlock: {
     success: boolean;
   };
+  /**
+   * True solo quando il voto è stato appena espresso in questa sessione
+   * (`unlockGameStep('success')`). Resta false quando lo stato è ripristinato
+   * da un refresh (`HYDRATE`), così i confetti non ripartono al reload.
+   */
+  celebrate: boolean;
 }
 
 type VoteAction =
   | { type: 'SET_COMPANY'; payload: { company: { id: string; name: string }; pallet: 4 | 2 | 1 } }
   | { type: 'REMOVE_COMPANY'; payload: number }
   | { type: 'SET_PALLET'; payload: { index: number; pallet: 4 | 2 | 1 } }
+  | { type: 'HYDRATE'; payload: { selectedCompanies: SelectedCompany[] } }
   | { type: 'UNLOCK_GAME_STEP'; payload: keyof VoteState['gameUnlock'] }
   | { type: 'RESET' };
 
@@ -28,6 +35,7 @@ const initialState: VoteState = {
   gameUnlock: {
     success: false,
   },
+  celebrate: false,
 };
 
 function voteReducer(state: VoteState, action: VoteAction): VoteState {
@@ -36,12 +44,24 @@ function voteReducer(state: VoteState, action: VoteAction): VoteState {
   // pallet) è ignorata, così la scheda di successo e l'evidenziazione in
   // classifica restano congelate e coerenti con il voto effettivamente
   // registrato. Il voto non può più essere ritoccato in questa sessione.
-  if (state.gameUnlock.success) {
-    if (action.type === 'SET_COMPANY' || action.type === 'REMOVE_COMPANY' || action.type === 'SET_PALLET') {
-      return state;
-    }
+  if (
+    state.gameUnlock.success &&
+    (action.type === 'SET_COMPANY' ||
+      action.type === 'REMOVE_COMPANY' ||
+      action.type === 'SET_PALLET' ||
+      action.type === 'HYDRATE')
+  ) {
+    return state;
   }
   switch (action.type) {
+    case 'HYDRATE':
+      if (action.payload.selectedCompanies.length !== 3) return state;
+      return {
+        ...state,
+        selectedCompanies: action.payload.selectedCompanies,
+        gameUnlock: { ...state.gameUnlock, success: true },
+        celebrate: false,
+      };
     case 'SET_COMPANY':
       if (state.selectedCompanies.length >= 3) return state;
       return { ...state, selectedCompanies: [...state.selectedCompanies, action.payload] };
@@ -58,7 +78,11 @@ function voteReducer(state: VoteState, action: VoteAction): VoteState {
         ),
       };
     case 'UNLOCK_GAME_STEP':
-      return { ...state, gameUnlock: { ...state.gameUnlock, [action.payload]: true } };
+      return {
+        ...state,
+        gameUnlock: { ...state.gameUnlock, [action.payload]: true },
+        celebrate: action.payload === 'success' ? true : state.celebrate,
+      };
     case 'RESET':
       return initialState;
     default:
@@ -70,9 +94,11 @@ interface VoteContextType {
   selectedCompanies: VoteState['selectedCompanies'];
   currentSection: VoteState['currentSection'];
   gameUnlock: VoteState['gameUnlock'];
+  celebrate: VoteState['celebrate'];
   setCompany: (company: { id: string; name: string }, pallet: 4 | 2 | 1) => void;
   removeCompany: (index: number) => void;
   setPallet: (index: number, pallet: 4 | 2 | 1) => void;
+  hydrateVote: (selectedCompanies: SelectedCompany[]) => void;
   unlockGameStep: (step: keyof VoteState['gameUnlock']) => void;
   resetVote: () => void;
   usedPallets: () => (4 | 2 | 1)[];
@@ -83,17 +109,25 @@ const VoteContext = createContext<VoteContextType | undefined>(undefined);
 export function VoteProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(voteReducer, initialState);
 
+  const hydrateVote = useCallback(
+    (selectedCompanies: SelectedCompany[]) =>
+      dispatch({ type: 'HYDRATE', payload: { selectedCompanies } }),
+    [],
+  );
+
   const value = useMemo<VoteContextType>(() => ({
     selectedCompanies: state.selectedCompanies,
     currentSection: state.currentSection,
     gameUnlock: state.gameUnlock,
+    celebrate: state.celebrate,
     setCompany: (company, pallet) => dispatch({ type: 'SET_COMPANY', payload: { company, pallet } }),
     removeCompany: (index) => dispatch({ type: 'REMOVE_COMPANY', payload: index }),
     setPallet: (index, pallet) => dispatch({ type: 'SET_PALLET', payload: { index, pallet } }),
+    hydrateVote,
     unlockGameStep: (step) => dispatch({ type: 'UNLOCK_GAME_STEP', payload: step }),
     resetVote: () => dispatch({ type: 'RESET' }),
     usedPallets: () => state.selectedCompanies.map((c) => c.pallet),
-  }), [state]);
+  }), [state, hydrateVote]);
 
   return <VoteContext.Provider value={value}>{children}</VoteContext.Provider>;
 }

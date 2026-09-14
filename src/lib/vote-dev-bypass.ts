@@ -8,6 +8,9 @@
  * The env var is server-only (no NEXT_PUBLIC_ prefix) so it never reaches
  * the client bundle. Removal before going live: delete this file, remove the
  * single import in /api/vota, and delete the env line from .env.local.
+ *
+ * Nota: con il bypass attivo il restore del voto (`/api/vota/status`) è disattivato
+ * per design; per testarlo impostare DEV_BYPASS_VOTE_LIMIT=0.
  */
 
 export function isVoteLimitBypassed(): boolean {
