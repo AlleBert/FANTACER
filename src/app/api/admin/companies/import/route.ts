@@ -98,10 +98,15 @@ export async function POST(request: NextRequest) {
     await requireRoleAdmin(request)
     const formData = await request.formData()
     const file = formData.get('file') as File
-    const batchName = formData.get('batchName') as string
+    const batchName = ((formData.get('batchName') as string) || '').trim()
 
     if (!file || !batchName) {
       return NextResponse.json({ error: 'File and batch name required' }, { status: 400 })
+    }
+
+    const MAX_UPLOAD_BYTES = 5 * 1024 * 1024
+    if (file.size > MAX_UPLOAD_BYTES) {
+      return NextResponse.json({ error: 'File too large (max 5MB)' }, { status: 413 })
     }
 
     const fileName = file.name.toLowerCase()
@@ -147,6 +152,23 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    if (companies.length === 0) {
+      return NextResponse.json({ error: 'No valid companies found in file' }, { status: 400 })
+    }
+
+    // Report duplicati (nome già presente nel batch): non blocca l'import,
+    // serve solo a segnalare all'admin cosa è stato aggiunto in doppia copia.
+    const { data: existing } = await supabase
+      .from('companies')
+      .select('name')
+      .eq('batch', batchName)
+    const existingNames = new Set(
+      (existing || []).map((c: { name: string }) => c.name.trim().toLowerCase()),
+    )
+    const duplicateNames = companies
+      .filter((c) => existingNames.has(c.name.toLowerCase()))
+      .map((c) => c.name)
+
     const { error } = await supabase
       .from('companies')
       .insert(companies)
@@ -158,7 +180,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       message: 'Import completed',
       count: companies.length,
-      batch: batchName
+      batch: batchName,
+      duplicates: duplicateNames.length,
+      duplicateNames,
     })
   } catch (err) {
     const status = toAdminError(err)

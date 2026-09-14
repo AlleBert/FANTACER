@@ -28,6 +28,39 @@ interface ParsedRow {
 
 type Notification = { type: 'success' | 'error' | 'info'; text: string }
 
+const PREVIEW_HEADER_MAP: Record<string, string> = {
+  nome: 'name',
+  categoria: 'category',
+  'url logo': 'image_url',
+  url_logo: 'image_url',
+  logo: 'image_url',
+}
+
+function detectDelimiter(line: string): string {
+  const comma = (line.match(/,/g) || []).length
+  const semicolon = (line.match(/;/g) || []).length
+  return semicolon > comma ? ';' : ','
+}
+
+function splitCsvLine(line: string, delimiter: string): string[] {
+  const result: string[] = []
+  let current = ''
+  let inQuotes = false
+  for (let i = 0; i < line.length; i += 1) {
+    const char = line[i]
+    if (char === '"') {
+      inQuotes = !inQuotes
+    } else if (char === delimiter && !inQuotes) {
+      result.push(current.trim())
+      current = ''
+    } else {
+      current += char
+    }
+  }
+  result.push(current.trim())
+  return result
+}
+
 export default function ImportPage() {
   const role = useAdminRole()
   const isViewer = role === 'viewer'
@@ -126,11 +159,14 @@ export default function ImportPage() {
       return
     }
 
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase())
+    const delimiter = detectDelimiter(lines[0])
+    const headers = splitCsvLine(lines[0], delimiter).map(
+      (h) => PREVIEW_HEADER_MAP[h.toLowerCase()] || h.toLowerCase(),
+    )
     const parsed: ParsedRow[] = []
 
     for (let i = 1; i < Math.min(lines.length, 6); i++) {
-      const values = lines[i].split(',').map(v => v.trim())
+      const values = splitCsvLine(lines[i], delimiter)
       const row: Record<string, string> = {}
       headers.forEach((header, index) => {
         row[header] = values[index] || ''
@@ -168,7 +204,13 @@ export default function ImportPage() {
       if (!res.ok) {
         setNotification({ type: 'error', text: data.error || 'Errore import' })
       } else {
-        setNotification({ type: 'success', text: `${data.count} aziende importate nel batch "${batchName}"` })
+        const dupes = data.duplicates || 0
+        setNotification({
+          type: dupes > 0 ? 'info' : 'success',
+          text: dupes > 0
+            ? `${data.count} aziende importate nel batch "${batchName}" (${dupes} nomi già presenti)`
+            : `${data.count} aziende importate nel batch "${batchName}"`,
+        })
         setFile(null)
         setPreview([])
         fetchBatchInfo()

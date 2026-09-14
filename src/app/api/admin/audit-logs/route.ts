@@ -21,7 +21,11 @@ export async function GET(request: NextRequest) {
       .range(from, to)
 
     if (search) {
-      query = query.or(`fingerprint.ilike.%${search}%,event_type.ilike.%${search}%`)
+      // Rimuove i caratteri che rompono la grammatica `or` di PostgREST.
+      const safe = search.replace(/[,()]/g, '')
+      if (safe) {
+        query = query.or(`fingerprint.ilike.%${safe}%,event_type.ilike.%${safe}%`)
+      }
     }
 
     const { data, error, count } = await query
