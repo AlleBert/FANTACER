@@ -19,6 +19,7 @@ type VoteAction =
   | { type: 'SET_COMPANY'; payload: { company: { id: string; name: string }; pallet: 4 | 2 | 1 } }
   | { type: 'REMOVE_COMPANY'; payload: number }
   | { type: 'SET_PALLET'; payload: { index: number; pallet: 4 | 2 | 1 } }
+  | { type: 'HYDRATE'; payload: { selectedCompanies: SelectedCompany[] } }
   | { type: 'UNLOCK_GAME_STEP'; payload: keyof VoteState['gameUnlock'] }
   | { type: 'RESET' };
 
@@ -42,6 +43,13 @@ function voteReducer(state: VoteState, action: VoteAction): VoteState {
     }
   }
   switch (action.type) {
+    case 'HYDRATE':
+      if (state.gameUnlock.success) return state;
+      return {
+        ...state,
+        selectedCompanies: action.payload.selectedCompanies,
+        gameUnlock: { ...state.gameUnlock, success: true },
+      };
     case 'SET_COMPANY':
       if (state.selectedCompanies.length >= 3) return state;
       return { ...state, selectedCompanies: [...state.selectedCompanies, action.payload] };
@@ -73,6 +81,7 @@ interface VoteContextType {
   setCompany: (company: { id: string; name: string }, pallet: 4 | 2 | 1) => void;
   removeCompany: (index: number) => void;
   setPallet: (index: number, pallet: 4 | 2 | 1) => void;
+  hydrateVote: (selectedCompanies: SelectedCompany[]) => void;
   unlockGameStep: (step: keyof VoteState['gameUnlock']) => void;
   resetVote: () => void;
   usedPallets: () => (4 | 2 | 1)[];
@@ -90,6 +99,7 @@ export function VoteProvider({ children }: { children: ReactNode }) {
     setCompany: (company, pallet) => dispatch({ type: 'SET_COMPANY', payload: { company, pallet } }),
     removeCompany: (index) => dispatch({ type: 'REMOVE_COMPANY', payload: index }),
     setPallet: (index, pallet) => dispatch({ type: 'SET_PALLET', payload: { index, pallet } }),
+    hydrateVote: (selectedCompanies) => dispatch({ type: 'HYDRATE', payload: { selectedCompanies } }),
     unlockGameStep: (step) => dispatch({ type: 'UNLOCK_GAME_STEP', payload: step }),
     resetVote: () => dispatch({ type: 'RESET' }),
     usedPallets: () => state.selectedCompanies.map((c) => c.pallet),
