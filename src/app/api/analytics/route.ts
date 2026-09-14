@@ -1,6 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
+import * as XLSX from 'xlsx'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin, requireRoleAdmin, toAdminError } from '@/lib/admin-auth'
+import {
+  aggregateSummary,
+  filterSessionsByBatch,
+  sanitizeCsvValue,
+  type SessionSummaryRow,
+} from '@/lib/admin-analytics'
+
+type AdminClient = ReturnType<typeof createAdminClient>
+
+const ONLINE_WINDOW_MS = 5 * 60 * 1000
+
+/** Set delle company del batch, oppure null quando il filtro è "tutti". */
+async function getBatchCompanyIds(
+  supabase: AdminClient,
+  batch: string | null,
+): Promise<Set<string> | null> {
+  if (!batch || batch === 'all') return null
+  const { data } = await supabase.from('companies').select('id').eq('batch', batch)
+  return new Set((data || []).map((c: { id: string }) => c.id))
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,8 +31,9 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type') || 'summary'
+    const batch = searchParams.get('batch')
 
-    // Export (estrazione massiva CSV) è privilegiato: solo admin (MFA aal2).
+    // Export (estrazione massiva CSV/Excel) è privilegiato: solo admin (MFA aal2).
     if (type === 'export') {
       await requireRoleAdmin(request)
     }
@@ -19,50 +41,30 @@ export async function GET(request: NextRequest) {
     const dateTo = searchParams.get('to')
 
     if (type === 'summary') {
-      const { data: stats } = await supabase
-        .from('daily_stats')
-        .select('*')
-        .order('date', { ascending: false })
-        .limit(30)
+      const batchIds = await getBatchCompanyIds(supabase, batch)
 
-      const { count: totalVotes } = await supabase
+      const { data: sessions } = await supabase
         .from('vote_sessions')
-        .select('*', { count: 'exact', head: true })
+        .select('created_at, fingerprint, company1_id, company2_id, company3_id')
 
-      const { data: voterData } = await supabase
-        .from('vote_sessions')
-        .select('fingerprint')
-      
-      const uniqueVoters = new Set((voterData || []).map(v => v.fingerprint)).size
+      const filtered = filterSessionsByBatch(
+        (sessions || []) as SessionSummaryRow[],
+        batch,
+        batchIds ?? new Set(),
+      )
 
-      // Calculate trend for Today
-      const today = new Date().toISOString().split('T')[0]
-      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
-      
-      const todayVotes = stats?.find(s => s.date === today)?.vote_count || 0
-      const yesterdayVotes = stats?.find(s => s.date === yesterday)?.vote_count || 0
-
-      const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString()
-      const { count: votantiOra } = await supabase
-        .from('vote_sessions')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', fifteenMinsAgo)
-
-      const fiveMinsAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString()
+      const fiveMinsAgo = new Date(Date.now() - ONLINE_WINDOW_MS).toISOString()
       const { count: onlineUsers } = await supabase
         .from('device_sessions')
         .select('*', { count: 'exact', head: true })
         .gte('last_used', fiveMinsAgo)
 
-      return NextResponse.json({
-        totalVotes: totalVotes || 0,
-        uniqueVoters: uniqueVoters || 0,
-        todayVotes,
-        yesterdayVotes,
-        activeNow: votantiOra || 0,
-        onlineUsers: onlineUsers || 0,
-        dailyStats: stats || []
-      })
+      // Le "voti" sono sessioni (non assegnazioni pallet) e l'aggregazione
+      // giornaliera è calcolata dai vote_sessions, non dalle righe per-azienda
+      // di daily_stats (che gonfierebbero il conteggio di 3x).
+      const summary = aggregateSummary(filtered, onlineUsers || 0)
+
+      return NextResponse.json(summary)
     }
 
     if (type === 'detailed') {
@@ -85,35 +87,76 @@ export async function GET(request: NextRequest) {
     }
 
     if (type === 'export') {
-      const { data: exportData } = await supabase
+      const format = searchParams.get('format') === 'xlsx' ? 'xlsx' : 'csv'
+      const batchIds = await getBatchCompanyIds(supabase, batch)
+
+      const { data: allSessions } = await supabase
         .from('vote_sessions')
-        .select('fingerprint, created_at, country, user_agent, company1_id, company2_id, company3_id, pallet1, pallet2, pallet3')
+        .select(
+          'created_at, fingerprint, country, user_agent, company1_id, company2_id, company3_id, pallet1, pallet2, pallet3',
+        )
         .order('created_at', { ascending: false })
 
+      const sessions = filterSessionsByBatch(
+        (allSessions || []) as Array<SessionSummaryRow & {
+          country: string | null
+          user_agent: string | null
+          pallet1: number
+          pallet2: number
+          pallet3: number
+        }>,
+        batch,
+        batchIds ?? new Set(),
+      )
+
       const { data: companies } = await supabase.from('companies').select('id, name')
-      const companyMap = new Map((companies || []).map(c => [c.id, c.name]))
+      const companyMap = new Map(
+        (companies || []).map((c: { id: string; name: string }) => [c.id, c.name]),
+      )
+
+      const header = [
+        'fingerprint', 'timestamp', 'country', 'user_agent',
+        'company1', 'pallet1', 'company2', 'pallet2', 'company3', 'pallet3',
+      ]
+      const body = sessions.map((v) => [
+        v.fingerprint,
+        v.created_at,
+        v.country || '',
+        v.user_agent || '',
+        companyMap.get(v.company1_id) || v.company1_id,
+        v.pallet1,
+        companyMap.get(v.company2_id) || v.company2_id,
+        v.pallet2,
+        companyMap.get(v.company3_id) || v.company3_id,
+        v.pallet3,
+      ])
+
+      if (format === 'xlsx') {
+        const ws = XLSX.utils.aoa_to_sheet([header, ...body])
+        ws['!cols'] = header.map(() => ({ wch: 20 }))
+        const wb = XLSX.utils.book_new()
+        XLSX.utils.book_append_sheet(wb, ws, 'Voti')
+        const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
+
+        return new NextResponse(buf, {
+          headers: {
+            'Content-Type':
+              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition': 'attachment; filename=fantacer_export.xlsx',
+          },
+        })
+      }
 
       const csv = [
-        ['fingerprint', 'timestamp', 'country', 'user_agent', 'company1', 'pallet1', 'company2', 'pallet2', 'company3', 'pallet3'].join(','),
-        ...(exportData || []).map(v => [
-          v.fingerprint,
-          v.created_at,
-          v.country || '',
-          (v.user_agent || '').replace(/,/g, ';'),
-          companyMap.get(v.company1_id) || v.company1_id,
-          v.pallet1,
-          companyMap.get(v.company2_id) || v.company2_id,
-          v.pallet2,
-          companyMap.get(v.company3_id) || v.company3_id,
-          v.pallet3,
-        ].join(','))
+        header.join(','),
+        ...body.map((row) => row.map(sanitizeCsvValue).join(',')),
       ].join('\n')
 
       return new NextResponse(csv, {
         headers: {
-          'Content-Type': 'text/csv',
-          'Content-Disposition': 'attachment; filename=fantacer_export.csv'
-        }
+          'Content-Type': 'text/csv; charset=utf-8',
+          'Content-Disposition': 'attachment; filename=fantacer_export.csv',
+        },
       })
     }
 

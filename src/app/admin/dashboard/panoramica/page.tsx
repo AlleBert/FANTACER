@@ -11,6 +11,8 @@ import { useRouter } from 'next/navigation'
 import { useAdminRole } from '@/lib/use-admin-role'
 import { createClient } from '@/lib/supabase/client'
 import { safeSubscribe } from '@/lib/supabase/realtime'
+import { useBatches } from '@/hooks/use-batches'
+import { BatchFilter } from '@/components/admin/batch-filter'
 
 interface Stats {
   totalVotes: number
@@ -31,20 +33,27 @@ export default function PanoramicaPage() {
   const router = useRouter()
   const role = useAdminRole()
   const isViewer = role === 'viewer'
+  const { batches, activeBatch, loading: batchesLoading } = useBatches()
   const [stats, setStats] = useState<Stats>({
     totalVotes: 0, uniqueVoters: 0, todayVotes: 0, yesterdayVotes: 0, activeNow: 0, onlineUsers: 0,
   })
   const [dailyStats, setDailyStats] = useState<DailyStats[]>([])
-  const [batchInfo, setBatchInfo] = useState<{ activeBatch: string; batches: { name: string; companyCount: number; voteCount: number }[] } | null>(null)
-  const [selectedBatch, setSelectedBatch] = useState('all')
+  // null = "usa il batch attivo" (default); stringa = scelta esplicita ('all' = tutti).
+  const [selectedBatch, setSelectedBatch] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const effectiveBatch = selectedBatch ?? activeBatch ?? 'all'
+  const batchParam =
+    effectiveBatch && effectiveBatch !== 'all'
+      ? `&batch=${encodeURIComponent(effectiveBatch)}`
+      : ''
 
   const loadData = useCallback(async (showLoading = false) => {
     if (showLoading) setLoading(true)
     setError(null)
     try {
-      const statsRes = await fetch('/api/analytics?type=summary')
+      const statsRes = await fetch(`/api/analytics?type=summary${batchParam}`)
       if (!statsRes.ok) {
         throw new Error(`Errore ${statsRes.status}: ${statsRes.statusText}`)
       }
@@ -58,52 +67,22 @@ export default function PanoramicaPage() {
         onlineUsers: statsData.onlineUsers || 0,
       })
       setDailyStats(statsData.dailyStats || [])
-
-      const batchRes = await fetch('/api/admin/batch')
-      const batchData = await batchRes.json()
-      setBatchInfo(batchData)
-      setSelectedBatch(batchData.activeBatch)
     } catch (e) {
       console.error(e)
       setError(e instanceof Error ? e.message : 'Errore di caricamento')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [batchParam])
+
+  // Ricarica quando cambia il batch effettivo (attivo o scelto dall'admin).
+  useEffect(() => {
+    if (batchesLoading) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch dati quando cambia il batch
+    loadData()
+  }, [batchesLoading, effectiveBatch, loadData])
 
   useEffect(() => {
-    const loadInitial = async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        const statsRes = await fetch('/api/analytics?type=summary')
-        if (!statsRes.ok) {
-          throw new Error(`Errore ${statsRes.status}: ${statsRes.statusText}`)
-        }
-        const statsData = await statsRes.json()
-        setStats({
-          totalVotes: statsData.totalVotes || 0,
-          uniqueVoters: statsData.uniqueVoters || 0,
-          todayVotes: statsData.todayVotes || 0,
-          yesterdayVotes: statsData.yesterdayVotes || 0,
-          activeNow: statsData.activeNow || 0,
-          onlineUsers: statsData.onlineUsers || 0,
-        })
-        setDailyStats(statsData.dailyStats || [])
-
-        const batchRes = await fetch('/api/admin/batch')
-        const batchData = await batchRes.json()
-        setBatchInfo(batchData)
-        setSelectedBatch(batchData.activeBatch)
-      } catch (e) {
-        console.error(e)
-        setError(e instanceof Error ? e.message : 'Errore di caricamento')
-      } finally {
-        setLoading(false)
-      }
-    }
-    loadInitial()
-
     const supabase = createClient()
     const channel = supabase
       .channel('panoramica-changes')
@@ -123,16 +102,18 @@ export default function PanoramicaPage() {
     }
   }, [loadData])
 
-  const handleExport = (format: 'csv' | 'excel') => {
-    window.open(`/api/analytics?type=export&format=${format}`, '_blank')
+  const handleExport = (format: 'csv' | 'xlsx') => {
+    window.open(`/api/analytics?type=export&format=${format}${batchParam}`, '_blank')
   }
+
+  const onlineIsGlobal = effectiveBatch !== 'all'
 
   const statCards = [
     { label: 'Voti Totali', value: stats.totalVotes, icon: Vote, color: 'violet' },
     { label: 'Elettori Unici', value: stats.uniqueVoters, icon: Users, color: 'blue' },
     { label: 'Voti Oggi', value: stats.todayVotes, icon: TrendingUp, color: 'emerald', diff: stats.todayVotes - stats.yesterdayVotes },
     { label: 'Votanti Ora', value: stats.activeNow, icon: Users, color: 'orange' },
-    { label: 'Utenti Online', value: stats.onlineUsers, icon: Wifi, color: 'cyan' },
+    { label: onlineIsGlobal ? 'Utenti Online (globale)' : 'Utenti Online', value: stats.onlineUsers, icon: Wifi, color: 'cyan' },
   ]
 
   return (
@@ -151,19 +132,8 @@ export default function PanoramicaPage() {
       </header>
 
       {/* Batch selector */}
-      {batchInfo && batchInfo.batches.length > 0 && (
-        <div className="flex gap-1 flex-wrap">
-          <button onClick={() => setSelectedBatch('all')}
-            className={`px-3 py-2 text-[clamp(0.75rem,2vw,0.875rem)] rounded-full transition-colors ${
-              selectedBatch === 'all' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
-            }`}>Tutti</button>
-          {batchInfo.batches.map(batch => (
-            <button key={batch.name} onClick={() => setSelectedBatch(batch.name)}
-              className={`px-3 py-2 text-[clamp(0.75rem,2vw,0.875rem)] rounded-full transition-colors ${
-                selectedBatch === batch.name ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
-              }`}>{batch.name}</button>
-          ))}
-        </div>
+      {batches.length > 0 && (
+        <BatchFilter batches={batches} value={effectiveBatch} onChange={setSelectedBatch} />
       )}
 
       {error && (
@@ -224,9 +194,9 @@ export default function PanoramicaPage() {
                 <div className="h-full flex items-center justify-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
                 </div>
-              ) : dailyStats.length > 0 ? (
+              ) : stats.totalVotes > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <RechartLine data={[...dailyStats].reverse()}
+                  <RechartLine data={dailyStats}
                     margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                     <XAxis dataKey="date" stroke="var(--muted-foreground)" fontSize={11}
@@ -283,7 +253,7 @@ export default function PanoramicaPage() {
                   className="w-full bg-primary hover:bg-primary/90 text-white">
                   <Download className="h-4 w-4 mr-2" /> Export CSV
                 </Button>
-                <Button variant="outline" onClick={() => handleExport('excel')}
+                <Button variant="outline" onClick={() => handleExport('xlsx')}
                   className="w-full border-border text-foreground hover:bg-secondary">
                   <Download className="h-4 w-4 mr-2" /> Export Excel
                 </Button>

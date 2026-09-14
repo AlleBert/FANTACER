@@ -1,10 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Users } from 'lucide-react'
 import { CompanyCardList } from '@/components/admin/company-card-list'
 import { CompanyTable } from '@/components/admin/company-table'
+import { BatchFilter } from '@/components/admin/batch-filter'
+import { useBatches } from '@/hooks/use-batches'
 import { createClient } from '@/lib/supabase/client'
 import { safeSubscribe } from '@/lib/supabase/realtime'
 
@@ -21,23 +23,30 @@ interface Company {
 export default function AziendePage() {
   const [companies, setCompanies] = useState<Company[]>([])
   const [loading, setLoading] = useState(true)
+  const { batches, activeBatch, loading: batchesLoading } = useBatches()
+  // null = "usa il batch attivo" (default); stringa = scelta esplicita.
+  const [selectedBatch, setSelectedBatch] = useState<string | null>(null)
 
-  const loadCompanies = async () => {
-    const res = await fetch('/api/admin/companies')
+  const effectiveBatch = selectedBatch ?? activeBatch ?? 'all'
+  const batchParam =
+    effectiveBatch && effectiveBatch !== 'all'
+      ? `?batch=${encodeURIComponent(effectiveBatch)}`
+      : ''
+
+  const loadCompanies = useCallback(async () => {
+    const res = await fetch(`/api/admin/companies${batchParam}`)
     const data = await res.json()
     setCompanies(data.data || [])
     setLoading(false)
-  }
+  }, [batchParam])
 
   useEffect(() => {
-    const loadInitial = async () => {
-      const res = await fetch('/api/admin/companies')
-      const data = await res.json()
-      setCompanies(data.data || [])
-      setLoading(false)
-    }
-    loadInitial()
+    if (batchesLoading) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch dati quando cambia il batch
+    loadCompanies()
+  }, [batchesLoading, effectiveBatch, loadCompanies])
 
+  useEffect(() => {
     const supabase = createClient()
     const channel = supabase
       .channel('companies-changes')
@@ -52,7 +61,7 @@ export default function AziendePage() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [])
+  }, [loadCompanies])
 
   return (
     <div className="w-full mx-auto p-4 md:p-6 space-y-6">
@@ -62,6 +71,14 @@ export default function AziendePage() {
           <p className="text-[clamp(0.75rem,2.5vw,1rem)] text-muted-foreground">Classifica aziende e voti</p>
         </div>
       </header>
+
+      {batches.length > 0 && (
+        <BatchFilter
+          batches={batches}
+          value={effectiveBatch}
+          onChange={(v) => { setLoading(true); setSelectedBatch(v) }}
+        />
+      )}
 
       <Card className="border-border">
         <CardHeader className="pb-4">
