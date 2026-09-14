@@ -7,6 +7,8 @@ function Harness() {
     <div>
       <span data-testid="names">{vote.selectedCompanies.map((c) => c.company.id).join(',')}</span>
       <span data-testid="success">{vote.gameUnlock.success ? 'yes' : 'no'}</span>
+      <span data-testid="celebrate">{vote.celebrate ? 'yes' : 'no'}</span>
+      <button onClick={() => vote.unlockGameStep('success')}>vote</button>
       <button
         onClick={() =>
           vote.hydrateVote([
@@ -108,5 +110,21 @@ describe('VoteContext HYDRATE', () => {
     })
     expect(screen.getByTestId('names')).toHaveTextContent('p,q')
     expect(screen.getByTestId('success')).toHaveTextContent('no')
+  })
+
+  it('HYDRATE non attiva i confetti (celebrate false)', () => {
+    renderHarness()
+    act(() => {
+      screen.getByText('hydrate').click()
+    })
+    expect(screen.getByTestId('celebrate')).toHaveTextContent('no')
+  })
+
+  it('un voto espresso in sessione attiva i confetti (celebrate true)', () => {
+    renderHarness()
+    act(() => {
+      screen.getByText('vote').click()
+    })
+    expect(screen.getByTestId('celebrate')).toHaveTextContent('yes')
   })
 })

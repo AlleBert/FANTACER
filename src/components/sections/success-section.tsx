@@ -9,10 +9,13 @@ import { VoteReceipt } from '@/components/sections/vote-receipt'
 import { ActionBar } from '@/components/sections/action-bar'
 
 export function SuccessSection() {
-  const { selectedCompanies } = useVote()
+  const { selectedCompanies, celebrate } = useVote()
   const { t } = useLocale()
 
   useEffect(() => {
+    // I confetti partono solo se il voto è stato espresso in questa sessione,
+    // non quando la success viene ripristinata da un refresh (celebrate=false).
+    if (!celebrate) return
     if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
     const colors = ['#fccb27', '#8000ff', '#ff803b', '#4B00AB', '#ffffff']
@@ -36,7 +39,7 @@ export function SuccessSection() {
     }, 600)
 
     return () => clearTimeout(timer)
-  }, [])
+  }, [celebrate])
 
   const shareText = `${t('success.shareTaglinePre')} @fanta.cer`
   const shareUrl = typeof window !== 'undefined' ? window.location.href : ''

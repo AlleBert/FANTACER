@@ -13,6 +13,12 @@ export interface VoteState {
   gameUnlock: {
     success: boolean;
   };
+  /**
+   * True solo quando il voto è stato appena espresso in questa sessione
+   * (`unlockGameStep('success')`). Resta false quando lo stato è ripristinato
+   * da un refresh (`HYDRATE`), così i confetti non ripartono al reload.
+   */
+  celebrate: boolean;
 }
 
 type VoteAction =
@@ -29,6 +35,7 @@ const initialState: VoteState = {
   gameUnlock: {
     success: false,
   },
+  celebrate: false,
 };
 
 function voteReducer(state: VoteState, action: VoteAction): VoteState {
@@ -53,6 +60,7 @@ function voteReducer(state: VoteState, action: VoteAction): VoteState {
         ...state,
         selectedCompanies: action.payload.selectedCompanies,
         gameUnlock: { ...state.gameUnlock, success: true },
+        celebrate: false,
       };
     case 'SET_COMPANY':
       if (state.selectedCompanies.length >= 3) return state;
@@ -70,7 +78,11 @@ function voteReducer(state: VoteState, action: VoteAction): VoteState {
         ),
       };
     case 'UNLOCK_GAME_STEP':
-      return { ...state, gameUnlock: { ...state.gameUnlock, [action.payload]: true } };
+      return {
+        ...state,
+        gameUnlock: { ...state.gameUnlock, [action.payload]: true },
+        celebrate: action.payload === 'success' ? true : state.celebrate,
+      };
     case 'RESET':
       return initialState;
     default:
@@ -82,6 +94,7 @@ interface VoteContextType {
   selectedCompanies: VoteState['selectedCompanies'];
   currentSection: VoteState['currentSection'];
   gameUnlock: VoteState['gameUnlock'];
+  celebrate: VoteState['celebrate'];
   setCompany: (company: { id: string; name: string }, pallet: 4 | 2 | 1) => void;
   removeCompany: (index: number) => void;
   setPallet: (index: number, pallet: 4 | 2 | 1) => void;
@@ -106,6 +119,7 @@ export function VoteProvider({ children }: { children: ReactNode }) {
     selectedCompanies: state.selectedCompanies,
     currentSection: state.currentSection,
     gameUnlock: state.gameUnlock,
+    celebrate: state.celebrate,
     setCompany: (company, pallet) => dispatch({ type: 'SET_COMPANY', payload: { company, pallet } }),
     removeCompany: (index) => dispatch({ type: 'REMOVE_COMPANY', payload: index }),
     setPallet: (index, pallet) => dispatch({ type: 'SET_PALLET', payload: { index, pallet } }),
