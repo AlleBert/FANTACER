@@ -5,11 +5,16 @@ import type { NextRequest } from 'next/server'
 import { POST, utcDayBounds } from '../src/app/api/vota/status/route'
 
 jest.mock('@/lib/supabase/admin', () => ({ createAdminClient: jest.fn() }))
-jest.mock('@/lib/vote-dev-bypass', () => ({ resolveFingerprint: (v: string) => v }))
+jest.mock('@/lib/vote-dev-bypass', () => ({
+  resolveFingerprint: (v: string) => v,
+  isVoteLimitBypassed: jest.fn(() => false),
+}))
 
 import { createAdminClient } from '@/lib/supabase/admin'
+import * as bypass from '@/lib/vote-dev-bypass'
 
 const mockCreateAdminClient = createAdminClient as jest.Mock
+const mockIsVoteLimitBypassed = bypass.isVoteLimitBypassed as jest.Mock
 
 const SESSION = {
   company1_id: 'c1',
@@ -35,7 +40,8 @@ function buildSupabase(
     .fn()
     .mockResolvedValue({ data: opts?.votesError ? null : session, error: opts?.votesError ?? null })
   const limit = jest.fn().mockReturnValue({ maybeSingle })
-  const lt = jest.fn().mockReturnValue({ limit })
+  const order = jest.fn().mockReturnValue({ limit })
+  const lt = jest.fn().mockReturnValue({ order })
   const gte = jest.fn().mockReturnValue({ lt })
   const eq = jest.fn().mockReturnValue({ gte })
   const selectVotes = jest.fn().mockReturnValue({ eq })
@@ -62,11 +68,26 @@ function malformedRequest(): NextRequest {
 }
 
 describe('POST /api/vota/status', () => {
-  beforeEach(() => jest.clearAllMocks())
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockIsVoteLimitBypassed.mockReturnValue(false)
+  })
 
   it('400 senza visitorId', async () => {
     const res = await POST(postRequest({}))
     expect(res.status).toBe(400)
+  })
+
+  it('bypass attivo: voted:false senza toccare il DB', async () => {
+    mockIsVoteLimitBypassed.mockReturnValue(true)
+    const supabase = buildSupabase(SESSION, COMPANIES)
+    mockCreateAdminClient.mockReturnValue(supabase)
+
+    const res = await POST(postRequest({ visitorId: 'v1' }))
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ voted: false, bypassed: true })
+    expect(supabase.from).not.toHaveBeenCalled()
   })
 
   it("voted:false se non c'è una sessione oggi", async () => {

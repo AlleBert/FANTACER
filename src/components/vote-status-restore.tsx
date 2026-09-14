@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useVote, type SelectedCompany } from '@/lib/VoteContext'
 import { clearStoredVoterId, getStoredVoterId } from '@/lib/vote-persistence'
 
@@ -13,6 +13,7 @@ interface StatusCompany {
 interface StatusResponse {
   voted: boolean
   companies?: StatusCompany[]
+  bypassed?: boolean
 }
 
 /**
@@ -21,6 +22,11 @@ interface StatusResponse {
  */
 export function VoteStatusRestore() {
   const { gameUnlock, hydrateVote } = useVote()
+  const successRef = useRef(gameUnlock.success)
+
+  useEffect(() => {
+    successRef.current = gameUnlock.success
+  }, [gameUnlock.success])
 
   useEffect(() => {
     if (gameUnlock.success) return
@@ -37,6 +43,7 @@ export function VoteStatusRestore() {
       .then((res) => (res.ok ? res.json() : null))
       .then((data: StatusResponse | null) => {
         if (cancelled || !data) return
+        if (data.bypassed) return
         if (data.voted && data.companies && data.companies.length === 3) {
           const restored: SelectedCompany[] = data.companies.map((c) => ({
             company: { id: c.id, name: c.name },
@@ -44,7 +51,7 @@ export function VoteStatusRestore() {
           }))
           hydrateVote(restored)
         } else if (data.voted === false) {
-          clearStoredVoterId()
+          if (!successRef.current) clearStoredVoterId()
         }
       })
       .catch(() => {})

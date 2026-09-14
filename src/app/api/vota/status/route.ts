@@ -1,6 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { resolveFingerprint } from '@/lib/vote-dev-bypass'
+import { isVoteLimitBypassed, resolveFingerprint } from '@/lib/vote-dev-bypass'
+
+const MAX_VISITOR_ID_LENGTH = 128
 
 interface VoteSessionRow {
   company1_id: string
@@ -22,17 +24,24 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => null)
     const visitorId = body?.visitorId
-    if (!visitorId || typeof visitorId !== 'string' || visitorId.length > 128) {
+    if (!visitorId || typeof visitorId !== 'string' || visitorId.length > MAX_VISITOR_ID_LENGTH) {
       return NextResponse.json(
         { error: 'visitorId is required' },
         { status: 400, headers: { 'Cache-Control': 'no-store' } },
       )
     }
 
+    if (isVoteLimitBypassed()) {
+      // DEV ONLY (DEV_BYPASS_VOTE_LIMIT=1): resolveFingerprint randomizes the id,
+      // so no session can be matched and restore is intentionally disabled.
+      // Set DEV_BYPASS_VOTE_LIMIT=0 to exercise the restore flow locally.
+      return NextResponse.json(
+        { voted: false, bypassed: true },
+        { headers: { 'Cache-Control': 'no-store' } },
+      )
+    }
+
     const supabase = createAdminClient()
-    // Nota dev-only: con DEV_BYPASS_VOTE_LIMIT=1 `resolveFingerprint` restituisce un id
-    // casuale a ogni chiamata, quindi lo status restituisce sempre voted:false e cancella
-    // l'id memorizzato. Comportamento atteso in dev, non un bug.
     const fingerprint = resolveFingerprint(visitorId)
     const { start, end } = utcDayBounds()
 
@@ -42,6 +51,7 @@ export async function POST(request: NextRequest) {
       .eq('fingerprint', fingerprint)
       .gte('created_at', start)
       .lt('created_at', end)
+      .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle()
 
@@ -86,6 +96,9 @@ export async function POST(request: NextRequest) {
     )
   } catch (error) {
     console.error('Vote status API error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500, headers: { 'Cache-Control': 'no-store' } },
+    )
   }
 }
