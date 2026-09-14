@@ -40,6 +40,7 @@ export function getStoredVoterId(): string | null {
 }
 
 export function setStoredVoterId(visitorId: string): void {
+  if (!visitorId) return
   write(STORAGE_KEY, visitorId)
 }
 
