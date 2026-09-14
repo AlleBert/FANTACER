@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Turnstile } from '@marsidev/react-turnstile'
 import { Star, X, Loader2 } from 'lucide-react'
 import { useLocale } from '@/lib/LocaleContext'
+import { useScrollLock } from '@/lib/use-scroll-lock'
 
 interface TurnstileOverlayProps {
   isVisible: boolean
@@ -17,19 +18,16 @@ export function TurnstileOverlay({ isVisible, onClose, onSuccess, onError }: Tur
   const [status, setStatus] = useState<'idle' | 'verifying' | 'success'>('idle')
   const [isClosing, setIsClosing] = useState(false)
 
+  useScrollLock(isVisible || isClosing)
+
   useEffect(() => {
     if (isVisible) {
-      document.body.style.overflow = 'hidden'
       queueMicrotask(() => {
         setStatus('idle')
         setIsClosing(false)
       })
     } else {
-      document.body.style.overflow = 'unset'
       queueMicrotask(() => setIsClosing(false))
-    }
-    return () => {
-      document.body.style.overflow = 'unset'
     }
   }, [isVisible])
 

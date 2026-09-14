@@ -65,6 +65,9 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: "#231f20",
+  // Android Chrome: con la tastiera aperta riduce la layout viewport (iOS ignora
+  // il valore), così i campi restano visibili senza il pan/scroll del browser.
+  interactiveWidget: "resizes-content",
 };
 
 export default async function RootLayout({
