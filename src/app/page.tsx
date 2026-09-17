@@ -47,16 +47,28 @@ export default function Page() {
     const deviceId = getOrCreateDeviceId();
 
     const sendHeartbeat = () => {
+      // Niente write in background: il conteggio "online" è a 5 minuti, quindi
+      // una battuta ogni 90s a scheda visibile è sufficiente. `keepalive`
+      // consente l'invio anche durante unload/visibilitychange.
+      if (document.visibilityState !== 'visible') return;
       fetch('/api/presence/heartbeat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fingerprint: deviceId }),
+        keepalive: true,
       }).catch(() => {})
     }
 
     sendHeartbeat()
-    const interval = setInterval(sendHeartbeat, 30000)
-    return () => clearInterval(interval)
+    const interval = setInterval(sendHeartbeat, 90000)
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') sendHeartbeat()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
   }, []);
 
   return (

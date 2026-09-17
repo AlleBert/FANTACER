@@ -1,5 +1,5 @@
 import { render, screen, act } from '@testing-library/react'
-import { LiveRankingSection } from '@/components/sections/live-ranking-section'
+import { LiveRankingSection, PALLETS_POLLING_MS } from '@/components/sections/live-ranking-section'
 import { useVote } from '@/lib/VoteContext'
 
 const mockT = (key: string, vars?: Record<string, unknown>) => {
@@ -159,7 +159,7 @@ describe('LiveRankingSection realtime (via RealtimeProvider)', () => {
     const before = rankingCalls()
 
     // realtimeActive=false → il polling 10s continua a rifetchare
-    await act(async () => { jest.advanceTimersByTime(10000) })
+    await act(async () => { jest.advanceTimersByTime(PALLETS_POLLING_MS) })
     const afterPoll = rankingCalls()
     expect(afterPoll).toBeGreaterThan(before)
 
@@ -172,7 +172,7 @@ describe('LiveRankingSection realtime (via RealtimeProvider)', () => {
     expect(afterEvent).toBeGreaterThan(afterPoll)
 
     // con realtimeActive=true il polling successivo NON aggiunge fetch
-    await act(async () => { jest.advanceTimersByTime(10000) })
+    await act(async () => { jest.advanceTimersByTime(PALLETS_POLLING_MS) })
     expect(rankingCalls()).toBe(afterEvent)
   })
 
@@ -185,7 +185,7 @@ describe('LiveRankingSection realtime (via RealtimeProvider)', () => {
     const before = rankingCalls()
 
     // fuori viewport il polling non rifetcha
-    await act(async () => { jest.advanceTimersByTime(10000) })
+    await act(async () => { jest.advanceTimersByTime(PALLETS_POLLING_MS) })
     expect(rankingCalls()).toBe(before)
 
     // rientro in viewport → fetch

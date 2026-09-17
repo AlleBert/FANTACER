@@ -1,5 +1,11 @@
 import { render, screen, act } from '@testing-library/react'
-import { RealtimeProvider, useRankingTick, useRealtime } from '@/lib/RealtimeContext'
+import {
+  RealtimeProvider,
+  useRankingTick,
+  useRealtime,
+  RANKING_DEBOUNCE_MS,
+  RANKING_DEBOUNCE_JITTER_MS,
+} from '@/lib/RealtimeContext'
 
 type FakeChannel = {
   onHandler?: () => void
@@ -114,7 +120,7 @@ describe('RealtimeProvider', () => {
 
     await act(async () => {
       mockChannels['realtime-ranking-tick'].onHandler?.()
-      jest.advanceTimersByTime(500)
+      jest.advanceTimersByTime(RANKING_DEBOUNCE_MS + RANKING_DEBOUNCE_JITTER_MS)
     })
     expect(state().rankingVersion).toBe(1)
     expect(state().realtimeActive).toBe(true)
