@@ -32,14 +32,14 @@ export function PlayAgainSection({ onPlayClick }: PlayAgainSectionProps) {
         <div className="flex flex-col items-center justify-center gap-[clamp(0.5rem,2svh,2rem)] md:gap-8">
           <div className="flex items-center justify-center pointer-events-none">
             <Image
-              src="/star-decoration-alt.svg"
+              src="/star-decoration-alt.webp"
               alt=""
               width={83}
               height={82}
               className="w-[clamp(2.5rem,9svh,4rem)] h-[clamp(2.5rem,9svh,4rem)] md:w-[88px] md:h-[88px] lg:w-[95px] lg:h-[95px] object-contain relative z-10 rotate-6"
             />
             <Image
-              src="/star-decoration.svg"
+              src="/star-decoration.webp"
               alt=""
               width={81}
               height={79}

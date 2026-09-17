@@ -22,9 +22,21 @@ const BRAND = {
 const SUCCESS_BG = 'linear-gradient(to bottom, #FFFFFF 0%, #FF2FB2 45%, #ff8a26 75%)'
 
 const FONT_800 = 'src/app/og/fonts/open-sauce-one-latin-800-normal.ttf'
+const LOGO_PNG = 'public/brand/foto-profilo.png'
 
-function asset(rel: string): Buffer {
-  return readFileSync(path.join(process.cwd(), rel))
+// Asset letti una sola volta per istanza (cold start), non a ogni richiesta:
+// la share card è CPU-heavy (Satori) e non deve ripagare I/O e base64.
+let fontData: Buffer | null = null
+let logoDataUri: string | null = null
+
+function getFont(): Buffer {
+  fontData ??= readFileSync(path.join(process.cwd(), FONT_800))
+  return fontData
+}
+
+function getLogoDataUri(): string {
+  logoDataUri ??= `data:image/png;base64,${readFileSync(path.join(process.cwd(), LOGO_PNG)).toString('base64')}`
+  return logoDataUri
 }
 
 const PALLET_BG: Record<number, string> = {
@@ -68,8 +80,8 @@ export async function GET(request: Request) {
   const byId = new Map(companies.map((c) => [c.id, c]))
   const rows = ids.map((id, i) => ({ company: byId.get(id as string), pallet: pallets[i] }))
 
-  const blackData = asset(FONT_800)
-  const logoUri = `data:image/png;base64,${asset('public/brand/foto-profilo.png').toString('base64')}`
+  const blackData = getFont()
+  const logoUri = getLogoDataUri()
 
   return new ImageResponse(
     (
@@ -235,6 +247,11 @@ export async function GET(request: Request) {
     {
       ...SIZE,
       fonts: [{ name: 'OpenSauce', data: blackData, weight: 800, style: 'normal' }],
+      // URL deterministico (ids+pallet+lang) → cache lunga su CDN: le preview
+      // social non devono ri-renderizzare a ogni condivisione/anteprima.
+      headers: {
+        'Cache-Control': 'public, max-age=0, s-maxage=86400, stale-while-revalidate=604800',
+      },
     }
   )
 }
