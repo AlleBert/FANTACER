@@ -113,7 +113,7 @@ Il progetto include una pipeline automatizzata per garantire:
 - **stabilità frontend** — test unitari (Jest), test E2E (Playwright), snapshot visivi;
 - **compatibilità responsive** — 6 viewport, 4 browser, verifiche di overflow e clipping;
 - **accessibilità** — scansioni WCAG 2.1 AA con `@axe-core/playwright` su tutte le route;
-- **qualità visuale** — visual audit con screenshot, metriche layout e analisi tipografia: 9 route × 3 viewport (audit completo), 6 route admin, homepage × 6 viewport e homepage × 7 dispositivi iOS;
+- **qualità visuale** — visual audit con screenshot, metriche layout e analisi tipografia: 9 route × 3 viewport (audit completo), 6 route admin, homepage × 6 viewport e homepage × 4 dispositivi iOS;
 - **prevenzione regressioni** — smoke test (6 route), scroll-blocking regression, voting flow E2E;
 - **controllo performance** — Lighthouse CI locale, bundle analysis;
 - **osservabilità produzione** — Sentry noop-ready (attivabile con DSN).
@@ -152,7 +152,7 @@ Monitoring (Sentry, opzionale)
 
 **Build Validation** — `next build` verifica che il progetto compili e produca un bundle valido.
 
-**E2E / Accessibility / Visual Checks** — Playwright esegue 10 spec file su 11 progetti browser (4 core + 7 iOS WebKit), inclusi snapshot, scansioni a11y, visual audit e verifica flussi utente reali.
+**E2E / Accessibility / Visual Checks** — Playwright esegue 21 spec file su 11 progetti browser (4 core + 7 iOS WebKit), inclusi snapshot, scansioni a11y, visual audit e verifica flussi utente reali.
 
 **Deployment** — manuale, dopo approvazione CI.
 
@@ -168,7 +168,7 @@ Monitoring (Sentry, opzionale)
 - `npm ci` per installazione deterministica;
 - **ESLint** (`npm run lint`) con configurazione Next.js;
 - **TypeScript strict** (`npm run typecheck`) — `tsc --noEmit`;
-- **Jest** (`npm test`) — 3 file test, 14 test, con `ts-jest` e jsdom;
+- **Jest** (`npm test`) — suite unit con `ts-jest` e jsdom (oggi 56 suite / 341 test);
 - **Next production build** (`npm run build`).
 
 ## Perché
@@ -209,7 +209,7 @@ Nella pipeline CI questi tre comandi vengono eseguiti PRIMA della build, in modo
 | `ios-ipad-pro-portrait` | iPad Pro 11 (portrait) | nativo |
 | `ios-ipad-pro-landscape` | iPad Pro 11 (landscape) | nativo |
 
-I 7 progetti `ios-*` (WebKit) sono usati principalmente dal visual audit iOS in `tests/e2e/visual-audit-homepage-ios.spec.ts`.
+I 7 progetti `ios-*` (WebKit) sono definiti in `playwright.config.ts`; `npm run visual:audit:ios` ne esegue 4 (SE, iPhone 13, Pro Max, iPad Mini portrait) come da matrice ridotta in `AGENTS.md`. Lo spec resta eseguibile su tutti i 7 progetti.
 
 ### Viewport coperti
 
@@ -292,7 +292,7 @@ Analisi visuale proattiva che produce screenshot e metriche per valutare la qual
 | `npm run visual:audit` | 9 route × 3 viewport (sito completo + admin) | `tests/e2e/visual-audit/report.json` |
 | `npm run visual:audit:admin` | 6 route admin × 3 viewport (+ bottom-nav) | `tests/e2e/visual-audit/report-admin.json` |
 | `npm run visual:audit:homepage` | homepage × 6 viewport + sub-elementi + score | `tests/e2e/visual-audit-homepage/report.json` |
-| `npm run visual:audit:ios` | homepage × 7 dispositivi iOS (WebKit) | `tests/e2e/visual-audit-homepage-ios/standard/report-{device}.json` |
+| `npm run visual:audit:ios` | homepage × 4 dispositivi iOS (WebKit: SE, 13, Pro Max, iPad Mini portrait) | `tests/e2e/visual-audit-homepage-ios/standard/report-{device}.json` |
 
 ### Cosa fanno
 
@@ -356,8 +356,8 @@ npm run ui:health
 Esegue in sequenza:
 1. `npm run lint` — zero-error policy ESLint;
 2. `npm run typecheck` — TypeScript strict;
-3. `npm test` — Jest unit test (14 test);
-4. `npm run test:e2e` — Playwright (10 spec, 11 progetti).
+3. `npm test` — Jest unit test (341 test);
+4. `npm run test:e2e` — Playwright (21 spec, 11 progetti).
 
 ### Quando usarlo
 
@@ -595,18 +595,18 @@ Il sistema funziona come rete di sicurezza contro:
 | `npm run setup:tunnel` | Installa `cloudflared` (Linux x86_64 / WSL2) in `~/.local/bin` |
 | `npm run lint` | ESLint — zero-error policy |
 | `npm run typecheck` | TypeScript strict check (`tsc --noEmit`) |
-| `npm test` | Unit test Jest (14 test) |
-| `npm run test:e2e` | Playwright E2E (10 spec, 11 progetti) |
+| `npm test` | Unit test Jest (56 suite, 341 test) |
+| `npm run test:e2e` | Playwright E2E (21 spec, 11 progetti) |
 | `npm run test:e2e:ui` | Playwright UI mode per debugging interattivo |
 | `npm run test:watch` | Jest in watch mode |
 | `npm run build` | Next.js production build |
 | `npm run ui:health` | Gate completo: lint → typecheck → test → E2E |
 | `npm run lighthouse` | Lighthouse CI locale (6 URL, 4 categorie) |
-| `npm run analyze` | Bundle analysis (Turbopack-native) |
+| `npm run analyze` | Bundle analysis (webpack: richiede `--webpack`, vedi sezione Bundle analysis) |
 | `npm run visual:audit` | Visual Quality Audit — 9 route × 3 viewport (screenshot + metriche layout) |
 | `npm run visual:audit:admin` | Visual Quality Audit admin — 6 route admin × 3 viewport (+ bottom-nav) |
 | `npm run visual:audit:homepage` | Homepage Responsive Visual Audit — 6 viewport + sub-elementi + score |
-| `npm run visual:audit:ios` | iOS Safari Visual Audit — homepage su 7 dispositivi WebKit |
+| `npm run visual:audit:ios` | iOS Safari Visual Audit — homepage su 4 dispositivi WebKit (SE, 13, Pro Max, iPad Mini portrait) |
 | `npm run provision:e2e:admin` | Crea/aggiorna utente admin (Auth + `admin_users` + TOTP + QR SVG); `--role=viewer` per utenti read-only senza TOTP |
 | `npm run loadtest:seed` | Load test: importa le company da production (read-only) + genera voti sintetici su `fantacer-e2e` |
 | `npm run loadtest:cleanup` | Load test: rimuove seed/load e ripristina `active_batch` (obbligatorio a fine sessione) |

@@ -236,6 +236,12 @@ migration `20260917000001`) rende usabile l'indice per i `LIKE 'prefisso%'`
 selettivi (per prefissi quasi totali come `seed-loadtest-%` la Seq Scan resta
 comunque la scelta ottimale).
 
+La migration `20260918000000_atomic_vote_dedup.sql` (colonna generata `vote_day`
+UTC + indice unico `(fingerprint, vote_day)`) è **applicata a e2e** e **pendente
+su production**. Non rompe seed/load: i fingerprint sintetici sono unici
+(`seed-loadtest-<n>`, `loadtest-<runid>-*`), quindi l'indice non blocca gli
+insert; i 409 del dedup restano attesi e vanno conteggiati a parte in k6.
+
 ## Guardrail
 
 - **Finestra esclusiva**: nessun run E2E/CI/visual audit durante un load test.

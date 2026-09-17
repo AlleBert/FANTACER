@@ -36,7 +36,7 @@ Conseguenza sul piano Free (**~200 connessioni**): ~**200 schede/visitatori** (n
 | Canale | Tabella | Evento | Effetto |
 |---|---|---|---|
 | `realtime-voting-flag` | `site_settings` (`key=eq.voting_enabled`) | UPDATE | refetch `/api/public/flag/voting` → `votingEnabled` |
-| `realtime-ranking-tick` | `ranking_tick` | UPDATE | debounce 500ms → `rankingVersion+1`, `realtimeActive=true` |
+| `realtime-ranking-tick` | `ranking_tick` | UPDATE | debounce 2000ms + jitter 0-1000ms → `rankingVersion+1`, `realtimeActive=true` |
 
 Il canale ranking è **refcounted** (`useRankingTick`): si apre solo se almeno un
 consumer lo richiede (sezione classifica in viewport) e la scheda è visibile.
@@ -49,7 +49,7 @@ consumer lo richiede (sezione classifica in viewport) e la scheda è visibile.
 - **Classifica**: `realtimeActive` è `true` **solo** dopo la consegna reale di un
   evento (mai dal solo status `SUBSCRIBED`: con RLS che blocca gli eventi il
   client resterebbe "connesso" ma muto). Finché `false`, la sezione fa **polling di
-  fallback ogni 10s**; quando `true`, il polling si ferma.
+  fallback ogni 30s** (`PALLETS_POLLING_MS`); quando `true`, il polling si ferma.
 - **Background**: su `document.visibilitychange` i canali vengono chiusi e
   `realtimeActive` torna `false`; al ritorno in primo piano si ri-sottoscrive e si
   fa **catch-up** (refetch del flag e della classifica se in viewport).
