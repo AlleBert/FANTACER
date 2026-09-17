@@ -229,8 +229,11 @@ database reale non-production. Runbook completo: `docs/load-testing.md`.
   **riabilitare sempre** entrambi) e poi
   `select public.recompute_company_totals()` per riallineare i contatori.
 - La classifica e' O(1) via `company_totals` (migration
-  `20260917000000_company_totals_ranking.sql`, solo su e2e finche' i test non
-  passano). Rollback manuale: `scripts/loadtest/sql/rollback_company_totals.sql`.
+  `20260917000000_company_totals_ranking.sql`). **Applicata a e2e e production**
+  (17/09/2026). L'indice `20260917000001` e' su e2e ma **non** su production
+  (scelta esplicita): resta pendente nel repo, quindi un `db push` su prod lo
+  applicherebbe. Rollback manuale:
+  `scripts/loadtest/sql/rollback_company_totals.sql`.
   Snapshot di sicurezza prima di migrazioni:
   `node scripts/loadtest/db-snapshot.mjs` → `backups/e2e-<ts>.json` (read-only).
 - Le operazioni massive (seed/cleanup/migrazioni) **non** devono passare da

@@ -168,17 +168,17 @@ istantaneo. Nessun voto perso, nessun crash.
 
 ## 9. Rollout in produzione
 
-Applicare con il flusso normale (`supabase db push`) in **finestra a basso
-traffico**:
+**Stato: applicato il 17/09/2026** su `zdfverdwdsigizxktilz` (production).
 
-1. `20260917000000_company_totals_ranking.sql` — **richiesta**: crea
+1. `20260917000000_company_totals_ranking.sql` — **applicata**: crea
    `company_totals`, i trigger, `recompute`, e sostituisce `get_company_ranking`.
-   La migration prende un `lock` breve su `vote_sessions` durante il backfill dei
-   voti esistenti. **Backup** prima (`scripts/loadtest/db-snapshot.mjs` è e2e-only;
-   per prod usare lo snapshot Supabase/pg_dump) e **canary** dopo.
-2. `20260917000001_vote_sessions_fingerprint_pattern_index.sql` — **opzionale in
-   produzione** (nessun delete per prefisso in prod; l'indice è piccolo e
-   innocuo). Si applica comunque insieme, essendo nello stesso set di migration.
+   Applicazione in **transazione** (`begin; … commit;`) con **snapshot pre-migration**
+   in `backups/prod-pre-migration-<ts>.json` e **canary** dopo (312 righe, `batch`/
+   `voting` invariati, 2 trigger, RPC che legge i contatori). A prod i voti erano 0,
+   quindi il backfill è istantaneo.
+2. `20260917000001_vote_sessions_fingerprint_pattern_index.sql` — **NON applicata
+   a production** (scelta esplicita: nessun delete per prefisso in prod). Resta nel
+   repo come pendente: un futuro `db push` su prod la applicherebbe.
 
 **Rollback**: `scripts/loadtest/sql/rollback_company_totals.sql` (drop trigger/
 funzioni/tabella + ripristino RPC precedente). Non tocca `trg_bump_ranking_tick`.
