@@ -215,6 +215,10 @@ database reale non-production. Runbook completo: `docs/load-testing.md`.
   piano Free di Supabase (Realtime max 200 connessioni).
 - k6 **non** è in CI: `tests/load/**/*.js` è escluso da ESLint (`__ENV`, moduli
   `k6/*`). Non aggiungere gli scenari k6 a `npm run test:e2e`.
+- **Preflight DNS obbligatorio** su portatile e server app: un resolver lento
+  (es. nameserver non raggiungibile in `/etc/resolv.conf` che va in timeout)
+  aggiunge secondi a ogni nuova connessione verso Supabase e falsa ogni misura.
+  Verifica con `getent hosts <ref>.supabase.co` (< 50ms) prima di testare.
 - Il sampler DB (`db-monitor.mjs`) è **read-only** e si connette a Postgres via
   session pooler (`aws-1-eu-west-1.pooler.supabase.com:5432`), **non** via
   PostgREST: non consuma gli slot del pooler applicativo e non falsa le metriche.

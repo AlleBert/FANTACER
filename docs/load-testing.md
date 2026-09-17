@@ -21,6 +21,27 @@ misurare performance, picchi e punto di rottura durante una sessione di fiera
 - `.env` (production, read-only) e `.env.e2e` presenti in repo root.
 - `.env.load` (gitignored) per l'env runtime dell'app, da `.env.load.example`.
 
+### Preflight rete (DNS) — obbligatorio
+
+Un DNS lento **falsa ogni misura**: ogni nuova connessione (app -> Supabase) paga
+il timeout del resolver, gonfiando latenze e timeout ben oltre il DB.
+
+```bash
+getent hosts <e2e-ref>.supabase.co          # deve rispondere subito (< 50ms)
+curl -s -o /dev/null -w 'dns=%{time_namelookup}\n' https://<e2e-ref>.supabase.co
+```
+
+Se compare un valore in **secondi**, il resolver e' lento (tipico: un nameserver
+non raggiungibile in `/etc/resolv.conf`, es. `1.1.1.1`, che va in timeout prima
+del fallback). Verificare i resolver:
+
+```bash
+node -e 'const d=require("dns").promises,t=Date.now();d.lookup("www.google.com").then(()=>console.log((Date.now()-t)+"ms"))'
+```
+
+Correggere **su portatile e server app** (es. solo `nameserver 8.8.8.8` /
+`8.8.4.4`) prima di lanciare i test, altrimenti i risultati non sono attendibili.
+
 ## 1. Seed
 
 ```bash
