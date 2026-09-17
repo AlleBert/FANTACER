@@ -35,10 +35,10 @@
     "loadtest:seed": "node scripts/loadtest/seed.mjs",
     "loadtest:cleanup": "node scripts/loadtest/cleanup.mjs",
     "load:smoke": "k6 run -e BASE_URL=${BASE_URL:-http://localhost:3000} -e RUN_ID=${RUN_ID:-manual} tests/load/scenarios/smoke.js",
-    "load:baseline": "k6 run -e BASE_URL=${BASE_URL:-http://localhost:3000} -e RUN_ID=${RUN_ID:-manual} tests/load/scenarios/baseline.js",
-    "load:spike": "k6 run -e BASE_URL=${BASE_URL:-http://localhost:3000} -e RUN_ID=${RUN_ID:-manual} tests/load/scenarios/spike.js",
-    "load:soak": "k6 run -e BASE_URL=${BASE_URL:-http://localhost:3000} -e RUN_ID=${RUN_ID:-manual} tests/load/scenarios/soak.js",
-    "load:realtime": "k6 run -e BASE_URL=${BASE_URL:-http://localhost:3000} -e RUN_ID=${RUN_ID:-manual} tests/load/scenarios/realtime.js",
+    "load:baseline": "k6 run -e BASE_URL=${BASE_URL:-http://localhost:3000} -e RUN_ID=${RUN_ID:-manual} -e VUS=${VUS:-500} -e RAMP=${RAMP:-3m} -e HOLD=${HOLD:-10m} -e SLEEP_MS=${SLEEP_MS:-30000} tests/load/scenarios/baseline.js",
+    "load:spike": "k6 run -e BASE_URL=${BASE_URL:-http://localhost:3000} -e RUN_ID=${RUN_ID:-manual} -e PEAK=${PEAK:-50} -e BASE_RATE=${BASE_RATE:-5} tests/load/scenarios/spike.js",
+    "load:soak": "k6 run -e BASE_URL=${BASE_URL:-http://localhost:3000} -e RUN_ID=${RUN_ID:-manual} -e VUS=${VUS:-250} -e DURATION=${DURATION:-30m} -e SLEEP_MS=${SLEEP_MS:-30000} tests/load/scenarios/soak.js",
+    "load:realtime": "k6 run -e BASE_URL=${BASE_URL:-http://localhost:3000} -e RUN_ID=${RUN_ID:-manual} -e VUS=${VUS:-500} -e REALTIME_URL=${REALTIME_URL:-} -e SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-} tests/load/scenarios/realtime.js",
     "load:browser": "playwright test --config=playwright.load.config.ts"
   },
   "dependencies": {

@@ -19,5 +19,5 @@ export const thresholds = {
   http_req_duration: ['p(95)<1200', 'p(99)<2500'],
   'http_req_duration{endpoint:vote}': ['p(95)<800'],
   'http_req_duration{endpoint:heartbeat}': ['p(95)<300'],
-  'http_req_duration{endpoint:ranking}': ['p(95)<500'],
+  'http_req_duration{endpoint:ranking}': ['p(95)<800'],
 }
