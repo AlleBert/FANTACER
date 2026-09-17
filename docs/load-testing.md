@@ -190,8 +190,13 @@ Override connessione: `LOADTEST_DB_URL`. Intervallo: `SAMPLE_MS` (default 10000)
 | `GET /` (page load) | < 1200 ms | < 1% |
 
 Le threshold sono in `tests/load/config.js` e fanno fallire il run se violate.
-La soglia ranking (800 ms) e' calibrata sulla baseline osservata su 100k righe
-(~640-690 ms p95); resta un endpoint lento, il fix e' un task separato.
+La soglia ranking (800 ms) e' calibrata sulla baseline; **dopo** la migration
+`company_totals` (classifica O(1)) il p95 reale e' ~120-160 ms.
+
+## Report della campagna
+
+I risultati completi (baseline prima/dopo, realtime, conclusioni, rollout in
+produzione) sono in [`docs/load-testing-report.md`](load-testing-report.md).
 
 ## Osservabilita'
 
@@ -212,6 +217,24 @@ npm run loadtest:cleanup -- --keep-companies
 Rimuove `seed-loadtest-%`, `loadtest-%` da `vote_sessions`/`audit_logs`/
 `device_sessions`, cancella le company importate e ripristina `active_batch`
 (il valore precedente salvato dallo seed). Svuota `.loadtest/state.json`.
+
+Il cleanup usa una **connessione diretta a Postgres** (`pg`, ruolo `postgres`),
+**non** PostgREST: le operazioni massive superano lo `statement_timeout` di 8s del
+ruolo `authenticator` usato da PostgREST. In una **singola transazione**:
+
+- `set local statement_timeout = 0`;
+- **disabilita i due trigger** su `vote_sessions` (evita 100k x trigger per riga)
+  e li **riabilita** prima del ricalcolo; in caso di errore il `rollback` ripristina
+  anche lo stato dei trigger;
+- cancella per prefisso da `vote_sessions`/`audit_logs`/`device_sessions` e le
+  company del batch (salvo `--keep-companies`);
+- `select public.recompute_company_totals()` per allineare i contatori;
+- ripristina `batch_settings.active_batch`.
+
+L'indice `idx_vote_sessions_fingerprint_pattern` (`fingerprint text_pattern_ops`,
+migration `20260917000001`) rende usabile l'indice per i `LIKE 'prefisso%'`
+selettivi (per prefissi quasi totali come `seed-loadtest-%` la Seq Scan resta
+comunque la scelta ottimale).
 
 ## Guardrail
 

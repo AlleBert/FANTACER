@@ -183,7 +183,8 @@ database reale non-production. Runbook completo: `docs/load-testing.md`.
   di prod (read-only, `image_url` azzerato) + genera voti sintetici + imposta
   `active_batch`; stampa il `RUN_ID` da usare con k6.
 - `npm run loadtest:cleanup [-- --keep-companies]` — rimuove seed/load e ripristina
-  `active_batch`.
+  `active_batch`. Usa una **connessione diretta `pg`** (non PostgREST) e disabilita
+  temporaneamente i due trigger durante il bulk.
 - `npm run load:smoke|baseline|spike|soak|realtime` — scenari k6 (richiedono
   `BASE_URL`; `realtime` anche `SUPABASE_ANON_KEY` + `REALTIME_URL`).
 - `npm run load:run -- <scenario>` — **wrapper con monitoraggio DB automatico**:
@@ -206,13 +207,25 @@ database reale non-production. Runbook completo: `docs/load-testing.md`.
   passano). Rollback manuale: `scripts/loadtest/sql/rollback_company_totals.sql`.
   Snapshot di sicurezza prima di migrazioni:
   `node scripts/loadtest/db-snapshot.mjs` → `backups/e2e-<ts>.json` (read-only).
+- Le operazioni massive (seed/cleanup/migrazioni) **non** devono passare da
+  PostgREST: il ruolo `authenticator` ha `statement_timeout=8s` (verificato) e una
+  DELETE su 100k righe viene cancellata. `cleanup.mjs` e `db-snapshot.mjs` usano
+  `loadE2eDbUrl()` (connessione diretta `pg`); il cleanup fa
+  `set local statement_timeout = 0` e disabilita i trigger su `vote_sessions`
+  durante il bulk, riabilitandoli prima di `recompute_company_totals()`.
+- Indice `idx_vote_sessions_fingerprint_pattern` (`fingerprint text_pattern_ops`,
+  migration `20260917000001`) per i `LIKE 'prefisso%'` selettivi; resta comunque
+  presente per l'app l'indice di uguaglianza `idx_vote_sessions_fingerprint`.
 - Turnstile è bypassato solo se `TURNSTILE_SECRET_KEY` è **assente**: non
   impostarlo nell'ambiente di load (k6/Playwright non generano token reali).
 - Il generatore k6 gira su macchina separata dall'app (mai stessa CPU): il
   portatile in LAN. Il server app è self-hosted (`next start`): **non** copre Vercel
   (cold start, autoscaling).
-- Server casa 2 core/8GB: ai picchi l'app può essere CPU-bound; il muro atteso è il
-  piano Free di Supabase (Realtime max 200 connessioni).
+- Server casa 2 core/8GB: regge 500 VU HTTP/DB con p95 < 180ms e CPU < 1 core;
+  il muro reale è il **Realtime del piano Free (~200 connessioni)**. Una scheda può
+  tenere **2 connessioni** (`live-ranking-section.tsx` crea due client) → ~100-200
+  visitatori. Per la fiera (~500) serve **Supabase Pro**. Dettagli e misure in
+  `docs/load-testing-report.md`.
 - k6 **non** è in CI: `tests/load/**/*.js` è escluso da ESLint (`__ENV`, moduli
   `k6/*`). Non aggiungere gli scenari k6 a `npm run test:e2e`.
 - **Preflight DNS obbligatorio** su portatile e server app: un resolver lento
@@ -229,3 +242,8 @@ database reale non-production. Runbook completo: `docs/load-testing.md`.
 
 - Eseguire `npm run loadtest:cleanup` e verificare che
   `batch_settings.active_batch` sia tornato al valore precedente.
+
+### Report della campagna
+
+Risultati completi (baseline prima/dopo, realtime, conclusioni, rollout in
+produzione): [`docs/load-testing-report.md`](docs/load-testing-report.md).

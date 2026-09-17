@@ -506,6 +506,9 @@ npm run loadtest:cleanup              # OBBLIGATORIO a fine sessione
 `load:run` avvia un sampler DB automatico e produce
 `loadtest-output/<scenario>-<ts>/summary.md` (k6 + delta DB allineati).
 
+Risultati della campagna, fix classifica e limite Realtime (cap Free ~200
+connessioni → serve Pro per la fiera): [`docs/load-testing-report.md`](docs/load-testing-report.md).
+
 > Il load test condivide `fantacer-e2e` con le suite E2E: va eseguito in una
 > **finestra esclusiva** (nessun E2E/CI/visual audit in corso) e chiuso **sempre**
 > con `npm run loadtest:cleanup`.
@@ -682,5 +685,6 @@ Ogni fase è stata costruita per risolvere un problema reale emerso durante lo s
 | `tests/e2e/scroll-blocking-test-plan.md` | Test plan scroll blocking bug fix |
 | `docs/visual-audit.md` | Visual Quality Audit — workflow e formato report |
 | `docs/load-testing.md` | Load test k6 — runbook, SLO, guardrail, cleanup |
+| `docs/load-testing-report.md` | Load test — report campagna (risultati, fix classifica, limite Realtime, rollout) |
 | `lighthouserc.json` | Configurazione Lighthouse |
 | `.env.example` | Variabili d'ambiente richieste e opzionali |

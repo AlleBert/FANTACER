@@ -2,17 +2,24 @@
 /**
  * Cleanup del load test su `fantacer-e2e`.
  *
- * Riporta il progetto e2e allo stato baseline:
- * - cancella i voti sintetici (`seed-loadtest-%`) e quelli di load (`loadtest-%`);
- * - cancella `device_sessions`/`audit_logs` prodotti dal load;
- * - rimuove le company importate dal batch (opzionale con --keep-companies);
- * - ripristina `batch_settings.active_batch` al valore precedente al seed.
+ * Usa una connessione diretta a Postgres (ruolo `postgres`), NON PostgREST:
+ * le operazioni massive superano lo `statement_timeout` (8s) del ruolo
+ * `authenticator` usato da PostgREST. I due trigger su `vote_sessions` vengono
+ * disabilitati durante il bulk (evita 100k x trigger per riga) e riabilitati
+ * prima del ricalcolo dei contatori. Tutto in una transazione: in caso di
+ * errore il rollback ripristina anche lo stato dei trigger.
+ *
+ * Ripristina lo stato baseline: rimuove seed/load, le company importate e
+ * riporta `batch_settings.active_batch` al valore precedente.
  *
  * Usage:
  *   npm run loadtest:cleanup
  *   npm run loadtest:cleanup -- --keep-companies
  */
-import { adminClient, clearState, countRows, fail, LOAD_PREFIX, loadCreds, parseArgs, readState, SEED_PREFIX } from './lib.mjs'
+import pg from 'pg'
+import { clearState, fail, LOAD_PREFIX, loadE2eDbUrl, parseArgs, readState, SEED_PREFIX } from './lib.mjs'
+
+const { Client } = pg
 
 const args = parseArgs(process.argv.slice(2))
 if (args.help) {
@@ -20,13 +27,13 @@ if (args.help) {
 Usage: npm run loadtest:cleanup [-- --keep-companies]
 
   --keep-companies  non rimuove le company importate (piu' veloce per run ripetuti)
+  --batch=<batch>   batch company da rimuovere (default: da .loadtest/state.json)
+  --previous=<b>    active_batch da ripristinare (default: da state, poi TEST)
   --help            questo messaggio
 `)
   process.exit(0)
 }
 
-const { e2e } = loadCreds()
-const e2eDb = adminClient(e2e)
 const state = readState()
 const batch = args.batch ? String(args.batch) : state?.batch
 const previousActiveBatch = args.previous ? String(args.previous) : state?.previousActiveBatch ?? 'TEST'
@@ -35,68 +42,83 @@ function log(...a) {
   console.log('[cleanup]', ...a)
 }
 
-async function deleteByPrefix(table, column, prefix) {
-  const before = await countRows(e2eDb, table, (q) => q.like(column, `${prefix}%`))
-  if (before === 0) return 0
-  const { error } = await e2eDb.from(table).delete().like(column, `${prefix}%`)
-  if (error) fail(`Delete ${table}.${column} LIKE ${prefix}%: ${error.message}`)
-  log(`${table}: rimossi ${before} (${column} LIKE ${prefix}%)`)
-  return before
-}
-
-async function restoreBatch() {
-  const { data } = await e2eDb.from('batch_settings').select('active_batch').eq('id', 'default').maybeSingle()
-  const current = data?.active_batch ?? '(nessuno)'
-  if (current === previousActiveBatch) {
-    log(`active_batch gia' '${current}', nessun ripristino`)
-    return
-  }
-  const { error } = await e2eDb.from('batch_settings').upsert({ id: 'default', active_batch: previousActiveBatch }, { onConflict: 'id' })
-  if (error) fail(`Ripristino active_batch: ${error.message}`)
-  log(`active_batch ripristinato: '${current}' -> '${previousActiveBatch}'`)
-}
-
-/** Riallinea i contatori della classifica dopo le cancellazioni massive. */
-async function recomputeTotals() {
-  const { error } = await e2eDb.rpc('recompute_company_totals')
-  if (error) {
-    log(`recompute_company_totals non disponibile (${error.message}): i contatori restano quelli del trigger`)
-  } else {
-    log('company_totals ricalcolati')
-  }
-}
-
 async function main() {
-  log('target: fantacer-e2e (write)')
-  if (!state) log('nessuno stato .loadtest/state.json: uso i prefissi e --previous/--batch espliciti')
-  else log(`stato: batch='${state.batch}', runId='${state.runId}', seedCount=${state.seedCount}`)
+  const client = new Client({ connectionString: loadE2eDbUrl(), ssl: { rejectUnauthorized: false } })
+  await client.connect()
+  log('target: fantacer-e2e (write, connessione diretta)')
 
-  await deleteByPrefix('vote_sessions', 'fingerprint', SEED_PREFIX)
-  await deleteByPrefix('vote_sessions', 'fingerprint', LOAD_PREFIX)
-  await deleteByPrefix('audit_logs', 'fingerprint', LOAD_PREFIX)
-  await deleteByPrefix('audit_logs', 'fingerprint', SEED_PREFIX)
-  await deleteByPrefix('device_sessions', 'fingerprint', LOAD_PREFIX)
-  await deleteByPrefix('device_sessions', 'fingerprint', SEED_PREFIX)
+  try {
+    await client.query('begin')
+    await client.query('set local statement_timeout = 0')
 
-  if (!args['keep-companies']) {
-    if (!batch) {
-      log('batch sconosciuto: salto la rimozione company (usa --batch=<batch> per forzarla)')
-    } else {
-      const before = await countRows(e2eDb, 'companies', (q) => q.eq('batch', batch))
-      if (before > 0) {
-        const { error } = await e2eDb.from('companies').delete().eq('batch', batch)
-        if (error) fail(`Delete companies batch '${batch}': ${error.message}`)
-        log(`companies batch '${batch}': rimosse ${before}`)
-      }
+    await client.query('alter table public.vote_sessions disable trigger trg_bump_ranking_tick')
+    await client.query('alter table public.vote_sessions disable trigger trg_maintain_company_totals')
+    log('trigger disabilitati (bulk)')
+
+    const delPrefix = async (table, column, prefix) => {
+      const { rowCount } = await client.query(
+        `delete from public.${table} where ${column} like $1`,
+        [`${prefix}%`],
+      )
+      if (rowCount) log(`${table}: rimossi ${rowCount} (${column} LIKE ${prefix}%)`)
+      return rowCount
     }
-  } else {
-    log('company importate mantenute (--keep-companies)')
-  }
 
-  await recomputeTotals()
-  await restoreBatch()
-  clearState()
-  log('cleanup completato')
+    await delPrefix('vote_sessions', 'fingerprint', SEED_PREFIX)
+    await delPrefix('vote_sessions', 'fingerprint', LOAD_PREFIX)
+    await delPrefix('audit_logs', 'fingerprint', LOAD_PREFIX)
+    await delPrefix('audit_logs', 'fingerprint', SEED_PREFIX)
+    await delPrefix('device_sessions', 'fingerprint', LOAD_PREFIX)
+    await delPrefix('device_sessions', 'fingerprint', SEED_PREFIX)
+
+    if (!args['keep-companies']) {
+      if (!batch) {
+        log('batch sconosciuto: salto la rimozione company (usa --batch=<batch> per forzarla)')
+      } else {
+        const { rowCount } = await client.query('delete from public.companies where batch = $1', [batch])
+        if (rowCount) log(`companies batch '${batch}': rimosse ${rowCount}`)
+      }
+    } else {
+      log('company importate mantenute (--keep-companies)')
+    }
+
+    await client.query('alter table public.vote_sessions enable trigger trg_bump_ranking_tick')
+    await client.query('alter table public.vote_sessions enable trigger trg_maintain_company_totals')
+    log('trigger riabilitati')
+
+    await client.query('select public.recompute_company_totals()')
+    log('company_totals ricalcolati')
+
+    await client.query('update public.batch_settings set active_batch = $1 where id = $2', [previousActiveBatch, 'default'])
+    log(`active_batch ripristinato a '${previousActiveBatch}'`)
+
+    await client.query('commit')
+
+    const seedLeft = (await client.query(
+      'select count(*)::int n from public.vote_sessions where fingerprint like $1',
+      [`${SEED_PREFIX}%`],
+    )).rows[0].n
+    const loadLeft = (await client.query(
+      'select count(*)::int n from public.vote_sessions where fingerprint like $1',
+      [`${LOAD_PREFIX}%`],
+    )).rows[0].n
+    const triggers = (await client.query(
+      'select tgname, tgenabled from pg_trigger where tgrelid = $1::regclass and not tgisinternal order by tgname',
+      ['public.vote_sessions'],
+    )).rows
+    log(`residui: seed=${seedLeft}, load=${loadLeft}`)
+    log('trigger: ' + triggers.map((t) => `${t.tgname}=${t.tgenabled}`).join(', '))
+
+    clearState()
+    log('cleanup completato')
+  } catch (e) {
+    try {
+      await client.query('rollback')
+    } catch {}
+    fail(`cleanup: ${e.message}`)
+  } finally {
+    await client.end().catch(() => {})
+  }
 }
 
 main().catch((e) => fail(e?.stack || String(e)))
