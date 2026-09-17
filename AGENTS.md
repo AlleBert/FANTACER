@@ -78,6 +78,32 @@ La webapp è un gioco multi-device con sezioni full-page a snap. La responsivene
 - `SuccessSection` è condizionale (compare solo dopo il voto) e non è coperta dagli audit standard.
 - WebKit/Playwright non simula `env(safe-area-inset-*)` reali: l'audit safe-area li emula via override dei token CSS (`--safe-top`, `--safe-bottom`, `--safe-x`). Non dichiarare una verifica superata senza averla eseguita.
 
+## Realtime (homepage) — invarianti
+
+Client realtime centralizzato in `src/lib/RealtimeContext.tsx`. Dettagli,
+comportamento e comandi di verifica: `docs/realtime.md`.
+
+- **Un solo provider** (`RealtimeProvider`), montato in `src/app/page.tsx`. I
+  componenti **non** devono chiamare `createClient().channel(...)` direttamente:
+  usano `useRealtime()` / `useRankingTick(enabled)`.
+- `@supabase/ssr` `createBrowserClient` è **singleton nel browser** → **1 WebSocket
+  per scheda**, canali multiplexati. Non passare `isSingleton: false`, non creare
+  client in loop.
+- Canali: `realtime-ranking-tick` (refcounted via `useRankingTick`, evento
+  `ranking_tick`, debounce 500ms) e `realtime-voting-flag` (`site_settings`,
+  `key=eq.voting_enabled`).
+- `realtimeActive` è `true` **solo** dopo la consegna reale di un evento (mai dal
+  solo `SUBSCRIBED`): finché è `false` la classifica fa polling di fallback ogni
+  **10s**, poi si ferma.
+- **Visibilità**: canali chiusi quando la scheda va in background, ri-sottoscritti
+  al ritorno con refetch di catch-up.
+- Ogni modifica va coperta da unit test (`tests/components/realtime`,
+  `tests/components/sections`) e dallo spec e2e `tests/e2e/realtime-live.spec.ts`;
+  prima della produzione serve il **load test su e2e** (vedi sezione load test).
+- In locale `playwright.config.ts` usa `next dev`, quindi l'a11y scan rileva il
+  toolbar di `react-scan` (`#react-scan-root`) e fallisce su `button-name`: è un
+  falso positivo dev (su CI con `npm run start` non compare).
+
 ## Esecuzione test su hardware limitato (PC dev)
 
 La macchina di sviluppo ha RAM limitata (~3.7GiB, WSL2) e **si blocca se la suite e2e completa viene lanciata tutta insieme**. Regole vincolanti:

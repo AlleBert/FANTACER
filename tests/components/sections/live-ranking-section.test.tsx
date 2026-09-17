@@ -57,31 +57,18 @@ function makePayload() {
 const mockFetch = jest.fn()
 global.fetch = mockFetch as unknown as typeof fetch
 
-const mockHolder = {
-  subscribeCb: null as ((status: string) => void) | null,
-  changeCb: null as (() => void) | null,
-  removeChannel: jest.fn(),
+const mockRealtime = {
+  votingEnabled: true,
+  votingEnabledLoaded: true,
+  rankingVersion: 0,
+  realtimeActive: true,
+  visible: true,
+  acquireRanking: jest.fn(() => jest.fn()),
 }
 
-jest.mock('@/lib/supabase/client', () => ({
-  createClient: () => ({
-    channel: (name: string) => ({
-      on: (_e: string, _o: unknown, cb: () => void) => {
-        if (name === 'live-ranking-votes') mockHolder.changeCb = cb
-        return {
-          subscribe: (cb2: (s: string) => void) => {
-            if (name === 'live-ranking-votes') mockHolder.subscribeCb = cb2
-            return { unsubscribe: jest.fn() }
-          },
-        }
-      },
-      subscribe: (cb2: (s: string) => void) => {
-        if (name === 'live-ranking-votes') mockHolder.subscribeCb = cb2
-        return { unsubscribe: jest.fn() }
-      },
-    }),
-    removeChannel: mockHolder.removeChannel,
-  }),
+jest.mock('@/lib/RealtimeContext', () => ({
+  useRealtime: () => mockRealtime,
+  useRankingTick: jest.fn(),
 }))
 
 class MockIntersectionObserver {
@@ -102,9 +89,10 @@ class MockIntersectionObserver {
 describe('LiveRankingSection', () => {
   beforeEach(() => {
     mockFetch.mockReset()
-    mockHolder.subscribeCb = null
-    mockHolder.changeCb = null
-    mockHolder.removeChannel.mockClear()
+    mockRealtime.votingEnabled = true
+    mockRealtime.rankingVersion = 0
+    mockRealtime.realtimeActive = true
+    mockRealtime.visible = true
     mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
       const url = String(input)
       if (url.includes('/api/public/flag/voting')) {
@@ -195,13 +183,7 @@ describe('LiveRankingSection', () => {
   })
 
   it('con voto disattivato non renderizza la sezione', async () => {
-    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
-      const url = String(input)
-      if (url.includes('/api/public/flag/voting')) {
-        return { ok: true, json: async () => ({ enabled: false }) }
-      }
-      return { ok: true, json: async () => makePayload() }
-    })
+    mockRealtime.votingEnabled = false
     const { container } = render(<LiveRankingSection />)
     await waitFor(() => {
       expect(container.querySelector('section')).toBeNull()
@@ -209,13 +191,7 @@ describe('LiveRankingSection', () => {
   })
 
   it('con showWhenDisabled e voto disattivato renderizza la classifica', async () => {
-    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
-      const url = String(input)
-      if (url.includes('/api/public/flag/voting')) {
-        return { ok: true, json: async () => ({ enabled: false }) }
-      }
-      return { ok: true, json: async () => makePayload() }
-    })
+    mockRealtime.votingEnabled = false
     const { container } = render(<LiveRankingSection showWhenDisabled />)
     await waitFor(() => {
       expect(container.querySelector('section')).not.toBeNull()
@@ -228,8 +204,10 @@ describe('LiveRankingSection — stato accordion al refetch', () => {
   beforeEach(() => {
     jest.useFakeTimers()
     MockIntersectionObserver.instances = []
-    mockHolder.changeCb = null
-    mockHolder.subscribeCb = null
+    mockRealtime.votingEnabled = true
+    mockRealtime.rankingVersion = 0
+    mockRealtime.realtimeActive = true
+    mockRealtime.visible = true
     ;(global as { IntersectionObserver: unknown }).IntersectionObserver = MockIntersectionObserver
   })
 
@@ -248,7 +226,7 @@ describe('LiveRankingSection — stato accordion al refetch', () => {
       return { ok: true, json: async () => payload }
     })
 
-    render(<LiveRankingSection />)
+    const { rerender } = render(<LiveRankingSection />)
     await act(async () => {})
     const io = MockIntersectionObserver.instances[0]
     await act(async () => { io.fire(true) })
@@ -268,11 +246,10 @@ describe('LiveRankingSection — stato accordion al refetch', () => {
     payload.companies[20] = { ...payload.companies[20], id: 'n02', name: 'Nuova GOLD' }
     payload.companies[21] = { ...payload.companies[21], id: 'n03', name: 'Nuova GOLD 2' }
 
-    // refetch via evento realtime (dopo il debounce di 500ms)
-    await act(async () => {
-      mockHolder.changeCb?.()
-      jest.advanceTimersByTime(600)
-    })
+    // refetch via evento realtime (il provider incrementa rankingVersion)
+    mockRealtime.rankingVersion += 1
+    rerender(<LiveRankingSection />)
+    await act(async () => {})
 
     // lo stato è preservato: GOLD resta aperta, SILVER/BRONZE restano chiuse
     expect(screen.getByRole('button', { name: /GOLD/ })).toHaveAttribute('aria-expanded', 'true')

@@ -1,9 +1,12 @@
 import { render, act } from '@testing-library/react'
 import { LiveRankingSection } from '@/components/sections/live-ranking-section'
+import { RealtimeProvider } from '@/lib/RealtimeContext'
 import { useVote } from '@/lib/VoteContext'
 
+const mockT = (key: string) => key
+
 jest.mock('@/lib/LocaleContext', () => ({
-  useLocale: () => ({ t: (key: string) => key }),
+  useLocale: () => ({ t: mockT }),
 }))
 
 jest.mock('@/lib/VoteContext', () => ({
@@ -14,10 +17,12 @@ jest.mock('@/components/sponsor/sponsor-cards', () => ({ SponsorCards: () => nul
 
 // Il client reale (createBrowserClient) è un singleton e RealtimeClient.channel()
 // deduplica per topic: una seconda chiamata con lo stesso nome restituisce lo
-// STESSO canale. Su quel canale già joinato, `.on()` lancia:
-//   "cannot add `postgres_changes` callbacks for realtime:live-ranking-voting-flag after `subscribe()`."
-// Questo mock riproduce fedelmente quel comportamento.
+// STESSO canale già joinato, su cui `.on()` lancia:
+//   "cannot add `postgres_changes` callbacks for realtime:<topic> after `subscribe()`."
+// Il RealtimeProvider centralizza i canali e condivide il topic fra i consumer;
+// questo mock verifica che NON si registri due volte lo stesso topic.
 const channels = new Map<string, Record<string, unknown>>()
+const onCallCount = new Map<string, number>()
 
 jest.mock('@/lib/supabase/client', () => ({
   createClient: () => ({
@@ -28,6 +33,7 @@ jest.mock('@/lib/supabase/client', () => ({
           if (ch.joined) {
             throw new Error(`cannot add \`postgres_changes\` callbacks for realtime:${name} after \`subscribe()\`.`)
           }
+          onCallCount.set(name, (onCallCount.get(name) ?? 0) + 1)
           return ch
         }
         ch.subscribe = (cb?: (s: string) => void) => {
@@ -46,25 +52,27 @@ jest.mock('@/lib/supabase/client', () => ({
 const mockFetch = jest.fn()
 global.fetch = mockFetch as unknown as typeof fetch
 
-describe('LiveRankingSection — doppio mount con client singleton', () => {
+describe('RealtimeProvider + consumatori — canale condiviso', () => {
   beforeEach(() => {
     channels.clear()
+    onCallCount.clear()
     mockFetch.mockReset()
-    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
-      const url = String(input)
-      if (url.includes('/api/public/flag/voting')) {
-        return { ok: true, json: async () => ({ enabled: false }) }
-      }
-      return { ok: true, json: async () => ({ companies: [] }) }
-    })
+    mockFetch.mockImplementation(async () => ({ ok: true, json: async () => ({ companies: [], enabled: false }) }))
     ;(useVote as jest.Mock).mockReturnValue({ gameUnlock: { success: false }, selectedCompanies: [] })
   })
 
-  it('non lancia "cannot add ... after subscribe()" quando due istanze condividono lo stesso topic', async () => {
-    render(<LiveRankingSection />)
+  it('due consumatori condividono lo stesso topic senza doppio `on` (nessun throw)', async () => {
+    expect(() =>
+      render(
+        <RealtimeProvider>
+          <LiveRankingSection showWhenDisabled />
+          <LiveRankingSection showWhenDisabled />
+        </RealtimeProvider>,
+      ),
+    ).not.toThrow()
     await act(async () => {})
 
-    expect(() => render(<LiveRankingSection />)).not.toThrow()
-    await act(async () => {})
+    // il flag è un solo topic, con un solo `.on()`
+    expect(onCallCount.get('realtime-voting-flag')).toBe(1)
   })
 })
