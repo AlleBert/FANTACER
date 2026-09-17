@@ -27,6 +27,36 @@ function isAdminPage(pathname: string): boolean {
   return pathname.startsWith('/admin') && !pathname.startsWith('/api/');
 }
 
+// Flag coming-soon: il valore cambia solo da azione Admin (raro). Una cache
+// in-memory con TTL evita 1 query DB per ogni pageview. Il trade-off è una
+// finestra di ~15s in cui una modifica Admin non è ancora visibile ai nuovi
+// visitatori; accettabile e coerente con la propagazione delle altre flag.
+const COMING_SOON_TTL_MS = 15_000;
+let comingSoonCache: { value: boolean; expiresAt: number } | null = null;
+
+async function getComingSoonEnabled(): Promise<boolean> {
+  const now = Date.now();
+  if (comingSoonCache && comingSoonCache.expiresAt > now) {
+    return comingSoonCache.value;
+  }
+
+  let value = false;
+  try {
+    const adminClient = createAdminClient();
+    const { data } = await adminClient
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'coming_soon_enabled')
+      .single();
+    value = data?.value === 'true';
+  } catch {
+    value = false;
+  }
+
+  comingSoonCache = { value, expiresAt: now + COMING_SOON_TTL_MS };
+  return value;
+}
+
 function buildAdminCsp(nonce: string, isDev: boolean): string {
   return [
     "default-src 'self'",
@@ -189,18 +219,7 @@ export async function proxy(request: NextRequest) {
 
   // Coming-soon: pages only (API responses must stay available, as before).
   if (!isApi) {
-    let enabled = false;
-    try {
-      const adminClient = createAdminClient();
-      const { data } = await adminClient
-        .from('site_settings')
-        .select('value')
-        .eq('key', 'coming_soon_enabled')
-        .single();
-      enabled = data?.value === 'true';
-    } catch {
-      enabled = false;
-    }
+    const enabled = await getComingSoonEnabled();
 
     const isComingSoonPage = pathname === '/coming-soon';
     if (isComingSoonPage) {
@@ -218,5 +237,13 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: [
+    // Pagine + asset non-statici. Esclude le API pubbliche (non usano x-pathname
+    // né il redirect coming-soon) e gli asset: così il proxy non è invocato due
+    // volte per ogni chiamata API pubblica né per ogni immagine/font.
+    '/((?!api/|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpe?g|webp|avif|ico|webmanifest|woff2?|ttf)$).*)',
+    // API protette: il proxy resta obbligatorio (sessione + AAL + ruolo).
+    '/api/admin/:path*',
+    '/api/analytics/:path*',
+  ],
 };
