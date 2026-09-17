@@ -7,8 +7,7 @@ import { SafeCenterSection } from '@/components/layout/safe-center-section';
 import { useLocale } from '@/lib/LocaleContext';
 import { useVote } from '@/lib/VoteContext';
 import { useSponsorMaxItems } from '@/hooks/use-sponsor-max-items';
-import { createClient } from '@/lib/supabase/client';
-import { safeOnPostgresChanges, safeSubscribe } from '@/lib/supabase/realtime';
+import { useRankingTick, useRealtime } from '@/lib/RealtimeContext';
 import {
   CLUSTERS,
   CLUSTER_ORDER,
@@ -19,8 +18,7 @@ import {
 } from '@/lib/ranking';
 import { cn } from '@/lib/utils';
 
-const PALLETS_POLLING_MS = 30000;
-const REFETCH_DEBOUNCE_MS = 500;
+const PALLETS_POLLING_MS = 10000;
 
 function getInitialOpen(): Record<Cluster, boolean> {
   return { TOP20: true, GOLD: false, SILVER: false, BRONZE: false };
@@ -54,19 +52,22 @@ export function LiveRankingSection({ showWhenDisabled = false }: LiveRankingSect
   const { t } = useLocale()
   const { selectedCompanies, gameUnlock } = useVote()
   const maxItems = useSponsorMaxItems()
+  const { votingEnabled, realtimeActive, rankingVersion, visible } = useRealtime()
   const [companies, setCompanies] = useState<RankingCompany[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [votingEnabled, setVotingEnabled] = useState(false)
   const [open, setOpen] = useState<Record<Cluster, boolean>>(getInitialOpen)
-  const [channelActive, setChannelActive] = useState(false)
   const [isVisible, setIsVisible] = useState(true)
   const [flash, setFlash] = useState<Record<Cluster, number>>({ TOP20: 0, GOLD: 0, SILVER: 0, BRONZE: 0 })
 
   const sectionRef = useRef<HTMLDivElement>(null)
-  const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null)
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const prevBandSig = useRef<Record<Cluster, string>>({ TOP20: '', GOLD: '', SILVER: '', BRONZE: '' })
+  const lastVersion = useRef(rankingVersion)
+  const prevVisible = useRef(visible)
+
+  // Il canale ranking_tick è richiesto solo quando la sezione è visibile e il voto
+  // è attivo; il provider lo condivide (refcount) e lo sospende in background.
+  useRankingTick(isVisible && votingEnabled)
 
   const votedIds = useMemo(
     () => new Set(gameUnlock.success ? selectedCompanies.map((s) => s.company.id) : []),
@@ -101,105 +102,56 @@ export function LiveRankingSection({ showWhenDisabled = false }: LiveRankingSect
     fetchRanking()
   }, [fetchRanking, votingEnabled, showWhenDisabled])
 
-  // Polling di fallback: solo se il voto è attivo, il channel non è attivo e la
-  // sezione è visibile. Mai con loader: gli aggiornamenti successivi sono silenziosi.
+  // Polling di fallback (10s): attivo solo se il voto è attivo, il realtime non
+  // ha ancora consegnato un evento reale, la sezione è in viewport e la scheda è
+  // visibile. Mai con loader: gli aggiornamenti successivi sono silenziosi.
   useEffect(() => {
     const interval = setInterval(() => {
-      if (votingEnabled && !channelActive && isVisible) fetchRanking(false)
+      if (votingEnabled && !realtimeActive && isVisible && visible) fetchRanking(false)
     }, PALLETS_POLLING_MS)
     return () => clearInterval(interval)
-  }, [fetchRanking, channelActive, isVisible, votingEnabled])
+  }, [fetchRanking, realtimeActive, isVisible, visible, votingEnabled])
 
-  // Realtime channel su ranking_tick (primario), sospeso fuori viewport.
-  // ranking_tick è una tabella "tick" con solo un contatore di versione (no
-  // PII) e una policy anon select: gli eventi Realtime vengono consegnati ai
-  // client pubblici, che poi refetchano /api/public/ranking. vote_sessions
-  // resta chiuso ai client (solo service_role), quindi NON va sottoscritto qui.
+  // Viewport: la classifica si aggiorna quando entra a schermo. Il canale
+  // ranking_tick è gestito dal provider (refcount, sospeso in background): qui
+  // resta l'osservazione dell'intersezione e il fetch al rientro.
   useEffect(() => {
     const section = sectionRef.current
     if (!section) return
 
     // jsdom non implementa IntersectionObserver: in test env il realtime non
-    // viene cablato (il comportamento è coperto separatamente in Task 6).
+    // viene cablato (il comportamento è coperto dai test del provider).
     if (typeof IntersectionObserver === 'undefined') return
-
-    const supabase = createClient()
-
-    const startChannel = () => {
-      if (channelRef.current) return
-      const channel = safeOnPostgresChanges(
-        supabase.channel('live-ranking-votes'),
-        { event: 'UPDATE', schema: 'public', table: 'ranking_tick' },
-        () => {
-          if (debounceRef.current) clearTimeout(debounceRef.current)
-          debounceRef.current = setTimeout(() => {
-            fetchRanking(false)
-            setChannelActive(true)
-          }, REFETCH_DEBOUNCE_MS)
-        }
-      )
-      if (!channel) return
-      safeSubscribe(channel, (status) => {
-        // MAI attivare il realtime dal solo status di socket: Supabase Realtime
-        // consegna gli eventi solo se l'RLS del subscriber li autorizza. Con
-        // ranking_tick (policy anon select, solo un contatore, nessuna PII) il
-        // client pubblico riceve davvero gli eventi, ma channelActive va comunque
-        // impostato SOLO alla consegna reale di un evento (nell'handler sopra):
-        // se un subscriber non è autorizzato riceve SUBSCRIBED ma ZERO eventi, e
-        // senza questa guardia il polling fallback si congelerebbe.
-        if (status !== 'SUBSCRIBED') setChannelActive(false)
-      })
-      channelRef.current = channel
-    }
-
-    const stopChannel = () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current)
-        channelRef.current = null
-      }
-      setChannelActive(false)
-    }
 
     const io = new IntersectionObserver(([entry]) => {
       setIsVisible(entry.isIntersecting)
-      if (entry.isIntersecting) {
-        startChannel()
-        fetchRanking(false)
-      } else {
-        stopChannel()
-      }
+      if (entry.isIntersecting) fetchRanking(false)
     })
     io.observe(section)
+    return () => io.disconnect()
+  }, [fetchRanking])
 
-    return () => {
-      io.disconnect()
-      stopChannel()
-      if (debounceRef.current) clearTimeout(debounceRef.current)
-    }
-  }, [fetchRanking, votingEnabled])
-
-  // Canale del flag voting_enabled (site_settings): sempre attivo, anche quando
-  // la sezione è null (voto disattivo, pre-fiera). Il client già aperto riceve
-  // l'UPDATE quando l'admin accende il voto e monta la classifica senza reload.
-  // Il fetch iniziale del flag vive qui, nello stesso effect mount-only.
+  // Refetch quando il provider segnala un evento ranking_tick (il debounce è nel
+  // provider). Si salta il primo giro: il mount è coperto dal fetch iniziale.
   useEffect(() => {
-    fetch('/api/public/flag/voting').then((res) => res.json()).then((d) => setVotingEnabled(d.enabled)).catch(() => {})
+    if (rankingVersion === lastVersion.current) return
+    lastVersion.current = rankingVersion
+    if (!isVisible) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchRanking(false)
+  }, [rankingVersion, isVisible, fetchRanking])
 
-    const supabase = createClient()
-    const flagChannel = safeOnPostgresChanges(
-      supabase.channel('live-ranking-voting-flag'),
-      { event: 'UPDATE', schema: 'public', table: 'site_settings', filter: 'key=eq.voting_enabled' },
-      () => {
-        fetch('/api/public/flag/voting').then((res) => res.json()).then((d) => setVotingEnabled(d.enabled)).catch(() => {})
-      }
-    )
-    if (!flagChannel) return
-    safeSubscribe(flagChannel)
-
-    return () => {
-      supabase.removeChannel(flagChannel)
-    }
-  }, [])
+  // Catch-up al ritorno in primo piano: in background la scheda non riceve i
+  // tick, quindi al resume si riallinea la classifica (se in viewport).
+  useEffect(() => {
+    const wasVisible = prevVisible.current
+    prevVisible.current = visible
+    if (!visible || wasVisible) return
+    if (!isVisible) return
+    if (!votingEnabled && !showWhenDisabled) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchRanking(false)
+  }, [visible, isVisible, votingEnabled, showWhenDisabled, fetchRanking])
 
   const toggleBand = (cluster: Cluster) => {
     setOpen((prev) => ({ ...prev, [cluster]: !prev[cluster] }))

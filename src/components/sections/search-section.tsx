@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useId, type KeyboardEvent } from 'react';
 import { useVote } from '@/lib/VoteContext';
 import { createClient } from '@/lib/supabase/client';
-import { safeSubscribe } from '@/lib/supabase/realtime';
+import { useRealtime } from '@/lib/RealtimeContext';
 import { useDebouncedCallback } from 'use-debounce';
 import { Search, Loader2, X } from 'lucide-react';
 import { LiquidFillButton } from '@/components/voting/liquid-fill-button';
@@ -39,7 +39,7 @@ export function SearchSection() {
   const [showTurnstile, setShowTurnstile] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'warning'; text: string } | null>(null);
   const [loading, setLoading] = useState(false);
-  const [votingEnabled, setVotingEnabled] = useState(true);
+  const { votingEnabled } = useRealtime();
   const [activeIndex, setActiveIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const listboxId = useId();
@@ -49,25 +49,6 @@ export function SearchSection() {
       .then(res => res.json())
       .then(data => setActiveBatch(data.activeBatch))
       .catch(() => setActiveBatch('TEST'));
-
-    fetch('/api/public/flag/voting')
-      .then(res => res.json())
-      .then(data => setVotingEnabled(data.enabled))
-      .catch(() => setVotingEnabled(true));
-
-    const supabase = createClient();
-    const channel = supabase
-      .channel('search-voting-flag')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'site_settings', filter: 'key=eq.voting_enabled' }, () => {
-        fetch('/api/public/flag/voting')
-          .then(res => res.json())
-          .then(data => setVotingEnabled(data.enabled));
-      });
-    safeSubscribe(channel);
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, []);
 
   const fetchCompanies = useDebouncedCallback(async (term: string) => {

@@ -27,43 +27,25 @@ jest.mock('@/lib/VoteContext', () => ({
 
 jest.mock('@/components/sponsor/sponsor-cards', () => ({ SponsorCards: () => null }))
 
+// Stato realtime controllabile dal test. `useRankingTick` è un no-op (la
+// gestione dei canali è coperta dai test del RealtimeProvider).
+const mockRealtime = {
+  votingEnabled: true,
+  votingEnabledLoaded: true,
+  rankingVersion: 0,
+  realtimeActive: false,
+  visible: true,
+  acquireRanking: jest.fn(() => jest.fn()),
+}
+const mockUseRankingTick = jest.fn()
+
+jest.mock('@/lib/RealtimeContext', () => ({
+  useRealtime: () => mockRealtime,
+  useRankingTick: (enabled: boolean) => mockUseRankingTick(enabled),
+}))
+
 const mockFetch = jest.fn()
 global.fetch = mockFetch as unknown as typeof fetch
-
-const mockHolder = {
-  subscribeCb: null as ((status: string) => void) | null,
-  changeCb: null as (() => void) | null,
-  flagChangeCb: null as (() => void) | null,
-  removeChannel: jest.fn(),
-}
-
-jest.mock('@/lib/supabase/client', () => ({
-  createClient: () => ({
-    channel: (name: string) => {
-      // Solo i due channel controllabili espongono i callback: ranking_tick
-      // (primario) e voting flag (sempre attivo, anche a sezione null).
-      const isVote = name === 'live-ranking-votes'
-      const isFlag = name === 'live-ranking-voting-flag'
-      return {
-        on: (_e: string, _o: unknown, cb: () => void) => {
-          if (isVote) mockHolder.changeCb = cb
-          if (isFlag) mockHolder.flagChangeCb = cb
-          return {
-            subscribe: (cb2: (s: string) => void) => {
-              if (isVote) mockHolder.subscribeCb = cb2
-              return { unsubscribe: jest.fn() }
-            },
-          }
-        },
-        subscribe: (cb2: (s: string) => void) => {
-          if (isVote) mockHolder.subscribeCb = cb2
-          return { unsubscribe: jest.fn() }
-        },
-      }
-    },
-    removeChannel: mockHolder.removeChannel,
-  }),
-}))
 
 class MockIntersectionObserver {
   static instances: MockIntersectionObserver[] = []
@@ -107,21 +89,20 @@ function goldPallets(): Array<[string, string, number]> {
   return arr
 }
 
-describe('LiveRankingSection realtime', () => {
+function rankingCalls() {
+  return mockFetch.mock.calls.filter((c) => String(c[0]).includes('/api/public/ranking')).length
+}
+
+describe('LiveRankingSection realtime (via RealtimeProvider)', () => {
   beforeEach(() => {
     jest.useFakeTimers()
     mockFetch.mockReset()
-    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
-      const url = String(input)
-      if (url.includes('/api/public/flag/voting')) {
-        return { ok: true, json: async () => ({ enabled: true }) }
-      }
-      return { ok: true, json: async () => buildPayload(defaultPallets) }
-    })
-    mockHolder.changeCb = null
-    mockHolder.subscribeCb = null
-    mockHolder.flagChangeCb = null
-    mockHolder.removeChannel.mockClear()
+    mockFetch.mockImplementation(async () => ({ ok: true, json: async () => buildPayload(defaultPallets) }))
+    mockRealtime.votingEnabled = true
+    mockRealtime.rankingVersion = 0
+    mockRealtime.realtimeActive = false
+    mockRealtime.visible = true
+    mockUseRankingTick.mockClear()
     MockIntersectionObserver.instances = []
     ;(global as { IntersectionObserver: unknown }).IntersectionObserver = MockIntersectionObserver
     Object.defineProperty(window, 'matchMedia', { writable: true, configurable: true, value: undefined })
@@ -132,98 +113,114 @@ describe('LiveRankingSection realtime', () => {
     jest.useRealTimers()
   })
 
-  it('esegue l\'initial fetch al mount', async () => {
+  it("esegue l'initial fetch al mount", async () => {
     render(<LiveRankingSection />)
     await act(async () => {})
     expect(mockFetch).toHaveBeenCalledWith('/api/public/ranking')
     await screen.findByText('Ceramiche X')
   })
 
-  it('quando l\'admin accende il voto, la classifica si monta senza reload', async () => {
-    let enabled = false
-    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
-      const url = String(input)
-      if (url.includes('/api/public/flag/voting')) {
-        return { ok: true, json: async () => ({ enabled }) }
-      }
-      return { ok: true, json: async () => buildPayload(defaultPallets) }
-    })
-    const { container } = render(<LiveRankingSection />)
+  it("quando l'admin accende il voto, la classifica si monta senza reload", async () => {
+    mockRealtime.votingEnabled = false
+    const { container, rerender } = render(<LiveRankingSection />)
     await act(async () => {})
 
-    // pre-fiera: sezione assente dal DOM, ma il canale flag è già sottoscritto
+    // pre-fiera: sezione assente dal DOM (showWhenDisabled=false)
     expect(container.querySelector('section')).toBeNull()
-    expect(mockHolder.flagChangeCb).not.toBeNull()
 
-    // l'admin accende voting_enabled: UPDATE → refetch flag → true → sezione montata
-    enabled = true
-    await act(async () => {
-      mockHolder.flagChangeCb?.()
-    })
+    // l'admin accende voting_enabled: il provider aggiorna il contesto → sezione montata
+    mockRealtime.votingEnabled = true
+    rerender(<LiveRankingSection />)
 
     await screen.findByText('Ceramiche X')
     expect(container.querySelector('section')).not.toBeNull()
     expect(mockFetch).toHaveBeenCalledWith('/api/public/ranking')
   })
 
-  it('refetch su evento ranking_tick (channel primario)', async () => {
-    render(<LiveRankingSection />)
+  it('refetch su rankingVersion (evento ranking_tick dal provider)', async () => {
+    const { rerender } = render(<LiveRankingSection />)
     await act(async () => {})
     const io = MockIntersectionObserver.instances[0]
     await act(async () => { io.fire(true) })
-    const callsBefore = mockFetch.mock.calls.length
-    await act(async () => {
-      mockHolder.changeCb?.()
-      jest.advanceTimersByTime(600)
-    })
-    expect(mockFetch.mock.calls.length).toBeGreaterThan(callsBefore)
+    const before = rankingCalls()
+
+    mockRealtime.rankingVersion = 1
+    rerender(<LiveRankingSection />)
+    await act(async () => {})
+
+    expect(rankingCalls()).toBeGreaterThan(before)
   })
 
   it('il polling fallback resta attivo finché non arriva un evento reale (RLS)', async () => {
-    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
-      const url = String(input)
-      if (url.includes('/api/public/flag/voting')) {
-        return { ok: true, json: async () => ({ enabled: true }) }
-      }
-      return { ok: true, json: async () => buildPayload(defaultPallets) }
-    })
-    render(<LiveRankingSection />)
+    const { rerender } = render(<LiveRankingSection />)
     await act(async () => {})
     const io = MockIntersectionObserver.instances[0]
     await act(async () => { io.fire(true) })
-    const callsBefore = mockFetch.mock.calls.length
+    const before = rankingCalls()
 
-    // socket SUBSCRIBED ma nessun evento consegnato (RLS bloccante): il polling DEVE continuare
-    await act(async () => { mockHolder.subscribeCb?.('SUBSCRIBED') })
-    await act(async () => { jest.advanceTimersByTime(30000) })
-    expect(mockFetch.mock.calls.length).toBeGreaterThan(callsBefore)
+    // realtimeActive=false → il polling 10s continua a rifetchare
+    await act(async () => { jest.advanceTimersByTime(10000) })
+    const afterPoll = rankingCalls()
+    expect(afterPoll).toBeGreaterThan(before)
 
-    // un evento reale arriva → l'handler esegue fetchRanking(false) + setChannelActive(true)
-    // dopo il debounce (500ms): superando 600ms il refetch parte e channelActive diventa true
-    await act(async () => {
-      mockHolder.changeCb?.()
-      jest.advanceTimersByTime(600)
-    })
-    const callsAfterEvent = mockFetch.mock.calls.length
-    expect(callsAfterEvent).toBeGreaterThan(callsBefore)
+    // arriva un evento reale → realtimeActive=true
+    mockRealtime.rankingVersion = 1
+    mockRealtime.realtimeActive = true
+    rerender(<LiveRankingSection />)
+    await act(async () => {})
+    const afterEvent = rankingCalls()
+    expect(afterEvent).toBeGreaterThan(afterPoll)
 
-    // channelActive ora true → il tick di polling successivo NON aggiunge nuovi fetch
-    await act(async () => { jest.advanceTimersByTime(30000) })
-    expect(mockFetch.mock.calls.length).toBe(callsAfterEvent)
+    // con realtimeActive=true il polling successivo NON aggiunge fetch
+    await act(async () => { jest.advanceTimersByTime(10000) })
+    expect(rankingCalls()).toBe(afterEvent)
   })
 
-  it('sospende il channel fuori viewport e lo ristabilisce al rientro', async () => {
+  it('sospende polling fuori viewport e rifetcha al rientro', async () => {
     render(<LiveRankingSection />)
     await act(async () => {})
     const io = MockIntersectionObserver.instances[0]
     await act(async () => { io.fire(true) })
-    expect(mockHolder.removeChannel).not.toHaveBeenCalled()
     await act(async () => { io.fire(false) })
-    expect(mockHolder.removeChannel).toHaveBeenCalled()
-    const callsBefore = mockFetch.mock.calls.length
+    const before = rankingCalls()
+
+    // fuori viewport il polling non rifetcha
+    await act(async () => { jest.advanceTimersByTime(10000) })
+    expect(rankingCalls()).toBe(before)
+
+    // rientro in viewport → fetch
     await act(async () => { io.fire(true) })
-    expect(mockFetch.mock.calls.length).toBeGreaterThan(callsBefore)
-    expect(mockHolder.subscribeCb).not.toBeNull()
+    expect(rankingCalls()).toBeGreaterThan(before)
+  })
+
+  it('al ritorno in primo piano rifetcha (catch-up)', async () => {
+    const { rerender } = render(<LiveRankingSection />)
+    await act(async () => {})
+    const io = MockIntersectionObserver.instances[0]
+    await act(async () => { io.fire(true) })
+    const before = rankingCalls()
+
+    mockRealtime.visible = false
+    rerender(<LiveRankingSection />)
+    await act(async () => {})
+
+    mockRealtime.visible = true
+    rerender(<LiveRankingSection />)
+    await act(async () => {})
+
+    expect(rankingCalls()).toBeGreaterThan(before)
+  })
+
+  it('richiede il canale ranking solo quando è visibile e il voto è attivo', async () => {
+    mockRealtime.votingEnabled = false
+    const { rerender } = render(<LiveRankingSection />)
+    await act(async () => {})
+    expect(mockUseRankingTick).toHaveBeenLastCalledWith(false)
+
+    mockRealtime.votingEnabled = true
+    rerender(<LiveRankingSection />)
+    await act(async () => {})
+    expect(mockUseRankingTick).toHaveBeenLastCalledWith(true)
   })
 
   it('rispetta prefers-reduced-motion (stato finale renderizzato)', async () => {
@@ -243,14 +240,8 @@ describe('LiveRankingSection realtime', () => {
       selectedCompanies: [{ company: { id: 'c04', name: 'Marmo W' }, pallet: 4 }],
     })
     let pallets = goldPallets()
-    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
-      const url = String(input)
-      if (url.includes('/api/public/flag/voting')) {
-        return { ok: true, json: async () => ({ enabled: true }) }
-      }
-      return { ok: true, json: async () => buildPayload(pallets) }
-    })
-    const { container } = render(<LiveRankingSection />)
+    mockFetch.mockImplementation(async () => ({ ok: true, json: async () => buildPayload(pallets) }))
+    const { container, rerender } = render(<LiveRankingSection />)
     await act(async () => {})
     const io = MockIntersectionObserver.instances[0]
     await act(async () => { io.fire(true) })
@@ -261,51 +252,9 @@ describe('LiveRankingSection realtime', () => {
     // c04 scende da rank 22 a rank 21 (stessa fascia GOLD): firma cambia → pulse.
     pallets = goldPallets()
     pallets[20][2] = 978
-    await act(async () => {
-      mockHolder.changeCb?.()
-      jest.advanceTimersByTime(600)
-    })
-
-    const badge = container.querySelector('[class*="animate-pulse"]')
-    expect(badge).not.toBeNull()
-  })
-
-  it('con prefers-reduced-motion il pulse è delegato al CSS (la classe resta applicata)', async () => {
-    Object.defineProperty(window, 'matchMedia', {
-      writable: true,
-      configurable: true,
-      value: jest.fn().mockReturnValue({ matches: true }),
-    })
-    ;(useVote as jest.Mock).mockReturnValue({
-      gameUnlock: { success: true },
-      selectedCompanies: [{ company: { id: 'c04', name: 'Marmo W' }, pallet: 4 }],
-    })
-    let pallets = goldPallets()
-    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
-      const url = String(input)
-      if (url.includes('/api/public/flag/voting')) {
-        return { ok: true, json: async () => ({ enabled: true }) }
-      }
-      return { ok: true, json: async () => buildPayload(pallets) }
-    })
-    const { container } = render(<LiveRankingSection />)
+    mockRealtime.rankingVersion = 1
+    rerender(<LiveRankingSection />)
     await act(async () => {})
-    const io = MockIntersectionObserver.instances[0]
-    await act(async () => { io.fire(true) })
-
-    // 'Marmo W' compare nel badge header e nella riga del pannello GOLD (sempre montato)
-    await screen.findAllByText('Marmo W')
-
-    // c04 scende da rank 22 a rank 21 (stessa fascia GOLD): firma cambia. La
-    // soppressione visiva del pulse sotto reduce è delegata a globals.css
-    // (@media prefers-reduced-motion → animation-duration 0.01ms): il JS non
-    // fa più stripping della classe, che resta applicata quando flash > 0.
-    pallets = goldPallets()
-    pallets[20][2] = 978
-    await act(async () => {
-      mockHolder.changeCb?.()
-      jest.advanceTimersByTime(600)
-    })
 
     const badge = container.querySelector('[class*="animate-pulse"]')
     expect(badge).not.toBeNull()
