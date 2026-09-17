@@ -186,6 +186,10 @@ database reale non-production. Runbook completo: `docs/load-testing.md`.
   `active_batch`.
 - `npm run load:smoke|baseline|spike|soak|realtime` — scenari k6 (richiedono
   `BASE_URL`; `realtime` anche `SUPABASE_ANON_KEY` + `REALTIME_URL`).
+- `npm run load:run -- <scenario>` — **wrapper con monitoraggio DB automatico**:
+  avvia `scripts/loadtest/db-monitor.mjs` (sampler read-only), esegue k6 e scrive
+  `loadtest-output/<scenario>-<ts>/summary.md` con i delta DB allineati al run.
+  Preferirlo ai `load:*` semplici. Output in `loadtest-output/` (gitignored).
 - `npm run load:browser` — mini-run Playwright (`playwright.load.config.ts`, senza
   webServer/globalSetup e senza la guardia E2E di `playwright.config.ts`).
 
@@ -204,6 +208,11 @@ database reale non-production. Runbook completo: `docs/load-testing.md`.
   piano Free di Supabase (Realtime max 200 connessioni).
 - k6 **non** è in CI: `tests/load/**/*.js` è escluso da ESLint (`__ENV`, moduli
   `k6/*`). Non aggiungere gli scenari k6 a `npm run test:e2e`.
+- Il sampler DB (`db-monitor.mjs`) è **read-only** e si connette a Postgres via
+  session pooler (`aws-1-eu-west-1.pooler.supabase.com:5432`), **non** via
+  PostgREST: non consuma gli slot del pooler applicativo e non falsa le metriche.
+  Override con `LOADTEST_DB_URL`; intervallo con `SAMPLE_MS` (default 10000).
+  `pg` è una devDependency usata solo da questi script.
 
 ### Dopo un test
 

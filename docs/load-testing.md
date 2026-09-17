@@ -101,20 +101,53 @@ REALTIME_URL=wss://<e2e-ref>.supabase.co/realtime/v1/websocket \
 npm run load:realtime
 ```
 
+## 4b. Monitoraggio DB automatico (`load:run`)
+
+Invece dei comandi `load:*` semplici, usa il wrapper: avvia da sé un sampler DB
+leggero, esegue k6 e produce un report con i delta DB allineati al run.
+
+```bash
+npm run load:run -- smoke
+npm run load:run -- baseline
+npm run load:run -- spike
+npm run load:run -- soak
+```
+
+Per ogni run crea `loadtest-output/<scenario>-<ts>/` con:
+
+| File | Contenuto |
+|---|---|
+| `db.ndjson` | campioni ogni 10s: connessioni per stato, lock bloccati, query >2s, transazioni, cache, temp, WAL, insert/seq-scan per tabella |
+| `pgss-before.json` / `pgss-after.json` | snapshot `pg_stat_statements` per il delta della finestra |
+| `k6.csv` / `k6-summary.json` | serie temporali e summary k6 |
+| `summary.md` | report leggibile (sotto) |
+
+Il report `summary.md` contiene: richieste/errori/p95/p99 k6 per endpoint, picco
+connessioni e lock, delta transazioni/cache/WAL, delta per tabella e **top query
+per tempo DB nella finestra** (da `pg_stat_statements`).
+
+Il sampler e' **read-only** e si connette direttamente a Postgres via session
+pooler (`aws-1-eu-west-1.pooler.supabase.com:5432`), **non** via PostgREST: non
+consuma gli slot del pooler applicativo e non falsa le metriche dell'app.
+Override connessione: `LOADTEST_DB_URL`. Intervallo: `SAMPLE_MS` (default 10000).
+
 ## SLO di riferimento (da calibrare sul baseline)
 
 | Endpoint | p95 | Error |
 |---|---|---|
 | `POST /api/vota` | < 800 ms | < 1% |
 | `POST /api/presence/heartbeat` | < 300 ms | < 1% |
-| `GET /api/public/ranking` | < 500 ms | < 1% |
+| `GET /api/public/ranking` | < 800 ms | < 1% |
 | `GET /` (page load) | < 1200 ms | < 1% |
 
 Le threshold sono in `tests/load/config.js` e fanno fallire il run se violate.
+La soglia ranking (800 ms) e' calibrata sulla baseline osservata su 100k righe
+(~640-690 ms p95); resta un endpoint lento, il fix e' un task separato.
 
 ## Osservabilita'
 
 - k6: `http_req_duration` p95/p99, `http_req_failed`, RPS, metriche `ws_*`.
+- Report automatico: `loadtest-output/<scenario>-<ts>/summary.md` (vedi 4b).
 - Supabase Dashboard: Reports DB (CPU, connessioni, IOPS) e Realtime (client,
   messaggi/s).
 - SQL: `pg_stat_activity`, `pg_stat_statements`.

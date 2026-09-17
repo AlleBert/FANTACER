@@ -72,6 +72,29 @@ export function adminClient({ url, key }) {
   })
 }
 
+export const POOLER_HOST = 'aws-1-eu-west-1.pooler.supabase.com'
+
+/**
+ * Connection string Postgres per il sampler di monitoraggio.
+ * Passa dalla session pooler (IPv4): la connessione diretta e' IPv6-only e su
+ * WSL/reti senza IPv6 non funziona. Override opzionale con LOADTEST_DB_URL.
+ */
+export function loadE2eDbUrl() {
+  const explicit = process.env.LOADTEST_DB_URL
+  if (explicit) {
+    if (explicit.includes('zdfverdwdsigizxktilz')) {
+      fail('LOADTEST_DB_URL punta a production: rifiutato.')
+    }
+    return explicit
+  }
+  const e2e = readEnvFile('.env.e2e')
+  guardHost(e2e.NEXT_PUBLIC_SUPABASE_URL, E2E_HOST, 'fantacer-e2e (.env.e2e)')
+  if (!e2e.SUPABASE_DB_PASSWORD) fail('SUPABASE_DB_PASSWORD mancante in .env.e2e')
+  const ref = E2E_HOST.split('.')[0]
+  const pw = encodeURIComponent(e2e.SUPABASE_DB_PASSWORD)
+  return `postgresql://postgres.${ref}:${pw}@${POOLER_HOST}:5432/postgres`
+}
+
 export function readState() {
   if (!existsSync(STATE_FILE)) return null
   try {

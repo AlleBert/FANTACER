@@ -104,3 +104,4 @@ tests/e2e/responsive-structural/
 # load test state (seed/cleanup)
 /.loadtest/
 /.env.load
+/loadtest-output/

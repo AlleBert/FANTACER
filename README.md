@@ -498,10 +498,13 @@ database reale non-production, per misurare latenze, picchi e punto di rottura.
 ```bash
 npm run loadtest:seed                 # import company + 100k voti sintetici, stampa RUN_ID
 npm run load:browser                  # valida i path browser reali (LOAD_BASE_URL)
-BASE_URL=http://<app> RUN_ID=<id> npm run load:smoke
-BASE_URL=http://<app> RUN_ID=<id> npm run load:baseline   # rampa 0 -> 500
+BASE_URL=http://<app> RUN_ID=<id> npm run load:run -- smoke
+BASE_URL=http://<app> RUN_ID=<id> npm run load:run -- baseline   # rampa 0 -> 500 + report DB
 npm run loadtest:cleanup              # OBBLIGATORIO a fine sessione
 ```
+
+`load:run` avvia un sampler DB automatico e produce
+`loadtest-output/<scenario>-<ts>/summary.md` (k6 + delta DB allineati).
 
 > Il load test condivide `fantacer-e2e` con le suite E2E: va eseguito in una
 > **finestra esclusiva** (nessun E2E/CI/visual audit in corso) e chiuso **sempre**
@@ -605,6 +608,7 @@ Il sistema funziona come rete di sicurezza contro:
 | `npm run loadtest:seed` | Load test: importa le company da production (read-only) + genera voti sintetici su `fantacer-e2e` |
 | `npm run loadtest:cleanup` | Load test: rimuove seed/load e ripristina `active_batch` (obbligatorio a fine sessione) |
 | `npm run load:smoke\|baseline\|spike\|soak\|realtime` | Scenari k6 (richiedono `BASE_URL`; `realtime` anche `SUPABASE_ANON_KEY` + `REALTIME_URL`) |
+| `npm run load:run` | Wrapper con monitoraggio DB automatico: `npm run load:run -- baseline` → `loadtest-output/<scenario>-<ts>/summary.md` |
 | `npm run load:browser` | Mini-run Playwright sui path browser reali (`playwright.load.config.ts`) |
 
 ---

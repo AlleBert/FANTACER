@@ -39,6 +39,7 @@
     "load:spike": "k6 run -e BASE_URL=${BASE_URL:-http://localhost:3000} -e RUN_ID=${RUN_ID:-manual} -e PEAK=${PEAK:-50} -e BASE_RATE=${BASE_RATE:-5} tests/load/scenarios/spike.js",
     "load:soak": "k6 run -e BASE_URL=${BASE_URL:-http://localhost:3000} -e RUN_ID=${RUN_ID:-manual} -e VUS=${VUS:-250} -e DURATION=${DURATION:-30m} -e SLEEP_MS=${SLEEP_MS:-30000} tests/load/scenarios/soak.js",
     "load:realtime": "k6 run -e BASE_URL=${BASE_URL:-http://localhost:3000} -e RUN_ID=${RUN_ID:-manual} -e VUS=${VUS:-500} -e REALTIME_URL=${REALTIME_URL:-} -e SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-} tests/load/scenarios/realtime.js",
+    "load:run": "node scripts/loadtest/run-scenario.mjs",
     "load:browser": "playwright test --config=playwright.load.config.ts"
   },
   "dependencies": {
@@ -86,6 +87,7 @@
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "jsdom": "^29.1.1",
+    "pg": "^8.23.0",
     "qrcode-terminal": "^0.12.0",
     "react-scan": "^0.5.7",
     "shadcn": "^4.3.0",
