@@ -115,6 +115,27 @@ LOAD_BASE_URL=http://<IP-SERVER>:3000 npm run load:browser
 
 `LOAD_BROWSER_SESSIONS` (default 5) controlla il numero di contesti concorrenti.
 
+### 3b. Budget delle richieste (before/after client-side)
+
+`request-budget.spec.ts` conta le richieste API per sessione e le salva in
+`loadtest-output/browser-<ts>/requests.json` (gitignored). Verifica i guadagni
+client-side che k6 non vede:
+
+- `SponsorCards` montato 3× ma **1 sola** fetch `/api/public/sponsors` per
+  pageview (cache condivisa in `src/lib/sponsors.ts`);
+- polling `/api/public/ranking` ogni **30s** (pre-branch 10s) e heartbeat ogni
+  **90s** (pre-branch 30s);
+- una sola WebSocket per scheda.
+
+```bash
+LOAD_BASE_URL=http://<IP-SERVER>:3000 npm run load:browser:budget
+# test lento (~95s) su heartbeat/cadenze:
+LOAD_OBSERVE_LONG=1 LOAD_BASE_URL=http://<IP-SERVER>:3000 npm run load:browser:budget
+```
+
+Env: `LOAD_BROWSER_SESSIONS` (default 3), `LOAD_OBSERVE_MS` (default 35000).
+Le assert sono budget con slack → sono anche un guard di non-regressione.
+
 ## 4. Scenari k6
 
 Tutti dal portatile, in LAN:
@@ -235,6 +256,12 @@ L'indice `idx_vote_sessions_fingerprint_pattern` (`fingerprint text_pattern_ops`
 migration `20260917000001`) rende usabile l'indice per i `LIKE 'prefisso%'`
 selettivi (per prefissi quasi totali come `seed-loadtest-%` la Seq Scan resta
 comunque la scelta ottimale).
+
+La migration `20260918000000_atomic_vote_dedup.sql` (colonna generata `vote_day`
+UTC + indice unico `(fingerprint, vote_day)`) è **applicata a e2e** e **pendente
+su production**. Non rompe seed/load: i fingerprint sintetici sono unici
+(`seed-loadtest-<n>`, `loadtest-<runid>-*`), quindi l'indice non blocca gli
+insert; i 409 del dedup restano attesi e vanno conteggiati a parte in k6.
 
 ## Guardrail
 

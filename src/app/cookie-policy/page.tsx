@@ -6,7 +6,10 @@ import type { DictionaryKey } from '@/i18n/dictionary'
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLegalLocale()
-  return { title: `${dictionaries[locale]['cookiePolicy.title']} — FANTACER` }
+  return {
+    title: `${dictionaries[locale]['cookiePolicy.title']} — FANTACER`,
+    alternates: { canonical: '/cookie-policy' },
+  }
 }
 
 const TABLE_HEADERS = ['cookiePolicy.tableCookie', 'cookiePolicy.tablePurpose', 'cookiePolicy.tableDuration', 'cookiePolicy.tableProvider'] as const

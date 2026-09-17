@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import { SponsorCards } from '@/components/sponsor/sponsor-cards'
+import { resetSponsorsCache } from '@/lib/sponsors'
 
 jest.mock('next/image', () => ({
   __esModule: true,
@@ -16,12 +17,14 @@ const BASE = [
 const mockFetch = jest.fn()
 
 beforeEach(() => {
+  resetSponsorsCache()
   mockFetch.mockResolvedValue({ ok: true, json: async () => ({ sponsors: BASE }) } as Response)
   global.fetch = mockFetch as unknown as typeof fetch
 })
 
 afterEach(() => {
   mockFetch.mockReset()
+  resetSponsorsCache()
   delete (global as { fetch?: unknown }).fetch
 })
 

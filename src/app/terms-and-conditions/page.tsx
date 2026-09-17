@@ -5,7 +5,10 @@ import { getLegalLocale, makeLegalT } from '@/lib/legal'
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLegalLocale()
-  return { title: `${dictionaries[locale]['terms.title']} — FANTACER` }
+  return {
+    title: `${dictionaries[locale]['terms.title']} — FANTACER`,
+    alternates: { canonical: '/terms-and-conditions' },
+  }
 }
 
 const PARTICIPATION_REQUIREMENTS = [

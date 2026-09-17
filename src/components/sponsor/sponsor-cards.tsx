@@ -3,14 +3,7 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-
-interface Sponsor {
-  id: string;
-  name: string;
-  image_url: string | null;
-  website_url: string | null;
-  has_stand: boolean;
-}
+import { loadSponsors, type Sponsor } from '@/lib/sponsors';
 
 export type SponsorCardsVariant = 'default' | 'compact' | 'large';
 
@@ -73,14 +66,10 @@ export function SponsorCards({
 
   useEffect(() => {
     let active = true;
-    fetch('/api/public/sponsors')
-      .then((res) => res.json())
+    loadSponsors(refreshKey !== undefined && refreshKey !== null)
       .then((data) => {
         if (!active) return;
-        setSponsors(data.sponsors || []);
-      })
-      .catch(() => {
-        if (active) setSponsors([]);
+        setSponsors(data);
       })
       .finally(() => {
         if (active) setIsLoading(false);

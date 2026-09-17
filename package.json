@@ -41,7 +41,8 @@
     "load:soak": "k6 run -e BASE_URL=${BASE_URL:-http://localhost:3000} -e RUN_ID=${RUN_ID:-manual} -e VUS=${VUS:-250} -e DURATION=${DURATION:-30m} -e SLEEP_MS=${SLEEP_MS:-30000} tests/load/scenarios/soak.js",
     "load:realtime": "k6 run -e BASE_URL=${BASE_URL:-http://localhost:3000} -e RUN_ID=${RUN_ID:-manual} -e VUS=${VUS:-500} -e REALTIME_URL=${REALTIME_URL:-} -e SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-} tests/load/scenarios/realtime.js",
     "load:run": "node scripts/loadtest/run-scenario.mjs",
-    "load:browser": "playwright test --config=playwright.load.config.ts"
+    "load:browser": "playwright test --config=playwright.load.config.ts",
+    "load:browser:budget": "playwright test --config=playwright.load.config.ts tests/load/browser/request-budget.spec.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.0",

@@ -90,11 +90,11 @@ comportamento e comandi di verifica: `docs/realtime.md`.
   per scheda**, canali multiplexati. Non passare `isSingleton: false`, non creare
   client in loop.
 - Canali: `realtime-ranking-tick` (refcounted via `useRankingTick`, evento
-  `ranking_tick`, debounce 500ms) e `realtime-voting-flag` (`site_settings`,
-  `key=eq.voting_enabled`).
+  `ranking_tick`, debounce `RANKING_DEBOUNCE_MS` 2000ms + jitter 0-1000ms) e
+  `realtime-voting-flag` (`site_settings`, `key=eq.voting_enabled`).
 - `realtimeActive` è `true` **solo** dopo la consegna reale di un evento (mai dal
   solo `SUBSCRIBED`): finché è `false` la classifica fa polling di fallback ogni
-  **10s**, poi si ferma.
+  **30s** (`PALLETS_POLLING_MS`), poi si ferma.
 - **Visibilità**: canali chiusi quando la scheda va in background, ri-sottoscritti
   al ritorno con refetch di catch-up.
 - Ogni modifica va coperta da unit test (`tests/components/realtime`,
@@ -104,11 +104,30 @@ comportamento e comandi di verifica: `docs/realtime.md`.
   toolbar di `react-scan` (`#react-scan-root`) e fallisce su `button-name`: è un
   falso positivo dev (su CI con `npm run start` non compare).
 
+## Performance & caching (homepage e API pubbliche) — invarianti
+
+- La **homepage** (`/`) è **statica** (prerenderizzata): il root layout **non**
+  deve leggere `cookies()`/`headers()`. Il locale è risolto client-side da
+  `LocaleProvider` (cookie sticky impostato dal proxy). Reintrodurre API dinamiche
+  nel layout riporta `/` in SSR a ogni richiesta. Verifica dopo `npm run build`:
+  `/` deve comparire in `.next/prerender-manifest.json`.
+- Le **GET pubbliche** (`/api/public/ranking`, `/sponsors`, `/batch`, `flag/*`)
+  devono restituire `Cache-Control` con `s-maxage` + `stale-while-revalidate`:
+  la maggior parte delle richieste è servita dal CDN. Non rimuovere quegli header
+  e non rendere queste route dipendenti dalla request (perderebbero la cache).
+- Il **proxy** (`src/proxy.ts`) copre pagine + `/api/admin` + `/api/analytics`:
+  le API pubbliche sono escluse dal matcher (evita una doppia function invocation
+  per chiamata). Il flag `coming_soon` è cachato in-memory con TTL 15s.
+- Sponsor: fetch condivisa a livello modulo (`src/lib/sponsors.ts`) → una sola
+  richiesta per pageview anche con `SponsorCards` montato più volte.
+- Il polling cacheato è il **percorso primario** quando il realtime non è attivo
+  (cap Free ~200 connessioni): non renderlo più aggressivo senza motivo.
+
 ## Esecuzione test su hardware limitato (PC dev)
 
 La macchina di sviluppo ha RAM limitata (~3.7GiB, WSL2) e **si blocca se la suite e2e completa viene lanciata tutta insieme**. Regole vincolanti:
 
-- **Mai `npm run test:e2e` nudo**: è un'operazione da CI (tutti gli spec × 11 progetti; il gating runtime via `test.skip` riduce le esecuzioni effettive ma `--list` continua a mostrare 1672 test listed). In locale satura la RAM. Usa sempre i **batch dedicati**:
+- **Mai `npm run test:e2e` nudo**: è un'operazione da CI (tutti gli spec × 11 progetti; il gating runtime via `test.skip` riduce le esecuzioni effettive ma `--list` continua a mostrare 1925 test listed). In locale satura la RAM. Usa sempre i **batch dedicati**:
   - `npm run e2e:gate` — `responsive-structural` + `voting-flow` su `chromium` + `mobile-webkit` (gate P0)
   - `npm run e2e:home` — `homepage`, `legal-pages`, `smoke`, `scroll-blocking`, `accessibility` su `chromium`
   - `npm run e2e:admin` — `admin`, `admin-auth`, `admin-sponsor`, `viewer`, `repro-phantom-500` su `chromium`
@@ -219,6 +238,11 @@ database reale non-production. Runbook completo: `docs/load-testing.md`.
   Preferirlo ai `load:*` semplici. Output in `loadtest-output/` (gitignored).
 - `npm run load:browser` — mini-run Playwright (`playwright.load.config.ts`, senza
   webServer/globalSetup e senza la guardia E2E di `playwright.config.ts`).
+- `npm run load:browser:budget` — budget richieste per sessione (sponsor 1 fetch,
+  polling 30s, heartbeat 90s, 1 WebSocket) in
+  `tests/load/browser/request-budget.spec.ts`; output
+  `loadtest-output/browser-<ts>/requests.json`. Env: `LOAD_BASE_URL`,
+  `LOAD_BROWSER_SESSIONS`, `LOAD_OBSERVE_MS`, `LOAD_OBSERVE_LONG=1` (test ~95s).
 
 ### Vincoli tecnici
 
@@ -236,6 +260,13 @@ database reale non-production. Runbook completo: `docs/load-testing.md`.
   `scripts/loadtest/sql/rollback_company_totals.sql`.
   Snapshot di sicurezza prima di migrazioni:
   `node scripts/loadtest/db-snapshot.mjs` → `backups/e2e-<ts>.json` (read-only).
+- Dedup atomico del voto: migration `20260918000000_atomic_vote_dedup.sql`
+  (colonna generata `vote_day` UTC + indice unico `(fingerprint, vote_day)` +
+  `submit_vote` che gestisce `unique_violation`). **Applicata a e2e** (verificata:
+  10 submit concorrenti → 1 successo / 9 "Hai già votato oggi", cleanup ok),
+  **pendente su production**. Un `db push` su prod applica **entrambe**
+  `20260917000001` e `20260918000000`. Fail-safe: se esistono duplicati
+  `(fingerprint, vote_day)` la migrazione si interrompe senza cancellare dati.
 - Le operazioni massive (seed/cleanup/migrazioni) **non** devono passare da
   PostgREST: il ruolo `authenticator` ha `statement_timeout=8s` (verificato) e una
   DELETE su 100k righe viene cancellata. `cleanup.mjs` e `db-snapshot.mjs` usano

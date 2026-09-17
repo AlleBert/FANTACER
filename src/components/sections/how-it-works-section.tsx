@@ -51,14 +51,14 @@ export function HowItWorksSection() {
           {t('howItWorks.title.line1')} {t('howItWorks.title.line2')}
           <span className="relative grid grid-cols-[1.1rem_0.9rem] items-end justify-items-center -mt-2">
             <Image
-              src="/star-decoration.svg"
+              src="/star-decoration.webp"
               alt=""
               width={83}
               height={82}
               className="w-10 h-10 md:w-14 md:h-14 lg:w-[60px] lg:h-[60px] object-contain relative z-10 rotate-12 scale-95 max-w-none"
             />
             <Image
-              src="/star-decoration-alt.svg"
+              src="/star-decoration-alt.webp"
               alt=""
               width={81}
               height={79}

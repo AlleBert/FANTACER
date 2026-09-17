@@ -13,8 +13,13 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['@/components/ui', 'lucide-react'],
   },
   images: {
-    formats: ['image/avif', 'image/webp'],
-    deviceSizes: [640, 768, 1024, 1280, 1536],
+    // WebP prima di AVIF: resa equivalente sugli asset del sito, encoding molto
+    // meno costoso in CPU sull'image optimizer (rilevante sotto picco).
+    formats: ['image/webp', 'image/avif'],
+    // Default Next = 60s: i loghi sponsor e le foto su Supabase Storage cambiano
+    // raramente, quindi 31 giorni evitano ritrasformazioni continue.
+    minimumCacheTTL: 60 * 60 * 24 * 31,
+    deviceSizes: [96, 128, 256, 384, 640, 768, 1024, 1280, 1536],
     remotePatterns: [
       {
         protocol: 'https',

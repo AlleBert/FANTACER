@@ -26,9 +26,15 @@ import { safeOnPostgresChanges, safeSubscribe } from '@/lib/supabase/realtime';
  * visibile i canali vengono ri-sottoscritti e il flag viene ri-fetchato
  * (catch-up); i consumer ri-fetchano la classifica reagendo a `visible`.
  */
-const RANKING_DEBOUNCE_MS = 500;
+export const RANKING_DEBOUNCE_MS = 2000;
+export const RANKING_DEBOUNCE_JITTER_MS = 1000;
 const VOTING_FLAG_CHANNEL = 'realtime-voting-flag';
 const RANKING_TICK_CHANNEL = 'realtime-ranking-tick';
+
+/** Debounce + jitter: evita che tutti i client refetchino nello stesso istante. */
+function rankingDebounceDelay(): number {
+  return RANKING_DEBOUNCE_MS + Math.floor(Math.random() * RANKING_DEBOUNCE_JITTER_MS);
+}
 
 interface RealtimeContextType {
   votingEnabled: boolean;
@@ -126,7 +132,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
         debounceRef.current = setTimeout(() => {
           setRankingVersion((v) => v + 1);
           setRealtimeActive(true);
-        }, RANKING_DEBOUNCE_MS);
+        }, rankingDebounceDelay());
       },
     );
     if (!channel) return;

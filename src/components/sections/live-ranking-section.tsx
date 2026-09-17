@@ -18,7 +18,10 @@ import {
 } from '@/lib/ranking';
 import { cn } from '@/lib/utils';
 
-const PALLETS_POLLING_MS = 10000;
+// Polling di fallback per i client senza realtime attivo (es. oltre il limite
+// di connessioni Realtime). Il CDN cachea `/api/public/ranking` (s-maxage 3s),
+// quindi 30s per client è sufficiente e riduce di 3x le invocazioni.
+export const PALLETS_POLLING_MS = 30000;
 
 function getInitialOpen(): Record<Cluster, boolean> {
   return { TOP20: true, GOLD: false, SILVER: false, BRONZE: false };
