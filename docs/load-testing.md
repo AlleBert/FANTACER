@@ -136,8 +136,19 @@ in piu':
 ```bash
 SUPABASE_ANON_KEY=<e2e-anon> \
 REALTIME_URL=wss://<e2e-ref>.supabase.co/realtime/v1/websocket \
+VUS=250 RAMP=30s HOLD=30s DOWN=10s HOLD_SECONDS=30 \
 npm run load:realtime
 ```
+
+Lo scenario realtime e' configurabile: `RAMP`/`HOLD`/`DOWN` (default `1m`/`5m`/`30s`),
+`HOLD_SECONDS` (durata connessione per VU, default 300), `FAIL_BACKOFF_S`
+(pausa dopo un tentativo fallito, default 1s). Con i valori qui sopra dura
+~1,5 min, sufficiente perche' il cap di connessioni si manifesta durante la rampa.
+
+Metriche utili: `realtime_connect_success` / `realtime_join_success` (Rate, devono
+restare > 0.95), `realtime_join_ok` / `realtime_connect_failures` /
+`realtime_join_failures` (Counter), `ws_connecting` (p95). Su piano Free il cap e'
+~200 connessioni: oltre, le Rate crollano e `ws_connecting` sale.
 
 ## 4b. Monitoraggio DB automatico (`load:run`)
 

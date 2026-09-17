@@ -183,12 +183,31 @@ async function main() {
   if (!ready) log('warning: pgss-before.json non comparso, proseguo')
 
   log('avvio k6...')
+  const forward = [
+    'VUS',
+    'RAMP',
+    'HOLD',
+    'DOWN',
+    'HOLD_SECONDS',
+    'FAIL_BACKOFF_S',
+    'PEAK',
+    'BASE_RATE',
+    'DURATION',
+    'SLEEP_MS',
+    'RANKING_POLL_MS',
+    'REALTIME_URL',
+    'SUPABASE_ANON_KEY',
+  ]
+  const envArgs = forward
+    .filter((k) => process.env[k] !== undefined && process.env[k] !== '')
+    .flatMap((k) => ['-e', `${k}=${process.env[k]}`])
   const k6 = await spawnAsync('k6', [
     'run',
     '-e',
     `BASE_URL=${BASE_URL}`,
     '-e',
     `RUN_ID=${RUN_ID}`,
+    ...envArgs,
     '--out',
     `csv=${outDir}/k6.csv`,
     '--summary-trend-stats',
