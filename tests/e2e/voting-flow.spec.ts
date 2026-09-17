@@ -49,7 +49,7 @@ test.describe('Voting Flow', () => {
     await expect(badges).toBeVisible({ timeout: 10000 });
   });
 
-  test('sponsor cards stay within the success section bounds at mobile', async ({ page }) => {
+  test('sponsor cards stay within their section bounds at mobile', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/');
     await addCompany(page, 'Test Co');
@@ -60,10 +60,13 @@ test.describe('Voting Flow', () => {
     await expect(inviaButton).toBeEnabled();
     await inviaButton.click();
 
+    // Il voto è andato a buon fine…
     await page.waitForSelector('[data-section="success"]', { timeout: 15000 });
-    await page.waitForSelector('[data-section="success"] [style*="--sponsor-size"]', { timeout: 15000 });
+    // …e le sponsor card (sezione public-ranking, non più dentro success) non
+    // devono eccedere i bordi della loro sezione.
+    await page.waitForSelector('[data-section="public-ranking"] [style*="--sponsor-size"]', { timeout: 15000 });
 
-    const overflows = await page.locator('[data-section="success"]').evaluate((section) => {
+    const overflows = await page.locator('[data-section="public-ranking"]').evaluate((section) => {
       const sr = section.getBoundingClientRect();
       const offenders: { text: string; overflowBy: number; axis: string }[] = [];
       const cards = Array.from(section.querySelectorAll<HTMLElement>('a, div')).filter((el) =>
