@@ -222,10 +222,11 @@ database reale non-production. Runbook completo: `docs/load-testing.md`.
   portatile in LAN. Il server app è self-hosted (`next start`): **non** copre Vercel
   (cold start, autoscaling).
 - Server casa 2 core/8GB: regge 500 VU HTTP/DB con p95 < 180ms e CPU < 1 core;
-  il muro reale è il **Realtime del piano Free (~200 connessioni)**. Una scheda può
-  tenere **2 connessioni** (`live-ranking-section.tsx` crea due client) → ~100-200
-  visitatori. Per la fiera (~500) serve **Supabase Pro**. Dettagli e misure in
-  `docs/load-testing-report.md`.
+  il muro reale è il **Realtime del piano Free (~200 connessioni)**. Una scheda
+  apre **1 connessione** (`@supabase/ssr` `createBrowserClient` è singleton nel
+  browser: tutti i canali — classifica, flag voto, ricerca — sono multiplexati
+  sulla stessa socket) → ~200 schede/visitatori. Per la fiera (~500) serve
+  **Supabase Pro**. Dettagli e misure in `docs/load-testing-report.md`.
 - k6 **non** è in CI: `tests/load/**/*.js` è escluso da ESLint (`__ENV`, moduli
   `k6/*`). Non aggiungere gli scenari k6 a `npm run test:e2e`.
 - **Preflight DNS obbligatorio** su portatile e server app: un resolver lento

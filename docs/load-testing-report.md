@@ -132,10 +132,15 @@ Run a 500 VU (866 s, 25.301 richieste) — endpoint p95: **vote 302 ms**,
 Il punto di rottura è **tra 150 e 250**, coerente con il cap di ~200 connessioni
 del piano Free. Il DB resta ininfluente (0 lock, 0 rollback).
 
-**Nota importante sull'app**: una singola scheda può tenere **fino a 2 connessioni
-Realtime** (`live-ranking-section.tsx` crea due client: canale classifica + canale
-flag voto). Quindi il tetto di ~200 connessioni vale ~**100–200 visitatori
-simultanei** a seconda di quanti guardano la classifica.
+**Nota importante sull'app**: una singola scheda apre **1 sola connessione
+Realtime**, indipendentemente da quanti componenti si sottoscrivono.
+`@supabase/ssr` (v0.10.2) rende `createBrowserClient` un **singleton nel browser**
+(`node_modules/@supabase/ssr/dist/main/createBrowserClient.js:9,54`), quindi le
+chiamate in `live-ranking-section.tsx` (canale classifica + canale flag voto) e in
+`search-section.tsx` condividono lo **stesso** client → **una sola WebSocket**. I
+canali sono multiplexati sulla stessa connessione (Supabase: fino a 100 canali per
+connessione). Quindi il tetto di ~200 connessioni vale ~**200 schede/visitatori**
+con la pagina aperta (anche in background), non ~100.
 
 Cosa succede oltre il tetto: la classifica **continua a funzionare** e resta
 corretta, ma per i client non collegati si aggiorna **ogni 30 s** (fallback di
