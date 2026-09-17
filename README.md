@@ -498,6 +498,7 @@ database reale non-production, per misurare latenze, picchi e punto di rottura.
 ```bash
 npm run loadtest:seed                 # import company + 100k voti sintetici, stampa RUN_ID
 npm run load:browser                  # valida i path browser reali (LOAD_BASE_URL)
+npm run load:browser:budget           # budget richieste per sessione (before/after client-side)
 BASE_URL=http://<app> RUN_ID=<id> npm run load:run -- smoke
 BASE_URL=http://<app> RUN_ID=<id> npm run load:run -- baseline   # rampa 0 -> 500 + report DB
 npm run loadtest:cleanup              # OBBLIGATORIO a fine sessione
@@ -613,6 +614,7 @@ Il sistema funziona come rete di sicurezza contro:
 | `npm run load:smoke\|baseline\|spike\|soak\|realtime` | Scenari k6 (richiedono `BASE_URL`; `realtime` anche `SUPABASE_ANON_KEY` + `REALTIME_URL`) |
 | `npm run load:run` | Wrapper con monitoraggio DB automatico: `npm run load:run -- baseline` → `loadtest-output/<scenario>-<ts>/summary.md` |
 | `npm run load:browser` | Mini-run Playwright sui path browser reali (`playwright.load.config.ts`) |
+| `npm run load:browser:budget` | Budget richieste per sessione (`tests/load/browser/request-budget.spec.ts`) → `loadtest-output/browser-<ts>/requests.json` |
 
 ---
 

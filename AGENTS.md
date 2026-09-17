@@ -238,6 +238,11 @@ database reale non-production. Runbook completo: `docs/load-testing.md`.
   Preferirlo ai `load:*` semplici. Output in `loadtest-output/` (gitignored).
 - `npm run load:browser` — mini-run Playwright (`playwright.load.config.ts`, senza
   webServer/globalSetup e senza la guardia E2E di `playwright.config.ts`).
+- `npm run load:browser:budget` — budget richieste per sessione (sponsor 1 fetch,
+  polling 30s, heartbeat 90s, 1 WebSocket) in
+  `tests/load/browser/request-budget.spec.ts`; output
+  `loadtest-output/browser-<ts>/requests.json`. Env: `LOAD_BASE_URL`,
+  `LOAD_BROWSER_SESSIONS`, `LOAD_OBSERVE_MS`, `LOAD_OBSERVE_LONG=1` (test ~95s).
 
 ### Vincoli tecnici
 

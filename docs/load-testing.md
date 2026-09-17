@@ -115,6 +115,27 @@ LOAD_BASE_URL=http://<IP-SERVER>:3000 npm run load:browser
 
 `LOAD_BROWSER_SESSIONS` (default 5) controlla il numero di contesti concorrenti.
 
+### 3b. Budget delle richieste (before/after client-side)
+
+`request-budget.spec.ts` conta le richieste API per sessione e le salva in
+`loadtest-output/browser-<ts>/requests.json` (gitignored). Verifica i guadagni
+client-side che k6 non vede:
+
+- `SponsorCards` montato 3× ma **1 sola** fetch `/api/public/sponsors` per
+  pageview (cache condivisa in `src/lib/sponsors.ts`);
+- polling `/api/public/ranking` ogni **30s** (pre-branch 10s) e heartbeat ogni
+  **90s** (pre-branch 30s);
+- una sola WebSocket per scheda.
+
+```bash
+LOAD_BASE_URL=http://<IP-SERVER>:3000 npm run load:browser:budget
+# test lento (~95s) su heartbeat/cadenze:
+LOAD_OBSERVE_LONG=1 LOAD_BASE_URL=http://<IP-SERVER>:3000 npm run load:browser:budget
+```
+
+Env: `LOAD_BROWSER_SESSIONS` (default 3), `LOAD_OBSERVE_MS` (default 35000).
+Le assert sono budget con slack → sono anche un guard di non-regressione.
+
 ## 4. Scenari k6
 
 Tutti dal portatile, in LAN:
