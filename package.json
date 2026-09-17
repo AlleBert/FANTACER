@@ -31,7 +31,15 @@
     "visual:audit:ios": "playwright test tests/e2e/visual-audit-homepage-ios.spec.ts --project=ios-se --project=ios-iphone --project=ios-pro-max --project=ios-ipad-portrait --workers=1",
     "visual:audit:ios:safearea": "VISUAL_IOS_MODAL=1 playwright test tests/e2e/visual-audit-homepage-ios-safearea.spec.ts --project=ios-se --project=ios-iphone --project=ios-pro-max --project=ios-ipad-portrait --workers=1",
     "visual:audit:ios:chrome": "VISUAL_IOS_MODAL=1 playwright test tests/e2e/visual-audit-homepage-ios-chrome.spec.ts --project=ios-se --project=ios-iphone --project=ios-pro-max --project=ios-ipad-portrait --workers=1",
-    "visual:audit:summary": "node scripts/generate-audit-summary.mjs"
+    "visual:audit:summary": "node scripts/generate-audit-summary.mjs",
+    "loadtest:seed": "node scripts/loadtest/seed.mjs",
+    "loadtest:cleanup": "node scripts/loadtest/cleanup.mjs",
+    "load:smoke": "k6 run -e BASE_URL=${BASE_URL:-http://localhost:3000} -e RUN_ID=${RUN_ID:-manual} tests/load/scenarios/smoke.js",
+    "load:baseline": "k6 run -e BASE_URL=${BASE_URL:-http://localhost:3000} -e RUN_ID=${RUN_ID:-manual} tests/load/scenarios/baseline.js",
+    "load:spike": "k6 run -e BASE_URL=${BASE_URL:-http://localhost:3000} -e RUN_ID=${RUN_ID:-manual} tests/load/scenarios/spike.js",
+    "load:soak": "k6 run -e BASE_URL=${BASE_URL:-http://localhost:3000} -e RUN_ID=${RUN_ID:-manual} tests/load/scenarios/soak.js",
+    "load:realtime": "k6 run -e BASE_URL=${BASE_URL:-http://localhost:3000} -e RUN_ID=${RUN_ID:-manual} tests/load/scenarios/realtime.js",
+    "load:browser": "playwright test --config=playwright.load.config.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.0",

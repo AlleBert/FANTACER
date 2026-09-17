@@ -142,3 +142,70 @@ Tool di sviluppo per lavorare alla UI della pagina di successo senza votare davv
 - Il CI serializza i job E2E con `concurrency: { group: e2e-suite, cancel-in-progress: false }` (dataset Supabase condiviso + seed/cleanup non idempotente): non rimuovere né parallelizzare i job E2E su CI.
 - Canary manuale su production dopo un run E2E (mai automatizzato, vedi `docs/CI.md`):
   verificare che `batch_settings.active_batch` e `site_settings` non siano cambiati.
+
+## Load test (k6) — invarianti
+
+Test di carico per simulare una sessione di fiera (~500 utenti concorrenti) su
+database reale non-production. Runbook completo: `docs/load-testing.md`.
+
+### Target e sicurezza (non negoziabile)
+
+- Le scritture del load test girano **solo** su `fantacer-e2e`
+  (`ookipybsnjtvdrzqzpsl`), mai su production.
+- Production si usa **solo in lettura** (`.env`), per importare le aziende del
+  batch attivo. Mai scrivere, mai alterare stato Admin su production.
+- `scripts/loadtest/lib.mjs` valida gli host con fail-fast (`PROD_HOST`/`E2E_HOST`):
+  `.env` → prod (read-only), `.env.e2e` → target di scrittura. **Non bypassare la guardia.**
+- La **CLI Supabase è linkata a production** (`zdfverdwdsigizxktilz`): ogni comando
+  `supabase` va eseguito con `--project-ref` o `--db-url` espliciti. Mai
+  `supabase db push` senza aver verificato il ref. Per ispezioni read-only usare
+  `supabase inspect db <cmd> --project-ref <ref>`.
+- Namespace righe: seed `seed-loadtest-*`, carico/heartbeat `loadtest-*`. Ogni riga
+  scritta deve essere rimossa dal cleanup.
+
+### Isolamento da E2E (stesso progetto Supabase)
+
+- E2E e load test **condividono `fantacer-e2e`**: l'isolamento è **procedurale**,
+  non architetturale.
+- **Finestra esclusiva**: nessun run E2E, CI o visual audit mentre gira un load
+  test. Il `concurrency: e2e-suite` di CI copre solo i job CI, non i run locali.
+- E2E `globalSetup` riporta `active_batch='TEST'` ma **non** rimuove i voti seed:
+  con i dati load presenti l'analytics summary E2E rallenta (legge tutte le
+  `vote_sessions`, `src/app/api/analytics/route.ts`).
+- **Cleanup obbligatorio** a fine sessione (`npm run loadtest:cleanup`), anche in
+  caso di errore. Lo stato è in `.loadtest/state.json` (gitignored).
+- Il re-seed **non deve** sovrascrivere `previousActiveBatch` se il batch coincide
+  (altrimenti il cleanup ripristina il batch sbagliato).
+
+### Comandi
+
+- `npm run loadtest:seed [-- --votes=N --run-id=ID --batch=B]` — importa le company
+  di prod (read-only, `image_url` azzerato) + genera voti sintetici + imposta
+  `active_batch`; stampa il `RUN_ID` da usare con k6.
+- `npm run loadtest:cleanup [-- --keep-companies]` — rimuove seed/load e ripristina
+  `active_batch`.
+- `npm run load:smoke|baseline|spike|soak|realtime` — scenari k6 (richiedono
+  `BASE_URL`; `realtime` anche `SUPABASE_ANON_KEY` + `REALTIME_URL`).
+- `npm run load:browser` — mini-run Playwright (`playwright.load.config.ts`, senza
+  webServer/globalSetup e senza la guardia E2E di `playwright.config.ts`).
+
+### Vincoli tecnici
+
+- Trigger `trg_bump_ranking_tick` su INSERT **e DELETE** di `vote_sessions`: seed e
+  cleanup da 100k righe generano 100k update su `ranking_tick`. Opzionale
+  `scripts/loadtest/sql/trigger.sql` (disable/enable dall'SQL Editor Supabase;
+  **riabilitare sempre** a fine operazione).
+- Turnstile è bypassato solo se `TURNSTILE_SECRET_KEY` è **assente**: non
+  impostarlo nell'ambiente di load (k6/Playwright non generano token reali).
+- Il generatore k6 gira su macchina separata dall'app (mai stessa CPU): il
+  portatile in LAN. Il server app è self-hosted (`next start`): **non** copre Vercel
+  (cold start, autoscaling).
+- Server casa 2 core/8GB: ai picchi l'app può essere CPU-bound; il muro atteso è il
+  piano Free di Supabase (Realtime max 200 connessioni).
+- k6 **non** è in CI: `tests/load/**/*.js` è escluso da ESLint (`__ENV`, moduli
+  `k6/*`). Non aggiungere gli scenari k6 a `npm run test:e2e`.
+
+### Dopo un test
+
+- Eseguire `npm run loadtest:cleanup` e verificare che
+  `batch_settings.active_batch` sia tornato al valore precedente.

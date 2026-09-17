@@ -483,6 +483,32 @@ Analisi **locale/on-demand** (non in CI). Richiede RAM sufficiente per build + s
 
 ---
 
+# Load Test (k6)
+
+Stress test per simulare una sessione di fiera (~500 utenti concorrenti) su
+database reale non-production, per misurare latenze, picchi e punto di rottura.
+
+- **Target**: `fantacer-e2e` (mai production). Production si usa **solo in lettura**
+  per importare le aziende del batch attivo.
+- **App sotto test**: container Docker self-hosted (`next start`) — vedi `Dockerfile`.
+- **Generatore**: k6 (HTTP/WebSocket) + mini-run Playwright per i path browser reali
+  (FingerprintJS, heartbeat, polling, IntersectionObserver).
+- **Runbook completo**: [`docs/load-testing.md`](docs/load-testing.md).
+
+```bash
+npm run loadtest:seed                 # import company + 100k voti sintetici, stampa RUN_ID
+npm run load:browser                  # valida i path browser reali (LOAD_BASE_URL)
+BASE_URL=http://<app> RUN_ID=<id> npm run load:smoke
+BASE_URL=http://<app> RUN_ID=<id> npm run load:baseline   # rampa 0 -> 500
+npm run loadtest:cleanup              # OBBLIGATORIO a fine sessione
+```
+
+> Il load test condivide `fantacer-e2e` con le suite E2E: va eseguito in una
+> **finestra esclusiva** (nessun E2E/CI/visual audit in corso) e chiuso **sempre**
+> con `npm run loadtest:cleanup`.
+
+---
+
 # Daily Workflow
 
 ## Nuova feature
@@ -576,6 +602,10 @@ Il sistema funziona come rete di sicurezza contro:
 | `npm run visual:audit:homepage` | Homepage Responsive Visual Audit — 6 viewport + sub-elementi + score |
 | `npm run visual:audit:ios` | iOS Safari Visual Audit — homepage su 7 dispositivi WebKit |
 | `npm run provision:e2e:admin` | Crea/aggiorna utente admin (Auth + `admin_users` + TOTP + QR SVG); `--role=viewer` per utenti read-only senza TOTP |
+| `npm run loadtest:seed` | Load test: importa le company da production (read-only) + genera voti sintetici su `fantacer-e2e` |
+| `npm run loadtest:cleanup` | Load test: rimuove seed/load e ripristina `active_batch` (obbligatorio a fine sessione) |
+| `npm run load:smoke\|baseline\|spike\|soak\|realtime` | Scenari k6 (richiedono `BASE_URL`; `realtime` anche `SUPABASE_ANON_KEY` + `REALTIME_URL`) |
+| `npm run load:browser` | Mini-run Playwright sui path browser reali (`playwright.load.config.ts`) |
 
 ---
 
@@ -647,5 +677,6 @@ Ogni fase è stata costruita per risolvere un problema reale emerso durante lo s
 | `tests/e2e/accessibility.spec.ts` | Violazioni WCAG permesse per route |
 | `tests/e2e/scroll-blocking-test-plan.md` | Test plan scroll blocking bug fix |
 | `docs/visual-audit.md` | Visual Quality Audit — workflow e formato report |
+| `docs/load-testing.md` | Load test k6 — runbook, SLO, guardrail, cleanup |
 | `lighthouserc.json` | Configurazione Lighthouse |
 | `.env.example` | Variabili d'ambiente richieste e opzionali |

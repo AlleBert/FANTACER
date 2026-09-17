@@ -35,6 +35,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.load.example
 
 # vercel
 .vercel
@@ -99,3 +100,7 @@ tests/e2e/responsive-structural/
 
 # TOTP QR provisioning output
 .qr/
+
+# load test state (seed/cleanup)
+/.loadtest/
+/.env.load

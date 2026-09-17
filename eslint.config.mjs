@@ -15,6 +15,8 @@ const eslintConfig = defineConfig([
     "backup-src/**",
     // Third-party tooling
     ".opencode/**",
+    // k6 load scripts (non-Next runtime: __ENV global, moduli k6/*)
+    "tests/load/**/*.js",
   ]),
   {
     rules: {
