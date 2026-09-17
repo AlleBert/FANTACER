@@ -11,6 +11,7 @@
 export const BASE_URL = (__ENV.BASE_URL || 'http://localhost:3000').replace(/\/$/, '')
 export const RUN_ID = __ENV.RUN_ID || 'manual'
 export const SLEEP_MS = Number(__ENV.SLEEP_MS || 30000)
+export const RANKING_POLL_MS = Number(__ENV.RANKING_POLL_MS || 30000)
 export const REALTIME_URL = __ENV.REALTIME_URL || ''
 export const SUPABASE_ANON_KEY = __ENV.SUPABASE_ANON_KEY || ''
 

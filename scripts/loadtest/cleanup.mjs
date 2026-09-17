@@ -56,6 +56,16 @@ async function restoreBatch() {
   log(`active_batch ripristinato: '${current}' -> '${previousActiveBatch}'`)
 }
 
+/** Riallinea i contatori della classifica dopo le cancellazioni massive. */
+async function recomputeTotals() {
+  const { error } = await e2eDb.rpc('recompute_company_totals')
+  if (error) {
+    log(`recompute_company_totals non disponibile (${error.message}): i contatori restano quelli del trigger`)
+  } else {
+    log('company_totals ricalcolati')
+  }
+}
+
 async function main() {
   log('target: fantacer-e2e (write)')
   if (!state) log('nessuno stato .loadtest/state.json: uso i prefissi e --previous/--batch espliciti')
@@ -83,6 +93,7 @@ async function main() {
     log('company importate mantenute (--keep-companies)')
   }
 
+  await recomputeTotals()
   await restoreBatch()
   clearState()
   log('cleanup completato')

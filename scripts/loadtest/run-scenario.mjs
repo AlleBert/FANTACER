@@ -93,13 +93,27 @@ function buildSummary({ k6, samples, pgssBefore, pgssAfter, exit, startedAt, end
     const reqs = k6.metrics.http_reqs || {}
     const failed = k6.metrics.http_req_failed || {}
     const global = k6.metrics.http_req_duration || {}
+    const failRate = failed.value ?? failed.rate ?? 0
     L.push(`- richieste: ${num(reqs.count)}`)
-    L.push(`- error rate: ${pct(num(failed.rate))}`)
+    L.push(`- error rate: ${pct(num(failRate))}`)
     L.push(`- globale: avg ${num(global.avg).toFixed(0)}ms | p95 ${num(global['p(95)']).toFixed(0)}ms | p99 ${num(global['p(99)']).toFixed(0)}ms`)
     const endpoints = Object.keys(k6.metrics).filter((k) => k.startsWith('http_req_duration{endpoint:'))
     for (const key of endpoints) {
       const e = k6.metrics[key]
       L.push(`- ${key.replace('http_req_duration{', '').replace('}', '')}: avg ${num(e.avg).toFixed(0)}ms | p95 ${num(e['p(95)']).toFixed(0)}ms | p99 ${num(e['p(99)']).toFixed(0)}ms`)
+    }
+    const breached = []
+    for (const [name, m] of Object.entries(k6.metrics)) {
+      if (!m || !m.thresholds) continue
+      for (const [th, isBreached] of Object.entries(m.thresholds)) {
+        if (isBreached) breached.push(`${name}  ${th}`)
+      }
+    }
+    if (breached.length) {
+      L.push('- threshold violate:')
+      for (const b of breached) L.push(`  - ${b}`)
+    } else {
+      L.push('- threshold: tutte rispettate')
     }
   } else {
     L.push('- summary k6 non disponibile')

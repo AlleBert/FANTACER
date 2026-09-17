@@ -1,6 +1,6 @@
 import http from 'k6/http'
 import { check, sleep } from 'k6'
-import { BASE_URL, RUN_ID, SLEEP_MS } from '../config.js'
+import { BASE_URL, RANKING_POLL_MS, RUN_ID, SLEEP_MS } from '../config.js'
 import { mulberry32, pickTriple, seedFromString, visitorId } from './data.js'
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' }
@@ -61,11 +61,14 @@ export function vote(companies, visitorIdValue) {
 
 /**
  * Sessione utente realistica, ripetuta per ogni iterazione del VU:
- * page load + voto al primo giro, poi heartbeat + polling ranking ogni `sleepMs`.
+ * page load + voto al primo giro, poi heartbeat ogni `sleepMs` e polling
+ * classifica ogni `RANKING_POLL_MS` (l'app reale smette di pollare quando il
+ * realtime e' attivo: qui e' un fallback conservativo).
  */
 export function runSession(companies, sleepMs = SLEEP_MS) {
   const id = visitorId(RUN_ID, `s${__VU}`)
   const rng = sessionRng()
+  const rankEvery = Math.max(1, Math.round(RANKING_POLL_MS / sleepMs))
 
   if (__ITER === 0) {
     pageLoad()
@@ -73,7 +76,7 @@ export function runSession(companies, sleepMs = SLEEP_MS) {
   }
 
   heartbeat(id)
-  ranking()
+  if (__ITER % rankEvery === 0) ranking()
   sleep(sleepMs / 1000)
 }
 

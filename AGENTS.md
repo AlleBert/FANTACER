@@ -195,10 +195,17 @@ database reale non-production. Runbook completo: `docs/load-testing.md`.
 
 ### Vincoli tecnici
 
-- Trigger `trg_bump_ranking_tick` su INSERT **e DELETE** di `vote_sessions`: seed e
-  cleanup da 100k righe generano 100k update su `ranking_tick`. Opzionale
+- `vote_sessions` ha **due** trigger per riga: `trg_bump_ranking_tick` (realtime)
+  e `trg_maintain_company_totals` (contatori classifica `company_totals`). Seed e
+  cleanup da 100k righe generano 100k update per trigger. Opzionale
   `scripts/loadtest/sql/trigger.sql` (disable/enable dall'SQL Editor Supabase;
-  **riabilitare sempre** a fine operazione).
+  **riabilitare sempre** entrambi) e poi
+  `select public.recompute_company_totals()` per riallineare i contatori.
+- La classifica e' O(1) via `company_totals` (migration
+  `20260917000000_company_totals_ranking.sql`, solo su e2e finche' i test non
+  passano). Rollback manuale: `scripts/loadtest/sql/rollback_company_totals.sql`.
+  Snapshot di sicurezza prima di migrazioni:
+  `node scripts/loadtest/db-snapshot.mjs` → `backups/e2e-<ts>.json` (read-only).
 - Turnstile è bypassato solo se `TURNSTILE_SECRET_KEY` è **assente**: non
   impostarlo nell'ambiente di load (k6/Playwright non generano token reali).
 - Il generatore k6 gira su macchina separata dall'app (mai stessa CPU): il

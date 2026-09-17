@@ -38,10 +38,27 @@ Cosa fa:
 
 Al termine stampa il `RUN_ID` da usare nei test k6.
 
-> **Trigger `ranking_tick`**: ogni insert/delete su `vote_sessions` bumpa
-> `ranking_tick`. Per il seed da 100k righe e' accettabile ma lento; per
-> velocizzare si puo' usare `scripts/loadtest/sql/trigger.sql` (disable/enable
-> dall'SQL Editor di Supabase). **Riabilitare sempre** il trigger a fine operazione.
+> **Trigger su `vote_sessions`**: ogni insert/delete aggiorna `ranking_tick`
+> (realtime) **e** `company_totals` (classifica). Per il seed da 100k righe e'
+> accettabile ma lento; per velocizzare si puo' usare
+> `scripts/loadtest/sql/trigger.sql` (disable/enable dall'SQL Editor di Supabase)
+> e poi **ricalcolare** con `select public.recompute_company_totals()`. Riabilitare
+> sempre entrambi i trigger a fine operazione.
+
+### Classifica O(1) — `company_totals`
+
+`get_company_ranking` aggregava tutte le `vote_sessions` a ogni chiamata
+(301k righe / 242k buffer a 100k voti, ~1,45 s): con polling/realtime saturava il
+percorso DB. La migration `20260917000000_company_totals_ranking.sql` introduce
+`company_totals` (pallet pesati 4/2/1 + conteggio sessioni) mantenuta dal trigger
+dedicato `trg_maintain_company_totals`, **separato** da `trg_bump_ranking_tick`.
+La lettura e' passata a **~1,9 ms di esecuzione DB** (da ~1.450 ms).
+
+- `recompute_company_totals()`: ricalcolo completo (bulk/drift), eseguibile solo
+  da `service_role`; la chiamano `loadtest:seed` e `loadtest:cleanup`.
+- Rollback manuale: `scripts/loadtest/sql/rollback_company_totals.sql`.
+- Snapshot di sicurezza: `node scripts/loadtest/db-snapshot.mjs` →
+  `backups/e2e-<ts>.json` (read-only, tutte le tabelle `public`).
 
 ## 2. App sotto test (Docker sul server)
 

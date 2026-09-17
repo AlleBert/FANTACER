@@ -105,3 +105,4 @@ tests/e2e/responsive-structural/
 /.loadtest/
 /.env.load
 /loadtest-output/
+/backups/

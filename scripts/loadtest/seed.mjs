@@ -138,6 +138,16 @@ async function verifyRanking() {
   log(`get_company_ranking: ${Date.now() - t0} ms`)
 }
 
+/** Riallinea i contatori se i trigger sono stati disabilitati durante il bulk. */
+async function recomputeTotals() {
+  const { error } = await e2eDb.rpc('recompute_company_totals')
+  if (error) {
+    log(`recompute_company_totals non disponibile (${error.message}): i contatori restano quelli del trigger`)
+  } else {
+    log('company_totals ricalcolati')
+  }
+}
+
 async function main() {
   log('target: fantacer-e2e (write) | source: production (read-only)')
   const batch = await resolveBatch()
@@ -152,10 +162,11 @@ async function main() {
   log(`active_batch e2e: '${current}' -> '${batch}' (ripristino a '${previousActiveBatch}')`)
 
   log(
-    `ATTENZIONE: ogni insert/delete su vote_sessions bumpa ranking_tick (trigger). ` +
-      `Per 100k righe e' lento: opzionale disabilitare il trigger con scripts/loadtest/sql/trigger.sql.`,
+    `ATTENZIONE: ogni insert/delete su vote_sessions aggiorna ranking_tick e company_totals (trigger). ` +
+      `Per 100k righe e' lento: opzionale disabilitare i trigger con scripts/loadtest/sql/trigger.sql e poi ricalcolare.`,
   )
   const inserted = await seedVotes(ids)
+  await recomputeTotals()
   await verifyRanking()
 
   writeState({
