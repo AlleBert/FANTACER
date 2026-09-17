@@ -49,6 +49,7 @@ jest.mock('@/components/voting/liquid-fill-button', () => ({
   ),
 }))
 jest.mock('@/lib/vote-security', () => ({
+  getVisitorId: jest.fn().mockResolvedValue('v1'),
   getVoteSecurity: jest.fn().mockResolvedValue({
     turnstile_token: 'token',
     botd: '',

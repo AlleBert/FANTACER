@@ -42,12 +42,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: err('voteError.duplicateCompanies') }, { status: 400 })
     }
 
-    const activeBatch = await getActiveBatch()
     const supabaseAdmin = createAdminClient()
-    const { data: companies } = await supabaseAdmin
-      .from('companies')
-      .select('id, batch')
-      .in('id', [company1Id, company2Id, company3Id])
+
+    // Batch attivo e lookup aziende sono indipendenti: in parallelo risparmiano
+    // un round-trip DB seriale sul percorso critico del voto.
+    const [activeBatch, { data: companies }] = await Promise.all([
+      getActiveBatch(),
+      supabaseAdmin
+        .from('companies')
+        .select('id, batch')
+        .in('id', [company1Id, company2Id, company3Id]),
+    ])
 
     if (!companies || companies.length !== 3) {
       return NextResponse.json({ error: err('voteError.companiesNotFound') }, { status: 400 })

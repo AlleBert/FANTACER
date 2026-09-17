@@ -7,7 +7,7 @@ import { useRealtime } from '@/lib/RealtimeContext';
 import { useDebouncedCallback } from 'use-debounce';
 import { Search, Loader2, X } from 'lucide-react';
 import { LiquidFillButton } from '@/components/voting/liquid-fill-button';
-import { getVoteSecurity } from '@/lib/vote-security';
+import { getVoteSecurity, getVisitorId } from '@/lib/vote-security';
 import { TurnstileOverlay } from '@/components/voting/turnstile-overlay';
 import { MessageOverlay } from '@/components/voting/message-overlay';
 import { ModalShell } from '@/components/ui/modal-shell';
@@ -42,6 +42,7 @@ export function SearchSection() {
   const { votingEnabled } = useRealtime();
   const [activeIndex, setActiveIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
+  const submittingRef = useRef(false);
   const listboxId = useId();
 
   useEffect(() => {
@@ -73,6 +74,16 @@ export function SearchSection() {
       fetchCompanies(searchTerm);
     }
   }, [activeBatch, fetchCompanies, searchTerm]);
+
+  // Warm-up del visitorId: `fp.get()` è CPU-heavy (~1-2s su device lenti).
+  // Anticiparlo al primo input utile (o alla prima azienda scelta) evita di
+  // sommarlo al submit, quando la rete è già satura.
+  const startedVoting = selectedCompanies.length > 0;
+  useEffect(() => {
+    if (!votingEnabled) return;
+    if (searchTerm.length < 2 && !startedVoting) return;
+    getVisitorId().catch(() => {});
+  }, [votingEnabled, searchTerm.length, startedVoting]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const term = e.target.value;
@@ -145,6 +156,8 @@ export function SearchSection() {
   };
 
   const handleVoteSubmit = async (token: string) => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setShowTurnstile(false);
     setLoading(true);
     try {
@@ -181,6 +194,8 @@ export function SearchSection() {
         }
       }, 100);
     } catch (err) {
+      // Solo su errore si sblocca: dopo un successo la selezione è definitiva.
+      submittingRef.current = false;
       setMessage({ type: 'error', text: err instanceof Error ? err.message : t('search.errUnknown') });
     } finally {
       setLoading(false);
