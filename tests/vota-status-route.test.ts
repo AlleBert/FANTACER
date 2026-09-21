@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 import type { NextRequest } from 'next/server'
-import { POST, utcDayBounds } from '../src/app/api/vota/status/route'
+import { POST, romeDayKey } from '../src/app/api/vota/status/route'
 
 jest.mock('@/lib/supabase/admin', () => ({ createAdminClient: jest.fn() }))
 jest.mock('@/lib/vote-dev-bypass', () => ({
@@ -41,10 +41,9 @@ function buildSupabase(
     .mockResolvedValue({ data: opts?.votesError ? null : session, error: opts?.votesError ?? null })
   const limit = jest.fn().mockReturnValue({ maybeSingle })
   const order = jest.fn().mockReturnValue({ limit })
-  const lt = jest.fn().mockReturnValue({ order })
-  const gte = jest.fn().mockReturnValue({ lt })
-  const eq = jest.fn().mockReturnValue({ gte })
-  const selectVotes = jest.fn().mockReturnValue({ eq })
+  const eqVoteDay = jest.fn().mockReturnValue({ order })
+  const eqFingerprint = jest.fn().mockReturnValue({ eq: eqVoteDay })
+  const selectVotes = jest.fn().mockReturnValue({ eq: eqFingerprint })
   const inFn = jest
     .fn()
     .mockResolvedValue({
@@ -145,10 +144,12 @@ describe('POST /api/vota/status', () => {
   })
 })
 
-describe('utcDayBounds', () => {
-  it('calcola i confini della giornata UTC', () => {
-    const { start, end } = utcDayBounds(new Date('2026-09-14T12:00:00Z'))
-    expect(start).toBe('2026-09-14T00:00:00.000Z')
-    expect(end).toBe('2026-09-15T00:00:00.000Z')
+describe('romeDayKey', () => {
+  it('usa il fuso Europe/Rome', () => {
+    expect(romeDayKey(new Date('2026-09-14T12:00:00Z'))).toBe('2026-09-14')
+  })
+
+  it('a mezzanotte UTC è già il giorno dopo a Roma (CEST)', () => {
+    expect(romeDayKey(new Date('2026-09-13T23:30:00Z'))).toBe('2026-09-14')
   })
 })

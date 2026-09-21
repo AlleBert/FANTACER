@@ -254,19 +254,25 @@ database reale non-production. Runbook completo: `docs/load-testing.md`.
   `select public.recompute_company_totals()` per riallineare i contatori.
 - La classifica e' O(1) via `company_totals` (migration
   `20260917000000_company_totals_ranking.sql`). **Applicata a e2e e production**
-  (17/09/2026). L'indice `20260917000001` e' su e2e ma **non** su production
-  (scelta esplicita): resta pendente nel repo, quindi un `db push` su prod lo
-  applicherebbe. Rollback manuale:
+  (17/09/2026). Anche l'indice `20260917000001` risulta applicato su production
+  (verificato con `supabase migration list`, 21/09/2026). Rollback manuale:
   `scripts/loadtest/sql/rollback_company_totals.sql`.
   Snapshot di sicurezza prima di migrazioni:
   `node scripts/loadtest/db-snapshot.mjs` → `backups/e2e-<ts>.json` (read-only).
 - Dedup atomico del voto: migration `20260918000000_atomic_vote_dedup.sql`
-  (colonna generata `vote_day` UTC + indice unico `(fingerprint, vote_day)` +
-  `submit_vote` che gestisce `unique_violation`). **Applicata a e2e** (verificata:
-  10 submit concorrenti → 1 successo / 9 "Hai già votato oggi", cleanup ok),
-  **pendente su production**. Un `db push` su prod applica **entrambe**
-  `20260917000001` e `20260918000000`. Fail-safe: se esistono duplicati
-  `(fingerprint, vote_day)` la migrazione si interrompe senza cancellare dati.
+  (colonna generata `vote_day` + indice unico `(fingerprint, vote_day)` +
+  `submit_vote` che gestisce `unique_violation`). **Applicata a e2e e production**
+  (verificata: 10 submit concorrenti → 1 successo / 9 "Hai già votato oggi",
+  cleanup ok). Fail-safe: se esistono duplicati `(fingerprint, vote_day)` la
+  migrazione si interrompe senza cancellare dati.
+- Confine giornaliero del voto: `20260918000000` usa `vote_day` in **UTC** →
+  reset a mezzanotte UTC = **02:00 italiane** (CEST). La migration
+  `20260921000000_rome_vote_day.sql` allinea il confine a **Europe/Rome** (reset
+  a 00:00 locali) e allinea `submit_vote`/`daily_stats`. **Applicata a e2e**;
+  **da applicare a production dopo la fiera** (snapshot + pre-check duplicati
+  Rome-day; la migration abortisce se ne trova). Dopo l'allineamento
+  `/api/vota/status` filtra per `vote_day` di Roma, coerente con
+  panoramica/report.
 - Le operazioni massive (seed/cleanup/migrazioni) **non** devono passare da
   PostgREST: il ruolo `authenticator` ha `statement_timeout=8s` (verificato) e una
   DELETE su 100k righe viene cancellata. `cleanup.mjs` e `db-snapshot.mjs` usano

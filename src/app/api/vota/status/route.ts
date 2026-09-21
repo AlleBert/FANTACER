@@ -13,11 +13,16 @@ interface VoteSessionRow {
   pallet3: number
 }
 
-/** Confine giornata UTC, coerente con `created_at::date = current_date` della dedup voto. */
-export function utcDayBounds(now = new Date()): { start: string; end: string } {
-  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
-  const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1))
-  return { start: start.toISOString(), end: end.toISOString() }
+const romeDayFormatter = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Europe/Rome',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+})
+
+/** Giorno corrente (YYYY-MM-DD) nel fuso Europe/Rome, coerente con `vote_day`. */
+export function romeDayKey(now = new Date()): string {
+  return romeDayFormatter.format(now)
 }
 
 export async function POST(request: NextRequest) {
@@ -43,14 +48,12 @@ export async function POST(request: NextRequest) {
 
     const supabase = createAdminClient()
     const fingerprint = resolveFingerprint(visitorId)
-    const { start, end } = utcDayBounds()
 
     const { data: session, error } = await supabase
       .from('vote_sessions')
       .select('company1_id, company2_id, company3_id, pallet1, pallet2, pallet3')
       .eq('fingerprint', fingerprint)
-      .gte('created_at', start)
-      .lt('created_at', end)
+      .eq('vote_day', romeDayKey())
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle()
