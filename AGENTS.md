@@ -268,11 +268,15 @@ database reale non-production. Runbook completo: `docs/load-testing.md`.
 - Confine giornaliero del voto: `20260918000000` usa `vote_day` in **UTC** →
   reset a mezzanotte UTC = **02:00 italiane** (CEST). La migration
   `20260921000000_rome_vote_day.sql` allinea il confine a **Europe/Rome** (reset
-  a 00:00 locali) e allinea `submit_vote`/`daily_stats`. **Applicata a e2e**;
-  **da applicare a production dopo la fiera** (snapshot + pre-check duplicati
-  Rome-day; la migration abortisce se ne trova). Dopo l'allineamento
-  `/api/vota/status` filtra per `vote_day` di Roma, coerente con
-  panoramica/report.
+  a 00:00 locali) e allinea `submit_vote`/`daily_stats`.
+  **Applicata a e2e e production** (verificata con `supabase migration list` il
+  22/09/2026: `20260921000000` registrata su `zdfverdwdsigizxktilz`). Caveat
+  empirico: sui dati attuali di production `vote_day` coincide con la data UTC
+  (nessun voto nella fascia 22:00–24:00 UTC), quindi la correttezza Rome-day è
+  verificata strutturalmente (colonna/RPC), non da un caso limite reale. Dopo
+  l'allineamento `/api/vota/status` filtra per `vote_day` di Roma, coerente con
+  panoramica/report. Pre-check duplicati e rollback:
+  `docs/rome-vote-day-runbook.md` + `scripts/loadtest/sql/rome_precheck.sql`.
 - Le operazioni massive (seed/cleanup/migrazioni) **non** devono passare da
   PostgREST: il ruolo `authenticator` ha `statement_timeout=8s` (verificato) e una
   DELETE su 100k righe viene cancellata. `cleanup.mjs` e `db-snapshot.mjs` usano
