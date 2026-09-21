@@ -210,6 +210,19 @@ describe('selectDailyRange', () => {
   })
 })
 
+describe('buildVoteTrend su intervallo selezionato', () => {
+  it("ricalcola il cumulato dall'inizio dell'intervallo", () => {
+    const stats = [
+      trendDay('2026-09-18', 5),
+      trendDay('2026-09-19', 10),
+      trendDay('2026-09-20', 7),
+    ]
+    const ranged = buildVoteTrend(selectDailyRange(stats, '2026-09-19', '2026-09-20'))
+    expect(ranged.map((p) => p.votes)).toEqual([10, 7])
+    expect(ranged.map((p) => p.cumulative)).toEqual([10, 17])
+  })
+})
+
 describe('buildHourlyTrend', () => {
   const buckets = (votes: Record<number, number>) =>
     Array.from({ length: 24 }, (_, hour) => ({ hour, votes: votes[hour] ?? 0 }))

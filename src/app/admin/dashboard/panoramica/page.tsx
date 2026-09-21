@@ -98,10 +98,11 @@ export default function PanoramicaPage() {
   const [dailyStats, setDailyStats] = useState<DailyStats[]>([])
   // Vista del grafico: default Orario; l'intervallo Da–A seleziona i giorni.
   const [trendView, setTrendView] = useState<'daily' | 'hourly'>('hourly')
-  // Intervallo del grafico (Europe/Rome). `chartFrom` null = "auto" → dal primo
-  // giorno disponibile; `chartTo` default oggi (giorno delle fasce orarie).
+  // Intervallo del grafico (Europe/Rome). `null` = "auto": `chartFrom` → primo
+  // giorno disponibile, `chartTo` → oggi (giorno delle fasce orarie). Così la
+  // vista Orario resta su "oggi" anche se la scheda resta aperta oltre mezzanotte.
   const [chartFrom, setChartFrom] = useState<string | null>(null)
-  const [chartTo, setChartTo] = useState<string>(() => romeTodayKey())
+  const [chartTo, setChartTo] = useState<string | null>(null)
   // Intervallo di esportazione (Europe/Rome); default oggi.
   const [rangeFrom, setRangeFrom] = useState<string>(() => romeTodayKey())
   const [rangeTo, setRangeTo] = useState<string>(() => romeTodayKey())
@@ -203,7 +204,7 @@ export default function PanoramicaPage() {
   const maxDay = dailyStats[dailyStats.length - 1]?.date ?? romeTodayKey()
   // Clamp in render: se il batch cambia e le date escono dalla finestra, ricado sui bordi.
   const chartRangeFrom = chartFrom && chartFrom >= minDay && chartFrom <= maxDay ? chartFrom : minDay
-  const chartRangeTo = chartTo >= minDay && chartTo <= maxDay ? chartTo : maxDay
+  const chartRangeTo = chartTo && chartTo >= minDay && chartTo <= maxDay ? chartTo : maxDay
 
   const rangedDailySeries = useMemo(
     () => buildVoteTrend(selectDailyRange(dailyStats, chartRangeFrom, chartRangeTo)),
@@ -309,6 +310,7 @@ export default function PanoramicaPage() {
                     Da
                     <input
                       type="date"
+                      aria-label="Inizio intervallo grafico"
                       value={chartRangeFrom}
                       min={minDay}
                       max={chartRangeTo}
@@ -320,10 +322,11 @@ export default function PanoramicaPage() {
                     A
                     <input
                       type="date"
+                      aria-label="Fine intervallo grafico"
                       value={chartRangeTo}
                       min={chartRangeFrom}
                       max={maxDay}
-                      onChange={(e) => setChartTo(e.target.value)}
+                      onChange={(e) => setChartTo(e.target.value || null)}
                       className="h-8 rounded-md border border-border bg-background px-2 text-xs text-foreground"
                     />
                   </label>
@@ -394,8 +397,10 @@ export default function PanoramicaPage() {
                   </ComposedChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="h-full flex items-center justify-center text-muted-foreground italic">
-                  Nessun dato disponibile
+                <div className="h-full flex items-center justify-center px-4 text-center text-muted-foreground italic">
+                  {trendView === 'hourly'
+                    ? 'Nessun voto in questa giornata — scegli un altro giorno in «A» o passa a Giornaliero'
+                    : 'Nessun dato disponibile'}
                 </div>
               )}
             </div>

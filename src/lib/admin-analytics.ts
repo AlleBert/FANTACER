@@ -165,9 +165,9 @@ export interface TrendPoint {
 
 /**
  * Serie giornaliera per il grafico "Andamento Votazioni": cumulato calcolato
- * sull'intera serie (così il primo punto visibile include i voti precedenti) e
- * giorni a zero iniziali/finali rimossi per evitare l'effetto linea schiacciata.
- * Gli zeri interni sono mantenuti.
+ * sull'intera serie passata (con `selectDailyRange` il cumulato riparte
+ * dall'inizio dell'intervallo) e giorni a zero iniziali/finali rimossi per
+ * evitare l'effetto linea schiacciata. Gli zeri interni sono mantenuti.
  */
 export function buildVoteTrend(dailyStats: DailyStat[]): TrendPoint[] {
   let running = 0
