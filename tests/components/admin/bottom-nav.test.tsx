@@ -47,4 +47,17 @@ describe('BottomNav', () => {
       expect(link).not.toHaveAttribute('aria-current')
     })
   })
+
+  it('renderizza la pillola glass flottante', () => {
+    render(<BottomNav />)
+    const nav = screen.getByTestId('admin-bottom-nav')
+    expect(nav).toHaveClass('admin-nav-glass')
+    expect(nav).toHaveAttribute('aria-label', 'Navigazione principale')
+  })
+
+  it('espone il nome accessibile di ogni link', () => {
+    render(<BottomNav />)
+    expect(screen.getByRole('link', { name: 'Panoramica' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Impostazioni' })).toBeInTheDocument()
+  })
 })

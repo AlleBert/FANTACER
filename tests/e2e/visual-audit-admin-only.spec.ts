@@ -127,7 +127,7 @@ test.describe('Admin Visual Quality Audit', () => {
           mkdirSync(dirname(viewportPath), { recursive: true });
           await page.screenshot({ path: viewportPath });
 
-          const nav = page.locator('nav[role="tablist"]');
+          const nav = page.locator('[data-testid="admin-bottom-nav"]');
           if (await nav.count().then(n => n > 0)) {
             const navPath = screenshotPath(route.name, vpName, 'bottom-nav.png');
             mkdirSync(dirname(navPath), { recursive: true });
