@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { BarChart3, Users, TrendingUp, Vote, Wifi, Download, Upload, AlertCircle, RefreshCw } from 'lucide-react'
-import { LineChart as RechartLine, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { useRouter } from 'next/navigation'
@@ -13,6 +13,7 @@ import { createClient } from '@/lib/supabase/client'
 import { safeSubscribe } from '@/lib/supabase/realtime'
 import { useBatches } from '@/hooks/use-batches'
 import { BatchFilter } from '@/components/admin/batch-filter'
+import { buildVoteTrend, type VoteTrendPoint } from '@/lib/admin-analytics'
 
 interface Stats {
   totalVotes: number
@@ -27,6 +28,40 @@ interface DailyStats {
   date: string
   vote_count: number
   unique_voters: number
+}
+
+function formatTooltipDate(dateKey: string): string {
+  try {
+    return format(new Date(dateKey), 'dd MMM yyyy', { locale: it }).replace(
+      / ([a-z])/,
+      (_, c: string) => ` ${c.toUpperCase()}`
+    )
+  } catch {
+    return dateKey
+  }
+}
+
+function VoteTrendTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean
+  payload?: { payload?: VoteTrendPoint }[]
+}) {
+  const point = active ? payload?.[0]?.payload : undefined
+  if (!point) return null
+
+  return (
+    <div className="rounded-xl border border-border bg-card px-3 py-2 shadow-lg">
+      <p className="text-xs font-bold text-foreground">{formatTooltipDate(point.date)}</p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Voti del giorno: <span className="font-semibold text-foreground">{point.votes}</span>
+      </p>
+      <p className="text-xs text-muted-foreground">
+        Totale cumulato: <span className="font-semibold text-foreground">{point.cumulative}</span>
+      </p>
+    </div>
+  )
 }
 
 export default function PanoramicaPage() {
@@ -129,6 +164,8 @@ export default function PanoramicaPage() {
     { label: onlineIsGlobal ? 'Utenti Online (globale)' : 'Utenti Online', value: stats.onlineUsers, icon: Wifi, color: 'cyan' },
   ]
 
+  const chartData = useMemo(() => buildVoteTrend(dailyStats), [dailyStats])
+
   return (
     <div className="w-full mx-auto p-4 md:p-6 space-y-6">
       {/* Header */}
@@ -200,6 +237,16 @@ export default function PanoramicaPage() {
               <BarChart3 className="h-5 w-5 text-primary" />
               Andamento Votazioni
             </CardTitle>
+            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[clamp(0.65rem,2vw,0.8rem)] text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--primary)' }} aria-hidden="true" />
+                Voti del giorno
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--foreground)' }} aria-hidden="true" />
+                Totale cumulato
+              </span>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="h-[200px] md:h-[300px] w-full relative">
@@ -207,35 +254,35 @@ export default function PanoramicaPage() {
                 <div className="h-full flex items-center justify-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
                 </div>
-              ) : stats.totalVotes > 0 ? (
+              ) : chartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <RechartLine data={dailyStats}
-                    margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                  <ComposedChart data={chartData} margin={{ top: 8, right: 0, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="votesGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.28} />
+                        <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                     <XAxis dataKey="date" stroke="var(--muted-foreground)" fontSize={11}
-                      tickLine={false} axisLine={false}
+                      tickLine={false} axisLine={false} interval="preserveStartEnd" minTickGap={24}
                       tickFormatter={(v: string) => {
                         try { return format(new Date(v), 'dd/MM', { locale: it }) }
                         catch { return v }
                       }} />
-                    <YAxis stroke="var(--muted-foreground)" fontSize={11}
-                      tickLine={false} axisLine={false} />
-                    <Tooltip contentStyle={{
-                      backgroundColor: 'var(--card)', border: '1px solid var(--border)',
-                      borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                    }}
-                      labelStyle={{ color: 'var(--foreground)', fontWeight: 'bold' }}
-                      itemStyle={{ fontSize: '12px' }}
-                      labelFormatter={(label) => {
-                        try { return format(new Date(label as string), 'dd MMMM yyyy', { locale: it }) }
-                        catch { return label as string }
-                      }} />
-                    <Line type="monotone" dataKey="vote_count" stroke="var(--primary)"
-                      strokeWidth={3} dot={{ fill: 'var(--primary)', r: 4, strokeWidth: 0 }}
-                      activeDot={{ r: 6, strokeWidth: 0 }} name="Voti" />
-                    <Line type="monotone" dataKey="unique_voters" stroke="var(--muted-foreground)"
-                      strokeWidth={2} strokeDasharray="5 5" dot={false} name="Elettori" />
-                  </RechartLine>
+                    <YAxis yAxisId="left" stroke="var(--muted-foreground)" fontSize={11}
+                      tickLine={false} axisLine={false} allowDecimals={false} width={28} />
+                    <YAxis yAxisId="right" orientation="right" stroke="var(--muted-foreground)" fontSize={11}
+                      tickLine={false} axisLine={false} allowDecimals={false} width={28} />
+                    <Tooltip content={<VoteTrendTooltip />} cursor={{ stroke: 'var(--border)' }} />
+                    <Area yAxisId="left" type="monotone" dataKey="votes" name="Voti del giorno"
+                      stroke="var(--primary)" strokeWidth={3} fill="url(#votesGradient)"
+                      dot={{ fill: 'var(--primary)', r: 2, strokeWidth: 0 }}
+                      activeDot={{ r: 4, strokeWidth: 0 }} />
+                    <Line yAxisId="right" type="monotone" dataKey="cumulative" name="Totale cumulato"
+                      stroke="var(--foreground)" strokeWidth={2} dot={false}
+                      activeDot={{ r: 4, strokeWidth: 0 }} />
+                  </ComposedChart>
                 </ResponsiveContainer>
               ) : (
                 <div className="h-full flex items-center justify-center text-muted-foreground italic">

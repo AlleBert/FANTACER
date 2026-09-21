@@ -1,11 +1,13 @@
 import {
   aggregateSummary,
   buildDailyReport,
+  buildVoteTrend,
   filterSessionsByBatch,
   renderDailyReportText,
   romeDateKey,
   romeHourKey,
   sanitizeCsvValue,
+  type DailyStat,
   type ReportSessionRow,
   type SessionSummaryRow,
 } from '@/lib/admin-analytics'
@@ -120,6 +122,48 @@ describe('sanitizeCsvValue', () => {
     expect(sanitizeCsvValue('Ceramiche X')).toBe('Ceramiche X')
     expect(sanitizeCsvValue(4)).toBe('4')
     expect(sanitizeCsvValue(null)).toBe('')
+  })
+})
+
+const trendDay = (date: string, vote_count: number, unique_voters = vote_count): DailyStat => ({
+  date,
+  vote_count,
+  unique_voters,
+})
+
+describe('buildVoteTrend', () => {
+  it('rimuove i giorni a zero iniziali e finali e calcola il cumulato', () => {
+    const trend = buildVoteTrend([
+      trendDay('2026-09-17', 0),
+      trendDay('2026-09-18', 0),
+      trendDay('2026-09-19', 10),
+      trendDay('2026-09-20', 20),
+      trendDay('2026-09-21', 30),
+      trendDay('2026-09-22', 0),
+      trendDay('2026-09-23', 0),
+    ])
+    expect(trend.map((p) => p.date)).toEqual(['2026-09-19', '2026-09-20', '2026-09-21'])
+    expect(trend.map((p) => p.votes)).toEqual([10, 20, 30])
+    expect(trend.map((p) => p.cumulative)).toEqual([10, 30, 60])
+  })
+
+  it('mantiene gli zeri interni', () => {
+    const trend = buildVoteTrend([
+      trendDay('2026-09-19', 5),
+      trendDay('2026-09-20', 0),
+      trendDay('2026-09-21', 5),
+    ])
+    expect(trend).toHaveLength(3)
+    expect(trend[1]).toEqual({ date: '2026-09-20', votes: 0, cumulative: 5 })
+    expect(trend[2].cumulative).toBe(10)
+  })
+
+  it('ritorna serie vuota se tutti i giorni sono a zero', () => {
+    expect(buildVoteTrend([trendDay('2026-09-19', 0), trendDay('2026-09-20', 0)])).toEqual([])
+  })
+
+  it('ritorna serie vuota su input vuoto', () => {
+    expect(buildVoteTrend([])).toEqual([])
   })
 })
 

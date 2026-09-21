@@ -137,6 +137,34 @@ export function aggregateSummary(
   }
 }
 
+export interface VoteTrendPoint {
+  date: string
+  votes: number
+  cumulative: number
+}
+
+/**
+ * Serie per il grafico "Andamento Votazioni": cumulato calcolato sull'intera
+ * serie (così il primo punto visibile include i voti precedenti) e giorni a
+ * zero iniziali/finali rimossi per evitare l'effetto linea schiacciata. Gli
+ * zeri interni sono mantenuti.
+ */
+export function buildVoteTrend(dailyStats: DailyStat[]): VoteTrendPoint[] {
+  let running = 0
+  const withCumulative: VoteTrendPoint[] = dailyStats.map((day) => {
+    running += day.vote_count
+    return { date: day.date, votes: day.vote_count, cumulative: running }
+  })
+
+  const first = withCumulative.findIndex((point) => point.votes > 0)
+  if (first === -1) return []
+
+  let last = withCumulative.length - 1
+  while (last > first && withCumulative[last].votes === 0) last -= 1
+
+  return withCumulative.slice(first, last + 1)
+}
+
 /**
  * Neutralizza la CSV injection: se un valore inizia con un carattere
  * interpretato come formula da Excel/Sheets, lo prefissa con apice.
