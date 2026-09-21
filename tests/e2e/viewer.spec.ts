@@ -116,6 +116,11 @@ test.describe('Viewer role (read-only)', () => {
     expect(res.status()).toBe(403);
   });
 
+  test('daily report is admin-only (403 for viewer)', async ({ viewerRequest: request }) => {
+    const res = await request.get('/api/analytics?type=report');
+    expect(res.status()).toBe(403);
+  });
+
   test('admin still reaches dashboard with MFA (sanity)', async ({ page }) => {
     test.skip(!hasAdminMfaCredentials(), 'E2E admin MFA credentials not configured');
     await loginAsAdminWithMfa(page);

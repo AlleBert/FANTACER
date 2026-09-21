@@ -1,8 +1,12 @@
 import {
   aggregateSummary,
+  buildDailyReport,
   filterSessionsByBatch,
+  renderDailyReportText,
   romeDateKey,
+  romeHourKey,
   sanitizeCsvValue,
+  type ReportSessionRow,
   type SessionSummaryRow,
 } from '@/lib/admin-analytics'
 
@@ -116,5 +120,151 @@ describe('sanitizeCsvValue', () => {
     expect(sanitizeCsvValue('Ceramiche X')).toBe('Ceramiche X')
     expect(sanitizeCsvValue(4)).toBe('4')
     expect(sanitizeCsvValue(null)).toBe('')
+  })
+})
+
+const reportSession = (
+  created_at: string,
+  fingerprint: string,
+  companies: [string, string, string],
+  country = 'IT',
+): ReportSessionRow => ({
+  created_at,
+  fingerprint,
+  company1_id: companies[0],
+  company2_id: companies[1],
+  company3_id: companies[2],
+  pallet1: 4,
+  pallet2: 2,
+  pallet3: 1,
+  country,
+})
+
+const NAMES = new Map([
+  ['c1', 'Uno'],
+  ['c2', 'Due'],
+  ['c3', 'Tre'],
+  ['c4', 'Quattro'],
+  ['c5', 'Cinque'],
+])
+
+describe('romeHourKey', () => {
+  it('converte in ora Europe/Rome', () => {
+    expect(romeHourKey(new Date('2026-09-21T07:30:00Z'))).toBe(9)
+  })
+
+  it('gestisce il cambio giorno a mezzanotte', () => {
+    expect(romeHourKey(new Date('2026-09-21T22:30:00Z'))).toBe(0)
+  })
+
+  it('ritorna -1 su data invalida', () => {
+    expect(romeHourKey(new Date('invalid'))).toBe(-1)
+  })
+})
+
+describe('buildDailyReport', () => {
+  // Mercoledì 23/09/2026: settimana lun 21 – dom 27.
+  const now = new Date('2026-09-23T18:00:00Z')
+  const sessions = [
+    reportSession('2026-09-23T09:00:00Z', 'fp-a', ['c1', 'c2', 'c3'], 'IT'),
+    reportSession('2026-09-23T12:00:00Z', 'fp-b', ['c1', 'c4', 'c5'], 'DE'),
+    reportSession('2026-09-22T10:00:00Z', 'fp-c', ['c2', 'c3', 'c4']),
+    reportSession('2026-09-21T10:00:00Z', 'fp-d', ['c3', 'c4', 'c5']),
+    // domenica della settimana precedente: fuori dal cumulato settimanale
+    reportSession('2026-09-20T10:00:00Z', 'fp-e', ['c1', 'c2', 'c3']),
+  ]
+
+  it('aggrega i numeri del giorno corrente', () => {
+    const report = buildDailyReport(sessions, NAMES, now)
+    expect(report.dayKey).toBe('2026-09-23')
+    expect(report.votes).toBe(2)
+    expect(report.uniqueVoters).toBe(2)
+    expect(report.totalPoints).toBe(14)
+    expect(report.activeHours).toBe(2)
+    expect(report.avgVotesPerHour).toBe(1)
+    expect(report.firstVoteAt).toBe('2026-09-23T09:00:00.000Z')
+    expect(report.lastVoteAt).toBe('2026-09-23T12:00:00.000Z')
+  })
+
+  it('distribuisce i voti per fascia oraria locale', () => {
+    const report = buildDailyReport(sessions, NAMES, now)
+    expect(report.hourly).toHaveLength(24)
+    expect(report.hourly[11].votes).toBe(1)
+    expect(report.hourly[14].votes).toBe(1)
+    expect(report.hourly.reduce((acc, h) => acc + h.votes, 0)).toBe(2)
+    expect(report.peakHour).toBe(11)
+    expect(report.quietHour).toBe(11)
+  })
+
+  it('classifica le aziende del giorno per punti', () => {
+    const report = buildDailyReport(sessions, NAMES, now)
+    expect(report.companies).toHaveLength(5)
+    expect(report.top3[0]).toMatchObject({ id: 'c1', name: 'Uno', points: 8, votes: 2, firsts: 2 })
+    expect(report.companies[0].points).toBe(8)
+    expect(report.companies.reduce((acc, c) => acc + c.points, 0)).toBe(14)
+  })
+
+  it('conta i paesi e confronta con ieri', () => {
+    const report = buildDailyReport(sessions, NAMES, now)
+    expect(report.countries).toEqual([
+      { country: 'IT', votes: 1 },
+      { country: 'DE', votes: 1 },
+    ])
+    expect(report.yesterday).toEqual({ votes: 1, uniqueVoters: 1 })
+  })
+
+  it('cumula la settimana lun–dom escludendo i giorni fuori settimana', () => {
+    const report = buildDailyReport(sessions, NAMES, now)
+    expect(report.week.days).toHaveLength(7)
+    expect(report.week.votes).toBe(4)
+    expect(report.week.uniqueVoters).toBe(4)
+    expect(report.week.totalPoints).toBe(28)
+    const monday = report.week.days.find((d) => d.date === '2026-09-21')
+    expect(monday?.votes).toBe(1)
+    const wednesday = report.week.days.find((d) => d.date === '2026-09-23')
+    expect(wednesday?.votes).toBe(2)
+  })
+
+  it('gestisce una giornata senza voti', () => {
+    const report = buildDailyReport([], NAMES, now)
+    expect(report.votes).toBe(0)
+    expect(report.uniqueVoters).toBe(0)
+    expect(report.avgVotesPerHour).toBe(0)
+    expect(report.peakHour).toBeNull()
+    expect(report.quietHour).toBeNull()
+    expect(report.top3).toEqual([])
+    expect(report.firstVoteAt).toBeNull()
+    expect(report.lastVoteAt).toBeNull()
+    expect(report.week.votes).toBe(0)
+  })
+})
+
+describe('renderDailyReportText', () => {
+  const now = new Date('2026-09-23T18:00:00Z')
+
+  it('include numeri, classifica e cumulato settimanale', () => {
+    const report = buildDailyReport(
+      [
+        reportSession('2026-09-23T09:00:00Z', 'fp-a', ['c1', 'c2', 'c3']),
+        reportSession('2026-09-23T12:00:00Z', 'fp-b', ['c1', 'c4', 'c5']),
+      ],
+      NAMES,
+      now,
+    )
+    const text = renderDailyReportText(report, 'Fiera')
+    expect(text).toContain('# FANTACER — Riepilogo giornata')
+    expect(text).toContain('Batch: Fiera')
+    expect(text).toContain('- Voti totali: 2')
+    expect(text).toContain('- Votanti singoli: 2')
+    expect(text).toContain('Primo voto: 11:00')
+    expect(text).toContain('Ultimo voto: 14:00')
+    expect(text).toContain('Uno')
+    expect(text).toContain('Cumulato settimana')
+  })
+
+  it('non va in errore su giornata vuota', () => {
+    const report = buildDailyReport([], NAMES, now)
+    const text = renderDailyReportText(report)
+    expect(text).toContain('Nessun voto registrato.')
   })
 })

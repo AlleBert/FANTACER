@@ -102,8 +102,21 @@ export default function PanoramicaPage() {
     }
   }, [loadData])
 
+  const downloadFile = (url: string) => {
+    const link = document.createElement('a')
+    link.href = url
+    link.rel = 'noopener'
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+  }
+
+  // Ogni export scarica due file: il dettaglio (CSV/Excel) e il riepilogo
+  // giornaliero in markdown. Il browser può chiedere una volta il permesso
+  // per i download multipli.
   const handleExport = (format: 'csv' | 'xlsx') => {
-    window.open(`/api/analytics?type=export&format=${format}${batchParam}`, '_blank')
+    downloadFile(`/api/analytics?type=export&format=${format}${batchParam}`)
+    downloadFile(`/api/analytics?type=report${batchParam}`)
   }
 
   const onlineIsGlobal = effectiveBatch !== 'all'

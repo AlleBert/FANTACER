@@ -4,8 +4,11 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin, requireRoleAdmin, toAdminError } from '@/lib/admin-auth'
 import {
   aggregateSummary,
+  buildDailyReport,
   filterSessionsByBatch,
+  renderDailyReportText,
   sanitizeCsvValue,
+  type ReportSessionRow,
   type SessionSummaryRow,
 } from '@/lib/admin-analytics'
 
@@ -33,8 +36,9 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type') || 'summary'
     const batch = searchParams.get('batch')
 
-    // Export (estrazione massiva CSV/Excel) è privilegiato: solo admin (MFA aal2).
-    if (type === 'export') {
+    // Export (estrazione massiva CSV/Excel) e riepilogo sono privilegiati:
+    // solo admin (MFA aal2).
+    if (type === 'export' || type === 'report') {
       await requireRoleAdmin(request)
     }
     const dateFrom = searchParams.get('from')
@@ -65,6 +69,39 @@ export async function GET(request: NextRequest) {
       const summary = aggregateSummary(filtered, onlineUsers || 0)
 
       return NextResponse.json(summary)
+    }
+
+    if (type === 'report') {
+      const batchIds = await getBatchCompanyIds(supabase, batch)
+
+      const { data: allSessions } = await supabase
+        .from('vote_sessions')
+        .select(
+          'created_at, fingerprint, country, company1_id, company2_id, company3_id, pallet1, pallet2, pallet3',
+        )
+        .order('created_at', { ascending: false })
+
+      const sessions = filterSessionsByBatch(
+        (allSessions || []) as ReportSessionRow[],
+        batch,
+        batchIds ?? new Set(),
+      )
+
+      const { data: companies } = await supabase.from('companies').select('id, name')
+      const companyMap = new Map(
+        (companies || []).map((c: { id: string; name: string }) => [c.id, c.name]),
+      )
+
+      const report = buildDailyReport(sessions, companyMap)
+      const batchLabel = batch && batch !== 'all' ? batch : 'Tutti i batch'
+      const text = renderDailyReportText(report, batchLabel)
+
+      return new NextResponse(text, {
+        headers: {
+          'Content-Type': 'text/markdown; charset=utf-8',
+          'Content-Disposition': `attachment; filename=fantacer_riepilogo_${report.dayKey}.md`,
+        },
+      })
     }
 
     if (type === 'detailed') {
