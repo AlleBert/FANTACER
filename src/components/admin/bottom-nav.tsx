@@ -12,7 +12,7 @@ export function BottomNav() {
     <nav
       data-testid="admin-bottom-nav"
       aria-label="Navigazione principale"
-      className="admin-nav-glass fixed bottom-[var(--safe-bottom)] left-4 right-4 z-50 mx-auto max-w-[34rem] rounded-full p-1.5 md:hidden"
+      className="admin-nav-glass fixed bottom-[var(--safe-bottom)] left-[var(--safe-x)] right-[var(--safe-x)] z-50 mx-auto max-w-[34rem] rounded-full p-1.5 md:hidden"
     >
       <div className="flex items-stretch gap-1">
         {ADMIN_NAV_ITEMS.map((item) => {

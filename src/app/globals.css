@@ -1229,7 +1229,8 @@ section[data-section='contact'] textarea {
 
 /* Bottom-nav admin mobile: pillola glass flottante. Solo CSS, nessuna dipendenza.
    `container-type` abilita la container query che collassa le label quando la
-   pillola è stretta (viewport ~320-360px) senza introdurre breakpoint arbitrari. */
+   pillola è stretta (content box ≤22.5rem, cioè viewport ≲392px) senza breakpoint
+   arbitrari. */
 @layer components {
   .admin-nav-glass {
     background: color-mix(in srgb, var(--card) 72%, transparent);
