@@ -13,7 +13,8 @@ import { createClient } from '@/lib/supabase/client'
 import { safeSubscribe } from '@/lib/supabase/realtime'
 import { useBatches } from '@/hooks/use-batches'
 import { BatchFilter } from '@/components/admin/batch-filter'
-import { buildVoteTrend, type VoteTrendPoint } from '@/lib/admin-analytics'
+import { buildHourlyTrend, buildVoteTrend, type HourBucket, type TrendPoint } from '@/lib/admin-analytics'
+import { cn } from '@/lib/utils'
 
 interface Stats {
   totalVotes: number
@@ -22,6 +23,7 @@ interface Stats {
   yesterdayVotes: number
   activeNow: number
   onlineUsers: number
+  todayByHour: HourBucket[]
 }
 
 interface DailyStats {
@@ -44,21 +46,32 @@ function formatTooltipDate(dateKey: string): string {
 function VoteTrendTooltip({
   active,
   payload,
+  mode,
+  todayKey,
 }: {
   active?: boolean
-  payload?: { payload?: VoteTrendPoint }[]
+  payload?: { payload?: TrendPoint }[]
+  mode: 'daily' | 'hourly'
+  todayKey: string
 }) {
   const point = active ? payload?.[0]?.payload : undefined
   if (!point) return null
 
+  const title =
+    mode === 'hourly'
+      ? `${formatTooltipDate(todayKey)} · ${point.label}`
+      : formatTooltipDate(point.key)
+  const votesLabel = mode === 'hourly' ? "Voti nell'ora" : 'Voti del giorno'
+  const cumulativeLabel = mode === 'hourly' ? 'Cumulato giornata' : 'Totale cumulato'
+
   return (
     <div className="rounded-xl border border-border bg-card px-3 py-2 shadow-lg">
-      <p className="text-xs font-bold text-foreground">{formatTooltipDate(point.date)}</p>
+      <p className="text-xs font-bold text-foreground">{title}</p>
       <p className="mt-1 text-xs text-muted-foreground">
-        Voti del giorno: <span className="font-semibold text-foreground">{point.votes}</span>
+        {votesLabel}: <span className="font-semibold text-foreground">{point.votes}</span>
       </p>
       <p className="text-xs text-muted-foreground">
-        Totale cumulato: <span className="font-semibold text-foreground">{point.cumulative}</span>
+        {cumulativeLabel}: <span className="font-semibold text-foreground">{point.cumulative}</span>
       </p>
     </div>
   )
@@ -71,8 +84,11 @@ export default function PanoramicaPage() {
   const { batches, activeBatch, loading: batchesLoading } = useBatches()
   const [stats, setStats] = useState<Stats>({
     totalVotes: 0, uniqueVoters: 0, todayVotes: 0, yesterdayVotes: 0, activeNow: 0, onlineUsers: 0,
+    todayByHour: [],
   })
   const [dailyStats, setDailyStats] = useState<DailyStats[]>([])
+  // auto = oraria se c'è un solo giorno di dati, altrimenti giornaliera.
+  const [trendView, setTrendView] = useState<'auto' | 'daily' | 'hourly'>('auto')
   // null = "usa il batch attivo" (default); stringa = scelta esplicita ('all' = tutti).
   const [selectedBatch, setSelectedBatch] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -100,6 +116,7 @@ export default function PanoramicaPage() {
         yesterdayVotes: statsData.yesterdayVotes || 0,
         activeNow: statsData.activeNow || 0,
         onlineUsers: statsData.onlineUsers || 0,
+        todayByHour: statsData.todayByHour || [],
       })
       setDailyStats(statsData.dailyStats || [])
     } catch (e) {
@@ -164,7 +181,20 @@ export default function PanoramicaPage() {
     { label: onlineIsGlobal ? 'Utenti Online (globale)' : 'Utenti Online', value: stats.onlineUsers, icon: Wifi, color: 'cyan' },
   ]
 
-  const chartData = useMemo(() => buildVoteTrend(dailyStats), [dailyStats])
+  const dailySeries = useMemo(() => buildVoteTrend(dailyStats), [dailyStats])
+  const hourlySeries = useMemo(() => buildHourlyTrend(stats.todayByHour), [stats.todayByHour])
+  const effectiveView: 'daily' | 'hourly' =
+    trendView === 'daily'
+      ? 'daily'
+      : trendView === 'hourly'
+        ? 'hourly'
+        : dailySeries.length >= 2
+          ? 'daily'
+          : hourlySeries.length > 0
+            ? 'hourly'
+            : 'daily'
+  const chartData = effectiveView === 'hourly' ? hourlySeries : dailySeries
+  const todayKey = dailyStats[dailyStats.length - 1]?.date ?? ''
 
   return (
     <div className="w-full mx-auto p-4 md:p-6 space-y-6">
@@ -237,15 +267,39 @@ export default function PanoramicaPage() {
               <BarChart3 className="h-5 w-5 text-primary" />
               Andamento Votazioni
             </CardTitle>
-            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[clamp(0.65rem,2vw,0.8rem)] text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--primary)' }} aria-hidden="true" />
-                Voti del giorno
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--foreground)' }} aria-hidden="true" />
-                Totale cumulato
-              </span>
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[clamp(0.65rem,2vw,0.8rem)] text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--primary)' }} aria-hidden="true" />
+                  {effectiveView === 'hourly' ? "Voti nell'ora" : 'Voti del giorno'}
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--foreground)' }} aria-hidden="true" />
+                  {effectiveView === 'hourly' ? 'Cumulato giornata' : 'Totale cumulato'}
+                </span>
+              </div>
+              <div className="inline-flex rounded-lg border border-border p-0.5 text-[clamp(0.65rem,2vw,0.8rem)]">
+                {([
+                  ['auto', 'Auto'],
+                  ['daily', 'Giornaliero'],
+                  ['hourly', 'Orario'],
+                ] as const).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setTrendView(value)}
+                    aria-pressed={trendView === value}
+                    className={cn(
+                      'cursor-pointer rounded-md px-2 py-1 font-medium transition-colors',
+                      trendView === value
+                        ? 'bg-primary text-white'
+                        : 'text-muted-foreground hover:bg-secondary'
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -263,23 +317,24 @@ export default function PanoramicaPage() {
                         <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                    <XAxis dataKey="date" stroke="var(--muted-foreground)" fontSize={11}
-                      tickLine={false} axisLine={false} interval="preserveStartEnd" minTickGap={24}
-                      tickFormatter={(v: string) => {
-                        try { return format(new Date(v), 'dd/MM', { locale: it }) }
-                        catch { return v }
-                      }} />
+                    <CartesianGrid yAxisId="left" strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                    <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={11}
+                      tickLine={false} axisLine={false} interval="preserveStartEnd" minTickGap={24} />
                     <YAxis yAxisId="left" stroke="var(--muted-foreground)" fontSize={11}
                       tickLine={false} axisLine={false} allowDecimals={false} width={28} />
                     <YAxis yAxisId="right" orientation="right" stroke="var(--muted-foreground)" fontSize={11}
                       tickLine={false} axisLine={false} allowDecimals={false} width={28} />
-                    <Tooltip content={<VoteTrendTooltip />} cursor={{ stroke: 'var(--border)' }} />
-                    <Area yAxisId="left" type="monotone" dataKey="votes" name="Voti del giorno"
+                    <Tooltip
+                      content={<VoteTrendTooltip mode={effectiveView} todayKey={todayKey} />}
+                      cursor={{ stroke: 'var(--border)' }}
+                    />
+                    <Area yAxisId="left" type="monotone" dataKey="votes"
+                      name={effectiveView === 'hourly' ? "Voti nell'ora" : 'Voti del giorno'}
                       stroke="var(--primary)" strokeWidth={3} fill="url(#votesGradient)"
                       dot={{ fill: 'var(--primary)', r: 2, strokeWidth: 0 }}
                       activeDot={{ r: 4, strokeWidth: 0 }} />
-                    <Line yAxisId="right" type="monotone" dataKey="cumulative" name="Totale cumulato"
+                    <Line yAxisId="right" type="monotone" dataKey="cumulative"
+                      name={effectiveView === 'hourly' ? 'Cumulato giornata' : 'Totale cumulato'}
                       stroke="var(--foreground)" strokeWidth={2} dot={false}
                       activeDot={{ r: 4, strokeWidth: 0 }} />
                   </ComposedChart>

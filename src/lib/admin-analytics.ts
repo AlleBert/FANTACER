@@ -25,6 +25,11 @@ export interface DailyStat {
   unique_voters: number
 }
 
+export interface HourBucket {
+  hour: number
+  votes: number
+}
+
 export interface AnalyticsSummary {
   totalVotes: number
   uniqueVoters: number
@@ -33,6 +38,7 @@ export interface AnalyticsSummary {
   activeNow: number
   onlineUsers: number
   dailyStats: DailyStat[]
+  todayByHour: HourBucket[]
 }
 
 const romeDateFormatter = new Intl.DateTimeFormat('en-CA', {
@@ -87,6 +93,7 @@ export function aggregateSummary(
 
   const uniqueFingerprints = new Set<string>()
   const perDay = new Map<string, { votes: number; voters: Set<string> }>()
+  const todayByHour: HourBucket[] = Array.from({ length: 24 }, (_, hour) => ({ hour, votes: 0 }))
 
   let totalVotes = 0
   let todayVotes = 0
@@ -99,7 +106,11 @@ export function aggregateSummary(
 
     const created = new Date(s.created_at)
     const key = romeDateKey(created)
-    if (key === todayKey) todayVotes += 1
+    if (key === todayKey) {
+      todayVotes += 1
+      const hour = romeHourKey(created)
+      if (hour >= 0 && hour < 24) todayByHour[hour].votes += 1
+    }
     if (key === yesterdayKey) yesterdayVotes += 1
     if (created.getTime() >= activeThreshold) activeNow += 1
 
@@ -134,26 +145,33 @@ export function aggregateSummary(
     activeNow,
     onlineUsers,
     dailyStats,
+    todayByHour,
   }
 }
 
-export interface VoteTrendPoint {
-  date: string
+export interface TrendPoint {
+  key: string
+  label: string
   votes: number
   cumulative: number
 }
 
 /**
- * Serie per il grafico "Andamento Votazioni": cumulato calcolato sull'intera
- * serie (così il primo punto visibile include i voti precedenti) e giorni a
- * zero iniziali/finali rimossi per evitare l'effetto linea schiacciata. Gli
- * zeri interni sono mantenuti.
+ * Serie giornaliera per il grafico "Andamento Votazioni": cumulato calcolato
+ * sull'intera serie (così il primo punto visibile include i voti precedenti) e
+ * giorni a zero iniziali/finali rimossi per evitare l'effetto linea schiacciata.
+ * Gli zeri interni sono mantenuti.
  */
-export function buildVoteTrend(dailyStats: DailyStat[]): VoteTrendPoint[] {
+export function buildVoteTrend(dailyStats: DailyStat[]): TrendPoint[] {
   let running = 0
-  const withCumulative: VoteTrendPoint[] = dailyStats.map((day) => {
+  const withCumulative: TrendPoint[] = dailyStats.map((day) => {
     running += day.vote_count
-    return { date: day.date, votes: day.vote_count, cumulative: running }
+    return {
+      key: day.date,
+      label: `${day.date.slice(8, 10)}/${day.date.slice(5, 7)}`,
+      votes: day.vote_count,
+      cumulative: running,
+    }
   })
 
   const first = withCumulative.findIndex((point) => point.votes > 0)
@@ -163,6 +181,34 @@ export function buildVoteTrend(dailyStats: DailyStat[]): VoteTrendPoint[] {
   while (last > first && withCumulative[last].votes === 0) last -= 1
 
   return withCumulative.slice(first, last + 1)
+}
+
+/**
+ * Serie oraria della giornata corrente: cumulato infragiornaliero e trim a solo
+ * ore attive, con un'ora di contesto ai bordi. Usata come fallback quando c'è un
+ * solo giorno di dati (per non mostrare un grafico con un unico punto).
+ */
+export function buildHourlyTrend(buckets: HourBucket[]): TrendPoint[] {
+  let running = 0
+  const withCumulative: TrendPoint[] = buckets.map((bucket) => {
+    running += bucket.votes
+    return {
+      key: String(bucket.hour),
+      label: `${pad2(bucket.hour)}:00`,
+      votes: bucket.votes,
+      cumulative: running,
+    }
+  })
+
+  const first = withCumulative.findIndex((point) => point.votes > 0)
+  if (first === -1) return []
+
+  let last = withCumulative.length - 1
+  while (last > first && withCumulative[last].votes === 0) last -= 1
+
+  const from = Math.max(0, first - 1)
+  const to = Math.min(withCumulative.length - 1, last + 1)
+  return withCumulative.slice(from, to + 1)
 }
 
 /**

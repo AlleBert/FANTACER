@@ -1,6 +1,7 @@
 import {
   aggregateSummary,
   buildDailyReport,
+  buildHourlyTrend,
   buildVoteTrend,
   filterSessionsByBatch,
   renderDailyReportText,
@@ -78,6 +79,14 @@ describe('aggregateSummary', () => {
     expect(summary.onlineUsers).toBe(7)
   })
 
+  it('raggruppa i voti di oggi per ora (Europe/Rome)', () => {
+    const summary = aggregateSummary(sessions, 0, now)
+    expect(summary.todayByHour).toHaveLength(24)
+    expect(summary.todayByHour[10].votes).toBe(1)
+    expect(summary.todayByHour[13].votes).toBe(1)
+    expect(summary.todayByHour.reduce((acc, h) => acc + h.votes, 0)).toBe(2)
+  })
+
   it('aggrega per giorno (niente date duplicate) e ultimi 30 giorni', () => {
     const summary = aggregateSummary(sessions, 0, now)
     expect(summary.dailyStats).toHaveLength(30)
@@ -142,7 +151,8 @@ describe('buildVoteTrend', () => {
       trendDay('2026-09-22', 0),
       trendDay('2026-09-23', 0),
     ])
-    expect(trend.map((p) => p.date)).toEqual(['2026-09-19', '2026-09-20', '2026-09-21'])
+    expect(trend.map((p) => p.key)).toEqual(['2026-09-19', '2026-09-20', '2026-09-21'])
+    expect(trend.map((p) => p.label)).toEqual(['19/09', '20/09', '21/09'])
     expect(trend.map((p) => p.votes)).toEqual([10, 20, 30])
     expect(trend.map((p) => p.cumulative)).toEqual([10, 30, 60])
   })
@@ -154,7 +164,7 @@ describe('buildVoteTrend', () => {
       trendDay('2026-09-21', 5),
     ])
     expect(trend).toHaveLength(3)
-    expect(trend[1]).toEqual({ date: '2026-09-20', votes: 0, cumulative: 5 })
+    expect(trend[1]).toEqual({ key: '2026-09-20', label: '20/09', votes: 0, cumulative: 5 })
     expect(trend[2].cumulative).toBe(10)
   })
 
@@ -164,6 +174,34 @@ describe('buildVoteTrend', () => {
 
   it('ritorna serie vuota su input vuoto', () => {
     expect(buildVoteTrend([])).toEqual([])
+  })
+})
+
+describe('buildHourlyTrend', () => {
+  const buckets = (votes: Record<number, number>) =>
+    Array.from({ length: 24 }, (_, hour) => ({ hour, votes: votes[hour] ?? 0 }))
+
+  it('mostra solo le ore attive con un\'ora di contesto ai bordi', () => {
+    const trend = buildHourlyTrend(buckets({ 10: 5, 11: 7, 12: 3 }))
+    // 09 (contesto), 10, 11, 12, 13 (contesto)
+    expect(trend.map((p) => p.key)).toEqual(['9', '10', '11', '12', '13'])
+    expect(trend.map((p) => p.label)).toEqual(['09:00', '10:00', '11:00', '12:00', '13:00'])
+    expect(trend.map((p) => p.votes)).toEqual([0, 5, 7, 3, 0])
+  })
+
+  it('cumula infragiornalmente', () => {
+    const trend = buildHourlyTrend(buckets({ 10: 5, 11: 7 }))
+    expect(trend.map((p) => p.cumulative)).toEqual([0, 5, 12, 12])
+  })
+
+  it('non aggiunge contesto oltre i bordi della giornata', () => {
+    const trend = buildHourlyTrend(buckets({ 0: 4 }))
+    expect(trend.map((p) => p.key)).toEqual(['0', '1'])
+    expect(trend[0].cumulative).toBe(4)
+  })
+
+  it('ritorna serie vuota se nessuna ora ha voti', () => {
+    expect(buildHourlyTrend(buckets({}))).toEqual([])
   })
 })
 
