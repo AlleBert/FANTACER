@@ -3,13 +3,18 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ADMIN_NAV_ITEMS, isPathActive } from '@/lib/admin-navigation'
+import { cn } from '@/lib/utils'
 
 export function BottomNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border safe-pb md:hidden" aria-label="Navigazione principale">
-      <div className="flex h-16">
+    <nav
+      data-testid="admin-bottom-nav"
+      aria-label="Navigazione principale"
+      className="admin-nav-glass fixed bottom-[var(--safe-bottom)] left-[var(--safe-x)] right-[var(--safe-x)] z-50 mx-auto max-w-[34rem] rounded-full p-1.5 md:hidden"
+    >
+      <div className="flex items-stretch gap-1">
         {ADMIN_NAV_ITEMS.map((item) => {
           const isActive = isPathActive(pathname, item.href)
           return (
@@ -17,14 +22,19 @@ export function BottomNav() {
               key={item.href}
               href={item.href}
               aria-current={isActive ? 'page' : undefined}
-              className={`flex flex-1 min-w-0 flex-col items-center justify-center gap-0.5 px-1.5 py-2 rounded-xl transition-colors ${
+              aria-label={item.label}
+              className={cn(
+                'flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-full px-1 py-1.5 transition-colors',
+                'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
                 isActive
-                  ? 'text-primary'
+                  ? 'bg-primary/15 text-primary'
                   : 'text-muted-foreground hover:text-foreground'
-              }`}
+              )}
             >
               <item.icon className="h-5 w-5" aria-hidden="true" />
-              <span className="text-[10px] font-medium leading-tight">{item.label}</span>
+              <span className="admin-nav-label text-[10px] font-medium leading-tight">
+                {item.label}
+              </span>
             </Link>
           )
         })}

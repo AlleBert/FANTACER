@@ -13,7 +13,7 @@ import { createClient } from '@/lib/supabase/client'
 import { safeSubscribe } from '@/lib/supabase/realtime'
 import { useBatches } from '@/hooks/use-batches'
 import { BatchFilter } from '@/components/admin/batch-filter'
-import { buildHourlyTrend, buildVoteTrend, type HourBucket, type TrendPoint } from '@/lib/admin-analytics'
+import { buildHourlyTrend, buildVoteTrend, selectDailyRange, type HourBucket, type TrendPoint } from '@/lib/admin-analytics'
 import { cn } from '@/lib/utils'
 
 interface Stats {
@@ -23,7 +23,7 @@ interface Stats {
   yesterdayVotes: number
   activeNow: number
   onlineUsers: number
-  todayByHour: HourBucket[]
+  hourlyByDay: Record<string, HourBucket[]>
 }
 
 interface DailyStats {
@@ -56,22 +56,22 @@ function VoteTrendTooltip({
   active,
   payload,
   mode,
-  todayKey,
+  dayKey,
 }: {
   active?: boolean
   payload?: { payload?: TrendPoint }[]
   mode: 'daily' | 'hourly'
-  todayKey: string
+  dayKey: string
 }) {
   const point = active ? payload?.[0]?.payload : undefined
   if (!point) return null
 
   const title =
     mode === 'hourly'
-      ? `${formatTooltipDate(todayKey)} · ${point.label}`
+      ? `${formatTooltipDate(dayKey)} · ${point.label}`
       : formatTooltipDate(point.key)
   const votesLabel = mode === 'hourly' ? "Voti nell'ora" : 'Voti del giorno'
-  const cumulativeLabel = mode === 'hourly' ? 'Cumulato giornata' : 'Totale cumulato'
+  const cumulativeLabel = mode === 'hourly' ? 'Cumulato del giorno' : 'Cumulato periodo'
 
   return (
     <div className="rounded-xl border border-border bg-card px-3 py-2 shadow-lg">
@@ -93,11 +93,16 @@ export default function PanoramicaPage() {
   const { batches, activeBatch, loading: batchesLoading } = useBatches()
   const [stats, setStats] = useState<Stats>({
     totalVotes: 0, uniqueVoters: 0, todayVotes: 0, yesterdayVotes: 0, activeNow: 0, onlineUsers: 0,
-    todayByHour: [],
+    hourlyByDay: {},
   })
   const [dailyStats, setDailyStats] = useState<DailyStats[]>([])
-  // auto = oraria se c'è un solo giorno di dati, altrimenti giornaliera.
-  const [trendView, setTrendView] = useState<'auto' | 'daily' | 'hourly'>('auto')
+  // Vista del grafico: default Orario; l'intervallo Da–A seleziona i giorni.
+  const [trendView, setTrendView] = useState<'daily' | 'hourly'>('hourly')
+  // Intervallo del grafico (Europe/Rome). `null` = "auto": `chartFrom` → primo
+  // giorno disponibile, `chartTo` → oggi (giorno delle fasce orarie). Così la
+  // vista Orario resta su "oggi" anche se la scheda resta aperta oltre mezzanotte.
+  const [chartFrom, setChartFrom] = useState<string | null>(null)
+  const [chartTo, setChartTo] = useState<string | null>(null)
   // Intervallo di esportazione (Europe/Rome); default oggi.
   const [rangeFrom, setRangeFrom] = useState<string>(() => romeTodayKey())
   const [rangeTo, setRangeTo] = useState<string>(() => romeTodayKey())
@@ -128,7 +133,7 @@ export default function PanoramicaPage() {
         yesterdayVotes: statsData.yesterdayVotes || 0,
         activeNow: statsData.activeNow || 0,
         onlineUsers: statsData.onlineUsers || 0,
-        todayByHour: statsData.todayByHour || [],
+        hourlyByDay: statsData.hourlyByDay || {},
       })
       setDailyStats(statsData.dailyStats || [])
     } catch (e) {
@@ -194,20 +199,22 @@ export default function PanoramicaPage() {
     { label: onlineIsGlobal ? 'Utenti Online (globale)' : 'Utenti Online', value: stats.onlineUsers, icon: Wifi, color: 'cyan' },
   ]
 
-  const dailySeries = useMemo(() => buildVoteTrend(dailyStats), [dailyStats])
-  const hourlySeries = useMemo(() => buildHourlyTrend(stats.todayByHour), [stats.todayByHour])
-  const effectiveView: 'daily' | 'hourly' =
-    trendView === 'daily'
-      ? 'daily'
-      : trendView === 'hourly'
-        ? 'hourly'
-        : dailySeries.length >= 2
-          ? 'daily'
-          : hourlySeries.length > 0
-            ? 'hourly'
-            : 'daily'
-  const chartData = effectiveView === 'hourly' ? hourlySeries : dailySeries
-  const todayKey = dailyStats[dailyStats.length - 1]?.date ?? ''
+  // Estremi della finestra disponibile (dailyStats è zero-filled sugli ultimi 30 giorni).
+  const minDay = dailyStats[0]?.date ?? romeTodayKey()
+  const maxDay = dailyStats[dailyStats.length - 1]?.date ?? romeTodayKey()
+  // Clamp in render: se il batch cambia e le date escono dalla finestra, ricado sui bordi.
+  const chartRangeFrom = chartFrom && chartFrom >= minDay && chartFrom <= maxDay ? chartFrom : minDay
+  const chartRangeTo = chartTo && chartTo >= minDay && chartTo <= maxDay ? chartTo : maxDay
+
+  const rangedDailySeries = useMemo(
+    () => buildVoteTrend(selectDailyRange(dailyStats, chartRangeFrom, chartRangeTo)),
+    [dailyStats, chartRangeFrom, chartRangeTo],
+  )
+  const hourlySeries = useMemo(
+    () => buildHourlyTrend(stats.hourlyByDay[chartRangeTo] ?? []),
+    [stats.hourlyByDay, chartRangeTo],
+  )
+  const chartData = trendView === 'hourly' ? hourlySeries : rangedDailySeries
 
   const fairRange = useMemo(() => {
     const active = dailyStats.filter((d) => d.vote_count > 0)
@@ -290,34 +297,61 @@ export default function PanoramicaPage() {
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[clamp(0.65rem,2vw,0.8rem)] text-muted-foreground">
                 <span className="inline-flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--primary)' }} aria-hidden="true" />
-                  {effectiveView === 'hourly' ? "Voti nell'ora" : 'Voti del giorno'}
+                  {trendView === 'hourly' ? "Voti nell'ora" : 'Voti del giorno'}
                 </span>
                 <span className="inline-flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--foreground)' }} aria-hidden="true" />
-                  {effectiveView === 'hourly' ? 'Cumulato giornata' : 'Totale cumulato'}
+                  {trendView === 'hourly' ? 'Cumulato del giorno' : 'Cumulato periodo'}
                 </span>
               </div>
-              <div className="inline-flex rounded-lg border border-border p-0.5 text-[clamp(0.65rem,2vw,0.8rem)]">
-                {([
-                  ['auto', 'Auto'],
-                  ['daily', 'Giornaliero'],
-                  ['hourly', 'Orario'],
-                ] as const).map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setTrendView(value)}
-                    aria-pressed={trendView === value}
-                    className={cn(
-                      'cursor-pointer rounded-md px-2 py-1 font-medium transition-colors',
-                      trendView === value
-                        ? 'bg-primary text-white'
-                        : 'text-muted-foreground hover:bg-secondary'
-                    )}
-                  >
-                    {label}
-                  </button>
-                ))}
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                <div className="flex flex-wrap items-center gap-2 text-[clamp(0.65rem,2vw,0.8rem)] text-muted-foreground">
+                  <label className="flex items-center gap-1">
+                    Da
+                    <input
+                      type="date"
+                      aria-label="Da — inizio intervallo grafico"
+                      value={chartRangeFrom}
+                      min={minDay}
+                      max={chartRangeTo}
+                      onChange={(e) => setChartFrom(e.target.value || null)}
+                      className="h-8 rounded-md border border-border bg-background px-2 text-xs text-foreground"
+                    />
+                  </label>
+                  <label className="flex items-center gap-1">
+                    A
+                    <input
+                      type="date"
+                      aria-label="A — fine intervallo grafico"
+                      value={chartRangeTo}
+                      min={chartRangeFrom}
+                      max={maxDay}
+                      onChange={(e) => setChartTo(e.target.value || null)}
+                      className="h-8 rounded-md border border-border bg-background px-2 text-xs text-foreground"
+                    />
+                  </label>
+                </div>
+                <div className="inline-flex rounded-lg border border-border p-0.5 text-[clamp(0.65rem,2vw,0.8rem)]">
+                  {([
+                    ['daily', 'Giornaliero'],
+                    ['hourly', 'Orario'],
+                  ] as const).map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setTrendView(value)}
+                      aria-pressed={trendView === value}
+                      className={cn(
+                        'cursor-pointer rounded-md px-2 py-1 font-medium transition-colors',
+                        trendView === value
+                          ? 'bg-primary text-white'
+                          : 'text-muted-foreground hover:bg-secondary'
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </CardHeader>
@@ -348,23 +382,25 @@ export default function PanoramicaPage() {
                     <YAxis yAxisId="right" orientation="right" stroke="var(--muted-foreground)" fontSize={11}
                       tickLine={false} axisLine={false} allowDecimals={false} width={28} />
                     <Tooltip
-                      content={<VoteTrendTooltip mode={effectiveView} todayKey={todayKey} />}
+                      content={<VoteTrendTooltip mode={trendView} dayKey={chartRangeTo} />}
                       cursor={{ stroke: 'var(--border)' }}
                     />
                     <Area yAxisId="left" type="monotone" dataKey="votes"
-                      name={effectiveView === 'hourly' ? "Voti nell'ora" : 'Voti del giorno'}
+                      name={trendView === 'hourly' ? "Voti nell'ora" : 'Voti del giorno'}
                       stroke="var(--primary)" strokeWidth={3} fill="url(#votesGradient)"
                       dot={{ fill: 'var(--primary)', r: 2, strokeWidth: 0 }}
                       activeDot={{ r: 4, strokeWidth: 0 }} />
                     <Line yAxisId="right" type="monotone" dataKey="cumulative"
-                      name={effectiveView === 'hourly' ? 'Cumulato giornata' : 'Totale cumulato'}
+                      name={trendView === 'hourly' ? 'Cumulato del giorno' : 'Cumulato periodo'}
                       stroke="var(--foreground)" strokeWidth={2} dot={false}
                       activeDot={{ r: 4, strokeWidth: 0 }} />
                   </ComposedChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="h-full flex items-center justify-center text-muted-foreground italic">
-                  Nessun dato disponibile
+                <div className="h-full flex items-center justify-center px-4 text-center text-muted-foreground italic">
+                  {trendView === 'hourly'
+                    ? 'Nessun voto in questa giornata — scegli un altro giorno in «A» o passa a Giornaliero'
+                    : 'Nessun dato disponibile'}
                 </div>
               )}
             </div>

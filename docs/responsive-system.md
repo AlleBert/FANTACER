@@ -62,6 +62,7 @@ Token in `globals.css:110-119` e classi `@layer components` (`globals.css:179-20
 - `viewportFit: cover` è attivo (`src/app/layout.tsx`).
 - Ogni sezione usa `.safe-shell` come primo contenitore: i padding safe-area sono **integrati nel sistema di spacing**, mai aggiunti a mano a singoli elementi.
 - Elementi ancorati ai bordi (footer legale del contact, bottom-nav admin) usano `var(--safe-bottom)`.
+- La **bottom-nav admin** è una pillola glass flottante (`fixed`, `bottom: var(--safe-bottom)`, `left/right: var(--safe-x)`, `max-w: 34rem`): lo spazio inferiore del contenuto è `pb-[calc(var(--safe-bottom)+5rem)]`. Le label collassano via container query (`@container (max-width: 22.5rem)`), non con breakpoint viewport.
 
 ### Tipografia fluida
 

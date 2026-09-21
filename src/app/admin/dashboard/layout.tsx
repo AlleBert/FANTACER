@@ -145,7 +145,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
       <main
-        className={`transition-all duration-300 min-h-dvh pb-16 md:pb-0 overflow-x-hidden ${
+        className={`transition-all duration-300 min-h-dvh pb-[calc(var(--safe-bottom)+5rem)] md:pb-0 overflow-x-hidden ${
           isSidebarCollapsed ? 'md:ml-[var(--admin-sidebar-width-collapsed)]' : 'md:ml-[var(--admin-sidebar-width)]'
         }`}
       >

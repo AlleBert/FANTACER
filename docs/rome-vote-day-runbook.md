@@ -3,6 +3,15 @@
 Migration: `supabase/migrations/20260921000000_rome_vote_day.sql`
 Branch: `feat/rome-vote-day`
 
+> **Stato: applicata il 21/09/2026.** `20260921000000` risulta registrata su
+> **production** (`zdfverdwdsigizxktilz`) e su **e2e** (`ookipybsnjtvdrzqzpsl`).
+> Verificato il 22/09/2026 con `supabase migration list --project-ref <ref>`.
+> La procedura sotto resta valida come runbook riutilizzabile (re-apply di
+> sicurezza, verifica post-apply) e per il rollback. Caveat empirico: sui dati
+> attuali `vote_day` coincide con la data UTC (nessun voto nella fascia
+> 22:00–24:00 UTC), quindi la correttezza Rome-day è verificata
+> strutturalmente, non da un caso limite reale.
+
 ## Obiettivo
 
 Il confine giornaliero del voto passa da **UTC** (reset alle 02:00 italiane) a

@@ -9,6 +9,7 @@ import {
   romeDateKey,
   romeHourKey,
   sanitizeCsvValue,
+  selectDailyRange,
   type DailyStat,
   type ReportSessionRow,
   type SessionSummaryRow,
@@ -80,12 +81,19 @@ describe('aggregateSummary', () => {
     expect(summary.onlineUsers).toBe(7)
   })
 
-  it('raggruppa i voti di oggi per ora (Europe/Rome)', () => {
+  it('raggruppa i voti per ora di ciascun giorno (Europe/Rome)', () => {
     const summary = aggregateSummary(sessions, 0, now)
-    expect(summary.todayByHour).toHaveLength(24)
-    expect(summary.todayByHour[10].votes).toBe(1)
-    expect(summary.todayByHour[13].votes).toBe(1)
-    expect(summary.todayByHour.reduce((acc, h) => acc + h.votes, 0)).toBe(2)
+
+    const today = summary.hourlyByDay['2026-09-14']
+    expect(today).toHaveLength(24)
+    expect(today[10].votes).toBe(1) // 08:00Z = 10:00 a Roma
+    expect(today[13].votes).toBe(1) // 11:55Z = 13:55 a Roma
+    expect(today.reduce((acc, h) => acc + h.votes, 0)).toBe(2)
+
+    const yesterday = summary.hourlyByDay['2026-09-13']
+    expect(yesterday).toHaveLength(24)
+    expect(yesterday[12].votes).toBe(1) // 10:00Z = 12:00 a Roma
+    expect(yesterday.reduce((acc, h) => acc + h.votes, 0)).toBe(1)
   })
 
   it('aggrega per giorno (niente date duplicate) e ultimi 30 giorni', () => {
@@ -175,6 +183,43 @@ describe('buildVoteTrend', () => {
 
   it('ritorna serie vuota su input vuoto', () => {
     expect(buildVoteTrend([])).toEqual([])
+  })
+})
+
+describe('selectDailyRange', () => {
+  const days = [
+    trendDay('2026-09-18', 1),
+    trendDay('2026-09-19', 2),
+    trendDay('2026-09-20', 3),
+  ]
+
+  it("tiene solo i giorni nell'intervallo inclusivo", () => {
+    expect(selectDailyRange(days, '2026-09-19', '2026-09-20').map((d) => d.date)).toEqual([
+      '2026-09-19',
+      '2026-09-20',
+    ])
+  })
+
+  it('non filtra i lati vuoti', () => {
+    expect(selectDailyRange(days, '', '2026-09-19')).toHaveLength(2)
+    expect(selectDailyRange(days, '2026-09-19', '')).toHaveLength(2)
+  })
+
+  it('ritorna vuoto se from > to', () => {
+    expect(selectDailyRange(days, '2026-09-20', '2026-09-19')).toEqual([])
+  })
+})
+
+describe('buildVoteTrend su intervallo selezionato', () => {
+  it("ricalcola il cumulato dall'inizio dell'intervallo", () => {
+    const stats = [
+      trendDay('2026-09-18', 5),
+      trendDay('2026-09-19', 10),
+      trendDay('2026-09-20', 7),
+    ]
+    const ranged = buildVoteTrend(selectDailyRange(stats, '2026-09-19', '2026-09-20'))
+    expect(ranged.map((p) => p.votes)).toEqual([10, 7])
+    expect(ranged.map((p) => p.cumulative)).toEqual([10, 17])
   })
 })
 
