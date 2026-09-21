@@ -16,6 +16,7 @@ const SUBPROCESSOR_ITEMS = [
   { labelKey: 'privacyPolicy.resend', descKey: 'privacyPolicy.resendDesc' },
   { labelKey: 'privacyPolicy.cloudflare', descKey: 'privacyPolicy.cloudflareDesc' },
   { labelKey: 'privacyPolicy.googleAnalytics', descKey: 'privacyPolicy.googleAnalyticsDesc' },
+  { labelKey: 'privacyPolicy.vercel', descKey: 'privacyPolicy.vercelDesc' },
 ] as const
 
 const RETENTION_ITEMS = [

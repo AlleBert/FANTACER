@@ -6,6 +6,7 @@ import { LocaleProvider } from '@/lib/LocaleContext'
 import type { Locale } from '@/lib/locale'
 import { CookieConsentUI } from '@/components/cookie-consent'
 import { Analytics } from '@/components/analytics'
+import { Analytics as VercelAnalytics } from '@vercel/analytics/next'
 import { ConsentErrorBoundary } from '@/components/consent-error-boundary'
 
 export function Providers({ locale, children }: { locale: Locale; children: ReactNode }) {
@@ -20,6 +21,7 @@ export function Providers({ locale, children }: { locale: Locale; children: Reac
         <ConsentErrorBoundary fallback={children}>
           {children}
           <Analytics />
+          <VercelAnalytics />
           <CookieConsentUI />
         </ConsentErrorBoundary>
       )}

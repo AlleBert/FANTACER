@@ -92,6 +92,7 @@ export default async function CookiePolicyPage() {
         <p>{t('cookiePolicy.analyticsDesc')}</p>
         <CookieTable rows={analyticsCookies} t={t} />
         <p className="muted">{t('cookiePolicy.ga4Note')}</p>
+        <p className="muted">{t('cookiePolicy.vercelNote')}</p>
       </LegalSection>
 
       <LegalSection id="third-party" headingKey="cookiePolicy.thirdParty">
@@ -101,6 +102,7 @@ export default async function CookiePolicyPage() {
           <li><a href="https://resend.com/privacy" target="_blank" rel="noopener noreferrer">{t('cookiePolicy.linkResend')}</a></li>
           <li><a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer">{t('cookiePolicy.linkCloudflare')}</a></li>
           <li><a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">{t('cookiePolicy.linkGoogle')}</a></li>
+          <li><a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer">{t('cookiePolicy.linkVercel')}</a></li>
         </ul>
       </LegalSection>
 

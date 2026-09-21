@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { dictionaries } from "@/i18n";
 import { Providers } from "@/components/providers";
-import { Analytics } from "@vercel/analytics/next";
 
 const siteUrl = "https://www.fantacer.com";
 
@@ -114,7 +113,6 @@ export default function RootLayout({
           </>
         )}
         <Providers locale={DEFAULT_LOCALE}>{children}</Providers>
-        <Analytics />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
