@@ -2,9 +2,10 @@ import {
   aggregateSummary,
   buildDailyReport,
   buildHourlyTrend,
+  buildRangeReport,
   buildVoteTrend,
+  enumerateDayKeys,
   filterSessionsByBatch,
-  renderDailyReportText,
   romeDateKey,
   romeHourKey,
   sanitizeCsvValue,
@@ -321,32 +322,73 @@ describe('buildDailyReport', () => {
   })
 })
 
-describe('renderDailyReportText', () => {
-  const now = new Date('2026-09-23T18:00:00Z')
-
-  it('include numeri, classifica e cumulato settimanale', () => {
-    const report = buildDailyReport(
-      [
-        reportSession('2026-09-23T09:00:00Z', 'fp-a', ['c1', 'c2', 'c3']),
-        reportSession('2026-09-23T12:00:00Z', 'fp-b', ['c1', 'c4', 'c5']),
-      ],
-      NAMES,
-      now,
-    )
-    const text = renderDailyReportText(report, 'Fiera')
-    expect(text).toContain('# FANTACER — Riepilogo giornata')
-    expect(text).toContain('Batch: Fiera')
-    expect(text).toContain('- Voti totali: 2')
-    expect(text).toContain('- Votanti singoli: 2')
-    expect(text).toContain('Primo voto: 11:00')
-    expect(text).toContain('Ultimo voto: 14:00')
-    expect(text).toContain('Uno')
-    expect(text).toContain('Cumulato settimana')
+describe('enumerateDayKeys', () => {
+  it('elenca i giorni inclusivi tra from e to', () => {
+    expect(enumerateDayKeys('2026-09-21', '2026-09-24')).toEqual([
+      '2026-09-21',
+      '2026-09-22',
+      '2026-09-23',
+      '2026-09-24',
+    ])
   })
 
-  it('non va in errore su giornata vuota', () => {
-    const report = buildDailyReport([], NAMES, now)
-    const text = renderDailyReportText(report)
-    expect(text).toContain('Nessun voto registrato.')
+  it('ritorna un solo giorno se from = to', () => {
+    expect(enumerateDayKeys('2026-09-21', '2026-09-21')).toEqual(['2026-09-21'])
+  })
+
+  it('ritorna [] su intervallo invalido o invertito', () => {
+    expect(enumerateDayKeys('2026-09-24', '2026-09-21')).toEqual([])
+    expect(enumerateDayKeys('nope', '2026-09-21')).toEqual([])
+  })
+
+  it('ritorna [] se l\'intervallo supera 31 giorni', () => {
+    expect(enumerateDayKeys('2026-08-01', '2026-09-30')).toEqual([])
+  })
+})
+
+describe('buildRangeReport', () => {
+  const now = new Date('2026-09-23T18:00:00Z')
+  const sessions = [
+    reportSession('2026-09-21T09:00:00Z', 'fp-a', ['c1', 'c2', 'c3']),
+    reportSession('2026-09-22T09:00:00Z', 'fp-a', ['c1', 'c2', 'c3']),
+    reportSession('2026-09-22T10:00:00Z', 'fp-b', ['c1', 'c4', 'c5']),
+    reportSession('2026-09-23T09:00:00Z', 'fp-c', ['c2', 'c3', 'c4']),
+  ]
+
+  it('produce una sezione per giorno e i totali del periodo', () => {
+    const report = buildRangeReport(sessions, NAMES, ['2026-09-21', '2026-09-22'], now)
+    expect(report.from).toBe('2026-09-21')
+    expect(report.to).toBe('2026-09-22')
+    expect(report.days).toHaveLength(2)
+    expect(report.totals.days).toBe(2)
+    expect(report.totals.votes).toBe(3)
+    expect(report.totals.totalPoints).toBe(21)
+    expect(report.totals.peakDay).toEqual({ date: '2026-09-22', votes: 2 })
+  })
+
+  it('conta i votanti unici sull\'intero periodo, non la somma per giorno', () => {
+    const report = buildRangeReport(sessions, NAMES, ['2026-09-21', '2026-09-22'], now)
+    // fp-a vota il 21 e il 22: unico nel periodo, due nei per-giorno.
+    expect(report.totals.uniqueVoters).toBe(2)
+    expect(report.days[0].uniqueVoters).toBe(1)
+    expect(report.days[1].uniqueVoters).toBe(2)
+  })
+
+  it('gestisce un giorno senza voti nell\'intervallo', () => {
+    const report = buildRangeReport(sessions, NAMES, ['2026-09-20', '2026-09-21'], now)
+    expect(report.days[0].votes).toBe(0)
+    expect(report.days[1].votes).toBe(1)
+    expect(report.totals.votes).toBe(1)
+  })
+
+  it('ritorna totali a zero senza sessioni', () => {
+    const report = buildRangeReport([], NAMES, ['2026-09-21'], now)
+    expect(report.totals).toEqual({
+      days: 1,
+      votes: 0,
+      uniqueVoters: 0,
+      totalPoints: 0,
+      peakDay: { date: '2026-09-21', votes: 0 },
+    })
   })
 })

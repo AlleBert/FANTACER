@@ -116,8 +116,8 @@ test.describe('Viewer role (read-only)', () => {
     expect(res.status()).toBe(403);
   });
 
-  test('daily report is admin-only (403 for viewer)', async ({ viewerRequest: request }) => {
-    const res = await request.get('/api/analytics?type=report');
+  test('bundle export is admin-only (403 for viewer)', async ({ viewerRequest: request }) => {
+    const res = await request.get('/api/analytics?type=bundle&format=csv');
     expect(res.status()).toBe(403);
   });
 

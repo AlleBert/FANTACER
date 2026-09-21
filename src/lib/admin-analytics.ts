@@ -295,12 +295,6 @@ const romeTimeFormatter = new Intl.DateTimeFormat('it-IT', {
   hourCycle: 'h23',
 })
 
-const romeWeekdayFormatter = new Intl.DateTimeFormat('it-IT', {
-  timeZone: ROME_TZ,
-  weekday: 'short',
-  day: 'numeric',
-})
-
 /** Ora del giorno (0–23) nel fuso Europe/Rome; -1 su data invalida. */
 export function romeHourKey(date: Date): number {
   if (Number.isNaN(date.getTime())) return -1
@@ -483,11 +477,11 @@ function pad2(value: number): string {
   return String(value).padStart(2, '0')
 }
 
-function formatHour(hour: number): string {
+export function formatHour(hour: number): string {
   return `${pad2(hour)}:00`
 }
 
-function formatBands(hourly: ReportHour[]): { label: string; votes: number }[] {
+export function formatBands(hourly: ReportHour[]): { label: string; votes: number }[] {
   const bands: { label: string; votes: number }[] = []
   for (let start = 0; start < 24; start += 3) {
     const votes = hourly.slice(start, start + 3).reduce((acc, h) => acc + h.votes, 0)
@@ -496,11 +490,11 @@ function formatBands(hourly: ReportHour[]): { label: string; votes: number }[] {
   return bands
 }
 
-function itNum(value: number): string {
+export function itNum(value: number): string {
   return value.toLocaleString('it-IT')
 }
 
-function timeLabel(iso: string | null): string {
+export function timeLabel(iso: string | null): string {
   if (!iso) return '—'
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return '—'
@@ -508,113 +502,84 @@ function timeLabel(iso: string | null): string {
 }
 
 /**
- * Rende il riepilogo come testo markdown leggibile, pronto da copiare nelle
- * stories. Il batch è opzionale e serve solo come etichetta.
+ * Elenca le chiavi giorno (YYYY-MM-DD, Europe/Rome) tra `from` e `to` inclusi.
+ * Ritorna [] se l'intervallo è invalido o troppo ampio (> 31 giorni).
  */
-export function renderDailyReportText(report: DailyReport, batchLabel?: string): string {
-  const lines: string[] = []
-  const peak = report.peakHour
-
-  lines.push('# FANTACER — Riepilogo giornata')
-  lines.push('')
-  lines.push(
-    `**${report.dayLabel}**${batchLabel ? ` · Batch: ${batchLabel}` : ''} · Generato: ${timeLabel(
-      report.generatedAt,
-    )}`,
-  )
-  lines.push('')
-  lines.push('## In breve')
-  lines.push(`- Voti totali: ${itNum(report.votes)}`)
-  lines.push(`- Votanti singoli: ${itNum(report.uniqueVoters)}`)
-  lines.push(`- Punti assegnati: ${itNum(report.totalPoints)}`)
-  lines.push(`- Media voti/ora attiva: ${itNum(report.avgVotesPerHour)}`)
-  lines.push(`- Ore attive: ${itNum(report.activeHours)}`)
-  lines.push(
-    `- Fascia di punta: ${
-      peak === null
-        ? '—'
-        : `${formatHour(peak)}–${formatHour(peak + 1)} (${itNum(report.hourly[peak].votes)} voti)`
-    }`,
-  )
-  lines.push(
-    `- Primo voto: ${timeLabel(report.firstVoteAt)} · Ultimo voto: ${timeLabel(report.lastVoteAt)}`,
-  )
-  lines.push('')
-  lines.push('## Fasce orarie (Europe/Rome)')
-  lines.push('')
-  lines.push('| Fascia | Voti |')
-  lines.push('| --- | ---: |')
-  for (const band of formatBands(report.hourly)) {
-    lines.push(`| ${band.label} | ${itNum(band.votes)} |`)
+export function enumerateDayKeys(from: string, to: string): string[] {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to)) return []
+  const start = utcNoonFromKey(from)
+  const end = utcNoonFromKey(to)
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start > end) return []
+  const keys: string[] = []
+  for (let cursor = start; cursor <= end; cursor = addDays(cursor, 1)) {
+    keys.push(romeDateKey(cursor))
+    if (keys.length > 31) return []
   }
-  lines.push('')
+  return keys
+}
 
-  lines.push('## Top aziende del giorno')
-  lines.push('')
-  if (report.top3.length === 0) {
-    lines.push('Nessun voto registrato.')
-  } else {
-    report.top3.forEach((company, index) => {
-      lines.push(
-        `${index + 1}. **${company.name}** — ${itNum(company.points)} punti (${itNum(
-          company.votes,
-        )} voti)`,
-      )
-    })
+export interface RangeTotals {
+  days: number
+  votes: number
+  uniqueVoters: number
+  totalPoints: number
+  peakDay: { date: string; votes: number } | null
+}
+
+export interface RangeReport {
+  from: string
+  to: string
+  generatedAt: string
+  days: DailyReport[]
+  totals: RangeTotals
+}
+
+/**
+ * Report multi-giorno: riusa `buildDailyReport` per ciascuna giornata (con
+ * `now` = mezzogiorno del giorno, così il confronto "ieri" è corretto) e
+ * aggrega i totali. I votanti unici del periodo sono distinti sull'intero
+ * intervallo, non la somma dei per-giorno.
+ */
+export function buildRangeReport(
+  sessions: ReportSessionRow[],
+  companyNames: Map<string, string>,
+  dayKeys: string[],
+  now: Date = new Date(),
+): RangeReport {
+  const keys = [...dayKeys].sort()
+  const days = keys.map((key) => buildDailyReport(sessions, companyNames, utcNoonFromKey(key)))
+
+  const keySet = new Set(keys)
+  const rangeVoters = new Set<string>()
+  let votes = 0
+  let totalPoints = 0
+  let peakDay: { date: string; votes: number } | null = null
+
+  for (const day of days) {
+    votes += day.votes
+    totalPoints += day.totalPoints
+    if (!peakDay || day.votes > peakDay.votes) {
+      peakDay = { date: day.dayKey, votes: day.votes }
+    }
   }
-  lines.push('')
 
-  lines.push('## Classifica completa del giorno')
-  lines.push('')
-  if (report.companies.length === 0) {
-    lines.push('Nessun voto registrato.')
-  } else {
-    lines.push('| # | Azienda | Punti | Voti | 1° | 2° | 3° |')
-    lines.push('| ---: | --- | ---: | ---: | ---: | ---: | ---: |')
-    report.companies.forEach((company, index) => {
-      lines.push(
-        `| ${index + 1} | ${company.name} | ${itNum(company.points)} | ${itNum(
-          company.votes,
-        )} | ${company.firsts} | ${company.seconds} | ${company.thirds} |`,
-      )
-    })
+  for (const s of sessions) {
+    const key = romeDateKey(new Date(s.created_at))
+    if (keySet.has(key)) rangeVoters.add(s.fingerprint)
   }
-  lines.push('')
 
-  lines.push('## Paesi')
-  lines.push('')
-  if (report.countries.length === 0) {
-    lines.push('Nessun dato.')
-  } else {
-    lines.push(report.countries.map((c) => `${c.country} (${itNum(c.votes)})`).join(' · '))
+  return {
+    from: keys[0] ?? '',
+    to: keys[keys.length - 1] ?? '',
+    generatedAt: now.toISOString(),
+    days,
+    totals: {
+      days: days.length,
+      votes,
+      uniqueVoters: rangeVoters.size,
+      totalPoints,
+      peakDay,
+    },
   }
-  lines.push('')
-
-  lines.push('## Confronto con ieri')
-  lines.push(
-    `- Voti: ${itNum(report.yesterday.votes)} · Votanti singoli: ${itNum(
-      report.yesterday.uniqueVoters,
-    )}`,
-  )
-  lines.push('')
-
-  lines.push('## Cumulato settimana (lun–dom)')
-  lines.push(
-    `- Voti: ${itNum(report.week.votes)} · Votanti singoli: ${itNum(
-      report.week.uniqueVoters,
-    )} · Punti: ${itNum(report.week.totalPoints)}`,
-  )
-  lines.push('')
-  lines.push('| Giorno | Voti | Votanti | Punti |')
-  lines.push('| --- | ---: | ---: | ---: |')
-  for (const day of report.week.days) {
-    const label = romeWeekdayFormatter.format(utcNoonFromKey(day.date))
-    lines.push(
-      `| ${label} | ${itNum(day.votes)} | ${itNum(day.uniqueVoters)} | ${itNum(day.points)} |`,
-    )
-  }
-  lines.push('')
-
-  return lines.join('\n')
 }
 

@@ -32,6 +32,15 @@ interface DailyStats {
   unique_voters: number
 }
 
+function romeTodayKey(): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Rome',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date())
+}
+
 function formatTooltipDate(dateKey: string): string {
   try {
     return format(new Date(dateKey), 'dd MMM yyyy', { locale: it }).replace(
@@ -89,6 +98,9 @@ export default function PanoramicaPage() {
   const [dailyStats, setDailyStats] = useState<DailyStats[]>([])
   // auto = oraria se c'è un solo giorno di dati, altrimenti giornaliera.
   const [trendView, setTrendView] = useState<'auto' | 'daily' | 'hourly'>('auto')
+  // Intervallo di esportazione (Europe/Rome); default oggi.
+  const [rangeFrom, setRangeFrom] = useState<string>(() => romeTodayKey())
+  const [rangeTo, setRangeTo] = useState<string>(() => romeTodayKey())
   // null = "usa il batch attivo" (default); stringa = scelta esplicita ('all' = tutti).
   const [selectedBatch, setSelectedBatch] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -157,18 +169,19 @@ export default function PanoramicaPage() {
   const downloadFile = (url: string) => {
     const link = document.createElement('a')
     link.href = url
+    link.download = ''
     link.rel = 'noopener'
     document.body.appendChild(link)
     link.click()
     link.remove()
   }
 
-  // Ogni export scarica due file: il dettaglio (CSV/Excel) e il riepilogo
-  // giornaliero in markdown. Il browser può chiedere una volta il permesso
-  // per i download multipli.
+  // Un solo download (ZIP con raw + PDF) per evitare che due navigazioni
+  // concorrenti si annullino a vicenda.
   const handleExport = (format: 'csv' | 'xlsx') => {
-    downloadFile(`/api/analytics?type=export&format=${format}${batchParam}`)
-    downloadFile(`/api/analytics?type=report${batchParam}`)
+    const params = new URLSearchParams({ type: 'bundle', format, from: rangeFrom, to: rangeTo })
+    if (effectiveBatch && effectiveBatch !== 'all') params.set('batch', effectiveBatch)
+    downloadFile(`/api/analytics?${params.toString()}`)
   }
 
   const onlineIsGlobal = effectiveBatch !== 'all'
@@ -195,6 +208,12 @@ export default function PanoramicaPage() {
             : 'daily'
   const chartData = effectiveView === 'hourly' ? hourlySeries : dailySeries
   const todayKey = dailyStats[dailyStats.length - 1]?.date ?? ''
+
+  const fairRange = useMemo(() => {
+    const active = dailyStats.filter((d) => d.vote_count > 0)
+    if (active.length === 0) return null
+    return { from: active[0].date, to: active[active.length - 1].date }
+  }, [dailyStats])
 
   return (
     <div className="w-full mx-auto p-4 md:p-6 space-y-6">
@@ -309,7 +328,11 @@ export default function PanoramicaPage() {
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
                 </div>
               ) : chartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%"
+                  initialDimension={{ width: 1, height: 200 }}
+                >
                   <ComposedChart data={chartData} margin={{ top: 8, right: 0, left: 0, bottom: 0 }}>
                     <defs>
                       <linearGradient id="votesGradient" x1="0" y1="0" x2="0" y2="1">
@@ -362,8 +385,55 @@ export default function PanoramicaPage() {
             ) : (
               <>
                 <p className="text-sm text-muted-foreground mb-2">
-                  Esporta dati o importa aziende.
+                  {"Scegli l'intervallo e scarica un ZIP con dati e report PDF."}
                 </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                    Da
+                    <input
+                      type="date"
+                      value={rangeFrom}
+                      max={rangeTo}
+                      onChange={(e) => setRangeFrom(e.target.value)}
+                      className="h-9 w-full rounded-md border border-border bg-background px-2 text-sm text-foreground"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                    A
+                    <input
+                      type="date"
+                      value={rangeTo}
+                      min={rangeFrom}
+                      onChange={(e) => setRangeTo(e.target.value)}
+                      className="h-9 w-full rounded-md border border-border bg-background px-2 text-sm text-foreground"
+                    />
+                  </label>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const today = romeTodayKey()
+                      setRangeFrom(today)
+                      setRangeTo(today)
+                    }}
+                    className="flex-1 cursor-pointer rounded-md border border-border px-2 py-1.5 text-xs font-medium text-foreground hover:bg-secondary"
+                  >
+                    Oggi
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!fairRange}
+                    onClick={() => {
+                      if (!fairRange) return
+                      setRangeFrom(fairRange.from)
+                      setRangeTo(fairRange.to)
+                    }}
+                    className="flex-1 cursor-pointer rounded-md border border-border px-2 py-1.5 text-xs font-medium text-foreground hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Tutta la fiera
+                  </button>
+                </div>
                 <Button onClick={() => handleExport('csv')}
                   className="w-full bg-primary hover:bg-primary/90 text-white">
                   <Download className="h-4 w-4 mr-2" /> Export CSV

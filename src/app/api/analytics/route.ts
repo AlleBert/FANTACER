@@ -1,20 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
 import * as XLSX from 'xlsx'
+import JSZip from 'jszip'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin, requireRoleAdmin, toAdminError } from '@/lib/admin-auth'
 import {
   aggregateSummary,
-  buildDailyReport,
+  buildRangeReport,
+  enumerateDayKeys,
   filterSessionsByBatch,
-  renderDailyReportText,
+  romeDateKey,
   sanitizeCsvValue,
   type ReportSessionRow,
   type SessionSummaryRow,
 } from '@/lib/admin-analytics'
+import { renderRangeReportPdf } from '@/lib/admin-report-pdf'
 
 type AdminClient = ReturnType<typeof createAdminClient>
 
 const ONLINE_WINDOW_MS = 5 * 60 * 1000
+
+type RawSession = ReportSessionRow & { user_agent: string | null }
+
+const RAW_SELECT =
+  'created_at, fingerprint, country, user_agent, company1_id, company2_id, company3_id, pallet1, pallet2, pallet3'
 
 /** Set delle company del batch, oppure null quando il filtro è "tutti". */
 async function getBatchCompanyIds(
@@ -24,6 +32,72 @@ async function getBatchCompanyIds(
   if (!batch || batch === 'all') return null
   const { data } = await supabase.from('companies').select('id').eq('batch', batch)
   return new Set((data || []).map((c: { id: string }) => c.id))
+}
+
+async function loadRawSessions(supabase: AdminClient, batch: string | null): Promise<RawSession[]> {
+  const batchIds = await getBatchCompanyIds(supabase, batch)
+  const { data } = await supabase
+    .from('vote_sessions')
+    .select(RAW_SELECT)
+    .order('created_at', { ascending: false })
+  return filterSessionsByBatch((data || []) as RawSession[], batch, batchIds ?? new Set())
+}
+
+async function loadCompanyMap(supabase: AdminClient): Promise<Map<string, string>> {
+  const { data } = await supabase.from('companies').select('id, name')
+  return new Map((data || []).map((c: { id: string; name: string }) => [c.id, c.name]))
+}
+
+/** Tiene solo le sessioni il cui giorno (Europe/Rome) è nell'intervallo. */
+function filterByRomeRange<T extends { created_at: string }>(sessions: T[], dayKeys: string[]): T[] {
+  const allowed = new Set(dayKeys)
+  return sessions.filter((s) => allowed.has(romeDateKey(new Date(s.created_at))))
+}
+
+function buildRawTable(sessions: RawSession[], companyMap: Map<string, string>) {
+  const header = [
+    'fingerprint', 'timestamp', 'country', 'user_agent',
+    'company1', 'pallet1', 'company2', 'pallet2', 'company3', 'pallet3',
+  ]
+  const body = sessions.map((v) => [
+    v.fingerprint,
+    v.created_at,
+    v.country || '',
+    v.user_agent || '',
+    companyMap.get(v.company1_id) || v.company1_id,
+    v.pallet1,
+    companyMap.get(v.company2_id) || v.company2_id,
+    v.pallet2,
+    companyMap.get(v.company3_id) || v.company3_id,
+    v.pallet3,
+  ])
+  return { header, body }
+}
+
+function buildCsv(header: string[], body: (string | number)[][]): string {
+  return [header.join(','), ...body.map((row) => row.map(sanitizeCsvValue).join(','))].join('\n')
+}
+
+function buildXlsx(header: string[], body: (string | number)[][]): Buffer {
+  const ws = XLSX.utils.aoa_to_sheet([header, ...body])
+  ws['!cols'] = header.map(() => ({ wch: 20 }))
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Voti')
+  return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer
+}
+
+/**
+ * Intervallo di giorni (Europe/Rome). Default: oggi. Se i parametri sono
+ * invalidi o l'intervallo è troppo ampio, ricade su oggi.
+ */
+function resolveRange(
+  fromParam: string | null,
+  toParam: string | null,
+): { from: string; to: string; dayKeys: string[] } {
+  const today = romeDateKey(new Date())
+  const dayKeys = enumerateDayKeys(fromParam || today, toParam || today)
+  if (dayKeys.length === 0) return { from: today, to: today, dayKeys: [today] }
+  return { from: dayKeys[0], to: dayKeys[dayKeys.length - 1], dayKeys }
 }
 
 export async function GET(request: NextRequest) {
@@ -36,9 +110,8 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type') || 'summary'
     const batch = searchParams.get('batch')
 
-    // Export (estrazione massiva CSV/Excel) e riepilogo sono privilegiati:
-    // solo admin (MFA aal2).
-    if (type === 'export' || type === 'report') {
+    // Export massivo e bundle (raw + PDF) sono privilegiati: solo admin (MFA aal2).
+    if (type === 'export' || type === 'bundle') {
       await requireRoleAdmin(request)
     }
     const dateFrom = searchParams.get('from')
@@ -71,35 +144,35 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(summary)
     }
 
-    if (type === 'report') {
-      const batchIds = await getBatchCompanyIds(supabase, batch)
+    if (type === 'bundle') {
+      const format = searchParams.get('format') === 'xlsx' ? 'xlsx' : 'csv'
+      const { from, to, dayKeys } = resolveRange(dateFrom, dateTo)
 
-      const { data: allSessions } = await supabase
-        .from('vote_sessions')
-        .select(
-          'created_at, fingerprint, country, company1_id, company2_id, company3_id, pallet1, pallet2, pallet3',
-        )
-        .order('created_at', { ascending: false })
+      const allSessions = await loadRawSessions(supabase, batch)
+      const sessions = filterByRomeRange(allSessions, dayKeys)
+      const companyMap = await loadCompanyMap(supabase)
 
-      const sessions = filterSessionsByBatch(
-        (allSessions || []) as ReportSessionRow[],
-        batch,
-        batchIds ?? new Set(),
-      )
+      const { header, body } = buildRawTable(sessions, companyMap)
+      const base = `fantacer_${from}_${to}`
 
-      const { data: companies } = await supabase.from('companies').select('id, name')
-      const companyMap = new Map(
-        (companies || []).map((c: { id: string; name: string }) => [c.id, c.name]),
-      )
+      const zip = new JSZip()
+      if (format === 'xlsx') {
+        zip.file(`${base}_voti.xlsx`, buildXlsx(header, body))
+      } else {
+        zip.file(`${base}_voti.csv`, buildCsv(header, body))
+      }
 
-      const report = buildDailyReport(sessions, companyMap)
       const batchLabel = batch && batch !== 'all' ? batch : 'Tutti i batch'
-      const text = renderDailyReportText(report, batchLabel)
+      const report = buildRangeReport(sessions, companyMap, dayKeys)
+      const pdf = await renderRangeReportPdf(report, batchLabel)
+      zip.file(`${base}_riepilogo.pdf`, pdf)
 
-      return new NextResponse(text, {
+      const zipBuffer = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' })
+
+      return new NextResponse(new Uint8Array(zipBuffer), {
         headers: {
-          'Content-Type': 'text/markdown; charset=utf-8',
-          'Content-Disposition': `attachment; filename=fantacer_riepilogo_${report.dayKey}.md`,
+          'Content-Type': 'application/zip',
+          'Content-Disposition': `attachment; filename=${base}.zip`,
         },
       })
     }
@@ -125,57 +198,12 @@ export async function GET(request: NextRequest) {
 
     if (type === 'export') {
       const format = searchParams.get('format') === 'xlsx' ? 'xlsx' : 'csv'
-      const batchIds = await getBatchCompanyIds(supabase, batch)
-
-      const { data: allSessions } = await supabase
-        .from('vote_sessions')
-        .select(
-          'created_at, fingerprint, country, user_agent, company1_id, company2_id, company3_id, pallet1, pallet2, pallet3',
-        )
-        .order('created_at', { ascending: false })
-
-      const sessions = filterSessionsByBatch(
-        (allSessions || []) as Array<SessionSummaryRow & {
-          country: string | null
-          user_agent: string | null
-          pallet1: number
-          pallet2: number
-          pallet3: number
-        }>,
-        batch,
-        batchIds ?? new Set(),
-      )
-
-      const { data: companies } = await supabase.from('companies').select('id, name')
-      const companyMap = new Map(
-        (companies || []).map((c: { id: string; name: string }) => [c.id, c.name]),
-      )
-
-      const header = [
-        'fingerprint', 'timestamp', 'country', 'user_agent',
-        'company1', 'pallet1', 'company2', 'pallet2', 'company3', 'pallet3',
-      ]
-      const body = sessions.map((v) => [
-        v.fingerprint,
-        v.created_at,
-        v.country || '',
-        v.user_agent || '',
-        companyMap.get(v.company1_id) || v.company1_id,
-        v.pallet1,
-        companyMap.get(v.company2_id) || v.company2_id,
-        v.pallet2,
-        companyMap.get(v.company3_id) || v.company3_id,
-        v.pallet3,
-      ])
+      const sessions = await loadRawSessions(supabase, batch)
+      const companyMap = await loadCompanyMap(supabase)
+      const { header, body } = buildRawTable(sessions, companyMap)
 
       if (format === 'xlsx') {
-        const ws = XLSX.utils.aoa_to_sheet([header, ...body])
-        ws['!cols'] = header.map(() => ({ wch: 20 }))
-        const wb = XLSX.utils.book_new()
-        XLSX.utils.book_append_sheet(wb, ws, 'Voti')
-        const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
-
-        return new NextResponse(buf, {
+        return new NextResponse(new Uint8Array(buildXlsx(header, body)), {
           headers: {
             'Content-Type':
               'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -184,12 +212,7 @@ export async function GET(request: NextRequest) {
         })
       }
 
-      const csv = [
-        header.join(','),
-        ...body.map((row) => row.map(sanitizeCsvValue).join(',')),
-      ].join('\n')
-
-      return new NextResponse(csv, {
+      return new NextResponse(buildCsv(header, body), {
         headers: {
           'Content-Type': 'text/csv; charset=utf-8',
           'Content-Disposition': 'attachment; filename=fantacer_export.csv',
