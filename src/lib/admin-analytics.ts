@@ -38,7 +38,8 @@ export interface AnalyticsSummary {
   activeNow: number
   onlineUsers: number
   dailyStats: DailyStat[]
-  todayByHour: HourBucket[]
+  /** Fasce orarie (24 bucket) per giorno `YYYY-MM-DD`; presente solo per i giorni con voti. */
+  hourlyByDay: Record<string, HourBucket[]>
 }
 
 const romeDateFormatter = new Intl.DateTimeFormat('en-CA', {
@@ -93,7 +94,7 @@ export function aggregateSummary(
 
   const uniqueFingerprints = new Set<string>()
   const perDay = new Map<string, { votes: number; voters: Set<string> }>()
-  const todayByHour: HourBucket[] = Array.from({ length: 24 }, (_, hour) => ({ hour, votes: 0 }))
+  const hourlyByDay: Record<string, HourBucket[]> = {}
 
   let totalVotes = 0
   let todayVotes = 0
@@ -106,11 +107,7 @@ export function aggregateSummary(
 
     const created = new Date(s.created_at)
     const key = romeDateKey(created)
-    if (key === todayKey) {
-      todayVotes += 1
-      const hour = romeHourKey(created)
-      if (hour >= 0 && hour < 24) todayByHour[hour].votes += 1
-    }
+    if (key === todayKey) todayVotes += 1
     if (key === yesterdayKey) yesterdayVotes += 1
     if (created.getTime() >= activeThreshold) activeNow += 1
 
@@ -122,6 +119,16 @@ export function aggregateSummary(
       }
       bucket.votes += 1
       bucket.voters.add(s.fingerprint)
+
+      const hour = romeHourKey(created)
+      if (hour >= 0 && hour < 24) {
+        let dayHours = hourlyByDay[key]
+        if (!dayHours) {
+          dayHours = Array.from({ length: 24 }, (_, h) => ({ hour: h, votes: 0 }))
+          hourlyByDay[key] = dayHours
+        }
+        dayHours[hour].votes += 1
+      }
     }
   }
 
@@ -145,7 +152,7 @@ export function aggregateSummary(
     activeNow,
     onlineUsers,
     dailyStats,
-    todayByHour,
+    hourlyByDay,
   }
 }
 
