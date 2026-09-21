@@ -310,7 +310,7 @@ export default function PanoramicaPage() {
                     Da
                     <input
                       type="date"
-                      aria-label="Inizio intervallo grafico"
+                      aria-label="Da — inizio intervallo grafico"
                       value={chartRangeFrom}
                       min={minDay}
                       max={chartRangeTo}
@@ -322,7 +322,7 @@ export default function PanoramicaPage() {
                     A
                     <input
                       type="date"
-                      aria-label="Fine intervallo grafico"
+                      aria-label="A — fine intervallo grafico"
                       value={chartRangeTo}
                       min={chartRangeFrom}
                       max={maxDay}
