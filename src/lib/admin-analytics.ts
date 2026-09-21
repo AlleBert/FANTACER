@@ -191,6 +191,16 @@ export function buildVoteTrend(dailyStats: DailyStat[]): TrendPoint[] {
 }
 
 /**
+ * Filtra la serie giornaliera (zero-filled) all'intervallo `[from, to]`
+ * inclusivo, in chiave `YYYY-MM-DD` (Europe/Rome). Un lato vuoto non filtra.
+ * Ritorna [] se l'intervallo è invertito.
+ */
+export function selectDailyRange(dailyStats: DailyStat[], from: string, to: string): DailyStat[] {
+  if (from && to && from > to) return []
+  return dailyStats.filter((d) => (!from || d.date >= from) && (!to || d.date <= to))
+}
+
+/**
  * Serie oraria della giornata corrente: cumulato infragiornaliero e trim a solo
  * ore attive, con un'ora di contesto ai bordi. Usata come fallback quando c'è un
  * solo giorno di dati (per non mostrare un grafico con un unico punto).

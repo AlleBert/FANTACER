@@ -9,6 +9,7 @@ import {
   romeDateKey,
   romeHourKey,
   sanitizeCsvValue,
+  selectDailyRange,
   type DailyStat,
   type ReportSessionRow,
   type SessionSummaryRow,
@@ -182,6 +183,30 @@ describe('buildVoteTrend', () => {
 
   it('ritorna serie vuota su input vuoto', () => {
     expect(buildVoteTrend([])).toEqual([])
+  })
+})
+
+describe('selectDailyRange', () => {
+  const days = [
+    trendDay('2026-09-18', 1),
+    trendDay('2026-09-19', 2),
+    trendDay('2026-09-20', 3),
+  ]
+
+  it("tiene solo i giorni nell'intervallo inclusivo", () => {
+    expect(selectDailyRange(days, '2026-09-19', '2026-09-20').map((d) => d.date)).toEqual([
+      '2026-09-19',
+      '2026-09-20',
+    ])
+  })
+
+  it('non filtra i lati vuoti', () => {
+    expect(selectDailyRange(days, '', '2026-09-19')).toHaveLength(2)
+    expect(selectDailyRange(days, '2026-09-19', '')).toHaveLength(2)
+  })
+
+  it('ritorna vuoto se from > to', () => {
+    expect(selectDailyRange(days, '2026-09-20', '2026-09-19')).toEqual([])
   })
 })
 
