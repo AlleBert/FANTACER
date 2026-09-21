@@ -1226,3 +1226,31 @@ section[data-section='contact'] input,
 section[data-section='contact'] textarea {
   scroll-margin-block: var(--safe-top-offset) var(--safe-bottom-offset);
 }
+
+/* Bottom-nav admin mobile: pillola glass flottante. Solo CSS, nessuna dipendenza.
+   `container-type` abilita la container query che collassa le label quando la
+   pillola è stretta (viewport ~320-360px) senza introdurre breakpoint arbitrari. */
+@layer components {
+  .admin-nav-glass {
+    background: color-mix(in srgb, var(--card) 72%, transparent);
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    border-radius: 9999px;
+    box-shadow: 0 10px 30px rgb(0 0 0 / 0.12);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    backdrop-filter: blur(16px) saturate(180%);
+    container-type: inline-size;
+  }
+
+  /* Fallback per browser senza backdrop-filter: superficie quasi opaca, leggibile. */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .admin-nav-glass {
+      background: color-mix(in srgb, var(--card) 96%, transparent);
+    }
+  }
+
+  @container (max-width: 22.5rem) {
+    .admin-nav-label {
+      display: none;
+    }
+  }
+}
