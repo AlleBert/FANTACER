@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin, toAdminError } from '@/lib/admin-auth'
+import { romeDateKey } from '@/lib/admin-analytics'
 
 export async function GET(request: NextRequest) {
   try {
@@ -33,11 +34,12 @@ export async function GET(request: NextRequest) {
     const palletCounts: Record<string, number> = {}
     const todayVotes: Record<string, number> = {}
     const yesterdayVotes: Record<string, number> = {}
-    const today = new Date().toISOString().split('T')[0]
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+    // Confini giornalieri in Europe/Rome, coerenti con la dedup voto e la panoramica.
+    const today = romeDateKey(new Date())
+    const yesterday = romeDateKey(new Date(Date.now() - 86400000))
 
     for (const s of sessions || []) {
-      const date = s.created_at.split('T')[0]
+      const date = romeDateKey(new Date(s.created_at))
       const entries = [
         { id: s.company1_id, pallet: s.pallet1 },
         { id: s.company2_id, pallet: s.pallet2 },
