@@ -75,7 +75,7 @@ Le route admin richiedono autenticazione: `setupAdminForTest()` in `tests/e2e/he
 
 ## 2. Audit admin — `npm run visual:audit:admin`
 
-Sottoinsieme del primo, focalizzato solo sulle 6 dashboard admin. Oltre a `viewport.png` e `{section}.png`, cattura anche la **bottom-nav** mobile quando presente (`nav[role="tablist"]`).
+Sottoinsieme del primo, focalizzato solo sulle 6 dashboard admin. Oltre a `viewport.png` e `{section}.png`, cattura anche la **bottom-nav** mobile quando presente (`[data-testid="admin-bottom-nav"]`).
 
 ```bash
 npm run visual:audit:admin
