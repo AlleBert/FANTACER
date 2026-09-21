@@ -1,8 +1,16 @@
 import {
   aggregateSummary,
+  buildDailyReport,
+  buildHourlyTrend,
+  buildRangeReport,
+  buildVoteTrend,
+  enumerateDayKeys,
   filterSessionsByBatch,
   romeDateKey,
+  romeHourKey,
   sanitizeCsvValue,
+  type DailyStat,
+  type ReportSessionRow,
   type SessionSummaryRow,
 } from '@/lib/admin-analytics'
 
@@ -72,6 +80,14 @@ describe('aggregateSummary', () => {
     expect(summary.onlineUsers).toBe(7)
   })
 
+  it('raggruppa i voti di oggi per ora (Europe/Rome)', () => {
+    const summary = aggregateSummary(sessions, 0, now)
+    expect(summary.todayByHour).toHaveLength(24)
+    expect(summary.todayByHour[10].votes).toBe(1)
+    expect(summary.todayByHour[13].votes).toBe(1)
+    expect(summary.todayByHour.reduce((acc, h) => acc + h.votes, 0)).toBe(2)
+  })
+
   it('aggrega per giorno (niente date duplicate) e ultimi 30 giorni', () => {
     const summary = aggregateSummary(sessions, 0, now)
     expect(summary.dailyStats).toHaveLength(30)
@@ -116,5 +132,263 @@ describe('sanitizeCsvValue', () => {
     expect(sanitizeCsvValue('Ceramiche X')).toBe('Ceramiche X')
     expect(sanitizeCsvValue(4)).toBe('4')
     expect(sanitizeCsvValue(null)).toBe('')
+  })
+})
+
+const trendDay = (date: string, vote_count: number, unique_voters = vote_count): DailyStat => ({
+  date,
+  vote_count,
+  unique_voters,
+})
+
+describe('buildVoteTrend', () => {
+  it('rimuove i giorni a zero iniziali e finali e calcola il cumulato', () => {
+    const trend = buildVoteTrend([
+      trendDay('2026-09-17', 0),
+      trendDay('2026-09-18', 0),
+      trendDay('2026-09-19', 10),
+      trendDay('2026-09-20', 20),
+      trendDay('2026-09-21', 30),
+      trendDay('2026-09-22', 0),
+      trendDay('2026-09-23', 0),
+    ])
+    expect(trend.map((p) => p.key)).toEqual(['2026-09-19', '2026-09-20', '2026-09-21'])
+    expect(trend.map((p) => p.label)).toEqual(['19/09', '20/09', '21/09'])
+    expect(trend.map((p) => p.votes)).toEqual([10, 20, 30])
+    expect(trend.map((p) => p.cumulative)).toEqual([10, 30, 60])
+  })
+
+  it('mantiene gli zeri interni', () => {
+    const trend = buildVoteTrend([
+      trendDay('2026-09-19', 5),
+      trendDay('2026-09-20', 0),
+      trendDay('2026-09-21', 5),
+    ])
+    expect(trend).toHaveLength(3)
+    expect(trend[1]).toEqual({ key: '2026-09-20', label: '20/09', votes: 0, cumulative: 5 })
+    expect(trend[2].cumulative).toBe(10)
+  })
+
+  it('ritorna serie vuota se tutti i giorni sono a zero', () => {
+    expect(buildVoteTrend([trendDay('2026-09-19', 0), trendDay('2026-09-20', 0)])).toEqual([])
+  })
+
+  it('ritorna serie vuota su input vuoto', () => {
+    expect(buildVoteTrend([])).toEqual([])
+  })
+})
+
+describe('buildHourlyTrend', () => {
+  const buckets = (votes: Record<number, number>) =>
+    Array.from({ length: 24 }, (_, hour) => ({ hour, votes: votes[hour] ?? 0 }))
+
+  it('mostra solo le ore attive con un\'ora di contesto ai bordi', () => {
+    const trend = buildHourlyTrend(buckets({ 10: 5, 11: 7, 12: 3 }))
+    // 09 (contesto), 10, 11, 12, 13 (contesto)
+    expect(trend.map((p) => p.key)).toEqual(['9', '10', '11', '12', '13'])
+    expect(trend.map((p) => p.label)).toEqual(['09:00', '10:00', '11:00', '12:00', '13:00'])
+    expect(trend.map((p) => p.votes)).toEqual([0, 5, 7, 3, 0])
+  })
+
+  it('cumula infragiornalmente', () => {
+    const trend = buildHourlyTrend(buckets({ 10: 5, 11: 7 }))
+    expect(trend.map((p) => p.cumulative)).toEqual([0, 5, 12, 12])
+  })
+
+  it('non aggiunge contesto oltre i bordi della giornata', () => {
+    const trend = buildHourlyTrend(buckets({ 0: 4 }))
+    expect(trend.map((p) => p.key)).toEqual(['0', '1'])
+    expect(trend[0].cumulative).toBe(4)
+  })
+
+  it('ritorna serie vuota se nessuna ora ha voti', () => {
+    expect(buildHourlyTrend(buckets({}))).toEqual([])
+  })
+})
+
+const reportSession = (
+  created_at: string,
+  fingerprint: string,
+  companies: [string, string, string],
+  country = 'IT',
+): ReportSessionRow => ({
+  created_at,
+  fingerprint,
+  company1_id: companies[0],
+  company2_id: companies[1],
+  company3_id: companies[2],
+  pallet1: 4,
+  pallet2: 2,
+  pallet3: 1,
+  country,
+})
+
+const NAMES = new Map([
+  ['c1', 'Uno'],
+  ['c2', 'Due'],
+  ['c3', 'Tre'],
+  ['c4', 'Quattro'],
+  ['c5', 'Cinque'],
+])
+
+describe('romeHourKey', () => {
+  it('converte in ora Europe/Rome', () => {
+    expect(romeHourKey(new Date('2026-09-21T07:30:00Z'))).toBe(9)
+  })
+
+  it('gestisce il cambio giorno a mezzanotte', () => {
+    expect(romeHourKey(new Date('2026-09-21T22:30:00Z'))).toBe(0)
+  })
+
+  it('ritorna -1 su data invalida', () => {
+    expect(romeHourKey(new Date('invalid'))).toBe(-1)
+  })
+})
+
+describe('buildDailyReport', () => {
+  // Mercoledì 23/09/2026: settimana lun 21 – dom 27.
+  const now = new Date('2026-09-23T18:00:00Z')
+  const sessions = [
+    reportSession('2026-09-23T09:00:00Z', 'fp-a', ['c1', 'c2', 'c3'], 'IT'),
+    reportSession('2026-09-23T12:00:00Z', 'fp-b', ['c1', 'c4', 'c5'], 'DE'),
+    reportSession('2026-09-22T10:00:00Z', 'fp-c', ['c2', 'c3', 'c4']),
+    reportSession('2026-09-21T10:00:00Z', 'fp-d', ['c3', 'c4', 'c5']),
+    // domenica della settimana precedente: fuori dal cumulato settimanale
+    reportSession('2026-09-20T10:00:00Z', 'fp-e', ['c1', 'c2', 'c3']),
+  ]
+
+  it('aggrega i numeri del giorno corrente', () => {
+    const report = buildDailyReport(sessions, NAMES, now)
+    expect(report.dayKey).toBe('2026-09-23')
+    expect(report.votes).toBe(2)
+    expect(report.uniqueVoters).toBe(2)
+    expect(report.totalPoints).toBe(14)
+    expect(report.activeHours).toBe(2)
+    expect(report.avgVotesPerHour).toBe(1)
+    expect(report.firstVoteAt).toBe('2026-09-23T09:00:00.000Z')
+    expect(report.lastVoteAt).toBe('2026-09-23T12:00:00.000Z')
+  })
+
+  it('distribuisce i voti per fascia oraria locale', () => {
+    const report = buildDailyReport(sessions, NAMES, now)
+    expect(report.hourly).toHaveLength(24)
+    expect(report.hourly[11].votes).toBe(1)
+    expect(report.hourly[14].votes).toBe(1)
+    expect(report.hourly.reduce((acc, h) => acc + h.votes, 0)).toBe(2)
+    expect(report.peakHour).toBe(11)
+    expect(report.quietHour).toBe(11)
+  })
+
+  it('classifica le aziende del giorno per punti', () => {
+    const report = buildDailyReport(sessions, NAMES, now)
+    expect(report.companies).toHaveLength(5)
+    expect(report.top3[0]).toMatchObject({ id: 'c1', name: 'Uno', points: 8, votes: 2, firsts: 2 })
+    expect(report.companies[0].points).toBe(8)
+    expect(report.companies.reduce((acc, c) => acc + c.points, 0)).toBe(14)
+  })
+
+  it('conta i paesi e confronta con ieri', () => {
+    const report = buildDailyReport(sessions, NAMES, now)
+    expect(report.countries).toEqual([
+      { country: 'IT', votes: 1 },
+      { country: 'DE', votes: 1 },
+    ])
+    expect(report.yesterday).toEqual({ votes: 1, uniqueVoters: 1 })
+  })
+
+  it('cumula la settimana lun–dom escludendo i giorni fuori settimana', () => {
+    const report = buildDailyReport(sessions, NAMES, now)
+    expect(report.week.days).toHaveLength(7)
+    expect(report.week.votes).toBe(4)
+    expect(report.week.uniqueVoters).toBe(4)
+    expect(report.week.totalPoints).toBe(28)
+    const monday = report.week.days.find((d) => d.date === '2026-09-21')
+    expect(monday?.votes).toBe(1)
+    const wednesday = report.week.days.find((d) => d.date === '2026-09-23')
+    expect(wednesday?.votes).toBe(2)
+  })
+
+  it('gestisce una giornata senza voti', () => {
+    const report = buildDailyReport([], NAMES, now)
+    expect(report.votes).toBe(0)
+    expect(report.uniqueVoters).toBe(0)
+    expect(report.avgVotesPerHour).toBe(0)
+    expect(report.peakHour).toBeNull()
+    expect(report.quietHour).toBeNull()
+    expect(report.top3).toEqual([])
+    expect(report.firstVoteAt).toBeNull()
+    expect(report.lastVoteAt).toBeNull()
+    expect(report.week.votes).toBe(0)
+  })
+})
+
+describe('enumerateDayKeys', () => {
+  it('elenca i giorni inclusivi tra from e to', () => {
+    expect(enumerateDayKeys('2026-09-21', '2026-09-24')).toEqual([
+      '2026-09-21',
+      '2026-09-22',
+      '2026-09-23',
+      '2026-09-24',
+    ])
+  })
+
+  it('ritorna un solo giorno se from = to', () => {
+    expect(enumerateDayKeys('2026-09-21', '2026-09-21')).toEqual(['2026-09-21'])
+  })
+
+  it('ritorna [] su intervallo invalido o invertito', () => {
+    expect(enumerateDayKeys('2026-09-24', '2026-09-21')).toEqual([])
+    expect(enumerateDayKeys('nope', '2026-09-21')).toEqual([])
+  })
+
+  it('ritorna [] se l\'intervallo supera 31 giorni', () => {
+    expect(enumerateDayKeys('2026-08-01', '2026-09-30')).toEqual([])
+  })
+})
+
+describe('buildRangeReport', () => {
+  const now = new Date('2026-09-23T18:00:00Z')
+  const sessions = [
+    reportSession('2026-09-21T09:00:00Z', 'fp-a', ['c1', 'c2', 'c3']),
+    reportSession('2026-09-22T09:00:00Z', 'fp-a', ['c1', 'c2', 'c3']),
+    reportSession('2026-09-22T10:00:00Z', 'fp-b', ['c1', 'c4', 'c5']),
+    reportSession('2026-09-23T09:00:00Z', 'fp-c', ['c2', 'c3', 'c4']),
+  ]
+
+  it('produce una sezione per giorno e i totali del periodo', () => {
+    const report = buildRangeReport(sessions, NAMES, ['2026-09-21', '2026-09-22'], now)
+    expect(report.from).toBe('2026-09-21')
+    expect(report.to).toBe('2026-09-22')
+    expect(report.days).toHaveLength(2)
+    expect(report.totals.days).toBe(2)
+    expect(report.totals.votes).toBe(3)
+    expect(report.totals.totalPoints).toBe(21)
+    expect(report.totals.peakDay).toEqual({ date: '2026-09-22', votes: 2 })
+  })
+
+  it('conta i votanti unici sull\'intero periodo, non la somma per giorno', () => {
+    const report = buildRangeReport(sessions, NAMES, ['2026-09-21', '2026-09-22'], now)
+    // fp-a vota il 21 e il 22: unico nel periodo, due nei per-giorno.
+    expect(report.totals.uniqueVoters).toBe(2)
+    expect(report.days[0].uniqueVoters).toBe(1)
+    expect(report.days[1].uniqueVoters).toBe(2)
+  })
+
+  it('gestisce un giorno senza voti nell\'intervallo', () => {
+    const report = buildRangeReport(sessions, NAMES, ['2026-09-20', '2026-09-21'], now)
+    expect(report.days[0].votes).toBe(0)
+    expect(report.days[1].votes).toBe(1)
+    expect(report.totals.votes).toBe(1)
+  })
+
+  it('ritorna totali a zero senza sessioni', () => {
+    const report = buildRangeReport([], NAMES, ['2026-09-21'], now)
+    expect(report.totals).toEqual({
+      days: 1,
+      votes: 0,
+      uniqueVoters: 0,
+      totalPoints: 0,
+      peakDay: { date: '2026-09-21', votes: 0 },
+    })
   })
 })

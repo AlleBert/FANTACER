@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { BarChart3, Users, TrendingUp, Vote, Wifi, Download, Upload, AlertCircle, RefreshCw } from 'lucide-react'
-import { LineChart as RechartLine, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { useRouter } from 'next/navigation'
@@ -13,6 +13,8 @@ import { createClient } from '@/lib/supabase/client'
 import { safeSubscribe } from '@/lib/supabase/realtime'
 import { useBatches } from '@/hooks/use-batches'
 import { BatchFilter } from '@/components/admin/batch-filter'
+import { buildHourlyTrend, buildVoteTrend, type HourBucket, type TrendPoint } from '@/lib/admin-analytics'
+import { cn } from '@/lib/utils'
 
 interface Stats {
   totalVotes: number
@@ -21,12 +23,67 @@ interface Stats {
   yesterdayVotes: number
   activeNow: number
   onlineUsers: number
+  todayByHour: HourBucket[]
 }
 
 interface DailyStats {
   date: string
   vote_count: number
   unique_voters: number
+}
+
+function romeTodayKey(): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Rome',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date())
+}
+
+function formatTooltipDate(dateKey: string): string {
+  try {
+    return format(new Date(dateKey), 'dd MMM yyyy', { locale: it }).replace(
+      / ([a-z])/,
+      (_, c: string) => ` ${c.toUpperCase()}`
+    )
+  } catch {
+    return dateKey
+  }
+}
+
+function VoteTrendTooltip({
+  active,
+  payload,
+  mode,
+  todayKey,
+}: {
+  active?: boolean
+  payload?: { payload?: TrendPoint }[]
+  mode: 'daily' | 'hourly'
+  todayKey: string
+}) {
+  const point = active ? payload?.[0]?.payload : undefined
+  if (!point) return null
+
+  const title =
+    mode === 'hourly'
+      ? `${formatTooltipDate(todayKey)} · ${point.label}`
+      : formatTooltipDate(point.key)
+  const votesLabel = mode === 'hourly' ? "Voti nell'ora" : 'Voti del giorno'
+  const cumulativeLabel = mode === 'hourly' ? 'Cumulato giornata' : 'Totale cumulato'
+
+  return (
+    <div className="rounded-xl border border-border bg-card px-3 py-2 shadow-lg">
+      <p className="text-xs font-bold text-foreground">{title}</p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        {votesLabel}: <span className="font-semibold text-foreground">{point.votes}</span>
+      </p>
+      <p className="text-xs text-muted-foreground">
+        {cumulativeLabel}: <span className="font-semibold text-foreground">{point.cumulative}</span>
+      </p>
+    </div>
+  )
 }
 
 export default function PanoramicaPage() {
@@ -36,8 +93,14 @@ export default function PanoramicaPage() {
   const { batches, activeBatch, loading: batchesLoading } = useBatches()
   const [stats, setStats] = useState<Stats>({
     totalVotes: 0, uniqueVoters: 0, todayVotes: 0, yesterdayVotes: 0, activeNow: 0, onlineUsers: 0,
+    todayByHour: [],
   })
   const [dailyStats, setDailyStats] = useState<DailyStats[]>([])
+  // auto = oraria se c'è un solo giorno di dati, altrimenti giornaliera.
+  const [trendView, setTrendView] = useState<'auto' | 'daily' | 'hourly'>('auto')
+  // Intervallo di esportazione (Europe/Rome); default oggi.
+  const [rangeFrom, setRangeFrom] = useState<string>(() => romeTodayKey())
+  const [rangeTo, setRangeTo] = useState<string>(() => romeTodayKey())
   // null = "usa il batch attivo" (default); stringa = scelta esplicita ('all' = tutti).
   const [selectedBatch, setSelectedBatch] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -65,6 +128,7 @@ export default function PanoramicaPage() {
         yesterdayVotes: statsData.yesterdayVotes || 0,
         activeNow: statsData.activeNow || 0,
         onlineUsers: statsData.onlineUsers || 0,
+        todayByHour: statsData.todayByHour || [],
       })
       setDailyStats(statsData.dailyStats || [])
     } catch (e) {
@@ -102,8 +166,22 @@ export default function PanoramicaPage() {
     }
   }, [loadData])
 
+  const downloadFile = (url: string) => {
+    const link = document.createElement('a')
+    link.href = url
+    link.download = ''
+    link.rel = 'noopener'
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+  }
+
+  // Un solo download (ZIP con raw + PDF) per evitare che due navigazioni
+  // concorrenti si annullino a vicenda.
   const handleExport = (format: 'csv' | 'xlsx') => {
-    window.open(`/api/analytics?type=export&format=${format}${batchParam}`, '_blank')
+    const params = new URLSearchParams({ type: 'bundle', format, from: rangeFrom, to: rangeTo })
+    if (effectiveBatch && effectiveBatch !== 'all') params.set('batch', effectiveBatch)
+    downloadFile(`/api/analytics?${params.toString()}`)
   }
 
   const onlineIsGlobal = effectiveBatch !== 'all'
@@ -115,6 +193,27 @@ export default function PanoramicaPage() {
     { label: 'Votanti Ora', value: stats.activeNow, icon: Users, color: 'orange' },
     { label: onlineIsGlobal ? 'Utenti Online (globale)' : 'Utenti Online', value: stats.onlineUsers, icon: Wifi, color: 'cyan' },
   ]
+
+  const dailySeries = useMemo(() => buildVoteTrend(dailyStats), [dailyStats])
+  const hourlySeries = useMemo(() => buildHourlyTrend(stats.todayByHour), [stats.todayByHour])
+  const effectiveView: 'daily' | 'hourly' =
+    trendView === 'daily'
+      ? 'daily'
+      : trendView === 'hourly'
+        ? 'hourly'
+        : dailySeries.length >= 2
+          ? 'daily'
+          : hourlySeries.length > 0
+            ? 'hourly'
+            : 'daily'
+  const chartData = effectiveView === 'hourly' ? hourlySeries : dailySeries
+  const todayKey = dailyStats[dailyStats.length - 1]?.date ?? ''
+
+  const fairRange = useMemo(() => {
+    const active = dailyStats.filter((d) => d.vote_count > 0)
+    if (active.length === 0) return null
+    return { from: active[0].date, to: active[active.length - 1].date }
+  }, [dailyStats])
 
   return (
     <div className="w-full mx-auto p-4 md:p-6 space-y-6">
@@ -187,6 +286,40 @@ export default function PanoramicaPage() {
               <BarChart3 className="h-5 w-5 text-primary" />
               Andamento Votazioni
             </CardTitle>
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[clamp(0.65rem,2vw,0.8rem)] text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--primary)' }} aria-hidden="true" />
+                  {effectiveView === 'hourly' ? "Voti nell'ora" : 'Voti del giorno'}
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--foreground)' }} aria-hidden="true" />
+                  {effectiveView === 'hourly' ? 'Cumulato giornata' : 'Totale cumulato'}
+                </span>
+              </div>
+              <div className="inline-flex rounded-lg border border-border p-0.5 text-[clamp(0.65rem,2vw,0.8rem)]">
+                {([
+                  ['auto', 'Auto'],
+                  ['daily', 'Giornaliero'],
+                  ['hourly', 'Orario'],
+                ] as const).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setTrendView(value)}
+                    aria-pressed={trendView === value}
+                    className={cn(
+                      'cursor-pointer rounded-md px-2 py-1 font-medium transition-colors',
+                      trendView === value
+                        ? 'bg-primary text-white'
+                        : 'text-muted-foreground hover:bg-secondary'
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="h-[200px] md:h-[300px] w-full relative">
@@ -194,35 +327,40 @@ export default function PanoramicaPage() {
                 <div className="h-full flex items-center justify-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
                 </div>
-              ) : stats.totalVotes > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <RechartLine data={dailyStats}
-                    margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                    <XAxis dataKey="date" stroke="var(--muted-foreground)" fontSize={11}
-                      tickLine={false} axisLine={false}
-                      tickFormatter={(v: string) => {
-                        try { return format(new Date(v), 'dd/MM', { locale: it }) }
-                        catch { return v }
-                      }} />
-                    <YAxis stroke="var(--muted-foreground)" fontSize={11}
-                      tickLine={false} axisLine={false} />
-                    <Tooltip contentStyle={{
-                      backgroundColor: 'var(--card)', border: '1px solid var(--border)',
-                      borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                    }}
-                      labelStyle={{ color: 'var(--foreground)', fontWeight: 'bold' }}
-                      itemStyle={{ fontSize: '12px' }}
-                      labelFormatter={(label) => {
-                        try { return format(new Date(label as string), 'dd MMMM yyyy', { locale: it }) }
-                        catch { return label as string }
-                      }} />
-                    <Line type="monotone" dataKey="vote_count" stroke="var(--primary)"
-                      strokeWidth={3} dot={{ fill: 'var(--primary)', r: 4, strokeWidth: 0 }}
-                      activeDot={{ r: 6, strokeWidth: 0 }} name="Voti" />
-                    <Line type="monotone" dataKey="unique_voters" stroke="var(--muted-foreground)"
-                      strokeWidth={2} strokeDasharray="5 5" dot={false} name="Elettori" />
-                  </RechartLine>
+              ) : chartData.length > 0 ? (
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%"
+                  initialDimension={{ width: 1, height: 200 }}
+                >
+                  <ComposedChart data={chartData} margin={{ top: 8, right: 0, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="votesGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.28} />
+                        <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid yAxisId="left" strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                    <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={11}
+                      tickLine={false} axisLine={false} interval="preserveStartEnd" minTickGap={24} />
+                    <YAxis yAxisId="left" stroke="var(--muted-foreground)" fontSize={11}
+                      tickLine={false} axisLine={false} allowDecimals={false} width={28} />
+                    <YAxis yAxisId="right" orientation="right" stroke="var(--muted-foreground)" fontSize={11}
+                      tickLine={false} axisLine={false} allowDecimals={false} width={28} />
+                    <Tooltip
+                      content={<VoteTrendTooltip mode={effectiveView} todayKey={todayKey} />}
+                      cursor={{ stroke: 'var(--border)' }}
+                    />
+                    <Area yAxisId="left" type="monotone" dataKey="votes"
+                      name={effectiveView === 'hourly' ? "Voti nell'ora" : 'Voti del giorno'}
+                      stroke="var(--primary)" strokeWidth={3} fill="url(#votesGradient)"
+                      dot={{ fill: 'var(--primary)', r: 2, strokeWidth: 0 }}
+                      activeDot={{ r: 4, strokeWidth: 0 }} />
+                    <Line yAxisId="right" type="monotone" dataKey="cumulative"
+                      name={effectiveView === 'hourly' ? 'Cumulato giornata' : 'Totale cumulato'}
+                      stroke="var(--foreground)" strokeWidth={2} dot={false}
+                      activeDot={{ r: 4, strokeWidth: 0 }} />
+                  </ComposedChart>
                 </ResponsiveContainer>
               ) : (
                 <div className="h-full flex items-center justify-center text-muted-foreground italic">
@@ -247,8 +385,55 @@ export default function PanoramicaPage() {
             ) : (
               <>
                 <p className="text-sm text-muted-foreground mb-2">
-                  Esporta dati o importa aziende.
+                  {"Scegli l'intervallo e scarica un ZIP con dati e report PDF."}
                 </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                    Da
+                    <input
+                      type="date"
+                      value={rangeFrom}
+                      max={rangeTo}
+                      onChange={(e) => setRangeFrom(e.target.value)}
+                      className="h-9 w-full rounded-md border border-border bg-background px-2 text-sm text-foreground"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                    A
+                    <input
+                      type="date"
+                      value={rangeTo}
+                      min={rangeFrom}
+                      onChange={(e) => setRangeTo(e.target.value)}
+                      className="h-9 w-full rounded-md border border-border bg-background px-2 text-sm text-foreground"
+                    />
+                  </label>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const today = romeTodayKey()
+                      setRangeFrom(today)
+                      setRangeTo(today)
+                    }}
+                    className="flex-1 cursor-pointer rounded-md border border-border px-2 py-1.5 text-xs font-medium text-foreground hover:bg-secondary"
+                  >
+                    Oggi
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!fairRange}
+                    onClick={() => {
+                      if (!fairRange) return
+                      setRangeFrom(fairRange.from)
+                      setRangeTo(fairRange.to)
+                    }}
+                    className="flex-1 cursor-pointer rounded-md border border-border px-2 py-1.5 text-xs font-medium text-foreground hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Tutta la fiera
+                  </button>
+                </div>
                 <Button onClick={() => handleExport('csv')}
                   className="w-full bg-primary hover:bg-primary/90 text-white">
                   <Download className="h-4 w-4 mr-2" /> Export CSV

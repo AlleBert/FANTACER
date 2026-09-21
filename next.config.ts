@@ -9,6 +9,15 @@ if (!supabaseUrl) {
 }
 
 const nextConfig: NextConfig = {
+  // pdfkit legge i file AFM dei font standard via fs: va lasciato esterno al
+  // bundle server, altrimenti il build non li traccia e il PDF fallisce.
+  serverExternalPackages: ['pdfkit'],
+  // Font/logo letti a runtime con readFileSync(process.cwd()): vanno inclusi
+  // esplicitamente nel trace delle function serverless.
+  outputFileTracingIncludes: {
+    '/api/analytics': ['./src/app/og/fonts/**', './public/brand/foto-profilo.png'],
+    '/api/share/vote': ['./src/app/og/fonts/**', './public/brand/foto-profilo.png'],
+  },
   experimental: {
     optimizePackageImports: ['@/components/ui', 'lucide-react'],
   },

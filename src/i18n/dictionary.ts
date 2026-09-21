@@ -165,6 +165,7 @@ export interface Dictionary {
   'cookiePolicy.linkResend': string
   'cookiePolicy.linkCloudflare': string
   'cookiePolicy.linkGoogle': string
+  'cookiePolicy.linkVercel': string
   'cookiePolicy.howToManage': string
   'cookiePolicy.browserSettings': string
   'cookiePolicy.contact': string
@@ -173,6 +174,7 @@ export interface Dictionary {
   'cookiePolicy.tableDuration': string
   'cookiePolicy.tableProvider': string
   'cookiePolicy.ga4Note': string
+  'cookiePolicy.vercelNote': string
   'cookiePolicy.contactHeading': string
   'cookiePolicy.duration.session': string
   'cookiePolicy.duration.oneYear': string
@@ -200,6 +202,8 @@ export interface Dictionary {
   'privacyPolicy.cloudflareDesc': string
   'privacyPolicy.googleAnalytics': string
   'privacyPolicy.googleAnalyticsDesc': string
+  'privacyPolicy.vercel': string
+  'privacyPolicy.vercelDesc': string
   'privacyPolicy.transfers': string
   'privacyPolicy.transfersDesc': string
   'privacyPolicy.retention': string
