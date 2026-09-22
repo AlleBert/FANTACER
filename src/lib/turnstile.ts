@@ -2,19 +2,21 @@
  * Verifica server-side di Cloudflare Turnstile (fail-closed).
  *
  * Regole di sicurezza:
- *  - in produzione il secret è obbligatorio: se manca la verifica fallisce;
- *  - in produzione un secret di test Cloudflare è rifiutato;
+ *  - il secret è obbligatorio: se manca la verifica fallisce;
+ *  - le testing key Cloudflare sono rifiutate su **qualsiasi deployment Vercel**
+ *    (production e preview, entrambi NODE_ENV=production); sono accettate solo
+ *    in ambiente locale, incluso `next start` usato per gli E2E production-like;
  *  - Siteverify ha un timeout esplicito (AbortController): timeout, errore di
  *    rete, HTTP non valido o JSON malformato falliscono;
  *  - si richiede `success === true`, `action === "vote"` e `hostname` in
  *    allowlist esatta (nessuna wildcard);
  *  - non si usa l'IP per la decisione (estrazione attendibile in P0-2);
- *  - nessun log di token/secret.
+ *  - nessun log di token/secret o della risposta completa di Siteverify.
  *
- * Eccezione controllata per test/E2E: con un secret di test Cloudflare in
- * ambiente NON di produzione la verifica è soddisfatta localmente (i testing
- * key sono pensati per questo). In produzione lo stesso secret viene rifiutato
- * prima di arrivare a questo ramo, quindi l'eccezione è inerte in prod.
+ * Confine test/Vercel: `process.env.VERCEL` è impostato da Vercel su ogni
+ * deployment (production e preview). La testing key è ammessa solo quando tale
+ * variabile è assente (macchina locale). In produzione Vercel il secret reale è
+ * obbligatorio.
  */
 
 export const TURNSTILE_VERIFY_URL =
@@ -74,14 +76,15 @@ export async function verifyTurnstile(token: unknown): Promise<TurnstileResult> 
   }
 
   const isProduction = process.env.NODE_ENV === 'production';
+  const onVercel = Boolean(process.env.VERCEL);
   const testingSecret = isTestTurnstileSecret(secret);
 
-  if (isProduction && testingSecret) {
+  if (testingSecret && onVercel) {
     return { ok: false, reason: 'test_key_in_production' };
   }
 
-  // Test/E2E non-produzione: testing key → verifica locale deterministica,
-  // nessuna chiamata di rete. Inerte in produzione (bloccato sopra).
+  // Locale (dev o `next start` per E2E): testing key → verifica deterministica,
+  // nessuna chiamata di rete. Su Vercel il ramo è irraggiungibile (bloccato sopra).
   if (testingSecret) {
     return { ok: true };
   }

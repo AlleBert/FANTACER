@@ -23,6 +23,11 @@ produzione sono obbligatori:
 Il widget invia `action: "vote"`, verificata lato server; il timeout Siteverify è
 4,5s. Se la configurazione manca, il voto viene rifiutato (fail-closed).
 
+Le **testing key** Cloudflare sono accettate **solo in locale** (incluso
+`next start` per gli E2E production-like). Su qualsiasi deployment **Vercel**
+(preview e production, dove `VERCEL` è impostato) sono rifiutate: per staging e
+preview usare una coppia reale dedicata all'hostname esatto.
+
 ## Development
 
 ```bash

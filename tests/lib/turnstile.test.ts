@@ -67,9 +67,25 @@ describe('verifyTurnstile — fail-closed', () => {
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
-  it('testing key in produzione', async () => {
-    setEnv({ TURNSTILE_SECRET_KEY: TEST_SECRET, NODE_ENV: 'production' })
+  it('testing key in produzione Vercel (preview o prod)', async () => {
+    setEnv({ TURNSTILE_SECRET_KEY: TEST_SECRET, NODE_ENV: 'production', VERCEL: '1' })
     expect(await verifyTurnstile('tok')).toEqual({ ok: false, reason: 'test_key_in_production' })
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('testing key in produzione Vercel Preview (NODE_ENV=production)', async () => {
+    setEnv({
+      TURNSTILE_SECRET_KEY: TEST_SECRET,
+      NODE_ENV: 'production',
+      VERCEL: '1',
+      VERCEL_ENV: 'preview',
+    })
+    expect(await verifyTurnstile('tok')).toEqual({ ok: false, reason: 'test_key_in_production' })
+  })
+
+  it('testing key in locale (anche next start, VERCEL assente) → ok, nessuna rete', async () => {
+    setEnv({ TURNSTILE_SECRET_KEY: TEST_SECRET, NODE_ENV: 'production', VERCEL: undefined })
+    expect(await verifyTurnstile('tok')).toEqual({ ok: true })
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
