@@ -54,12 +54,18 @@ jest.mock('@/lib/vote-security', () => ({
     turnstile_token: 'token',
     botd: '',
     visitorId: 'v1',
+    voterId: '11111111-2222-4333-8444-555555555555',
   }),
+}))
+jest.mock('@/lib/vote-client-identity', () => ({
+  ensureVoterId: jest.fn().mockResolvedValue('11111111-2222-4333-8444-555555555555'),
+  isNewVoterIdentity: () => false,
 }))
 
 const setStoredVoterIdMock = jest.fn()
 jest.mock('@/lib/vote-persistence', () => ({
   setStoredVoterId: (visitorId: string) => setStoredVoterIdMock(visitorId),
+  getStoredVoterId: () => null,
 }))
 
 beforeEach(() => {
@@ -80,20 +86,22 @@ beforeEach(() => {
 })
 
 describe('SearchSection — persistenza voto', () => {
-  it('salva il visitorId al successo del voto', async () => {
+  it('salva il voterId al successo del voto', async () => {
     render(<SearchSection />)
 
     fireEvent.click(screen.getByText('submit'))
     fireEvent.click(await screen.findByText('turnstile-ok'))
 
-    await waitFor(() => expect(setStoredVoterIdMock).toHaveBeenCalledWith('v1'))
+    await waitFor(() =>
+      expect(setStoredVoterIdMock).toHaveBeenCalledWith('11111111-2222-4333-8444-555555555555'),
+    )
     expect(mockVote.unlockGameStep).toHaveBeenCalledWith('success')
     expect(setStoredVoterIdMock.mock.invocationCallOrder[0]).toBeLessThan(
       mockVote.unlockGameStep.mock.invocationCallOrder[0],
     )
   })
 
-  it('non salva il visitorId se il voto fallisce', async () => {
+  it('non salva il voterId se il voto fallisce', async () => {
     ;(global.fetch as jest.Mock).mockImplementation((input: RequestInfo | URL) => {
       const url = String(input)
       if (url.includes('/api/public/batch')) {

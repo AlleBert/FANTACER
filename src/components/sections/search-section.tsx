@@ -8,6 +8,7 @@ import { useDebouncedCallback } from 'use-debounce';
 import { Search, Loader2, X } from 'lucide-react';
 import { LiquidFillButton } from '@/components/voting/liquid-fill-button';
 import { getVoteSecurity, getVisitorId } from '@/lib/vote-security';
+import { ensureVoterId } from '@/lib/vote-client-identity';
 import { TurnstileOverlay } from '@/components/voting/turnstile-overlay';
 import { MessageOverlay } from '@/components/voting/message-overlay';
 import { ModalShell } from '@/components/ui/modal-shell';
@@ -83,6 +84,7 @@ export function SearchSection() {
     if (!votingEnabled) return;
     if (searchTerm.length < 2 && !startedVoting) return;
     getVisitorId().catch(() => {});
+    ensureVoterId().catch(() => {});
   }, [votingEnabled, searchTerm.length, startedVoting]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -172,13 +174,14 @@ export function SearchSection() {
           turnstile_token: security.turnstile_token,
           botd: security.botd,
           visitorId: security.visitorId,
+          voterId: security.voterId,
         }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
         throw new Error(data.error || t('search.errVote'));
       }
-      setStoredVoterId(security.visitorId);
+      setStoredVoterId(security.voterId);
       unlockGameStep('success');
       setTimeout(() => {
         const main = document.querySelector('main');

@@ -63,6 +63,7 @@ export default async function CookiePolicyPage() {
     { cookie: 'supabase-auth-token', purposeKey: 'cookiePolicy.essentialDesc', durationKey: 'cookiePolicy.duration.session', provider: 'Supabase' },
     { cookie: 'fantacer_locale', purposeKey: 'cookiePolicy.essentialDesc', durationKey: 'cookiePolicy.duration.oneYear', provider: 'Fantacer' },
     { cookie: 'fantacer_cookie_consent', purposeKey: 'cookiePolicy.essentialDesc', durationKey: 'cookiePolicy.duration.oneYear', provider: 'Fantacer' },
+    { cookie: 'fantacer_voter_id', purposeKey: 'cookiePolicy.voterDesc', durationKey: 'cookiePolicy.duration.oneYear', provider: 'Fantacer' },
     { cookie: 'cf_turnstile_*', purposeKey: 'cookiePolicy.essentialDesc', durationKey: 'cookiePolicy.duration.session', provider: 'Cloudflare' },
   ]
 

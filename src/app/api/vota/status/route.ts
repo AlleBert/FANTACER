@@ -1,8 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { isVoteLimitBypassed, resolveFingerprint } from '@/lib/vote-dev-bypass'
-
-const MAX_VISITOR_ID_LENGTH = 128
+import { isVoteLimitBypassed } from '@/lib/vote-dev-bypass'
+import { resolveVoterKey, applyVoterCookie } from '@/lib/vote-identity-server'
 
 interface VoteSessionRow {
   company1_id: string
@@ -28,45 +27,50 @@ export function romeDayKey(now = new Date()): string {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => null)
-    const visitorId = body?.visitorId
-    if (!visitorId || typeof visitorId !== 'string' || visitorId.length > MAX_VISITOR_ID_LENGTH) {
+    const voterId = body?.voterId
+
+    // Stesso resolver di /api/vota: cookie first-party > voterId nel payload.
+    const resolved = resolveVoterKey(request, voterId)
+    if (!resolved) {
       return NextResponse.json(
-        { error: 'visitorId is required' },
+        { error: 'voterId is required' },
         { status: 400, headers: { 'Cache-Control': 'no-store' } },
       )
     }
 
+    const respond = (payload: unknown, status = 200) => {
+      const response = NextResponse.json(payload, {
+        status,
+        headers: { 'Cache-Control': 'no-store' },
+      })
+      applyVoterCookie(response, resolved.voterId)
+      return response
+    }
+
     if (isVoteLimitBypassed()) {
-      // DEV ONLY (DEV_BYPASS_VOTE_LIMIT=1): resolveFingerprint randomizes the id,
-      // so no session can be matched and restore is intentionally disabled.
-      // Set DEV_BYPASS_VOTE_LIMIT=0 to exercise the restore flow locally.
-      return NextResponse.json(
-        { voted: false, bypassed: true },
-        { headers: { 'Cache-Control': 'no-store' } },
-      )
+      // DEV ONLY (DEV_BYPASS_VOTE_LIMIT=1): la chiave di voto è randomizzata,
+      // quindi nessuna sessione può essere riconosciuta; restore disattivato.
+      // Set DEV_BYPASS_VOTE_LIMIT=0 per esercitare il restore in locale.
+      return respond({ voted: false, bypassed: true, voterId: resolved.voterId })
     }
 
     const supabase = createAdminClient()
-    const fingerprint = resolveFingerprint(visitorId)
 
     const { data: session, error } = await supabase
       .from('vote_sessions')
       .select('company1_id, company2_id, company3_id, pallet1, pallet2, pallet3')
-      .eq('fingerprint', fingerprint)
+      .eq('fingerprint', resolved.key)
       .eq('vote_day', romeDayKey())
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle()
 
     if (error) {
-      return NextResponse.json(
-        { error: 'Internal server error' },
-        { status: 500, headers: { 'Cache-Control': 'no-store' } },
-      )
+      return respond({ error: 'Internal server error' }, 500)
     }
 
     if (!session) {
-      return NextResponse.json({ voted: false }, { headers: { 'Cache-Control': 'no-store' } })
+      return respond({ voted: false, voterId: resolved.voterId })
     }
 
     const row = session as VoteSessionRow
@@ -77,10 +81,7 @@ export async function POST(request: NextRequest) {
       .in('id', ids)
 
     if (companiesError) {
-      return NextResponse.json(
-        { error: 'Internal server error' },
-        { status: 500, headers: { 'Cache-Control': 'no-store' } },
-      )
+      return respond({ error: 'Internal server error' }, 500)
     }
 
     const nameById = new Map(
@@ -93,10 +94,7 @@ export async function POST(request: NextRequest) {
       { id: row.company3_id, name: nameById.get(row.company3_id) ?? '', pallet: row.pallet3 },
     ]
 
-    return NextResponse.json(
-      { voted: true, companies: votedCompanies },
-      { headers: { 'Cache-Control': 'no-store' } },
-    )
+    return respond({ voted: true, companies: votedCompanies, voterId: resolved.voterId })
   } catch (error) {
     console.error('Vote status API error:', error)
     return NextResponse.json(

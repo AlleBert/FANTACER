@@ -142,6 +142,7 @@ export const en: Dictionary = {
   'voteError.missingSecurity': 'Missing security verification',
   'voteError.securityFailed': 'Security verification failed. Reload the page.',
   'voteError.alreadyVoted': 'You have already voted today',
+  'voteError.missingVoterId': 'Invalid voting session. Reload the page.',
 
   // Cookie Policy
   'cookiePolicy.title': 'Cookie Policy',
@@ -153,6 +154,7 @@ export const en: Dictionary = {
   'cookiePolicy.categoriesIntro': 'The cookies allowed on the site fall into two main groups: those strictly necessary for the game to work and those related to traffic analysis, activated only after explicit consent.',
   'cookiePolicy.essential': 'Essential (always active)',
   'cookiePolicy.essentialDesc': 'These cookies are strictly necessary for the website to function and cannot be switched off. They do not require your consent.',
+  'cookiePolicy.voterDesc': 'Identifies the browser with an anonymous UUID to enforce one vote per day and restore the submitted vote. Technical cookie, always active: by accepting essential cookies you also accept this one.',
   'cookiePolicy.analytics': 'Analytics (require consent)',
   'cookiePolicy.analyticsDesc': 'These cookies help us understand how visitors interact with the site. They are only activated after your explicit consent via the banner.',
   'cookiePolicy.thirdParty': 'Third-party cookies',
