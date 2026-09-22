@@ -8,7 +8,7 @@ import {
 } from '@/lib/RealtimeContext'
 
 type FakeChannel = {
-  onHandler?: () => void
+  onHandlers?: Array<{ filter: string; cb: () => void }>
   subscribeCb?: (status: string) => void
   subscribed?: boolean
 }
@@ -21,8 +21,9 @@ jest.mock('@/lib/supabase/client', () => ({
     channel: (name: string) => {
       mockChannels[name] = mockChannels[name] ?? {}
       const ch = {
-        on: (_e: string, _o: unknown, cb: () => void) => {
-          mockChannels[name].onHandler = cb
+        on: (_e: string, opts: { filter?: string }, cb: () => void) => {
+          mockChannels[name].onHandlers = mockChannels[name].onHandlers ?? []
+          mockChannels[name].onHandlers!.push({ filter: opts?.filter ?? '', cb })
           return ch
         },
         subscribe: (cb: (status: string) => void) => {
@@ -37,15 +38,22 @@ jest.mock('@/lib/supabase/client', () => ({
   }),
 }))
 
+/** Invoca i listener del canale il cui filtro contiene `needle`. */
+function emit(channel: string, needle: string) {
+  for (const h of mockChannels[channel]?.onHandlers ?? []) {
+    if (h.filter.includes(needle)) h.cb()
+  }
+}
+
 const mockFetch = jest.fn()
 global.fetch = mockFetch as unknown as typeof fetch
 
 function Probe({ enabled = true }: { enabled?: boolean }) {
-  const { votingEnabled, rankingVersion, realtimeActive, visible } = useRealtime()
+  const { votingEnabled, antibotEnabled, rankingVersion, realtimeActive, visible } = useRealtime()
   useRankingTick(enabled)
   return (
     <div data-testid="state">
-      {JSON.stringify({ votingEnabled, rankingVersion, realtimeActive, visible })}
+      {JSON.stringify({ votingEnabled, antibotEnabled, rankingVersion, realtimeActive, visible })}
     </div>
   )
 }
@@ -53,6 +61,7 @@ function Probe({ enabled = true }: { enabled?: boolean }) {
 function state() {
   return JSON.parse(screen.getByTestId('state').textContent || '{}') as {
     votingEnabled: boolean
+    antibotEnabled: boolean
     rankingVersion: number
     realtimeActive: boolean
     visible: boolean
@@ -71,7 +80,10 @@ describe('RealtimeProvider', () => {
     for (const k of Object.keys(mockChannels)) delete mockChannels[k]
     mockRemoveChannel.mockClear()
     mockFetch.mockReset()
-    mockFetch.mockImplementation(async () => ({ ok: true, json: async () => ({ enabled: true }) }))
+    mockFetch.mockImplementation(async (url: string) => ({
+      ok: true,
+      json: async () => ({ enabled: !String(url).includes('antibot') }),
+    }))
     hidden = false
     Object.defineProperty(document, 'hidden', { configurable: true, get: () => hidden })
   })
@@ -90,7 +102,11 @@ describe('RealtimeProvider', () => {
     expect(mockChannels['realtime-voting-flag']).toBeDefined()
     expect(mockChannels['realtime-voting-flag'].subscribed).toBe(true)
     expect(state().votingEnabled).toBe(true)
+    expect(state().antibotEnabled).toBe(false)
     expect(mockFetch).toHaveBeenCalledWith('/api/public/flag/voting')
+    expect(mockFetch).toHaveBeenCalledWith('/api/public/flag/antibot')
+    // due listener sullo stesso canale: voting_enabled + antibot_enabled
+    expect(mockChannels['realtime-voting-flag'].onHandlers).toHaveLength(2)
   })
 
   it('su UPDATE del flag ri-fetcha voting_enabled', async () => {
@@ -103,9 +119,25 @@ describe('RealtimeProvider', () => {
 
     mockFetch.mockImplementation(async () => ({ ok: true, json: async () => ({ enabled: false }) }))
     await act(async () => {
-      mockChannels['realtime-voting-flag'].onHandler?.()
+      emit('realtime-voting-flag', 'voting_enabled')
     })
     expect(state().votingEnabled).toBe(false)
+  })
+
+  it('su UPDATE di antibot_enabled attiva il blocco', async () => {
+    render(
+      <RealtimeProvider>
+        <Probe />
+      </RealtimeProvider>,
+    )
+    await act(async () => {})
+    expect(state().antibotEnabled).toBe(false)
+
+    mockFetch.mockImplementation(async () => ({ ok: true, json: async () => ({ enabled: true }) }))
+    await act(async () => {
+      emit('realtime-voting-flag', 'antibot_enabled')
+    })
+    expect(state().antibotEnabled).toBe(true)
   })
 
   it('apre il canale ranking con un consumer e incrementa la versione su evento (debounced)', async () => {
@@ -119,7 +151,7 @@ describe('RealtimeProvider', () => {
     expect(state().rankingVersion).toBe(0)
 
     await act(async () => {
-      mockChannels['realtime-ranking-tick'].onHandler?.()
+      emit('realtime-ranking-tick', '')
       jest.advanceTimersByTime(RANKING_DEBOUNCE_MS + RANKING_DEBOUNCE_JITTER_MS)
     })
     expect(state().rankingVersion).toBe(1)

@@ -32,6 +32,7 @@ jest.mock('@/components/sponsor/sponsor-cards', () => ({ SponsorCards: () => nul
 const mockRealtime = {
   votingEnabled: true,
   votingEnabledLoaded: true,
+  antibotEnabled: false,
   rankingVersion: 0,
   realtimeActive: false,
   visible: true,

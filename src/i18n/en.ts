@@ -67,6 +67,10 @@ export const en: Dictionary = {
   'liveRanking.yourVote': 'your vote',
   'liveRanking.yourVotes': 'your votes',
 
+  'antibot.title': 'Voting paused',
+  'antibot.body':
+    'Our systems detected votes coming from automated tools. Voting is paused until tomorrow morning. Fantacer is a game: automated systems go against its rules and spirit. Companies using them will be excluded from the ranking.',
+
   'contact.title1': 'TALK',
   'contact.title2': 'TO US',
   'contact.sendMessage': 'Send us a message',
@@ -143,6 +147,7 @@ export const en: Dictionary = {
   'voteError.securityFailed': 'Security verification failed. Reload the page.',
   'voteError.alreadyVoted': 'You have already voted today',
   'voteError.missingVoterId': 'Invalid voting session. Reload the page.',
+  'voteError.antibot': 'Voting temporarily paused: our systems detected unusual activity.',
 
   // Cookie Policy
   'cookiePolicy.title': 'Cookie Policy',

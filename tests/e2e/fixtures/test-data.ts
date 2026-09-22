@@ -85,10 +85,30 @@ async function seedSponsors(supabase: ReturnType<typeof createTestAdminClient>) 
   }
 }
 
+/**
+ * Assicura le flag di sito ai valori "gioco attivo" a ogni run E2E.
+ * Senza la riga `site_settings`, gli update admin non hanno effetto e i test
+ * sulla propagazione dei toggle fallirebbero.
+ */
+async function seedSiteSettings(supabase: ReturnType<typeof createTestAdminClient>) {
+  const settings = [
+    { key: 'voting_enabled', value: 'true' },
+    { key: 'coming_soon_enabled', value: 'false' },
+    { key: 'antibot_enabled', value: 'false' },
+  ];
+  for (const setting of settings) {
+    const { error } = await supabase
+      .from('site_settings')
+      .upsert({ ...setting, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+    if (error) throw new Error(`Failed to seed site_settings ${setting.key}: ${error.message}`);
+  }
+}
+
 export async function seedTestData() {
   const supabase = createTestAdminClient();
 
   await seedSponsors(supabase);
+  await seedSiteSettings(supabase);
 
   let batchError: { message: string } | null = null;
   for (let attempt = 1; attempt <= 3; attempt++) {

@@ -92,6 +92,8 @@ C:*
 # visual audit reports
 docs/admin-audit-report.md
 docs/ui-audit-report.md
+# comunicato stampa operativo (non versionato)
+docs/comunicato-eliminazione-voti-bot.md
 tests/e2e/visual-audit/
 tests/e2e/visual-audit-homepage/
 tests/e2e/visual-audit-homepage-ios/

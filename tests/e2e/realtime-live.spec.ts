@@ -77,4 +77,28 @@ test.describe('Realtime — classifica e flag voto', () => {
       await supabase.from('site_settings').update({ value: 'true' }).eq('key', 'voting_enabled')
     }
   })
+
+  test('toggle antibot_enabled nasconde la classifica e sospende il voto senza reload', async ({ page }) => {
+    const supabase = adminClient()
+    await seedConsentCookie(page)
+    await page.goto('/')
+
+    const ranking = page.locator('main > section[data-section="live-ranking"]')
+    await expect(ranking).toBeVisible({ timeout: 15000 })
+
+    try {
+      await supabase.from('site_settings').update({ value: 'true' }).eq('key', 'antibot_enabled')
+
+      // classifica live rimossa dal DOM
+      await expect(ranking).toHaveCount(0, { timeout: 10000 })
+
+      // la sezione voto mostra il messaggio anti-bot al posto della ricerca
+      const search = page.locator('main > section[data-section="search"]')
+      await search.scrollIntoViewIfNeeded()
+      await expect(search.getByText('Voto sospeso')).toBeVisible({ timeout: 10000 })
+      await expect(search.getByLabel('Cerca azienda...')).toHaveCount(0)
+    } finally {
+      await supabase.from('site_settings').update({ value: 'false' }).eq('key', 'antibot_enabled')
+    }
+  })
 })

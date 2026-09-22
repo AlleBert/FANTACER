@@ -40,7 +40,7 @@ export function SearchSection() {
   const [showTurnstile, setShowTurnstile] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'warning'; text: string } | null>(null);
   const [loading, setLoading] = useState(false);
-  const { votingEnabled } = useRealtime();
+  const { votingEnabled, antibotEnabled } = useRealtime();
   const [activeIndex, setActiveIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const submittingRef = useRef(false);
@@ -81,11 +81,11 @@ export function SearchSection() {
   // sommarlo al submit, quando la rete è già satura.
   const startedVoting = selectedCompanies.length > 0;
   useEffect(() => {
-    if (!votingEnabled) return;
+    if (!votingEnabled || antibotEnabled) return;
     if (searchTerm.length < 2 && !startedVoting) return;
     getVisitorId().catch(() => {});
     ensureVoterId().catch(() => {});
-  }, [votingEnabled, searchTerm.length, startedVoting]);
+  }, [votingEnabled, antibotEnabled, searchTerm.length, startedVoting]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const term = e.target.value;
@@ -225,7 +225,21 @@ export function SearchSection() {
             </p>
           </div>
 
-          {!votingEnabled ? (
+          {antibotEnabled ? (
+            <div className="flex-1 flex flex-col items-center justify-safe-center w-full max-w-2xl mx-auto gap-(--rythm-sec) py-8">
+              <div className="bg-white rounded-3xl border-[3px] md:border-[4px] border-ink shadow-[6px_6px_0_#000] p-6 md:p-10 text-center max-w-lg">
+                <div className="text-[clamp(2rem,6vw,3rem)] leading-none mb-3" aria-hidden="true">
+                  🚫
+                </div>
+                <h3 className="text-[clamp(1.5rem,4vw,2.5rem)] font-[900] text-purple mb-4 leading-tight">
+                  {t('antibot.title')}
+                </h3>
+                <p className="text-[clamp(0.9375rem,2.5vw,1.125rem)] font-bold text-ink leading-relaxed [text-wrap:balance]">
+                  {t('antibot.body')}
+                </p>
+              </div>
+            </div>
+          ) : !votingEnabled ? (
             <div className="flex-1 flex flex-col items-center justify-safe-center w-full max-w-2xl mx-auto gap-(--rythm-sec) py-8">
               <div className="bg-white rounded-3xl border-[3px] md:border-[4px] border-ink shadow-[6px_6px_0_#000] p-6 md:p-10 text-center max-w-lg">
                 <h3 className="text-[clamp(1.5rem,4vw,2.5rem)] font-[900] text-purple mb-4 leading-tight">
@@ -408,7 +422,7 @@ export function SearchSection() {
           </div>
           )}
 
-          {votingEnabled && (
+          {votingEnabled && !antibotEnabled && (
             <div className="flex-none flex flex-col items-center justify-center w-full pt-[clamp(0.75rem,1.5svh,1.5rem)]">
               {hasVoted ? (
                 <button
