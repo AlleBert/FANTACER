@@ -23,10 +23,14 @@ produzione sono obbligatori:
 Il widget invia `action: "vote"`, verificata lato server; il timeout Siteverify è
 4,5s. Se la configurazione manca, il voto viene rifiutato (fail-closed).
 
-Le **testing key** Cloudflare sono accettate **solo in locale** (incluso
-`next start` per gli E2E production-like). Su qualsiasi deployment **Vercel**
-(preview e production, dove `VERCEL` è impostato) sono rifiutate: per staging e
-preview usare una coppia reale dedicata all'hostname esatto.
+Le **testing key** Cloudflare sono rifiutate di default. L'unica eccezione è
+l'**harness E2E locale**: sono ammesse solo se `VERCEL` è assente **e**
+`E2E_ALLOW_TURNSTILE_TEST_KEYS === "true"` (variabile server-only, mai
+`NEXT_PUBLIC_*`, impostata esclusivamente nel processo webServer di Playwright,
+mai sugli environment Vercel). Su **qualsiasi** deployment Vercel (preview e
+production) restano **sempre** rifiutate, anche se il flag fosse impostato per
+errore. Per staging/preview usare una coppia reale dedicata all'hostname esatto
+(es. `staging.fantacer.com`).
 
 ## Development
 

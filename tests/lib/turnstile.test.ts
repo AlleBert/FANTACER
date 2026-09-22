@@ -67,25 +67,43 @@ describe('verifyTurnstile — fail-closed', () => {
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
-  it('testing key in produzione Vercel (preview o prod)', async () => {
-    setEnv({ TURNSTILE_SECRET_KEY: TEST_SECRET, NODE_ENV: 'production', VERCEL: '1' })
-    expect(await verifyTurnstile('tok')).toEqual({ ok: false, reason: 'test_key_in_production' })
+  it('testing key non-Vercel senza flag E2E → rifiutata', async () => {
+    setEnv({
+      TURNSTILE_SECRET_KEY: TEST_SECRET,
+      NODE_ENV: 'production',
+      VERCEL: undefined,
+      E2E_ALLOW_TURNSTILE_TEST_KEYS: undefined,
+    })
+    expect(await verifyTurnstile('tok')).toEqual({ ok: false, reason: 'test_key_not_allowed' })
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
-  it('testing key in produzione Vercel Preview (NODE_ENV=production)', async () => {
+  it('testing key non-Vercel con flag E2E → accettata (harness locale)', async () => {
+    setEnv({
+      TURNSTILE_SECRET_KEY: TEST_SECRET,
+      NODE_ENV: 'production',
+      VERCEL: undefined,
+      E2E_ALLOW_TURNSTILE_TEST_KEYS: 'true',
+    })
+    expect(await verifyTurnstile('tok')).toEqual({ ok: true })
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('testing key su Vercel con flag E2E → comunque rifiutata', async () => {
     setEnv({
       TURNSTILE_SECRET_KEY: TEST_SECRET,
       NODE_ENV: 'production',
       VERCEL: '1',
       VERCEL_ENV: 'preview',
+      E2E_ALLOW_TURNSTILE_TEST_KEYS: 'true',
     })
-    expect(await verifyTurnstile('tok')).toEqual({ ok: false, reason: 'test_key_in_production' })
+    expect(await verifyTurnstile('tok')).toEqual({ ok: false, reason: 'test_key_not_allowed' })
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 
-  it('testing key in locale (anche next start, VERCEL assente) → ok, nessuna rete', async () => {
-    setEnv({ TURNSTILE_SECRET_KEY: TEST_SECRET, NODE_ENV: 'production', VERCEL: undefined })
-    expect(await verifyTurnstile('tok')).toEqual({ ok: true })
+  it('testing key su Vercel production → rifiutata', async () => {
+    setEnv({ TURNSTILE_SECRET_KEY: TEST_SECRET, NODE_ENV: 'production', VERCEL: '1' })
+    expect(await verifyTurnstile('tok')).toEqual({ ok: false, reason: 'test_key_not_allowed' })
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
@@ -182,9 +200,14 @@ describe('verifyTurnstile — fail-closed', () => {
     expect(body).toContain(encodeURIComponent(PROD_SECRET))
   })
 
-  it('testing key in non-produzione: verifica locale, nessuna rete', async () => {
-    setEnv({ TURNSTILE_SECRET_KEY: TEST_SECRET, NODE_ENV: 'test' })
-    expect(await verifyTurnstile('tok')).toEqual({ ok: true })
+  it('testing key in dev senza flag → rifiutata (nessun default permissivo)', async () => {
+    setEnv({
+      TURNSTILE_SECRET_KEY: TEST_SECRET,
+      NODE_ENV: 'test',
+      VERCEL: undefined,
+      E2E_ALLOW_TURNSTILE_TEST_KEYS: undefined,
+    })
+    expect(await verifyTurnstile('tok')).toEqual({ ok: false, reason: 'test_key_not_allowed' })
     expect(fetchMock).not.toHaveBeenCalled()
   })
 })

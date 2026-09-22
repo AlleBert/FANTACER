@@ -3,20 +3,19 @@
  *
  * Regole di sicurezza:
  *  - il secret è obbligatorio: se manca la verifica fallisce;
- *  - le testing key Cloudflare sono rifiutate su **qualsiasi deployment Vercel**
- *    (production e preview, entrambi NODE_ENV=production); sono accettate solo
- *    in ambiente locale, incluso `next start` usato per gli E2E production-like;
+ *  - le testing key Cloudflare sono rifiutate di default e **sempre** su
+ *    qualsiasi deployment Vercel (production e preview, dove `VERCEL` è
+ *    impostato), anche se il flag E2E fosse accidentalmente presente;
+ *  - l'unica eccezione è l'harness E2E **locale**: testing key ammessa solo se
+ *    `VERCEL` è assente **e** `E2E_ALLOW_TURNSTILE_TEST_KEYS === 'true'`
+ *    (variabile server-only, mai `NEXT_PUBLIC_*`, impostata solo nel processo
+ *    webServer di Playwright);
  *  - Siteverify ha un timeout esplicito (AbortController): timeout, errore di
  *    rete, HTTP non valido o JSON malformato falliscono;
  *  - si richiede `success === true`, `action === "vote"` e `hostname` in
  *    allowlist esatta (nessuna wildcard);
  *  - non si usa l'IP per la decisione (estrazione attendibile in P0-2);
  *  - nessun log di token/secret o della risposta completa di Siteverify.
- *
- * Confine test/Vercel: `process.env.VERCEL` è impostato da Vercel su ogni
- * deployment (production e preview). La testing key è ammessa solo quando tale
- * variabile è assente (macchina locale). In produzione Vercel il secret reale è
- * obbligatorio.
  */
 
 export const TURNSTILE_VERIFY_URL =
@@ -27,7 +26,7 @@ export const TURNSTILE_TIMEOUT_MS = 4500;
 export type TurnstileFailureReason =
   | 'missing_token'
   | 'missing_secret'
-  | 'test_key_in_production'
+  | 'test_key_not_allowed'
   | 'timeout'
   | 'network_error'
   | 'http_error'
@@ -79,13 +78,17 @@ export async function verifyTurnstile(token: unknown): Promise<TurnstileResult> 
   const onVercel = Boolean(process.env.VERCEL);
   const testingSecret = isTestTurnstileSecret(secret);
 
-  if (testingSecret && onVercel) {
-    return { ok: false, reason: 'test_key_in_production' };
+  // Testing key ammessa SOLO per l'harness E2E locale: VERCEL assente E flag
+  // esplicito server-only. Su Vercel la condizione è sempre falsa → rifiuto.
+  const allowTestKeys =
+    !onVercel && process.env.E2E_ALLOW_TURNSTILE_TEST_KEYS === 'true';
+
+  if (testingSecret && !allowTestKeys) {
+    return { ok: false, reason: 'test_key_not_allowed' };
   }
 
-  // Locale (dev o `next start` per E2E): testing key → verifica deterministica,
-  // nessuna chiamata di rete. Su Vercel il ramo è irraggiungibile (bloccato sopra).
   if (testingSecret) {
+    // Harness E2E locale: verifica deterministica, nessuna chiamata di rete.
     return { ok: true };
   }
 
