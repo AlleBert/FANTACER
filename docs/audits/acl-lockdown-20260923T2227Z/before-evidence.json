@@ -1,0 +1,612 @@
+[
+  {
+    "evidence": {
+      "counts": {
+        "audit_logs_rows": 1462,
+        "daily_stats_rows": 239,
+        "device_sessions_rows": 5126,
+        "legacy_votes_total": 0,
+        "rate_limits_rows": 88,
+        "vote_sessions_today": 0,
+        "vote_sessions_total": 545
+      },
+      "default_acl": [
+        {
+          "acl": "{postgres=rwU/postgres,anon=rwU/postgres,authenticated=rwU/postgres,service_role=rwU/postgres}",
+          "ns": "public",
+          "objtype": "S",
+          "owner": "postgres"
+        },
+        {
+          "acl": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+          "ns": "public",
+          "objtype": "f",
+          "owner": "postgres"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+          "ns": "public",
+          "objtype": "r",
+          "owner": "postgres"
+        },
+        {
+          "acl": "{postgres=rwU/postgres,anon=rwU/postgres,authenticated=rwU/postgres,service_role=rwU/postgres}",
+          "ns": "storage",
+          "objtype": "S",
+          "owner": "postgres"
+        },
+        {
+          "acl": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+          "ns": "storage",
+          "objtype": "f",
+          "owner": "postgres"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+          "ns": "storage",
+          "objtype": "r",
+          "owner": "postgres"
+        },
+        {
+          "acl": "{postgres=r*w*U*/supabase_admin}",
+          "ns": "extensions",
+          "objtype": "S",
+          "owner": "supabase_admin"
+        },
+        {
+          "acl": "{postgres=X*/supabase_admin}",
+          "ns": "extensions",
+          "objtype": "f",
+          "owner": "supabase_admin"
+        },
+        {
+          "acl": "{postgres=a*r*w*d*D*x*t*m*/supabase_admin}",
+          "ns": "extensions",
+          "objtype": "r",
+          "owner": "supabase_admin"
+        },
+        {
+          "acl": "{postgres=rwU/supabase_admin,anon=rwU/supabase_admin,authenticated=rwU/supabase_admin,service_role=rwU/supabase_admin}",
+          "ns": "graphql",
+          "objtype": "S",
+          "owner": "supabase_admin"
+        },
+        {
+          "acl": "{postgres=X/supabase_admin,anon=X/supabase_admin,authenticated=X/supabase_admin,service_role=X/supabase_admin}",
+          "ns": "graphql",
+          "objtype": "f",
+          "owner": "supabase_admin"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/supabase_admin,anon=arwdDxtm/supabase_admin,authenticated=arwdDxtm/supabase_admin,service_role=arwdDxtm/supabase_admin}",
+          "ns": "graphql",
+          "objtype": "r",
+          "owner": "supabase_admin"
+        },
+        {
+          "acl": "{postgres=rwU/supabase_admin,anon=rwU/supabase_admin,authenticated=rwU/supabase_admin,service_role=rwU/supabase_admin}",
+          "ns": "graphql_public",
+          "objtype": "S",
+          "owner": "supabase_admin"
+        },
+        {
+          "acl": "{postgres=X/supabase_admin,anon=X/supabase_admin,authenticated=X/supabase_admin,service_role=X/supabase_admin}",
+          "ns": "graphql_public",
+          "objtype": "f",
+          "owner": "supabase_admin"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/supabase_admin,anon=arwdDxtm/supabase_admin,authenticated=arwdDxtm/supabase_admin,service_role=arwdDxtm/supabase_admin}",
+          "ns": "graphql_public",
+          "objtype": "r",
+          "owner": "supabase_admin"
+        },
+        {
+          "acl": "{postgres=rwU/supabase_admin,anon=rwU/supabase_admin,authenticated=rwU/supabase_admin,service_role=rwU/supabase_admin}",
+          "ns": "public",
+          "objtype": "S",
+          "owner": "supabase_admin"
+        },
+        {
+          "acl": "{postgres=X/supabase_admin,anon=X/supabase_admin,authenticated=X/supabase_admin,service_role=X/supabase_admin}",
+          "ns": "public",
+          "objtype": "f",
+          "owner": "supabase_admin"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/supabase_admin,anon=arwdDxtm/supabase_admin,authenticated=arwdDxtm/supabase_admin,service_role=arwdDxtm/supabase_admin}",
+          "ns": "public",
+          "objtype": "r",
+          "owner": "supabase_admin"
+        },
+        {
+          "acl": "{postgres=rwU/supabase_admin,dashboard_user=rwU/supabase_admin}",
+          "ns": "realtime",
+          "objtype": "S",
+          "owner": "supabase_admin"
+        },
+        {
+          "acl": "{postgres=X/supabase_admin,dashboard_user=X/supabase_admin}",
+          "ns": "realtime",
+          "objtype": "f",
+          "owner": "supabase_admin"
+        },
+        {
+          "acl": "{postgres=a*r*wdDxtm/supabase_admin,dashboard_user=arwdDxtm/supabase_admin}",
+          "ns": "realtime",
+          "objtype": "r",
+          "owner": "supabase_admin"
+        },
+        {
+          "acl": "{postgres=rwU/supabase_auth_admin,dashboard_user=rwU/supabase_auth_admin}",
+          "ns": "auth",
+          "objtype": "S",
+          "owner": "supabase_auth_admin"
+        },
+        {
+          "acl": "{postgres=X/supabase_auth_admin,dashboard_user=X/supabase_auth_admin}",
+          "ns": "auth",
+          "objtype": "f",
+          "owner": "supabase_auth_admin"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/supabase_auth_admin,dashboard_user=arwdDxtm/supabase_auth_admin}",
+          "ns": "auth",
+          "objtype": "r",
+          "owner": "supabase_auth_admin"
+        }
+      ],
+      "functions": [
+        {
+          "anon": true,
+          "auth": true,
+          "cfg": null,
+          "owner": "postgres",
+          "proname": "bump_ranking_tick",
+          "secdef": false,
+          "sig": "",
+          "svc": true
+        },
+        {
+          "anon": true,
+          "auth": true,
+          "cfg": null,
+          "owner": "postgres",
+          "proname": "check_can_vote",
+          "secdef": true,
+          "sig": "fingerprint_param text",
+          "svc": true
+        },
+        {
+          "anon": true,
+          "auth": true,
+          "cfg": null,
+          "owner": "postgres",
+          "proname": "check_rate_limit",
+          "secdef": true,
+          "sig": "ip_param text, window_ms integer, max_requests integer",
+          "svc": true
+        },
+        {
+          "anon": true,
+          "auth": true,
+          "cfg": "{search_path=public}",
+          "owner": "postgres",
+          "proname": "get_company_ranking",
+          "secdef": true,
+          "sig": "limit_count integer",
+          "svc": true
+        },
+        {
+          "anon": true,
+          "auth": true,
+          "cfg": null,
+          "owner": "postgres",
+          "proname": "increment_vote",
+          "secdef": false,
+          "sig": "company_id_param uuid, date_param date",
+          "svc": true
+        },
+        {
+          "anon": true,
+          "auth": true,
+          "cfg": "{search_path=public}",
+          "owner": "postgres",
+          "proname": "maintain_company_totals",
+          "secdef": true,
+          "sig": "",
+          "svc": true
+        },
+        {
+          "anon": true,
+          "auth": true,
+          "cfg": null,
+          "owner": "postgres",
+          "proname": "submit_vote",
+          "secdef": true,
+          "sig": "company_id_param uuid, fingerprint_param text, ip_param text, user_agent_param text, country_param text",
+          "svc": true
+        },
+        {
+          "anon": true,
+          "auth": true,
+          "cfg": null,
+          "owner": "postgres",
+          "proname": "submit_vote",
+          "secdef": true,
+          "sig": "company_id_param uuid, fingerprint_param text, ip_param text, user_agent_param text, country_param text, comment_param text, adjective_param text, slider_innovation_param integer, slider_sales_param integer, slider_wow_param integer",
+          "svc": true
+        },
+        {
+          "anon": true,
+          "auth": true,
+          "cfg": "{search_path=public}",
+          "owner": "postgres",
+          "proname": "submit_vote",
+          "secdef": true,
+          "sig": "fingerprint_param text, ip_param text, user_agent_param text, company1_id_param uuid, company2_id_param uuid, company3_id_param uuid, country_param text",
+          "svc": true
+        },
+        {
+          "anon": true,
+          "auth": true,
+          "cfg": "{search_path=public}",
+          "owner": "postgres",
+          "proname": "submit_vote",
+          "secdef": true,
+          "sig": "fingerprint_param text, ip_param text, user_agent_param text, company1_id_param uuid, company2_id_param uuid, company3_id_param uuid, country_param text, botd_param text",
+          "svc": true
+        }
+      ],
+      "policies": [
+        {
+          "cmd": "SELECT",
+          "policyname": "Admin read own admin_users",
+          "roles": "{public}",
+          "tablename": "admin_users"
+        },
+        {
+          "cmd": "UPDATE",
+          "policyname": "Admin update own admin_users",
+          "roles": "{public}",
+          "tablename": "admin_users"
+        },
+        {
+          "cmd": "INSERT",
+          "policyname": "Insert analytics",
+          "roles": "{public}",
+          "tablename": "analytics_raw"
+        },
+        {
+          "cmd": "SELECT",
+          "policyname": "Admin read analytics",
+          "roles": "{public}",
+          "tablename": "analytics_raw"
+        },
+        {
+          "cmd": "SELECT",
+          "policyname": "Admin read audit_logs",
+          "roles": "{public}",
+          "tablename": "audit_logs"
+        },
+        {
+          "cmd": "ALL",
+          "policyname": "Service role only for batch_settings",
+          "roles": "{public}",
+          "tablename": "batch_settings"
+        },
+        {
+          "cmd": "INSERT",
+          "policyname": "Allow authenticated insert",
+          "roles": "{authenticated}",
+          "tablename": "companies"
+        },
+        {
+          "cmd": "SELECT",
+          "policyname": "Allow public read",
+          "roles": "{anon,authenticated}",
+          "tablename": "companies"
+        },
+        {
+          "cmd": "SELECT",
+          "policyname": "Public read companies",
+          "roles": "{public}",
+          "tablename": "companies"
+        },
+        {
+          "cmd": "INSERT",
+          "policyname": "Anyone insert daily_stats",
+          "roles": "{public}",
+          "tablename": "daily_stats"
+        },
+        {
+          "cmd": "SELECT",
+          "policyname": "Admin read daily_stats",
+          "roles": "{public}",
+          "tablename": "daily_stats"
+        },
+        {
+          "cmd": "SELECT",
+          "policyname": "Public read daily_stats",
+          "roles": "{public}",
+          "tablename": "daily_stats"
+        },
+        {
+          "cmd": "UPDATE",
+          "policyname": "Admin update daily_stats",
+          "roles": "{public}",
+          "tablename": "daily_stats"
+        },
+        {
+          "cmd": "UPDATE",
+          "policyname": "Anyone update daily_stats",
+          "roles": "{public}",
+          "tablename": "daily_stats"
+        },
+        {
+          "cmd": "ALL",
+          "policyname": "Manage own sessions",
+          "roles": "{public}",
+          "tablename": "device_sessions"
+        },
+        {
+          "cmd": "SELECT",
+          "policyname": "ranking_tick_public_select",
+          "roles": "{public}",
+          "tablename": "ranking_tick"
+        },
+        {
+          "cmd": "ALL",
+          "policyname": "Service role only for rate_limits",
+          "roles": "{public}",
+          "tablename": "rate_limits"
+        },
+        {
+          "cmd": "ALL",
+          "policyname": "public_full_settings",
+          "roles": "{public}",
+          "tablename": "settings"
+        },
+        {
+          "cmd": "ALL",
+          "policyname": "Service role only for site_settings",
+          "roles": "{public}",
+          "tablename": "site_settings"
+        },
+        {
+          "cmd": "SELECT",
+          "policyname": "Public read site_settings",
+          "roles": "{public}",
+          "tablename": "site_settings"
+        },
+        {
+          "cmd": "DELETE",
+          "policyname": "sponsors_service_delete",
+          "roles": "{service_role}",
+          "tablename": "sponsors"
+        },
+        {
+          "cmd": "INSERT",
+          "policyname": "sponsors_service_insert",
+          "roles": "{service_role}",
+          "tablename": "sponsors"
+        },
+        {
+          "cmd": "SELECT",
+          "policyname": "sponsors_public_select",
+          "roles": "{public}",
+          "tablename": "sponsors"
+        },
+        {
+          "cmd": "UPDATE",
+          "policyname": "sponsors_service_update",
+          "roles": "{service_role}",
+          "tablename": "sponsors"
+        },
+        {
+          "cmd": "INSERT",
+          "policyname": "vote_sessions_service_insert",
+          "roles": "{service_role}",
+          "tablename": "vote_sessions"
+        },
+        {
+          "cmd": "SELECT",
+          "policyname": "vote_sessions_service_select",
+          "roles": "{service_role}",
+          "tablename": "vote_sessions"
+        },
+        {
+          "cmd": "INSERT",
+          "policyname": "Anyone insert votes",
+          "roles": "{public}",
+          "tablename": "votes"
+        },
+        {
+          "cmd": "SELECT",
+          "policyname": "Admin read votes",
+          "roles": "{public}",
+          "tablename": "votes"
+        },
+        {
+          "cmd": "SELECT",
+          "policyname": "anon_read_votes",
+          "roles": "{public}",
+          "tablename": "votes"
+        }
+      ],
+      "tables": [
+        {
+          "anon_del": false,
+          "anon_ins": false,
+          "anon_sel": true,
+          "anon_upd": true,
+          "relkind": "S",
+          "relname": "analytics_raw_id_seq",
+          "rls": false
+        },
+        {
+          "anon_del": false,
+          "anon_ins": false,
+          "anon_sel": true,
+          "anon_upd": true,
+          "relkind": "S",
+          "relname": "audit_logs_id_seq",
+          "rls": false
+        },
+        {
+          "anon_del": false,
+          "anon_ins": false,
+          "anon_sel": true,
+          "anon_upd": true,
+          "relkind": "S",
+          "relname": "vote_sessions_id_seq",
+          "rls": false
+        },
+        {
+          "anon_del": false,
+          "anon_ins": false,
+          "anon_sel": true,
+          "anon_upd": true,
+          "relkind": "S",
+          "relname": "votes_id_seq",
+          "rls": false
+        },
+        {
+          "anon_del": true,
+          "anon_ins": true,
+          "anon_sel": true,
+          "anon_upd": true,
+          "relkind": "r",
+          "relname": "admin_users",
+          "rls": true
+        },
+        {
+          "anon_del": true,
+          "anon_ins": true,
+          "anon_sel": true,
+          "anon_upd": true,
+          "relkind": "r",
+          "relname": "analytics_raw",
+          "rls": true
+        },
+        {
+          "anon_del": true,
+          "anon_ins": true,
+          "anon_sel": true,
+          "anon_upd": true,
+          "relkind": "r",
+          "relname": "audit_logs",
+          "rls": true
+        },
+        {
+          "anon_del": true,
+          "anon_ins": true,
+          "anon_sel": true,
+          "anon_upd": true,
+          "relkind": "r",
+          "relname": "batch_settings",
+          "rls": true
+        },
+        {
+          "anon_del": true,
+          "anon_ins": true,
+          "anon_sel": true,
+          "anon_upd": true,
+          "relkind": "r",
+          "relname": "companies",
+          "rls": true
+        },
+        {
+          "anon_del": true,
+          "anon_ins": true,
+          "anon_sel": true,
+          "anon_upd": true,
+          "relkind": "r",
+          "relname": "company_totals",
+          "rls": true
+        },
+        {
+          "anon_del": true,
+          "anon_ins": true,
+          "anon_sel": true,
+          "anon_upd": true,
+          "relkind": "r",
+          "relname": "daily_stats",
+          "rls": true
+        },
+        {
+          "anon_del": true,
+          "anon_ins": true,
+          "anon_sel": true,
+          "anon_upd": true,
+          "relkind": "r",
+          "relname": "device_sessions",
+          "rls": true
+        },
+        {
+          "anon_del": true,
+          "anon_ins": true,
+          "anon_sel": true,
+          "anon_upd": true,
+          "relkind": "r",
+          "relname": "ranking_tick",
+          "rls": true
+        },
+        {
+          "anon_del": true,
+          "anon_ins": true,
+          "anon_sel": true,
+          "anon_upd": true,
+          "relkind": "r",
+          "relname": "rate_limits",
+          "rls": true
+        },
+        {
+          "anon_del": true,
+          "anon_ins": true,
+          "anon_sel": true,
+          "anon_upd": true,
+          "relkind": "r",
+          "relname": "settings",
+          "rls": true
+        },
+        {
+          "anon_del": true,
+          "anon_ins": true,
+          "anon_sel": true,
+          "anon_upd": true,
+          "relkind": "r",
+          "relname": "site_settings",
+          "rls": true
+        },
+        {
+          "anon_del": true,
+          "anon_ins": true,
+          "anon_sel": true,
+          "anon_upd": true,
+          "relkind": "r",
+          "relname": "sponsors",
+          "rls": true
+        },
+        {
+          "anon_del": true,
+          "anon_ins": true,
+          "anon_sel": true,
+          "anon_upd": true,
+          "relkind": "r",
+          "relname": "vote_sessions",
+          "rls": true
+        },
+        {
+          "anon_del": true,
+          "anon_ins": true,
+          "anon_sel": true,
+          "anon_upd": true,
+          "relkind": "r",
+          "relname": "votes",
+          "rls": true
+        }
+      ]
+    }
+  }
+]
