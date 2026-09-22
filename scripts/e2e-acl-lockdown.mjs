@@ -31,6 +31,7 @@ const anonKey = e2e.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const svcKey = e2e.SUPABASE_SERVICE_ROLE_KEY;
 const dbUrl = loadE2eDbUrl();
 const MIGRATION = 'supabase/migrations/20260923000000_emergency_acl_lockdown.sql';
+const RESIDUAL_MIGRATION = 'supabase/migrations/20260923000002_residual_table_privileges.sql';
 
 const results = [];
 const ok = (id, name, detail = '') => results.push({ id, name, esito: 'PASS', detail });
@@ -183,6 +184,26 @@ async function main() {
     await db.query('rollback').catch(() => {});
     ko('T12', 'idempotenza', e.message);
   }
+
+  // --- D) hardening residuo: revoca grant tabella su vote_sessions/rate_limits
+  try {
+    const sql = readFileSync(RESIDUAL_MIGRATION, 'utf8');
+    await db.query('begin'); await db.query(sql); await db.query('commit');
+    ok('T14', 'migration residua applicata (revoca grant anon/auth su vote_sessions/rate_limits)');
+  } catch (e) {
+    await db.query('rollback').catch(() => {});
+    ko('T14', 'migration residua', e.message);
+  }
+
+  const d1 = await anon.from('vote_sessions').select('id').limit(1);
+  const d2 = await anon.from('rate_limits').select('ip').limit(1);
+  if (d1.error && d2.error) ok('T15', 'anon bloccato su vote_sessions/rate_limits (grant revocato)');
+  else ko('T15', 'grant residui', `vote_sessions=${d1.error?.message ?? 'accessibile'} rate_limits=${d2.error?.message ?? 'accessibile'}`);
+
+  const s1 = await svc.from('vote_sessions').select('id').limit(1);
+  const s2 = await svc.from('rate_limits').select('ip').limit(1);
+  if (!s1.error && !s2.error) ok('T16', 'service_role legge vote_sessions/rate_limits');
+  else ko('T16', 'service_role', `vote_sessions=${s1.error?.message} rate_limits=${s2.error?.message}`);
 
   // --- cleanup artefatti di test
   await db.query('delete from public.vote_sessions where fingerprint=$1', [probeFp]);
