@@ -17,6 +17,8 @@ export function TurnstileOverlay({ isVisible, onClose, onSuccess, onError }: Tur
   const { t } = useLocale()
   const [status, setStatus] = useState<'idle' | 'verifying' | 'success'>('idle')
   const [isClosing, setIsClosing] = useState(false)
+  // Forza il remount del widget (nuovo challenge/token) dopo expire o errore.
+  const [attempt, setAttempt] = useState(0)
 
   useScrollLock(isVisible || isClosing)
 
@@ -104,11 +106,20 @@ export function TurnstileOverlay({ isVisible, onClose, onSuccess, onError }: Tur
           <div className="relative w-full min-h-[65px] flex items-center justify-center">
             {status === 'idle' && (
               <Turnstile 
+                key={attempt}
                 siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''} 
                 onSuccess={handleSuccess}
-                onExpire={() => setStatus('idle')}
-                onError={() => onError(t('turnstile.error'))}
-                options={{ theme: 'light' }}
+                onExpire={() => {
+                  setStatus('idle')
+                  setAttempt((n) => n + 1)
+                }}
+                onError={() => {
+                  // Reset per consentire un nuovo challenge/token all'utente.
+                  setStatus('idle')
+                  setAttempt((n) => n + 1)
+                  onError(t('turnstile.error'))
+                }}
+                options={{ theme: 'light', action: 'vote' }}
               />
             )}
             

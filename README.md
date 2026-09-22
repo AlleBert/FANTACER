@@ -11,6 +11,18 @@ npm install
 cp .env.example .env.local  # then fill in Supabase credentials
 ```
 
+### Turnstile (voto)
+
+La verifica è server-side e **fail-closed** (`src/lib/turnstile.ts`). In
+produzione sono obbligatori:
+
+- `TURNSTILE_SECRET_KEY` — chiave **reale** (le testing key sono rifiutate in produzione);
+- `TURNSTILE_ALLOWED_HOSTNAMES` — allowlist **esatta** (comma-separated, nessuna
+  wildcard), es. `www.fantacer.com,fantacer.com`.
+
+Il widget invia `action: "vote"`, verificata lato server; il timeout Siteverify è
+4,5s. Se la configurazione manca, il voto viene rifiutato (fail-closed).
+
 ## Development
 
 ```bash
