@@ -21,7 +21,7 @@ const mockVote = {
 
 jest.mock('@/lib/VoteContext', () => ({ useVote: () => mockVote }))
 jest.mock('@/lib/RealtimeContext', () => ({
-  useRealtime: () => ({ votingEnabled: true }),
+  useRealtime: () => ({ votingEnabled: true, antibotEnabled: false }),
 }))
 jest.mock('use-debounce', () => ({
   useDebouncedCallback: (fn: (...args: unknown[]) => unknown) => fn,

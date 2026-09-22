@@ -55,7 +55,7 @@ export function LiveRankingSection({ showWhenDisabled = false }: LiveRankingSect
   const { t } = useLocale()
   const { selectedCompanies, gameUnlock } = useVote()
   const maxItems = useSponsorMaxItems()
-  const { votingEnabled, realtimeActive, rankingVersion, visible } = useRealtime()
+  const { votingEnabled, antibotEnabled, realtimeActive, rankingVersion, visible } = useRealtime()
   const [companies, setCompanies] = useState<RankingCompany[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -70,7 +70,7 @@ export function LiveRankingSection({ showWhenDisabled = false }: LiveRankingSect
 
   // Il canale ranking_tick è richiesto solo quando la sezione è visibile e il voto
   // è attivo; il provider lo condivide (refcount) e lo sospende in background.
-  useRankingTick(isVisible && votingEnabled)
+  useRankingTick(isVisible && votingEnabled && !antibotEnabled)
 
   const votedIds = useMemo(
     () => new Set(gameUnlock.success ? selectedCompanies.map((s) => s.company.id) : []),
@@ -100,20 +100,21 @@ export function LiveRankingSection({ showWhenDisabled = false }: LiveRankingSect
   // (classifica visibile pre-fiera). A voto disattivo senza showWhenDisabled la
   // sezione è null e il fetch è inutile (riparte quando il flag va true).
   useEffect(() => {
+    if (antibotEnabled) return
     if (!votingEnabled && !showWhenDisabled) return
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchRanking()
-  }, [fetchRanking, votingEnabled, showWhenDisabled])
+  }, [fetchRanking, votingEnabled, showWhenDisabled, antibotEnabled])
 
   // Polling di fallback (10s): attivo solo se il voto è attivo, il realtime non
   // ha ancora consegnato un evento reale, la sezione è in viewport e la scheda è
   // visibile. Mai con loader: gli aggiornamenti successivi sono silenziosi.
   useEffect(() => {
     const interval = setInterval(() => {
-      if (votingEnabled && !realtimeActive && isVisible && visible) fetchRanking(false)
+      if (votingEnabled && !antibotEnabled && !realtimeActive && isVisible && visible) fetchRanking(false)
     }, PALLETS_POLLING_MS)
     return () => clearInterval(interval)
-  }, [fetchRanking, realtimeActive, isVisible, visible, votingEnabled])
+  }, [fetchRanking, realtimeActive, isVisible, visible, votingEnabled, antibotEnabled])
 
   // Viewport: la classifica si aggiorna quando entra a schermo. Il canale
   // ranking_tick è gestito dal provider (refcount, sospeso in background): qui
@@ -151,10 +152,11 @@ export function LiveRankingSection({ showWhenDisabled = false }: LiveRankingSect
     prevVisible.current = visible
     if (!visible || wasVisible) return
     if (!isVisible) return
+    if (antibotEnabled) return
     if (!votingEnabled && !showWhenDisabled) return
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchRanking(false)
-  }, [visible, isVisible, votingEnabled, showWhenDisabled, fetchRanking])
+  }, [visible, isVisible, votingEnabled, showWhenDisabled, antibotEnabled, fetchRanking])
 
   const toggleBand = (cluster: Cluster) => {
     setOpen((prev) => ({ ...prev, [cluster]: !prev[cluster] }))
@@ -210,7 +212,7 @@ export function LiveRankingSection({ showWhenDisabled = false }: LiveRankingSect
   // nessuna sezione, nessuno skeleton. Il flag voting_enabled (admin) la
   // ripristina dal lunedì di fiera.
   // Se showWhenDisabled è true, mostriamo comunque la classifica.
-  if (!votingEnabled && !showWhenDisabled) return null
+  if (antibotEnabled || (!votingEnabled && !showWhenDisabled)) return null
 
   return (
     <SectionFrame theme="live-ranking" className="flex flex-col">

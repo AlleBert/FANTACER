@@ -39,6 +39,7 @@ function rankingDebounceDelay(): number {
 interface RealtimeContextType {
   votingEnabled: boolean;
   votingEnabledLoaded: boolean;
+  antibotEnabled: boolean;
   rankingVersion: number;
   realtimeActive: boolean;
   /** Visibilità della scheda (`document.visibilityState === 'visible'`). */
@@ -68,6 +69,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
   // rimontaggio tardivo della UI di ricerca (che sposterebbe i portal nel DOM).
   const [votingEnabled, setVotingEnabled] = useState(true);
   const [votingEnabledLoaded, setVotingEnabledLoaded] = useState(false);
+  const [antibotEnabled, setAntibotEnabled] = useState(false);
   const [rankingVersion, setRankingVersion] = useState(0);
   const [realtimeActive, setRealtimeActive] = useState(false);
   const [visible, setVisible] = useState(initialVisible);
@@ -88,6 +90,16 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const fetchAntibotFlag = useCallback(async () => {
+    try {
+      const res = await fetch('/api/public/flag/antibot');
+      const data = await res.json();
+      setAntibotEnabled(!!data?.enabled);
+    } catch {
+      // realtime/fetch non disponibili: mantiene l'ultimo valore noto
+    }
+  }, []);
+
   // Visibilità scheda: pausa/riprende i canali.
   useEffect(() => {
     const onVisibility = () => setVisible(!document.hidden);
@@ -100,23 +112,31 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
     if (!visible) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchVotingFlag();
+    fetchAntibotFlag();
 
     const supabase = safeClient();
     if (!supabase) return;
-    const channel = safeOnPostgresChanges(
-      supabase.channel(VOTING_FLAG_CHANNEL),
+    const channel = supabase.channel(VOTING_FLAG_CHANNEL);
+    safeOnPostgresChanges(
+      channel,
       { event: 'UPDATE', schema: 'public', table: 'site_settings', filter: 'key=eq.voting_enabled' },
       () => {
         fetchVotingFlag();
       },
     );
-    if (!channel) return;
+    safeOnPostgresChanges(
+      channel,
+      { event: 'UPDATE', schema: 'public', table: 'site_settings', filter: 'key=eq.antibot_enabled' },
+      () => {
+        fetchAntibotFlag();
+      },
+    );
     safeSubscribe(channel);
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [visible, fetchVotingFlag]);
+  }, [visible, fetchVotingFlag, fetchAntibotFlag]);
 
   // Classifica: canale aperto solo con almeno un consumer e scheda visibile.
   useEffect(() => {
@@ -166,12 +186,13 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
     () => ({
       votingEnabled,
       votingEnabledLoaded,
+      antibotEnabled,
       rankingVersion,
       realtimeActive,
       visible,
       acquireRanking,
     }),
-    [votingEnabled, votingEnabledLoaded, rankingVersion, realtimeActive, visible, acquireRanking],
+    [votingEnabled, votingEnabledLoaded, antibotEnabled, rankingVersion, realtimeActive, visible, acquireRanking],
   );
 
   return <RealtimeContext.Provider value={value}>{children}</RealtimeContext.Provider>;

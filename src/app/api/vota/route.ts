@@ -4,6 +4,7 @@ import { getActiveBatch } from '@/lib/supabase/batch'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveVoteFingerprint } from '@/lib/vote-dev-bypass'
 import { resolveVoterKey, applyVoterCookie } from '@/lib/vote-identity-server'
+import { getAntibotEnabled } from '@/lib/site-flags'
 import { LOCALE_COOKIE, resolveLocale } from '@/lib/locale'
 import { translate } from '@/i18n'
 
@@ -46,6 +47,12 @@ export async function POST(request: NextRequest) {
       const response = NextResponse.json(payload, { status })
       applyVoterCookie(response, resolved.voterId)
       return response
+    }
+
+    // Gate anti-bot: il toggle Admin sospende il voto anche server-side, non
+    // solo in UI. `423 Locked` distingue il blocco dagli errori di validazione.
+    if (await getAntibotEnabled()) {
+      return respond({ error: err('voteError.antibot') }, 423)
     }
 
     if (!company1Id || !company2Id || !company3Id) {

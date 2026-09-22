@@ -72,7 +72,8 @@ describe('RealtimeProvider + consumatori — canale condiviso', () => {
     ).not.toThrow()
     await act(async () => {})
 
-    // il flag è un solo topic, con un solo `.on()`
-    expect(onCallCount.get('realtime-voting-flag')).toBe(1)
+    // il topic dei flag resta uno solo (voting_enabled + antibot_enabled),
+    // non uno per consumer: nessun doppio `on` per lo stesso filtro.
+    expect(onCallCount.get('realtime-voting-flag')).toBe(2)
   })
 })

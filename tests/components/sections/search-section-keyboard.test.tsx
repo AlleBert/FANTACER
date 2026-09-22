@@ -27,8 +27,10 @@ jest.mock('@/lib/VoteContext', () => ({
   useVote: () => mockVote,
 }))
 
+const mockRealtime = { votingEnabled: true, antibotEnabled: false }
+
 jest.mock('@/lib/RealtimeContext', () => ({
-  useRealtime: () => ({ votingEnabled: true }),
+  useRealtime: () => mockRealtime,
 }))
 
 jest.mock('use-debounce', () => ({
@@ -56,6 +58,8 @@ jest.mock('@/lib/supabase/client', () => ({
 
 beforeEach(() => {
   mockVote.selectedCompanies = []
+  mockRealtime.votingEnabled = true
+  mockRealtime.antibotEnabled = false
   global.fetch = jest.fn((input: RequestInfo | URL) => {
     const url = String(input)
     if (url.includes('/api/public/batch')) {
@@ -121,5 +125,13 @@ describe('SearchSection — tastiera input', () => {
     fireEvent.keyDown(input, { key: 'Enter' })
     expect(document.activeElement).not.toBe(input)
     expect(await screen.findByText('search.assignPallet')).toBeInTheDocument()
+  })
+
+  it('con anti-bot attivo mostra il messaggio e nasconde la ricerca', () => {
+    mockRealtime.antibotEnabled = true
+    render(<SearchSection />)
+    expect(screen.getByText('antibot.title')).toBeInTheDocument()
+    expect(screen.getByText('antibot.body')).toBeInTheDocument()
+    expect(screen.queryByLabelText('search.placeholder')).not.toBeInTheDocument()
   })
 })

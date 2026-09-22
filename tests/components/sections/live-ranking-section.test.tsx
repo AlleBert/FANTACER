@@ -60,6 +60,7 @@ global.fetch = mockFetch as unknown as typeof fetch
 const mockRealtime = {
   votingEnabled: true,
   votingEnabledLoaded: true,
+  antibotEnabled: false,
   rankingVersion: 0,
   realtimeActive: true,
   visible: true,
@@ -90,6 +91,7 @@ describe('LiveRankingSection', () => {
   beforeEach(() => {
     mockFetch.mockReset()
     mockRealtime.votingEnabled = true
+    mockRealtime.antibotEnabled = false
     mockRealtime.rankingVersion = 0
     mockRealtime.realtimeActive = true
     mockRealtime.visible = true
@@ -198,6 +200,14 @@ describe('LiveRankingSection', () => {
     })
     expect(screen.getByText('live ranking')).toBeInTheDocument()
   })
+
+  it('con anti-bot attivo non renderizza la sezione nemmeno con showWhenDisabled', async () => {
+    mockRealtime.antibotEnabled = true
+    const { container } = render(<LiveRankingSection showWhenDisabled />)
+    await waitFor(() => {
+      expect(container.querySelector('section')).toBeNull()
+    })
+  })
 })
 
 describe('LiveRankingSection — stato accordion al refetch', () => {
@@ -205,6 +215,7 @@ describe('LiveRankingSection — stato accordion al refetch', () => {
     jest.useFakeTimers()
     MockIntersectionObserver.instances = []
     mockRealtime.votingEnabled = true
+    mockRealtime.antibotEnabled = false
     mockRealtime.rankingVersion = 0
     mockRealtime.realtimeActive = true
     mockRealtime.visible = true

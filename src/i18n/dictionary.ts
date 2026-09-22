@@ -74,6 +74,10 @@ export interface Dictionary {
   'liveRanking.yourVote': string
   'liveRanking.yourVotes': string
 
+  // Anti-bot
+  'antibot.title': string
+  'antibot.body': string
+
   // Contact
   'contact.title1': string
   'contact.title2': string
@@ -306,6 +310,7 @@ export interface Dictionary {
   'voteError.securityFailed': string
   'voteError.alreadyVoted': string
   'voteError.missingVoterId': string
+  'voteError.antibot': string
 }
 
 export type DictionaryKey = keyof Dictionary

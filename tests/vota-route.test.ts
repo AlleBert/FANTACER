@@ -7,6 +7,7 @@ import { POST } from '../src/app/api/vota/route'
 jest.mock('@/lib/supabase/admin', () => ({ createAdminClient: jest.fn() }))
 jest.mock('@/lib/supabase/batch', () => ({ getActiveBatch: jest.fn() }))
 jest.mock('@/lib/supabase/vote-api', () => ({ submitVote: jest.fn() }))
+jest.mock('@/lib/site-flags', () => ({ getAntibotEnabled: jest.fn() }))
 jest.mock('@/lib/vote-dev-bypass', () => ({
   isVoteLimitBypassed: jest.fn(() => false),
   resolveVoteFingerprint: (key: string) => key,
@@ -20,10 +21,12 @@ jest.mock('@/i18n', () => ({ translate: (_locale: string, key: string) => key })
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getActiveBatch } from '@/lib/supabase/batch'
 import { submitVote } from '@/lib/supabase/vote-api'
+import { getAntibotEnabled } from '@/lib/site-flags'
 
 const mockCreateAdminClient = createAdminClient as jest.Mock
 const mockGetActiveBatch = getActiveBatch as jest.Mock
 const mockSubmitVote = submitVote as jest.Mock
+const mockGetAntibotEnabled = getAntibotEnabled as jest.Mock
 
 const UUID = '11111111-2222-4333-8444-555555555555'
 const OTHER_UUID = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee'
@@ -84,7 +87,16 @@ describe('POST /api/vota', () => {
     delete process.env.TURNSTILE_SECRET_KEY
     mockCreateAdminClient.mockReturnValue(buildAdmin())
     mockGetActiveBatch.mockResolvedValue('TEST')
+    mockGetAntibotEnabled.mockResolvedValue(false)
     mockSubmitVote.mockResolvedValue({ success: true })
+  })
+
+  it('423 quando l\'anti-bot è attivo (voto sospeso server-side)', async () => {
+    mockGetAntibotEnabled.mockResolvedValue(true)
+    const res = await POST(makeRequest(validBody()))
+    expect(res.status).toBe(423)
+    expect(await res.json()).toEqual({ error: 'voteError.antibot' })
+    expect(mockSubmitVote).not.toHaveBeenCalled()
   })
 
   it('400 senza UUID valido (né cookie né payload)', async () => {

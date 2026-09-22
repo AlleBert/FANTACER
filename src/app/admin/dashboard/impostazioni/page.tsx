@@ -24,6 +24,7 @@ export default function ImpostazioniPage() {
   const isViewer = role === 'viewer'
   const [comingSoonEnabled, setComingSoonEnabled] = useState(false)
   const [votingEnabled, setVotingEnabled] = useState(false)
+  const [antibotEnabled, setAntibotEnabled] = useState(false)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [pendingValue, setPendingValue] = useState(false)
   const [updating, setUpdating] = useState(false)
@@ -32,6 +33,10 @@ export default function ImpostazioniPage() {
   const [showVotingConfirmModal, setShowVotingConfirmModal] = useState(false)
   const [pendingVotingValue, setPendingVotingValue] = useState(false)
   const [updatingVoting, setUpdatingVoting] = useState(false)
+  const [loadingAntibot, setLoadingAntibot] = useState(true)
+  const [showAntibotConfirmModal, setShowAntibotConfirmModal] = useState(false)
+  const [pendingAntibotValue, setPendingAntibotValue] = useState(false)
+  const [updatingAntibot, setUpdatingAntibot] = useState(false)
 
   // Audit log state
   const [auditExpanded, setAuditExpanded] = useState(false)
@@ -50,6 +55,11 @@ export default function ImpostazioniPage() {
       .then(data => setVotingEnabled(data.enabled))
       .finally(() => setLoadingVoting(false))
 
+    fetch('/api/admin/settings/antibot')
+      .then(res => res.json())
+      .then(data => setAntibotEnabled(data.enabled))
+      .finally(() => setLoadingAntibot(false))
+
     const supabase = createClient()
     const channel = supabase
       .channel('settings-changes')
@@ -60,6 +70,9 @@ export default function ImpostazioniPage() {
         fetch('/api/admin/settings/voting')
           .then(res => res.json())
           .then(data => setVotingEnabled(data.enabled))
+        fetch('/api/admin/settings/antibot')
+          .then(res => res.json())
+          .then(data => setAntibotEnabled(data.enabled))
       })
     safeSubscribe(channel)
 
@@ -111,6 +124,24 @@ export default function ImpostazioniPage() {
       if (res.ok) setVotingEnabled(pendingVotingValue)
     } catch (e) { console.error(e) }
     finally { setUpdatingVoting(false); setShowVotingConfirmModal(false) }
+  }
+
+  const handleAntibotToggle = () => {
+    setPendingAntibotValue(!antibotEnabled)
+    setShowAntibotConfirmModal(true)
+  }
+
+  const confirmAntibotToggle = async () => {
+    setUpdatingAntibot(true)
+    try {
+      const res = await fetch('/api/admin/settings/antibot', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: pendingAntibotValue }),
+      })
+      if (res.ok) setAntibotEnabled(pendingAntibotValue)
+    } catch (e) { console.error(e) }
+    finally { setUpdatingAntibot(false); setShowAntibotConfirmModal(false) }
   }
 
   return (
@@ -184,6 +215,35 @@ export default function ImpostazioniPage() {
                 }`}>
                 <span className={`absolute left-0.5 top-0.5 h-8 w-8 rounded-full bg-white transition-transform ${
                   votingEnabled ? 'translate-x-5' : ''
+                }`} />
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg border border-border p-4 mt-4">
+            <div>
+              <p className="font-medium text-foreground">Anti-bot</p>
+              <p className="text-sm text-muted-foreground">
+                {antibotEnabled
+                  ? 'Attivo — voto sospeso e classifica live nascosta su tutti i dispositivi'
+                  : 'Disattivo — nessun blocco automatico'}
+              </p>
+            </div>
+            {loadingAntibot ? (
+              <div className="h-6 w-11 animate-pulse rounded-full bg-muted" />
+            ) : isViewer ? (
+              <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${
+                antibotEnabled ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+              }`}>
+                {antibotEnabled ? 'Attivo' : 'Disattivo'}
+              </span>
+            ) : (
+              <button onClick={handleAntibotToggle} disabled={updatingAntibot}
+                className={`relative h-9 w-14 rounded-full transition-colors disabled:opacity-50 ${
+                  antibotEnabled ? 'bg-primary' : 'bg-muted'
+                }`}>
+                <span className={`absolute left-0.5 top-0.5 h-8 w-8 rounded-full bg-white transition-transform ${
+                  antibotEnabled ? 'translate-x-5' : ''
                 }`} />
               </button>
             )}
@@ -275,6 +335,34 @@ export default function ImpostazioniPage() {
               pendingVotingValue ? 'bg-primary hover:bg-primary/90' : 'bg-destructive hover:bg-destructive/90'
             }`}>
             {updatingVoting ? 'Aggiornamento...' : 'Conferma'}
+          </button>
+        </div>
+      </ModalShell>
+
+      {/* Antibot confirm modal */}
+      <ModalShell
+        open={showAntibotConfirmModal}
+        onClose={() => setShowAntibotConfirmModal(false)}
+        labelledBy="antibot-confirm-title"
+        className="bg-card border border-border rounded-xl p-6 shadow-lg max-w-md"
+      >
+        <h3 id="antibot-confirm-title" className="text-lg font-semibold text-foreground">
+          {pendingAntibotValue ? 'Attivare l\'anti-bot?' : 'Disattivare l\'anti-bot?'}
+        </h3>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {pendingAntibotValue
+            ? 'Il voto verrà sospeso e la classifica live nascosta su tutti i dispositivi, con il messaggio "Voto sospeso".'
+            : 'Voto e classifica live torneranno immediatamente disponibili.'}
+        </p>
+        <div className="mt-6 flex justify-end gap-3">
+          <button onClick={() => setShowAntibotConfirmModal(false)}
+            className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-secondary"
+            disabled={updatingAntibot}>Annulla</button>
+          <button onClick={confirmAntibotToggle} disabled={updatingAntibot}
+            className={`rounded-lg px-4 py-2 text-sm font-medium text-white ${
+              pendingAntibotValue ? 'bg-destructive hover:bg-destructive/90' : 'bg-primary hover:bg-primary/90'
+            }`}>
+            {updatingAntibot ? 'Aggiornamento...' : 'Conferma'}
           </button>
         </div>
       </ModalShell>
