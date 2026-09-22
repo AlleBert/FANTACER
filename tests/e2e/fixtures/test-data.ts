@@ -24,28 +24,19 @@ const TEST_SPONSORS = [
 ];
 
 /**
- * Rimuove i voti di oggi generati dalle suite E2E (fingerprint `e2e-voter-*`).
+ * Rimuove i voti runtime generati dalle suite E2E.
  *
- * Il fingerprint di voto (`FingerprintJS.visitorId`) è stabile per browser
- * instance: due test paralleli che votano nello stesso worker condividono lo
- * stesso fingerprint e la RPC `submit_vote` rifiuta il secondo voto con
- * "Hai già votato oggi" (409). Azzerare i vote_sessions di oggi subito prima
- * di ogni voto evita la collisione mantenendo intatti i dati seedati
- * (`test-fp-*`).
+ * L'identità di voto è un UUID first-party, quindi la chiave salvata in
+ * `vote_sessions.fingerprint` è `v1:<uuid>`. I dati seedati usano `test-fp-*`
+ * e restano intatti.
  */
 export async function clearRuntimeVotes() {
   const supabase = createTestAdminClient();
 
-  const today = new Date();
-  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const startOfTomorrow = new Date(startOfToday);
-  startOfTomorrow.setDate(startOfToday.getDate() + 1);
   const { error } = await supabase
     .from('vote_sessions')
     .delete()
-    .gte('created_at', startOfToday.toISOString())
-    .lt('created_at', startOfTomorrow.toISOString())
-    .like('fingerprint', 'e2e-voter-%');
+    .like('fingerprint', 'v1:%');
 
   if (error) {
     throw new Error(`Failed to clear runtime votes: ${error.message}`);

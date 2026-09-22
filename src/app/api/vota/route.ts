@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { submitVote } from '@/lib/supabase/vote-api'
 import { getActiveBatch } from '@/lib/supabase/batch'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { resolveFingerprint } from '@/lib/vote-dev-bypass'
+import { resolveVoteFingerprint } from '@/lib/vote-dev-bypass'
+import { resolveVoterKey, applyVoterCookie } from '@/lib/vote-identity-server'
 import { LOCALE_COOKIE, resolveLocale } from '@/lib/locale'
 import { translate } from '@/i18n'
 
@@ -32,14 +33,27 @@ export async function POST(request: NextRequest) {
       || 'unknown'
 
     const body = await request.json()
-    const { company1Id, company2Id, company3Id, turnstile_token, botd, visitorId } = body
+    const { company1Id, company2Id, company3Id, turnstile_token, botd, voterId } = body
 
-    if (!company1Id || !company2Id || !company3Id || !visitorId) {
-      return NextResponse.json({ error: err('voteError.missingFields') }, { status: 400 })
+    // Identità ordinaria: cookie first-party > voterId nel payload. Niente
+    // fallback al FingerprintJS (collisioni) né chiave nuova per richiesta.
+    const resolved = resolveVoterKey(request, voterId)
+    if (!resolved) {
+      return NextResponse.json({ error: err('voteError.missingVoterId') }, { status: 400 })
+    }
+
+    const respond = (payload: unknown, status = 200) => {
+      const response = NextResponse.json(payload, { status })
+      applyVoterCookie(response, resolved.voterId)
+      return response
+    }
+
+    if (!company1Id || !company2Id || !company3Id) {
+      return respond({ error: err('voteError.missingFields') }, 400)
     }
 
     if (company1Id === company2Id || company1Id === company3Id || company2Id === company3Id) {
-      return NextResponse.json({ error: err('voteError.duplicateCompanies') }, { status: 400 })
+      return respond({ error: err('voteError.duplicateCompanies') }, 400)
     }
 
     const supabaseAdmin = createAdminClient()
@@ -55,29 +69,29 @@ export async function POST(request: NextRequest) {
     ])
 
     if (!companies || companies.length !== 3) {
-      return NextResponse.json({ error: err('voteError.companiesNotFound') }, { status: 400 })
+      return respond({ error: err('voteError.companiesNotFound') }, 400)
     }
 
     for (const company of companies) {
       if (company.batch !== activeBatch) {
-        return NextResponse.json({ error: err('voteError.companyNotInBatch') }, { status: 400 })
+        return respond({ error: err('voteError.companyNotInBatch') }, 400)
       }
     }
 
     if (!turnstile_token) {
-      return NextResponse.json({ error: err('voteError.missingSecurity') }, { status: 400 })
+      return respond({ error: err('voteError.missingSecurity') }, 400)
     }
 
     const isHuman = await verifyTurnstile(turnstile_token, ip)
     if (!isHuman) {
-      return NextResponse.json({ error: err('voteError.securityFailed') }, { status: 400 })
+      return respond({ error: err('voteError.securityFailed') }, 400)
     }
 
     const userAgent = request.headers.get('user-agent') || ''
     const country = request.headers.get('cf-ipcountry') || 'IT'
 
     const { success, error: submitError } = await submitVote({
-      fingerprint: resolveFingerprint(visitorId),
+      fingerprint: resolveVoteFingerprint(resolved.key),
       ip,
       userAgent,
       country,
@@ -89,15 +103,15 @@ export async function POST(request: NextRequest) {
 
     if (!success) {
       if (submitError?.includes('Hai già votato oggi')) {
-        return NextResponse.json({ error: err('voteError.alreadyVoted') }, { status: 409 })
+        return respond({ error: err('voteError.alreadyVoted') }, 409)
       }
       if (submitError) {
-        return NextResponse.json({ error: submitError }, { status: 400 })
+        return respond({ error: submitError }, 400)
       }
-      return NextResponse.json({ error: 'Vote rejected' }, { status: 400 })
+      return respond({ error: 'Vote rejected' }, 400)
     }
 
-    return NextResponse.json({ success: true })
+    return respond({ success: true })
   } catch (error) {
     console.error('Vote error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

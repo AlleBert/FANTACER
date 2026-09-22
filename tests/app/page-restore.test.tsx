@@ -2,6 +2,10 @@ import type { ReactNode } from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import Page from '@/app/page'
 import { setStoredVoterId } from '@/lib/vote-persistence'
+import { VOTER_COOKIE } from '@/lib/vote-identity'
+import { __resetVoterIdentityForTests } from '@/lib/vote-client-identity'
+
+const UUID = '11111111-2222-4333-8444-555555555555'
 
 jest.mock('@/lib/device', () => ({ getOrCreateDeviceId: () => 'dev-device' }))
 jest.mock('@/components/layout/app-shell', () => ({
@@ -25,11 +29,13 @@ jest.mock('@/components/dev/dev-success-preview', () => ({ DevSuccessPreview: ()
 describe('Page — wiring del restore voto', () => {
   afterEach(() => {
     localStorage.clear()
+    document.cookie = `${VOTER_COOKIE}=; Max-Age=0; Path=/`
+    __resetVoterIdentityForTests()
     jest.restoreAllMocks()
   })
 
   it('monta la success section quando il server conferma il voto', async () => {
-    setStoredVoterId('v1')
+    setStoredVoterId(UUID)
     global.fetch = jest.fn((input: RequestInfo | URL) => {
       const url = String(input)
       if (url.includes('/api/vota/status')) {
@@ -37,6 +43,7 @@ describe('Page — wiring del restore voto', () => {
           ok: true,
           json: async () => ({
             voted: true,
+            voterId: UUID,
             companies: [
               { id: 'c1', name: 'Alpha', pallet: 4 },
               { id: 'c2', name: 'Beta', pallet: 2 },

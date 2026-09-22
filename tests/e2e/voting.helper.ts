@@ -6,28 +6,39 @@ import { seedConsentCookie } from './helpers/cookie-consent';
 const DEFAULT_COMPANIES = ['Test Co', 'GreenEnergy', 'Third Co'];
 
 /**
- * Il fingerprint di voto (`FingerprintJS.visitorId`) è stabile per browser
- * instance: test paralleli/sequenziali nello stesso worker condividono lo stesso
- * visitorId e la RPC `submit_vote` rifiuta il secondo voto ("Hai già votato oggi"
- * → 409). Qui il `visitorId` del payload `/api/vota` viene riscritto con un UUID
- * unico per test: ogni voto E2E simula un visitatore distinto, senza toccare il
- * percorso reale (Turnstile, BotD, RPC) e senza pulizie DB a runtime.
+ * L'identità di voto è ora un UUID first-party (`fantacer_voter_id`) in cookie
+ * e localStorage, non più il `FingerprintJS.visitorId`. Per simulare un
+ * visitatore distinto per test si impone un UUID unico su cookie + localStorage
+ * prima del submit: il server risolve l'identità dal cookie (precedenza) e la
+ * RPC `submit_vote` usa la chiave `v1:<uuid>`.
  */
-const voteRouteStubbed = new WeakSet<Page>();
+const voterIdStubbed = new WeakSet<Page>();
 
-export async function stubUniqueVoteFingerprint(page: Page) {
-  if (voteRouteStubbed.has(page)) return;
-  await page.route('**/api/vota', async (route) => {
-    const body = JSON.parse(route.request().postData() || '{}');
-    body.visitorId = `e2e-voter-${randomUUID()}`;
-    await route.continue({ postData: JSON.stringify(body) });
-  });
-  voteRouteStubbed.add(page);
+export async function stubUniqueVoterId(page: Page) {
+  if (voterIdStubbed.has(page)) return;
+  const voterId = randomUUID();
+  const origin = new URL(page.url()).origin;
+
+  await page.context().addCookies([
+    { name: 'fantacer_voter_id', value: voterId, url: origin },
+  ]);
+  await page.addInitScript((id) => {
+    try {
+      window.localStorage.setItem('fantacer_voter_id', id);
+    } catch {
+      // storage non disponibile: il cookie resta l'identità
+    }
+  }, voterId);
+
+  voterIdStubbed.add(page);
 }
+
+/** Alias retro-compatibile: l'identità non è più il fingerprint. */
+export const stubUniqueVoteFingerprint = stubUniqueVoterId;
 
 export async function searchAndSelectCompany(page: Page, companyName: string) {
   await seedConsentCookie(page);
-  await stubUniqueVoteFingerprint(page);
+  await stubUniqueVoterId(page);
   const searchInput = page.locator('input[placeholder*="Cerca"]').first();
   await searchInput.waitFor({ state: 'visible', timeout: 10000 });
   await searchInput.click();

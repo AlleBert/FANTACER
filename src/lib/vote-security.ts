@@ -2,11 +2,15 @@
 
 import { load as loadBotd } from '@fingerprintjs/botd'
 import { load as loadFingerprintJS } from '@fingerprintjs/fingerprintjs'
+import { ensureVoterId } from './vote-client-identity'
 
 export interface VoteSecurity {
   turnstile_token: string
   botd: string
+  /** FingerprintJS: solo diagnostica, NON è la chiave di voto. */
   visitorId: string
+  /** UUID first-party: identità ordinaria usata per la dedup giornaliera. */
+  voterId: string
 }
 
 /**
@@ -64,11 +68,16 @@ export async function getVoteSecurity(token: string): Promise<VoteSecurity> {
     '',
   )
 
-  const [botdResult, visitorId] = await Promise.all([botd, getVisitorId()])
+  const [botdResult, visitorId, voterId] = await Promise.all([
+    botd,
+    getVisitorId(),
+    ensureVoterId(),
+  ])
 
   return {
     turnstile_token: token,
     botd: botdResult,
     visitorId,
+    voterId,
   }
 }

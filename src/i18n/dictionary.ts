@@ -157,6 +157,7 @@ export interface Dictionary {
   'cookiePolicy.categoriesIntro': string
   'cookiePolicy.essential': string
   'cookiePolicy.essentialDesc': string
+  'cookiePolicy.voterDesc': string
   'cookiePolicy.analytics': string
   'cookiePolicy.analyticsDesc': string
   'cookiePolicy.thirdParty': string
@@ -304,6 +305,7 @@ export interface Dictionary {
   'voteError.missingSecurity': string
   'voteError.securityFailed': string
   'voteError.alreadyVoted': string
+  'voteError.missingVoterId': string
 }
 
 export type DictionaryKey = keyof Dictionary
