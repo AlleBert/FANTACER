@@ -306,6 +306,7 @@ export interface Dictionary {
   'voteError.duplicateCompanies': string
   'voteError.companiesNotFound': string
   'voteError.companyNotInBatch': string
+  'voteError.companyBlocked': string
   'voteError.missingSecurity': string
   'voteError.securityFailed': string
   'voteError.alreadyVoted': string

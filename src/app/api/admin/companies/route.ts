@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     // Get companies with vote counts
     let query = supabase
       .from('companies')
-      .select('id, name, category, image_url, batch')
+      .select('id, name, category, image_url, batch, blocked')
       .ilike('name', `%${search}%`)
       .order('name')
 
@@ -30,6 +30,12 @@ export async function GET(request: NextRequest) {
     const { data: sessions } = await supabase
       .from('vote_sessions')
       .select('company1_id, company2_id, company3_id, pallet1, pallet2, pallet3, created_at')
+
+    // Punteggi manuali attivi (badge in UI).
+    const { data: overrides } = await supabase
+      .from('company_score_overrides')
+      .select('company_id')
+    const manualScore = new Set((overrides ?? []).map((o) => o.company_id))
 
     const palletCounts: Record<string, number> = {}
     const todayVotes: Record<string, number> = {}
@@ -65,7 +71,9 @@ export async function GET(request: NextRequest) {
         category: c.category || '-',
         image_url: c.image_url,
         votes: totalPallets,
-        trend
+        trend,
+        blocked: c.blocked === true,
+        manualScore: manualScore.has(c.id),
       }
     })
 

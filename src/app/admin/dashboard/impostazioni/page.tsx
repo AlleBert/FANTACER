@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Settings as SettingsIcon, Shield, ChevronDown, ChevronUp } from 'lucide-react'
 import { AuditCardList } from '@/components/admin/audit-card-list'
 import { AuditLogTable } from '@/components/admin/audit-log-table'
+import { CompanyActionsCard } from '@/components/admin/company-actions-card'
 import { useAdminRole } from '@/lib/use-admin-role'
 import { ModalShell } from '@/components/ui/modal-shell'
 import { createClient } from '@/lib/supabase/client'
@@ -250,6 +251,9 @@ export default function ImpostazioniPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Company actions: block / unblock / delete votes / manual score */}
+      <CompanyActionsCard />
 
       {/* Audit Log collapsible section */}
       <Card className="border-border">
