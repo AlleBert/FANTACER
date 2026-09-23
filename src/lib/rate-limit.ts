@@ -1,16 +1,14 @@
 import { NextRequest } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getTrustedClientIp } from '@/lib/request-ip'
 
 /**
- * Value "0.0.0.0"/"::1" → localhost; Next 16 `proxy.ts` sets
- * `x-forwarded-for` when behind a CDN/proxy.
+ * IP client attendibile, oppure `null` se non esiste evidenza affidabile.
+ * Unica fonte: `getTrustedClientIp` (cf-connecting-ip + cf-ray). Mai un
+ * valore condiviso tipo `0.0.0.0`.
  */
-export function getClientIp(request: NextRequest): string {
-  const forwarded = request.headers.get('x-forwarded-for')
-  const cf = request.headers.get('cf-connecting-ip')
-  const ip = cf || (forwarded ? forwarded.split(',')[0].trim() : '')
-  if (!ip || ip === 'unknown') return request.headers.get('x-real-ip') || '0.0.0.0'
-  return ip
+export function getClientIp(request: NextRequest): string | null {
+  return getTrustedClientIp(request).ip
 }
 
 /**

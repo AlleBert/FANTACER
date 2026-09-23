@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     // suites that must complete several MFA logins in sequence.
     const ip = getClientIp(request)
     const allowed = await checkRateLimit(
-      `admin:mfa:${ip}:${String(factorId)}`,
+      `admin:mfa:${ip ?? 'noip'}:${String(factorId)}`,
       15 * 60 * 1000,
       Number(process.env.ADMIN_MFA_VERIFY_RATE_MAX ?? 5),
     )
