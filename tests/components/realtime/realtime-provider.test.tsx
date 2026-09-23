@@ -105,8 +105,9 @@ describe('RealtimeProvider', () => {
     expect(state().antibotEnabled).toBe(false)
     expect(mockFetch).toHaveBeenCalledWith('/api/public/flag/voting')
     expect(mockFetch).toHaveBeenCalledWith('/api/public/flag/antibot')
-    // due listener sullo stesso canale: voting_enabled + antibot_enabled
-    expect(mockChannels['realtime-voting-flag'].onHandlers).toHaveLength(2)
+    expect(mockFetch).toHaveBeenCalledWith('/api/public/flag/fair-end')
+    // quattro listener sullo stesso canale: voting_enabled + antibot_enabled + fair_end_enabled + fair_end_config
+    expect(mockChannels['realtime-voting-flag'].onHandlers).toHaveLength(4)
   })
 
   it('su UPDATE del flag ri-fetcha voting_enabled', async () => {
