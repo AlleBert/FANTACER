@@ -312,6 +312,7 @@ export interface Dictionary {
   'voteError.alreadyVoted': string
   'voteError.missingVoterId': string
   'voteError.antibot': string
+  'voteError.fairEnded': string
   'voteError.rateLimited': string
 }
 

@@ -12,6 +12,7 @@ import {
 } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { safeOnPostgresChanges, safeSubscribe } from '@/lib/supabase/realtime';
+import type { FairEndCeremony } from '@/lib/fair-end';
 
 /**
  * Realtime centralizzato per la homepage.
@@ -40,6 +41,9 @@ interface RealtimeContextType {
   votingEnabled: boolean;
   votingEnabledLoaded: boolean;
   antibotEnabled: boolean;
+  fairEndEnabled: boolean;
+  fairEndRevealAt: string | null;
+  fairEndCeremony: FairEndCeremony;
   rankingVersion: number;
   realtimeActive: boolean;
   /** Visibilità della scheda (`document.visibilityState === 'visible'`). */
@@ -70,6 +74,9 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
   const [votingEnabled, setVotingEnabled] = useState(true);
   const [votingEnabledLoaded, setVotingEnabledLoaded] = useState(false);
   const [antibotEnabled, setAntibotEnabled] = useState(false);
+  const [fairEndEnabled, setFairEndEnabled] = useState(false);
+  const [fairEndRevealAt, setFairEndRevealAt] = useState<string | null>(null);
+  const [fairEndCeremony, setFairEndCeremony] = useState<FairEndCeremony>({ '1': '14:00', '2': '13:45', '3': '13:30' });
   const [rankingVersion, setRankingVersion] = useState(0);
   const [realtimeActive, setRealtimeActive] = useState(false);
   const [visible, setVisible] = useState(initialVisible);
@@ -100,6 +107,18 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const fetchFairEndFlag = useCallback(async () => {
+    try {
+      const res = await fetch('/api/public/flag/fair-end');
+      const data = await res.json();
+      setFairEndEnabled(!!data?.enabled);
+      setFairEndRevealAt(typeof data?.revealAt === 'string' ? data.revealAt : null);
+      if (data?.ceremony) setFairEndCeremony(data.ceremony);
+    } catch {
+      // mantiene l'ultimo valore noto
+    }
+  }, []);
+
   // Visibilità scheda: pausa/riprende i canali.
   useEffect(() => {
     const onVisibility = () => setVisible(!document.hidden);
@@ -113,6 +132,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchVotingFlag();
     fetchAntibotFlag();
+    fetchFairEndFlag();
 
     const supabase = safeClient();
     if (!supabase) return;
@@ -131,12 +151,22 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
         fetchAntibotFlag();
       },
     );
+    safeOnPostgresChanges(
+      channel,
+      { event: 'UPDATE', schema: 'public', table: 'site_settings', filter: 'key=eq.fair_end_enabled' },
+      () => { fetchFairEndFlag(); },
+    );
+    safeOnPostgresChanges(
+      channel,
+      { event: 'UPDATE', schema: 'public', table: 'site_settings', filter: 'key=eq.fair_end_config' },
+      () => { fetchFairEndFlag(); },
+    );
     safeSubscribe(channel);
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [visible, fetchVotingFlag, fetchAntibotFlag]);
+  }, [visible, fetchVotingFlag, fetchAntibotFlag, fetchFairEndFlag]);
 
   // Classifica: canale aperto solo con almeno un consumer e scheda visibile.
   useEffect(() => {
@@ -187,12 +217,15 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
       votingEnabled,
       votingEnabledLoaded,
       antibotEnabled,
+      fairEndEnabled,
+      fairEndRevealAt,
+      fairEndCeremony,
       rankingVersion,
       realtimeActive,
       visible,
       acquireRanking,
     }),
-    [votingEnabled, votingEnabledLoaded, antibotEnabled, rankingVersion, realtimeActive, visible, acquireRanking],
+    [votingEnabled, votingEnabledLoaded, antibotEnabled, fairEndEnabled, fairEndRevealAt, fairEndCeremony, rankingVersion, realtimeActive, visible, acquireRanking],
   );
 
   return <RealtimeContext.Provider value={value}>{children}</RealtimeContext.Provider>;

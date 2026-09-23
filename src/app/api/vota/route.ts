@@ -4,7 +4,7 @@ import { getActiveBatch } from '@/lib/supabase/batch'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveVoteFingerprint } from '@/lib/vote-dev-bypass'
 import { resolveVoterKey, applyVoterCookie } from '@/lib/vote-identity-server'
-import { getAntibotEnabled } from '@/lib/site-flags'
+import { getAntibotEnabled, getFairEndState } from '@/lib/site-flags'
 import { verifyTurnstile } from '@/lib/turnstile'
 import { getTrustedClientIp, hmacIp, type ClientIpSignal } from '@/lib/request-ip'
 import { recordIpSignal } from '@/lib/ip-signal-metrics'
@@ -92,6 +92,10 @@ export async function POST(request: NextRequest) {
     // solo in UI. `423 Locked` distingue il blocco dagli errori di validazione.
     if (await getAntibotEnabled()) {
       return respond({ error: err('voteError.antibot') }, 423, 'antibot')
+    }
+
+    if ((await getFairEndState()).enabled) {
+      return respond({ error: err('voteError.fairEnded') }, 423, 'fair_ended')
     }
 
     if (!company1Id || !company2Id || !company3Id) {

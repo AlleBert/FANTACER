@@ -13,6 +13,7 @@ export type VoteOutcome =
   | 'missing_security'
   | 'rate_limited'
   | 'antibot'
+  | 'fair_ended'
   | 'invalid_request'
   | 'error'
 

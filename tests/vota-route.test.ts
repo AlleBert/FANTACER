@@ -7,7 +7,7 @@ import { POST } from '../src/app/api/vota/route'
 jest.mock('@/lib/supabase/admin', () => ({ createAdminClient: jest.fn() }))
 jest.mock('@/lib/supabase/batch', () => ({ getActiveBatch: jest.fn() }))
 jest.mock('@/lib/supabase/vote-api', () => ({ submitVote: jest.fn() }))
-jest.mock('@/lib/site-flags', () => ({ getAntibotEnabled: jest.fn() }))
+jest.mock('@/lib/site-flags', () => ({ getAntibotEnabled: jest.fn(), getFairEndState: jest.fn() }))
 jest.mock('@/lib/turnstile', () => ({ verifyTurnstile: jest.fn() }))
 jest.mock('@/lib/vote-rate-limit', () => ({
   evaluateVoteRateLimit: jest.fn(async () => ({
@@ -31,7 +31,7 @@ jest.mock('@/i18n', () => ({ translate: (_locale: string, key: string) => key })
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getActiveBatch } from '@/lib/supabase/batch'
 import { submitVote } from '@/lib/supabase/vote-api'
-import { getAntibotEnabled } from '@/lib/site-flags'
+import { getAntibotEnabled, getFairEndState } from '@/lib/site-flags'
 import { verifyTurnstile } from '@/lib/turnstile'
 import { evaluateVoteRateLimit } from '@/lib/vote-rate-limit'
 
@@ -39,6 +39,7 @@ const mockCreateAdminClient = createAdminClient as jest.Mock
 const mockGetActiveBatch = getActiveBatch as jest.Mock
 const mockSubmitVote = submitVote as jest.Mock
 const mockGetAntibotEnabled = getAntibotEnabled as jest.Mock
+const mockGetFairEndState = getFairEndState as jest.Mock
 const mockVerifyTurnstile = verifyTurnstile as jest.Mock
 const mockEvaluateVoteRateLimit = evaluateVoteRateLimit as jest.Mock
 
@@ -102,6 +103,7 @@ describe('POST /api/vota', () => {
     mockCreateAdminClient.mockReturnValue(buildAdmin())
     mockGetActiveBatch.mockResolvedValue('TEST')
     mockGetAntibotEnabled.mockResolvedValue(false)
+    mockGetFairEndState.mockResolvedValue({ enabled: false })
     mockSubmitVote.mockResolvedValue({ success: true })
     mockVerifyTurnstile.mockResolvedValue({ ok: true })
   })
@@ -111,6 +113,15 @@ describe('POST /api/vota', () => {
     const res = await POST(makeRequest(validBody()))
     expect(res.status).toBe(423)
     expect(await res.json()).toEqual({ error: 'voteError.antibot' })
+    expect(mockSubmitVote).not.toHaveBeenCalled()
+  })
+
+  it('423 quando FINE FIERA è attivo', async () => {
+    mockGetAntibotEnabled.mockResolvedValue(false)
+    mockGetFairEndState.mockResolvedValue({ enabled: true })
+    const res = await POST(makeRequest(validBody()))
+    expect(res.status).toBe(423)
+    expect(await res.json()).toEqual({ error: 'voteError.fairEnded' })
     expect(mockSubmitVote).not.toHaveBeenCalled()
   })
 

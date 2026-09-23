@@ -149,6 +149,7 @@ export const en: Dictionary = {
   'voteError.alreadyVoted': 'You have already voted today',
   'voteError.missingVoterId': 'Invalid voting session. Reload the page.',
   'voteError.antibot': 'Voting temporarily paused: our systems detected unusual activity.',
+  'voteError.fairEnded': 'Voting is closed',
   'voteError.rateLimited': 'Too many requests. Please retry in a few minutes.',
 
   // Cookie Policy
