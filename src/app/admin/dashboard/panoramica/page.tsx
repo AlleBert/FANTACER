@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { BarChart3, Users, TrendingUp, Vote, Wifi, Download, Upload, AlertCircle, RefreshCw } from 'lucide-react'
@@ -117,15 +117,24 @@ export default function PanoramicaPage() {
       ? `&batch=${encodeURIComponent(effectiveBatch)}`
       : ''
 
+  // Evita fetch sovrapposte (realtime + polling + refresh manuale): una sola
+  // richiesta in volo; le risposte stale vengono ignorate.
+  const fetchingRef = useRef(false)
+  const requestIdRef = useRef(0)
+
   const loadData = useCallback(async (showLoading = false) => {
+    if (fetchingRef.current) return
+    fetchingRef.current = true
+    const requestId = ++requestIdRef.current
     if (showLoading) setLoading(true)
     setError(null)
     try {
-      const statsRes = await fetch(`/api/analytics?type=summary${batchParam}`)
+      const statsRes = await fetch(`/api/analytics?type=summary${batchParam}`, { cache: 'no-store' })
       if (!statsRes.ok) {
         throw new Error(`Errore ${statsRes.status}: ${statsRes.statusText}`)
       }
       const statsData = await statsRes.json()
+      if (requestId !== requestIdRef.current) return
       setStats({
         totalVotes: statsData.totalVotes || 0,
         uniqueVoters: statsData.uniqueVoters || 0,
@@ -137,10 +146,12 @@ export default function PanoramicaPage() {
       })
       setDailyStats(statsData.dailyStats || [])
     } catch (e) {
+      if (requestId !== requestIdRef.current) return
       console.error(e)
       setError(e instanceof Error ? e.message : 'Errore di caricamento')
     } finally {
-      setLoading(false)
+      fetchingRef.current = false
+      if (requestId === requestIdRef.current) setLoading(false)
     }
   }, [batchParam])
 
@@ -169,6 +180,17 @@ export default function PanoramicaPage() {
     return () => {
       supabase.removeChannel(channel)
     }
+  }, [loadData])
+
+  // Fallback di aggiornamento: il realtime è "best effort" (`safeSubscribe`
+  // inghiotte gli errori di connessione) e la dashboard non deve dipendere solo
+  // da esso. Polling leggero quando la scheda è visibile; il realtime resta per
+  // l'aggiornamento immediato.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') loadData()
+    }, 30_000)
+    return () => clearInterval(interval)
   }, [loadData])
 
   const downloadFile = (url: string) => {
