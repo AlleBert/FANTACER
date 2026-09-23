@@ -3,11 +3,15 @@ import { addCompany } from './voting.helper';
 import { checkNoHorizontalOverflow } from './helpers/responsive';
 import { VIEWPORTS } from './helpers/viewports';
 import { checkAccessibility } from './helpers/accessibility';
+import { seedConsentCookie } from './helpers/cookie-consent';
 
 const GATE_PROJECTS = ['chromium', 'mobile-webkit'];
 
-test.beforeEach(async ({}, testInfo) => {
+test.beforeEach(async ({ page }, testInfo) => {
   test.skip(!GATE_PROJECTS.includes(testInfo.project.name));
+  // Il banner cookie è un overlay `fixed inset-0 z-50` che intercetta i click:
+  // senza il cookie di consenso i test di ricerca/voto sono non deterministici.
+  await seedConsentCookie(page);
 });
 
 test.describe('Voting Flow', () => {
