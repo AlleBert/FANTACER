@@ -12,15 +12,26 @@ if (!file || !dbUrl) {
   console.error('usage: node scripts/apply-migration.mjs <file.sql> <db-url> [ref]')
   process.exit(1)
 }
-if (expectRef && !dbUrl.includes(expectRef)) {
-  console.error(`guard: la URL non contiene il ref atteso ${expectRef}`)
+if (!expectRef) {
+  console.error('usage: node scripts/apply-migration.mjs <file.sql> <db-url> <ref-atteso>')
+  process.exit(1)
+}
+let host
+try {
+  host = new URL(dbUrl).hostname
+} catch {
+  console.error('guard: db-url non valida')
+  process.exit(1)
+}
+if (!host.startsWith(`${expectRef}.`)) {
+  console.error(`guard: host ${host} non appartiene al ref atteso ${expectRef}`)
   process.exit(1)
 }
 const version = file.split('/').pop().split('_')[0]
 const sql = readFileSync(file, 'utf8')
 const client = new pg.Client({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } })
-await client.connect()
 try {
+  await client.connect()
   await client.query('begin')
   await client.query(sql)
   await client.query(

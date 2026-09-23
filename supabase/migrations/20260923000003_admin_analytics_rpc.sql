@@ -20,7 +20,7 @@ with eff as (
       and c.blocked
   )
   and (
-    p_batch is null or p_batch = 'all' or exists (
+    p_batch is null or p_batch = '' or p_batch = 'all' or exists (
       select 1 from public.companies c
       where c.id in (vs.company1_id, vs.company2_id, vs.company3_id)
         and c.batch = p_batch
@@ -44,7 +44,9 @@ hourly as (
   select (created_at at time zone 'Europe/Rome')::date as day,
          extract(hour from (created_at at time zone 'Europe/Rome'))::int as hour,
          count(*)::bigint as votes
-  from eff group by 1, 2
+  from eff
+  where (created_at at time zone 'Europe/Rome')::date >= (now() at time zone 'Europe/Rome')::date - 29
+  group by 1, 2
 )
 select jsonb_build_object(
   'totalVotes', (select count(*) from eff),
@@ -106,7 +108,7 @@ with eff as (
       and c.blocked
   )
   and (
-    p_batch is null or p_batch = 'all' or exists (
+    p_batch is null or p_batch = '' or p_batch = 'all' or exists (
       select 1 from public.companies c
       where c.id in (vs.company1_id, vs.company2_id, vs.company3_id)
         and c.batch = p_batch
