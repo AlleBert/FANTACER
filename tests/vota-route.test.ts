@@ -222,4 +222,23 @@ describe('POST /api/vota', () => {
     expect(await res.json()).toEqual({ error: 'voteError.rateLimited' })
     expect(mockSubmitVote).not.toHaveBeenCalled()
   })
+
+  it('emette il marker vote_request_end senza dati identificativi', async () => {
+    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {})
+    mockGetAntibotEnabled.mockResolvedValue(false)
+    mockCreateAdminClient.mockReturnValue(buildAdmin())
+    mockVerifyTurnstile.mockResolvedValue({ ok: true })
+    mockSubmitVote.mockResolvedValue({ success: true })
+
+    await POST(makeRequest(validBody()))
+
+    const lines = logSpy.mock.calls
+      .map((c) => String(c[0]))
+      .filter((l) => l.includes('vote_request_end'))
+    expect(lines).toHaveLength(1)
+    expect(lines[0]).not.toContain(UUID)
+    expect(lines[0]).not.toContain(LEGACY_FP)
+    expect(lines[0]).not.toMatch(/\d{1,3}(\.\d{1,3}){3}/)
+    logSpy.mockRestore()
+  })
 })

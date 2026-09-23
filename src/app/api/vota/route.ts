@@ -6,13 +6,27 @@ import { resolveVoteFingerprint } from '@/lib/vote-dev-bypass'
 import { resolveVoterKey, applyVoterCookie } from '@/lib/vote-identity-server'
 import { getAntibotEnabled } from '@/lib/site-flags'
 import { verifyTurnstile } from '@/lib/turnstile'
-import { getTrustedClientIp, hmacIp } from '@/lib/request-ip'
+import { getTrustedClientIp, hmacIp, type ClientIpSignal } from '@/lib/request-ip'
 import { recordIpSignal } from '@/lib/ip-signal-metrics'
 import { evaluateVoteRateLimit } from '@/lib/vote-rate-limit'
+import { logVoteRequestEnd, type VoteOutcome } from '@/lib/vote-telemetry'
 import { LOCALE_COOKIE, resolveLocale } from '@/lib/locale'
 import { translate } from '@/i18n'
 
+interface VoteTelemetry {
+  outcome?: VoteOutcome
+  status?: number
+  rateMode?: 'observe' | 'enforce'
+  rateWouldBlock?: boolean
+  rateScopes?: { ip: boolean | null; id: boolean | null }
+  ipSignal?: ClientIpSignal
+  turnstileReason?: string | null
+}
+
 export async function POST(request: NextRequest) {
+  const startedAt = Date.now()
+  const tel: VoteTelemetry = {}
+
   try {
     const locale = resolveLocale(
       request.headers.get('accept-language'),
@@ -21,6 +35,7 @@ export async function POST(request: NextRequest) {
     const err = (key: Parameters<typeof translate>[1]) => translate(locale, key)
     const ipSignal = getTrustedClientIp(request)
     recordIpSignal(ipSignal)
+    tel.ipSignal = ipSignal
     const ip = ipSignal.ip
 
     const body = await request.json()
@@ -30,10 +45,19 @@ export async function POST(request: NextRequest) {
     // fallback al FingerprintJS (collisioni) né chiave nuova per richiesta.
     const resolved = resolveVoterKey(request, voterId)
     if (!resolved) {
+      tel.outcome = 'invalid_request'
+      tel.status = 400
       return NextResponse.json({ error: err('voteError.missingVoterId') }, { status: 400 })
     }
 
-    const respond = (payload: unknown, status = 200, headers?: Record<string, string>) => {
+    const respond = (
+      payload: unknown,
+      status: number,
+      outcome: VoteOutcome,
+      headers?: Record<string, string>,
+    ) => {
+      tel.outcome = outcome
+      tel.status = status
       const response = NextResponse.json(payload, { status })
       if (headers) {
         for (const [name, value] of Object.entries(headers)) response.headers.set(name, value)
@@ -49,8 +73,14 @@ export async function POST(request: NextRequest) {
       ipHash: ip ? hmacIp(ip) : null,
       fingerprint,
     })
+    tel.rateMode = rate.mode
+    tel.rateWouldBlock = !rate.rawAllowed
+    tel.rateScopes = {
+      ip: rate.scopes.find((s) => s.scope === 'ip')?.allowed ?? null,
+      id: rate.scopes.find((s) => s.scope === 'id')?.allowed ?? null,
+    }
     if (!rate.allowed) {
-      return respond({ error: err('voteError.rateLimited') }, 429, {
+      return respond({ error: err('voteError.rateLimited') }, 429, 'rate_limited', {
         'Retry-After': String(rate.retryAfterSec),
       })
     }
@@ -58,15 +88,15 @@ export async function POST(request: NextRequest) {
     // Gate anti-bot: il toggle Admin sospende il voto anche server-side, non
     // solo in UI. `423 Locked` distingue il blocco dagli errori di validazione.
     if (await getAntibotEnabled()) {
-      return respond({ error: err('voteError.antibot') }, 423)
+      return respond({ error: err('voteError.antibot') }, 423, 'antibot')
     }
 
     if (!company1Id || !company2Id || !company3Id) {
-      return respond({ error: err('voteError.missingFields') }, 400)
+      return respond({ error: err('voteError.missingFields') }, 400, 'invalid_request')
     }
 
     if (company1Id === company2Id || company1Id === company3Id || company2Id === company3Id) {
-      return respond({ error: err('voteError.duplicateCompanies') }, 400)
+      return respond({ error: err('voteError.duplicateCompanies') }, 400, 'invalid_request')
     }
 
     const supabaseAdmin = createAdminClient()
@@ -82,24 +112,25 @@ export async function POST(request: NextRequest) {
     ])
 
     if (!companies || companies.length !== 3) {
-      return respond({ error: err('voteError.companiesNotFound') }, 400)
+      return respond({ error: err('voteError.companiesNotFound') }, 400, 'invalid_request')
     }
 
     for (const company of companies) {
       if (company.batch !== activeBatch) {
-        return respond({ error: err('voteError.companyNotInBatch') }, 400)
+        return respond({ error: err('voteError.companyNotInBatch') }, 400, 'invalid_request')
       }
     }
 
     if (!turnstile_token) {
-      return respond({ error: err('voteError.missingSecurity') }, 400)
+      return respond({ error: err('voteError.missingSecurity') }, 400, 'missing_security')
     }
 
     const verification = await verifyTurnstile(turnstile_token)
     if (!verification.ok) {
       // Log del solo codice di motivo: mai token, secret, cookie o payload.
+      tel.turnstileReason = verification.reason
       console.warn('[turnstile] verifica fallita:', verification.reason)
-      return respond({ error: err('voteError.securityFailed') }, 400)
+      return respond({ error: err('voteError.securityFailed') }, 400, 'turnstile_failed')
     }
 
     const userAgent = request.headers.get('user-agent') || ''
@@ -118,17 +149,32 @@ export async function POST(request: NextRequest) {
 
     if (!success) {
       if (submitError?.includes('Hai già votato oggi')) {
-        return respond({ error: err('voteError.alreadyVoted') }, 409)
+        return respond({ error: err('voteError.alreadyVoted') }, 409, 'already_voted')
       }
       if (submitError) {
-        return respond({ error: submitError }, 400)
+        return respond({ error: submitError }, 400, 'error')
       }
-      return respond({ error: 'Vote rejected' }, 400)
+      return respond({ error: 'Vote rejected' }, 400, 'error')
     }
 
-    return respond({ success: true })
+    return respond({ success: true }, 200, 'success')
   } catch (error) {
     console.error('Vote error:', error)
+    tel.outcome = 'error'
+    tel.status = 500
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  } finally {
+    logVoteRequestEnd({
+      outcome: tel.outcome ?? 'error',
+      status: tel.status ?? 500,
+      ms: Date.now() - startedAt,
+      rateMode: tel.rateMode,
+      rateWouldBlock: tel.rateWouldBlock,
+      rateScopes: tel.rateScopes,
+      ipSource: tel.ipSignal?.source,
+      ipConfidence: tel.ipSignal?.confidence,
+      ipHasDetected: tel.ipSignal ? tel.ipSignal.detectedIp !== null : undefined,
+      turnstileReason: tel.turnstileReason,
+    })
   }
 }
