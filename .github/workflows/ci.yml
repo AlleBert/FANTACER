@@ -1,10 +1,11 @@
 name: CI
 
 on:
+  # Full E2E: su push (master/develop) e manuale. Le PR sono coperte dal
+  # "Vote security gate" (workflow separato, più veloce). Così i due workflow
+  # non si contendono la stessa concurrency il giorno stesso della PR.
   push:
     branches: [master, develop]
-
-  pull_request:
 
   workflow_dispatch:
 

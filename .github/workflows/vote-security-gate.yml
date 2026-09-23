@@ -15,15 +15,16 @@ name: Vote security gate
 # - P0-2/P0-3: il gate verrà esteso quando implementati.
 
 on:
+  # Gate delle PR. Il full E2E (ci.yml) gira su push: trigger disgiunti per
+  # evitare la conflittualità della stessa concurrency nella stessa PR.
   pull_request:
-  push:
-    branches: [master]
   workflow_dispatch:
 
-# Stesso gruppo della CI completa: il dataset fantacer-e2e è condiviso e il
-# seed/cleanup non è idempotente sotto concorrenza. Serializza, non annulla.
+# Gruppo dedicato: il gate è serializzato con sé stesso ma NON si contende
+# l'`e2e-suite` del full E2E. Il dataset fantacer-e2e resta condiviso: non
+# lanciare manualmente il gate mentre gira il full E2E su master.
 concurrency:
-  group: e2e-suite
+  group: vote-security-gate
   cancel-in-progress: false
 
 permissions:
