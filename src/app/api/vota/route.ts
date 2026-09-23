@@ -6,6 +6,8 @@ import { resolveVoteFingerprint } from '@/lib/vote-dev-bypass'
 import { resolveVoterKey, applyVoterCookie } from '@/lib/vote-identity-server'
 import { getAntibotEnabled } from '@/lib/site-flags'
 import { verifyTurnstile } from '@/lib/turnstile'
+import { getTrustedClientIp } from '@/lib/request-ip'
+import { recordIpSignal } from '@/lib/ip-signal-metrics'
 import { LOCALE_COOKIE, resolveLocale } from '@/lib/locale'
 import { translate } from '@/i18n'
 
@@ -16,9 +18,9 @@ export async function POST(request: NextRequest) {
       request.cookies.get(LOCALE_COOKIE)?.value ?? null,
     )
     const err = (key: Parameters<typeof translate>[1]) => translate(locale, key)
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-      || request.headers.get('x-real-ip')
-      || 'unknown'
+    const ipSignal = getTrustedClientIp(request)
+    recordIpSignal(ipSignal)
+    const ip = ipSignal.ip
 
     const body = await request.json()
     const { company1Id, company2Id, company3Id, turnstile_token, botd, voterId } = body
@@ -88,7 +90,7 @@ export async function POST(request: NextRequest) {
 
     const { success, error: submitError } = await submitVote({
       fingerprint: resolveVoteFingerprint(resolved.key),
-      ip,
+      ip: ip ?? 'unknown',
       userAgent,
       country,
       company1Id,

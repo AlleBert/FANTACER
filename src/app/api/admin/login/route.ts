@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Credenziali richieste' }, { status: 400 })
     }
 
-    const key = `admin:login:${ip}:${String(email).toLowerCase()}`
+    const key = `admin:login:${ip ?? 'noip'}:${String(email).toLowerCase()}`
     const allowed = await checkRateLimit(key, 15 * 60 * 1000, Number(process.env.ADMIN_LOGIN_RATE_MAX ?? 10))
     if (!allowed) {
       await writeAuditEvent({

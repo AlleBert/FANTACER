@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireRoleAdmin, toAdminError } from '@/lib/admin-auth'
 import { writeAuditEvent } from '@/lib/audit'
+import { getTrustedClientIp } from '@/lib/request-ip'
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,10 +45,7 @@ export async function POST(request: NextRequest) {
 
     await writeAuditEvent({
       eventType: 'admin_votes_reset',
-      ipAddress:
-        request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-        request.headers.get('x-real-ip') ??
-        null,
+      ipAddress: getTrustedClientIp(request).ip,
       metadata: {
         scope,
         batch: scope === 'batch' ? batch : null,

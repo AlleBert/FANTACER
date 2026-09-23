@@ -31,7 +31,7 @@ function isSameOrigin(request: NextRequest): boolean {
 }
 
 export async function POST(request: NextRequest) {
-  const ip = getClientIp(request)
+  const ip = getClientIp(request) ?? 'noip'
 
   if (!isSameOrigin(request)) {
     return NextResponse.json({ success: false, error: 'forbidden' }, { status: 403 })
