@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin, requireRoleAdmin, toAdminError } from '@/lib/admin-auth'
+import { fetchAllRows } from '@/lib/fetch-all'
 
 export async function GET(request: NextRequest) {
   try {
@@ -32,11 +33,19 @@ export async function GET(request: NextRequest) {
   for (const c of companies || []) companyBatch.set(c.id, c.batch)
 
   const sessionCountByBatch = new Map<string, number>()
-  const { data: sessions } = await supabase
-    .from('vote_sessions')
-    .select('company1_id, company2_id, company3_id')
+  const { data: sessions } = await fetchAllRows<{
+    company1_id: string
+    company2_id: string
+    company3_id: string
+  }>((from, to) =>
+    supabase
+      .from('vote_sessions')
+      .select('company1_id, company2_id, company3_id')
+      .order('id', { ascending: false })
+      .range(from, to),
+  )
 
-  for (const s of sessions || []) {
+  for (const s of sessions) {
     const batch =
       companyBatch.get(s.company1_id) ??
       companyBatch.get(s.company2_id) ??
