@@ -141,7 +141,7 @@ from public.companies c
 left join public.company_totals ct on ct.company_id = c.id
 left join public.company_score_overrides o on o.company_id = c.id
 left join daily d on d.company_id = c.id
-where p_batch is null or p_batch = 'all' or c.batch = p_batch;
+where p_batch is null or p_batch = '' or p_batch = 'all' or c.batch = p_batch;
 $$;
 revoke execute on function public.admin_company_stats(text) from public, anon, authenticated;
 grant execute on function public.admin_company_stats(text) to service_role;
