@@ -54,9 +54,9 @@ it('ipHash null → nessun ambito IP (solo identità)', async () => {
 })
 
 it('chiavi pseudonimizzate, mai IP grezzo', async () => {
-  const check = jest.fn(async (_key: string, _windowMs: number, _max: number) => true)
+  const check = jest.fn(async () => true)
   await evaluateVoteRateLimit({ ipHash: 'k1.deadbeef', fingerprint: 'v1:x', check })
-  const keys = check.mock.calls.map((c) => c[0])
+  const keys = (check.mock.calls as unknown as [string, number, number][]).map((c) => c[0])
   expect(keys).toContain('vote:ip:k1.deadbeef')
   expect(keys).toContain('vote:id:v1:x')
   for (const k of keys) expect(k).not.toMatch(/\d+\.\d+\.\d+\.\d+/)
