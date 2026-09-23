@@ -148,6 +148,7 @@ export const it: Dictionary = {
   'voteError.alreadyVoted': 'Hai già votato oggi',
   'voteError.missingVoterId': 'Sessione di voto non valida. Ricarica la pagina.',
   'voteError.antibot': 'Voto sospeso temporaneamente: i nostri sistemi hanno rilevato attività anomale.',
+  'voteError.rateLimited': 'Troppe richieste. Riprova tra qualche minuto.',
 
   // Cookie Policy
   'cookiePolicy.title': 'Cookie Policy',

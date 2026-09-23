@@ -6,8 +6,9 @@ import { resolveVoteFingerprint } from '@/lib/vote-dev-bypass'
 import { resolveVoterKey, applyVoterCookie } from '@/lib/vote-identity-server'
 import { getAntibotEnabled } from '@/lib/site-flags'
 import { verifyTurnstile } from '@/lib/turnstile'
-import { getTrustedClientIp } from '@/lib/request-ip'
+import { getTrustedClientIp, hmacIp } from '@/lib/request-ip'
 import { recordIpSignal } from '@/lib/ip-signal-metrics'
+import { evaluateVoteRateLimit } from '@/lib/vote-rate-limit'
 import { LOCALE_COOKIE, resolveLocale } from '@/lib/locale'
 import { translate } from '@/i18n'
 
@@ -32,10 +33,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: err('voteError.missingVoterId') }, { status: 400 })
     }
 
-    const respond = (payload: unknown, status = 200) => {
+    const respond = (payload: unknown, status = 200, headers?: Record<string, string>) => {
       const response = NextResponse.json(payload, { status })
+      if (headers) {
+        for (const [name, value] of Object.entries(headers)) response.headers.set(name, value)
+      }
       applyVoterCookie(response, resolved.voterId)
       return response
+    }
+
+    // P0-3: rate limit su segnali attendibili (identità + IP pseudonimizzato).
+    // Default `observe`: calcola e registra senza bloccare. `enforce` → 429.
+    const fingerprint = resolveVoteFingerprint(resolved.key)
+    const rate = await evaluateVoteRateLimit({
+      ipHash: ip ? hmacIp(ip) : null,
+      fingerprint,
+    })
+    if (!rate.allowed) {
+      return respond({ error: err('voteError.rateLimited') }, 429, {
+        'Retry-After': String(rate.retryAfterSec),
+      })
     }
 
     // Gate anti-bot: il toggle Admin sospende il voto anche server-side, non
@@ -89,7 +106,7 @@ export async function POST(request: NextRequest) {
     const country = request.headers.get('cf-ipcountry') || 'IT'
 
     const { success, error: submitError } = await submitVote({
-      fingerprint: resolveVoteFingerprint(resolved.key),
+      fingerprint,
       ip: ip ?? 'unknown',
       userAgent,
       country,

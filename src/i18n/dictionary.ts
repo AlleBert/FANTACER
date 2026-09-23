@@ -311,6 +311,7 @@ export interface Dictionary {
   'voteError.alreadyVoted': string
   'voteError.missingVoterId': string
   'voteError.antibot': string
+  'voteError.rateLimited': string
 }
 
 export type DictionaryKey = keyof Dictionary

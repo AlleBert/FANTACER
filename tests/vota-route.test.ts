@@ -9,6 +9,15 @@ jest.mock('@/lib/supabase/batch', () => ({ getActiveBatch: jest.fn() }))
 jest.mock('@/lib/supabase/vote-api', () => ({ submitVote: jest.fn() }))
 jest.mock('@/lib/site-flags', () => ({ getAntibotEnabled: jest.fn() }))
 jest.mock('@/lib/turnstile', () => ({ verifyTurnstile: jest.fn() }))
+jest.mock('@/lib/vote-rate-limit', () => ({
+  evaluateVoteRateLimit: jest.fn(async () => ({
+    mode: 'observe',
+    allowed: true,
+    rawAllowed: true,
+    retryAfterSec: 600,
+    scopes: [],
+  })),
+}))
 jest.mock('@/lib/vote-dev-bypass', () => ({
   isVoteLimitBypassed: jest.fn(() => false),
   resolveVoteFingerprint: (key: string) => key,
@@ -24,12 +33,14 @@ import { getActiveBatch } from '@/lib/supabase/batch'
 import { submitVote } from '@/lib/supabase/vote-api'
 import { getAntibotEnabled } from '@/lib/site-flags'
 import { verifyTurnstile } from '@/lib/turnstile'
+import { evaluateVoteRateLimit } from '@/lib/vote-rate-limit'
 
 const mockCreateAdminClient = createAdminClient as jest.Mock
 const mockGetActiveBatch = getActiveBatch as jest.Mock
 const mockSubmitVote = submitVote as jest.Mock
 const mockGetAntibotEnabled = getAntibotEnabled as jest.Mock
 const mockVerifyTurnstile = verifyTurnstile as jest.Mock
+const mockEvaluateVoteRateLimit = evaluateVoteRateLimit as jest.Mock
 
 const UUID = '11111111-2222-4333-8444-555555555555'
 const OTHER_UUID = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee'
@@ -174,6 +185,41 @@ describe('POST /api/vota', () => {
     const res = await POST(makeRequest(validBody()))
     expect(res.status).toBe(400)
     expect(await res.json()).toEqual({ error: 'voteError.securityFailed' })
+    expect(mockSubmitVote).not.toHaveBeenCalled()
+  })
+
+  it('P0-3 observe: oltre soglia non blocca (nessuna modifica di comportamento)', async () => {
+    mockGetAntibotEnabled.mockResolvedValue(false)
+    mockEvaluateVoteRateLimit.mockResolvedValueOnce({
+      mode: 'observe',
+      allowed: true,
+      rawAllowed: false,
+      retryAfterSec: 600,
+      scopes: [],
+    })
+    mockCreateAdminClient.mockReturnValue(buildAdmin())
+    mockVerifyTurnstile.mockResolvedValue({ ok: true })
+    mockSubmitVote.mockResolvedValue({ success: true })
+
+    const res = await POST(makeRequest(validBody()))
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ success: true })
+  })
+
+  it('P0-3 enforce: oltre soglia → 429 con Retry-After', async () => {
+    mockGetAntibotEnabled.mockResolvedValue(false)
+    mockEvaluateVoteRateLimit.mockResolvedValueOnce({
+      mode: 'enforce',
+      allowed: false,
+      rawAllowed: false,
+      retryAfterSec: 120,
+      scopes: [],
+    })
+
+    const res = await POST(makeRequest(validBody()))
+    expect(res.status).toBe(429)
+    expect(res.headers.get('Retry-After')).toBe('120')
+    expect(await res.json()).toEqual({ error: 'voteError.rateLimited' })
     expect(mockSubmitVote).not.toHaveBeenCalled()
   })
 })
