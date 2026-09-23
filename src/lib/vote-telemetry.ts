@@ -22,6 +22,8 @@ export interface VoteRequestEndEvent {
   ms: number
   rateMode?: 'observe' | 'enforce'
   rateWouldBlock?: boolean
+  rateIpWouldBlock?: boolean
+  rateIdWouldBlock?: boolean
   rateScopes?: { ip: boolean | null; id: boolean | null }
   ipSource?: string
   ipConfidence?: string
@@ -35,11 +37,14 @@ export const VOTE_REQUEST_END_MARKER = 'vote_request_end'
 export function serializeVoteRequestEnd(e: VoteRequestEndEvent): string {
   return JSON.stringify({
     marker: VOTE_REQUEST_END_MARKER,
+    level: 'info',
     outcome: e.outcome,
     status: e.status,
     ms: e.ms,
     rateMode: e.rateMode ?? null,
     rateWouldBlock: e.rateWouldBlock ?? null,
+    rateIpWouldBlock: e.rateIpWouldBlock ?? null,
+    rateIdWouldBlock: e.rateIdWouldBlock ?? null,
     rateScopes: e.rateScopes ?? null,
     ipSource: e.ipSource ?? null,
     ipConfidence: e.ipConfidence ?? null,
@@ -48,6 +53,7 @@ export function serializeVoteRequestEnd(e: VoteRequestEndEvent): string {
   })
 }
 
+/** Emesso a livello `info` (console.log): l'aggregatore legge i log info. */
 export function logVoteRequestEnd(e: VoteRequestEndEvent): void {
   console.log(serializeVoteRequestEnd(e))
 }

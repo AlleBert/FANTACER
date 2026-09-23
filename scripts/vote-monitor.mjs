@@ -104,8 +104,12 @@ export function aggregate(entries) {
     byStatus[m.status] = (byStatus[m.status] ?? 0) + 1
     if (Number.isFinite(m.ms)) durations.push(m.ms)
     if (m.rateWouldBlock) {
-      if (m.rateScopes?.ip === false) wouldBlockIp += 1
-      if (m.rateScopes?.id === false) wouldBlockId += 1
+      if (m.rateIpWouldBlock === true || (m.rateIpWouldBlock == null && m.rateScopes?.ip === false)) {
+        wouldBlockIp += 1
+      }
+      if (m.rateIdWouldBlock === true || (m.rateIdWouldBlock == null && m.rateScopes?.id === false)) {
+        wouldBlockId += 1
+      }
     }
     if (m.outcome === 'rate_limited' || m.status === 429) rateLimited429 += 1
     const conf = m.ipConfidence ?? 'none'
@@ -154,9 +158,9 @@ function printReport(report) {
 function selftest() {
   const sample = [
     JSON.stringify({ requestMethod: 'POST', requestPath: '/api/vota', timestamp: 1000, responseStatusCode: 200 }),
-    JSON.stringify({ message: `{"marker":"${MARKER}","outcome":"success","status":200,"ms":30,"rateMode":"observe","rateWouldBlock":false,"rateScopes":{"ip":true,"id":true},"ipSource":"cf-connecting-ip","ipConfidence":"medium","ipHasDetected":true,"turnstileReason":null}`, timestamp: 1000 }),
-    JSON.stringify({ message: `{"marker":"${MARKER}","outcome":"already_voted","status":409,"ms":12,"rateMode":"observe","rateWouldBlock":false,"rateScopes":{"ip":true,"id":true},"ipSource":"none","ipConfidence":"none","ipHasDetected":false,"turnstileReason":null}`, timestamp: 2000 }),
-    JSON.stringify({ message: `{"marker":"${MARKER}","outcome":"rate_limited","status":429,"ms":5,"rateMode":"enforce","rateWouldBlock":true,"rateScopes":{"ip":false,"id":true},"ipSource":"cf-connecting-ip","ipConfidence":"medium","ipHasDetected":true,"turnstileReason":null}`, timestamp: 3000 }),
+    JSON.stringify({ message: `{"marker":"${MARKER}","level":"info","outcome":"success","status":200,"ms":30,"rateMode":"observe","rateWouldBlock":false,"rateIpWouldBlock":false,"rateIdWouldBlock":false,"rateScopes":{"ip":true,"id":true},"ipSource":"cf-connecting-ip","ipConfidence":"medium","ipHasDetected":true,"turnstileReason":null}`, timestamp: 1000 }),
+    JSON.stringify({ message: `{"marker":"${MARKER}","level":"info","outcome":"already_voted","status":409,"ms":12,"rateMode":"observe","rateWouldBlock":false,"rateIpWouldBlock":false,"rateIdWouldBlock":false,"rateScopes":{"ip":true,"id":true},"ipSource":"none","ipConfidence":"none","ipHasDetected":false,"turnstileReason":null}`, timestamp: 2000 }),
+    JSON.stringify({ message: `{"marker":"${MARKER}","level":"info","outcome":"rate_limited","status":429,"ms":5,"rateMode":"enforce","rateWouldBlock":true,"rateIpWouldBlock":true,"rateIdWouldBlock":false,"rateScopes":{"ip":false,"id":true},"ipSource":"cf-connecting-ip","ipConfidence":"medium","ipHasDetected":true,"turnstileReason":null}`, timestamp: 3000 }),
     'non-json riga da ignorare',
   ].join('\n')
 

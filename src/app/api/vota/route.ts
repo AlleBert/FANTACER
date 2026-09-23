@@ -18,6 +18,8 @@ interface VoteTelemetry {
   status?: number
   rateMode?: 'observe' | 'enforce'
   rateWouldBlock?: boolean
+  rateIpWouldBlock?: boolean
+  rateIdWouldBlock?: boolean
   rateScopes?: { ip: boolean | null; id: boolean | null }
   ipSignal?: ClientIpSignal
   turnstileReason?: string | null
@@ -75,10 +77,11 @@ export async function POST(request: NextRequest) {
     })
     tel.rateMode = rate.mode
     tel.rateWouldBlock = !rate.rawAllowed
-    tel.rateScopes = {
-      ip: rate.scopes.find((s) => s.scope === 'ip')?.allowed ?? null,
-      id: rate.scopes.find((s) => s.scope === 'id')?.allowed ?? null,
-    }
+    const rateIpAllowed = rate.scopes.find((s) => s.scope === 'ip')?.allowed ?? null
+    const rateIdAllowed = rate.scopes.find((s) => s.scope === 'id')?.allowed ?? null
+    tel.rateScopes = { ip: rateIpAllowed, id: rateIdAllowed }
+    tel.rateIpWouldBlock = rateIpAllowed === false
+    tel.rateIdWouldBlock = rateIdAllowed === false
     if (!rate.allowed) {
       return respond({ error: err('voteError.rateLimited') }, 429, 'rate_limited', {
         'Retry-After': String(rate.retryAfterSec),
@@ -170,6 +173,8 @@ export async function POST(request: NextRequest) {
       ms: Date.now() - startedAt,
       rateMode: tel.rateMode,
       rateWouldBlock: tel.rateWouldBlock,
+      rateIpWouldBlock: tel.rateIpWouldBlock,
+      rateIdWouldBlock: tel.rateIdWouldBlock,
       rateScopes: tel.rateScopes,
       ipSource: tel.ipSignal?.source,
       ipConfidence: tel.ipSignal?.confidence,

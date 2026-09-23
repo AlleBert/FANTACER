@@ -141,7 +141,7 @@ export async function GET(request: NextRequest) {
       // di daily_stats (che gonfierebbero il conteggio di 3x).
       const summary = aggregateSummary(filtered, onlineUsers || 0)
 
-      return NextResponse.json(summary)
+      return NextResponse.json(summary, { headers: { 'Cache-Control': 'no-store' } })
     }
 
     if (type === 'bundle') {

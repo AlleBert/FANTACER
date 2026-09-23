@@ -13,6 +13,8 @@ const EVENT = {
   ms: 42,
   rateMode: 'observe' as const,
   rateWouldBlock: false,
+  rateIpWouldBlock: false,
+  rateIdWouldBlock: false,
   rateScopes: { ip: true, id: true },
   ipSource: 'cf-connecting-ip',
   ipConfidence: 'medium',
@@ -21,14 +23,23 @@ const EVENT = {
 }
 
 describe('vote_request_end marker', () => {
-  it('serializza un unico JSON con il marker', () => {
+  it('serializza un unico JSON con il marker a livello info', () => {
     const line = serializeVoteRequestEnd(EVENT)
     expect(line.split('\n')).toHaveLength(1)
     const parsed = JSON.parse(line)
     expect(parsed.marker).toBe(VOTE_REQUEST_END_MARKER)
+    expect(parsed.level).toBe('info')
     expect(parsed.outcome).toBe('success')
     expect(parsed.status).toBe(200)
     expect(parsed.rateScopes).toEqual({ ip: true, id: true })
+  })
+
+  it('espone i campi espliciti rateIpWouldBlock / rateIdWouldBlock', () => {
+    const parsed = JSON.parse(
+      serializeVoteRequestEnd({ ...EVENT, rateWouldBlock: true, rateIpWouldBlock: true, rateIdWouldBlock: false }),
+    )
+    expect(parsed.rateIpWouldBlock).toBe(true)
+    expect(parsed.rateIdWouldBlock).toBe(false)
   })
 
   it('non contiene IP, UUID, token o ballot', () => {
