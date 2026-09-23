@@ -1,0 +1,119 @@
+name: Vote security gate
+
+# Gate autorizzativo per P0-2/P0-3/P0-4 durante il contenimento voto.
+# Separato dalla CI completa (`ci.yml`), che continua a girare e a mostrare
+# i debiti E2E esistenti.
+#
+# Copertura minima:
+# - Turnstile fail-closed ................ tests/lib/turnstile.test.ts
+# - nessuna scrittura DB se Turnstile fallisce ... tests/vota-route.test.ts
+# - un solo voto per identità / "già votato" ..... tests/vota-route.test.ts,
+#   tests/e2e/voting-scenarios.spec.ts
+# - voto completo con 3 preferenze ............... tests/e2e/voting-flow.spec.ts
+# - stato del voto ............................... tests/vota-status-route.test.ts
+# - voto disabilitato (anti-bot / voting_enabled) tests/vota-route.test.ts
+# - P0-2/P0-3: il gate verrà esteso quando implementati.
+
+on:
+  # Gate delle PR. Il full E2E (ci.yml) gira su push: trigger disgiunti per
+  # evitare la conflittualità della stessa concurrency nella stessa PR.
+  pull_request:
+  workflow_dispatch:
+
+# Gruppo dedicato: il gate è serializzato con sé stesso ma NON si contende
+# l'`e2e-suite` del full E2E. Il dataset fantacer-e2e resta condiviso: non
+# lanciare manualmente il gate mentre gira il full E2E su master.
+concurrency:
+  group: vote-security-gate
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL_TEST }}
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY_TEST }}
+  # Testing key Cloudflare: SOLO nel runner GitHub, mai in Vercel.
+  NEXT_PUBLIC_TURNSTILE_SITE_KEY: '1x00000000000000000000AA'
+  TURNSTILE_SECRET_KEY: '1x0000000000000000000000000000000AA'
+  # Server-only: abilita le testing key solo nel runner (VERCEL assente).
+  # Mai impostata sugli environment Vercel.
+  E2E_ALLOW_TURNSTILE_TEST_KEYS: 'true'
+
+jobs:
+  vote-security-gate:
+    name: Vote security gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: TypeScript check
+        run: npm run typecheck
+
+      - name: Unit — voto, Turnstile, identità, rate limit
+        run: >
+          npx jest --maxWorkers=4
+          tests/vota-route.test.ts
+          tests/vota-status-route.test.ts
+          tests/vote-api.test.ts
+          tests/lib/turnstile.test.ts
+          tests/components/voting/turnstile-overlay.test.tsx
+          tests/components/vote-status-restore.test.tsx
+          tests/lib/vote-identity.test.ts
+          tests/lib/vote-client-identity.test.ts
+          tests/vote-persistence.test.ts
+          tests/vote-persistence.ssr.test.ts
+          tests/VoteContext.test.tsx
+          tests/lib/vote-context.test.tsx
+          tests/lib/vote-context-hydrate.test.tsx
+          tests/contact-route.test.ts
+          tests/admin-auth.test.ts
+
+      - name: Production build (testing key Cloudflare)
+        run: npm run build
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps
+
+      - name: E2E — percorso voto (zero retry)
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY_TEST }}
+        run: >
+          npx playwright test
+          tests/e2e/voting-flow.spec.ts
+          tests/e2e/voting-scenarios.spec.ts
+          tests/e2e/vote-identity.spec.ts
+          --project=chromium
+          --workers=1
+          --retries=0
+          --trace=retain-on-failure
+
+      - name: Upload E2E artifacts (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vote-security-gate-artifacts
+          path: |
+            test-results/**
+            playwright-report/**
+          if-no-files-found: ignore
+          retention-days: 7
