@@ -4,25 +4,25 @@ import JSZip from 'jszip'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin, requireRoleAdmin, toAdminError } from '@/lib/admin-auth'
 import {
-  aggregateSummary,
   buildRangeReport,
   enumerateDayKeys,
   filterSessionsByBatch,
   romeDateKey,
   sanitizeCsvValue,
   type ReportSessionRow,
-  type SessionSummaryRow,
 } from '@/lib/admin-analytics'
+import { mapSummaryRpc } from '@/lib/admin-analytics-rpc'
 import { renderRangeReportPdf } from '@/lib/admin-report-pdf'
+import { fetchAllRows } from '@/lib/fetch-all'
 
 type AdminClient = ReturnType<typeof createAdminClient>
 
 const ONLINE_WINDOW_MS = 5 * 60 * 1000
 
-type RawSession = ReportSessionRow & { user_agent: string | null }
+type RawSession = ReportSessionRow & { id: number; user_agent: string | null }
 
 const RAW_SELECT =
-  'created_at, fingerprint, country, user_agent, company1_id, company2_id, company3_id, pallet1, pallet2, pallet3'
+  'id, created_at, fingerprint, country, user_agent, company1_id, company2_id, company3_id, pallet1, pallet2, pallet3'
 
 /** Set delle company del batch, oppure null quando il filtro è "tutti". */
 async function getBatchCompanyIds(
@@ -36,11 +36,16 @@ async function getBatchCompanyIds(
 
 async function loadRawSessions(supabase: AdminClient, batch: string | null): Promise<RawSession[]> {
   const batchIds = await getBatchCompanyIds(supabase, batch)
-  const { data } = await supabase
-    .from('vote_sessions')
-    .select(RAW_SELECT)
-    .order('created_at', { ascending: false })
-  return filterSessionsByBatch((data || []) as RawSession[], batch, batchIds ?? new Set())
+  const { data, error } = await fetchAllRows<RawSession>((from, to) =>
+    supabase
+      .from('vote_sessions')
+      .select(RAW_SELECT)
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
+      .range(from, to),
+  )
+  if (error) throw new Error(error)
+  return filterSessionsByBatch(data, batch, batchIds ?? new Set())
 }
 
 async function loadCompanyMap(supabase: AdminClient): Promise<Map<string, string>> {
@@ -118,29 +123,18 @@ export async function GET(request: NextRequest) {
     const dateTo = searchParams.get('to')
 
     if (type === 'summary') {
-      const batchIds = await getBatchCompanyIds(supabase, batch)
-
-      const { data: sessions } = await supabase
-        .from('vote_sessions')
-        .select('created_at, fingerprint, company1_id, company2_id, company3_id')
-
-      const filtered = filterSessionsByBatch(
-        (sessions || []) as SessionSummaryRow[],
-        batch,
-        batchIds ?? new Set(),
-      )
-
       const fiveMinsAgo = new Date(Date.now() - ONLINE_WINDOW_MS).toISOString()
-      const { count: onlineUsers } = await supabase
-        .from('device_sessions')
-        .select('*', { count: 'exact', head: true })
-        .gte('last_used', fiveMinsAgo)
-
-      // Le "voti" sono sessioni (non assegnazioni pallet) e l'aggregazione
-      // giornaliera è calcolata dai vote_sessions, non dalle righe per-azienda
-      // di daily_stats (che gonfierebbero il conteggio di 3x).
-      const summary = aggregateSummary(filtered, onlineUsers || 0)
-
+      const [summaryRes, onlineRes] = await Promise.all([
+        supabase.rpc('admin_analytics_summary', { p_batch: batch ?? null }),
+        supabase
+          .from('device_sessions')
+          .select('*', { count: 'exact', head: true })
+          .gte('last_used', fiveMinsAgo),
+      ])
+      if (summaryRes.error) {
+        return NextResponse.json({ error: summaryRes.error.message }, { status: 500 })
+      }
+      const summary = { ...mapSummaryRpc(summaryRes.data), onlineUsers: onlineRes.count || 0 }
       return NextResponse.json(summary, { headers: { 'Cache-Control': 'no-store' } })
     }
 

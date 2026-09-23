@@ -61,9 +61,16 @@ function buildSupabase() {
       }
       if (table === 'vote_sessions') {
         return {
-          select: jest.fn().mockReturnValue({
-            order: jest.fn().mockResolvedValue({ data: sessions, error: null }),
-          }),
+          select: jest.fn(() => ({
+            order: jest.fn(() => ({
+              order: jest.fn(() => ({
+                range: jest.fn(async (from: number, to: number) => ({
+                  data: sessions.slice(from, to + 1),
+                  error: null,
+                })),
+              })),
+            })),
+          })),
         }
       }
       throw new Error('unexpected table ' + table)
@@ -116,6 +123,30 @@ describe('GET /api/admin/votes', () => {
 
     expect(data.pagination.total).toBe(1)
     expect(data.data[0].id).toBe('s1')
+  })
+
+  it('total completo oltre 1000 righe', async () => {
+    const many = Array.from({ length: 1200 }, (_, i) =>
+      mkSession(String(i), '2026-09-14T12:00:00Z', ['c1', 'c2', 'c4']),
+    )
+    const supabase = {
+      from: jest.fn((table: string) => {
+        if (table === 'companies') return { select: jest.fn().mockResolvedValue({ data: companies, error: null }) }
+        return {
+          select: jest.fn(() => ({
+            order: jest.fn(() => ({
+              order: jest.fn(() => ({
+                range: jest.fn(async (from: number, to: number) => ({ data: many.slice(from, to + 1), error: null })),
+              })),
+            })),
+          })),
+        }
+      }),
+    }
+    mockCreateAdminClient.mockReturnValue(supabase)
+    const res = await GET(getRequest('batch=B1&page=1&limit=25'))
+    const data = await res.json()
+    expect(data.pagination.total).toBe(1200)
   })
 
   it('nega accesso senza admin', async () => {

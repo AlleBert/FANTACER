@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireRoleAdmin, toAdminError } from '@/lib/admin-auth'
 import { getActiveBatch } from '@/lib/supabase/batch'
+import { fetchAllRows } from '@/lib/fetch-all'
 import { parseCompanyAction } from '@/lib/company-admin-request'
 import {
   projectCompanyAction,
@@ -61,13 +62,24 @@ export async function POST(request: NextRequest) {
 
     let sessions: SessionLite[] = []
     if (action.deleteVotes) {
-      const { data, error } = await supabase
-        .from('vote_sessions')
-        .select('company1_id, company2_id, company3_id, pallet1, pallet2, pallet3')
+      const { data, error } = await fetchAllRows<{
+        company1_id: string
+        company2_id: string
+        company3_id: string
+        pallet1: number
+        pallet2: number
+        pallet3: number
+      }>((from, to) =>
+        supabase
+          .from('vote_sessions')
+          .select('company1_id, company2_id, company3_id, pallet1, pallet2, pallet3')
+          .order('id', { ascending: false })
+          .range(from, to),
+      )
       if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ error }, { status: 500 })
       }
-      sessions = (data ?? []).map((s) => ({
+      sessions = data.map((s) => ({
         company1Id: s.company1_id,
         company2Id: s.company2_id,
         company3Id: s.company3_id,
