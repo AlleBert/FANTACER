@@ -10,6 +10,15 @@ import { getTrustedClientIp, hmacIp, type ClientIpSignal } from '@/lib/request-i
 import { recordIpSignal } from '@/lib/ip-signal-metrics'
 import { evaluateVoteRateLimit } from '@/lib/vote-rate-limit'
 import { logVoteRequestEnd, type VoteOutcome } from '@/lib/vote-telemetry'
+import { keyringFromEnv, SESSION_COOKIE } from '@/lib/session-identity'
+import {
+  sessionIdentityMode,
+  getActiveEvent,
+  resolveOrCreatePrincipal,
+  resolveSessionPrincipal,
+  linkVoteToPrincipal,
+} from '@/lib/session-identity-server'
+import { romeDateKey } from '@/lib/admin-analytics'
 import { LOCALE_COOKIE, resolveLocale } from '@/lib/locale'
 import { translate } from '@/i18n'
 
@@ -68,9 +77,41 @@ export async function POST(request: NextRequest) {
       return response
     }
 
+    const admin = createAdminClient()
+
+    // P0-4 (gated da SESSION_IDENTITY_MODE, default `off` → nessun effetto).
+    // Dual-read: se esiste una sessione valida, il suo principal è l'autorità;
+    // si usa il fingerprint legacy del principal per mantenere il dedup.
+    const identityMode = sessionIdentityMode()
+    let fingerprint = resolveVoteFingerprint(resolved.key)
+    let principalId: string | null = null
+    let eventId: string | null = null
+    if (identityMode !== 'off') {
+      const keyring = keyringFromEnv()
+      const sessionCookie = request.cookies.get(SESSION_COOKIE)?.value
+      if (keyring) {
+        principalId = await resolveSessionPrincipal(admin, sessionCookie, keyring)
+      }
+      const event = await getActiveEvent(admin)
+      eventId = event?.id ?? null
+      if (!principalId && event) {
+        principalId = await resolveOrCreatePrincipal(admin, event.id, fingerprint)
+      }
+      if (principalId) {
+        const { data: principal } = await admin
+          .from('event_principals')
+          .select('legacy_fingerprint')
+          .eq('id', principalId)
+          .maybeSingle()
+        if (principal?.legacy_fingerprint) fingerprint = principal.legacy_fingerprint
+      }
+      // Cutover: senza sessione valida non si vota.
+      if (identityMode === 'session' && !principalId) {
+        return respond({ error: err('voteError.missingVoterId') }, 400, 'invalid_request')
+      }
+    }
+
     // P0-3: rate limit su segnali attendibili (identità + IP pseudonimizzato).
-    // Default `observe`: calcola e registra senza bloccare. `enforce` → 429.
-    const fingerprint = resolveVoteFingerprint(resolved.key)
     const rate = await evaluateVoteRateLimit({
       ipHash: ip ? hmacIp(ip) : null,
       fingerprint,
@@ -88,8 +129,7 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Gate anti-bot: il toggle Admin sospende il voto anche server-side, non
-    // solo in UI. `423 Locked` distingue il blocco dagli errori di validazione.
+    // Gate anti-bot: il toggle Admin sospende il voto anche server-side.
     if (await getAntibotEnabled()) {
       return respond({ error: err('voteError.antibot') }, 423, 'antibot')
     }
@@ -106,13 +146,10 @@ export async function POST(request: NextRequest) {
       return respond({ error: err('voteError.duplicateCompanies') }, 400, 'invalid_request')
     }
 
-    const supabaseAdmin = createAdminClient()
-
-    // Batch attivo e lookup aziende sono indipendenti: in parallelo risparmiano
-    // un round-trip DB seriale sul percorso critico del voto.
+    // Batch attivo e lookup aziende in parallelo.
     const [activeBatch, { data: companies }] = await Promise.all([
       getActiveBatch(),
-      supabaseAdmin
+      admin
         .from('companies')
         .select('id, batch, blocked')
         .in('id', [company1Id, company2Id, company3Id]),
@@ -139,7 +176,6 @@ export async function POST(request: NextRequest) {
 
     const verification = await verifyTurnstile(turnstile_token)
     if (!verification.ok) {
-      // Log del solo codice di motivo: mai token, secret, cookie o payload.
       tel.turnstileReason = verification.reason
       console.warn('[turnstile] verifica fallita:', verification.reason)
       return respond({ error: err('voteError.securityFailed') }, 400, 'turnstile_failed')
@@ -167,6 +203,15 @@ export async function POST(request: NextRequest) {
         return respond({ error: submitError }, 400, 'error')
       }
       return respond({ error: 'Vote rejected' }, 400, 'error')
+    }
+
+    // Dual-write shadow: collega la scheda al principal. Best-effort.
+    if (identityMode !== 'off' && principalId && eventId) {
+      try {
+        await linkVoteToPrincipal(admin, fingerprint, romeDateKey(new Date()), eventId, principalId)
+      } catch (linkError) {
+        console.warn('[identity] linkVoteToPrincipal failed:', linkError)
+      }
     }
 
     return respond({ success: true }, 200, 'success')
