@@ -152,6 +152,14 @@ export const en: Dictionary = {
   'voteError.fairEnded': 'Voting is closed',
   'voteError.rateLimited': 'Too many requests. Please retry in a few minutes.',
 
+  // Fair end
+  'fairEnd.title': 'VOTING IS CLOSED',
+  'fairEnd.reveal': 'Find out the FANTACER 2026 Winner at {time}',
+  'fairEnd.finalTitle': 'Fantacer 2026 Final Ranking',
+  'fairEnd.ceremony': 'Award ceremony at the stand today at {time}',
+  'fairEnd.thanks': 'Thank you all for the great participation! See you next year.',
+  'fairEnd.points': '{count} points',
+
   // Cookie Policy
   'cookiePolicy.title': 'Cookie Policy',
   'cookiePolicy.lastUpdated': 'Last updated: {date}',

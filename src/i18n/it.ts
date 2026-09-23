@@ -152,6 +152,14 @@ export const it: Dictionary = {
   'voteError.fairEnded': 'Le votazioni sono concluse',
   'voteError.rateLimited': 'Troppe richieste. Riprova tra qualche minuto.',
 
+  // Fair end
+  'fairEnd.title': 'LE VOTAZIONI SONO CONCLUSE',
+  'fairEnd.reveal': 'Scopri alle {time} il Vincitore FANTACER 2026',
+  'fairEnd.finalTitle': 'Classifica Finale Fantacer 2026',
+  'fairEnd.ceremony': 'Premiazione sullo stand oggi alle {time}',
+  'fairEnd.thanks': 'Grazie a tutti per la grande partecipazione! Ci vediamo il prossimo anno.',
+  'fairEnd.points': '{count} punti',
+
   // Cookie Policy
   'cookiePolicy.title': 'Cookie Policy',
   'cookiePolicy.lastUpdated': 'Ultimo aggiornamento: {date}',

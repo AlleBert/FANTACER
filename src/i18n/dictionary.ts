@@ -314,6 +314,14 @@ export interface Dictionary {
   'voteError.antibot': string
   'voteError.fairEnded': string
   'voteError.rateLimited': string
+
+  // Fair end
+  'fairEnd.title': string
+  'fairEnd.reveal': string
+  'fairEnd.finalTitle': string
+  'fairEnd.ceremony': string
+  'fairEnd.thanks': string
+  'fairEnd.points': string
 }
 
 export type DictionaryKey = keyof Dictionary
