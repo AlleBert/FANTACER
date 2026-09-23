@@ -38,6 +38,13 @@ export default function ImpostazioniPage() {
   const [showAntibotConfirmModal, setShowAntibotConfirmModal] = useState(false)
   const [pendingAntibotValue, setPendingAntibotValue] = useState(false)
   const [updatingAntibot, setUpdatingAntibot] = useState(false)
+  const [fairEndEnabled, setFairEndEnabled] = useState(false)
+  const [fairEndRevealTime, setFairEndRevealTime] = useState('12:30')
+  const [fairEndCeremony, setFairEndCeremony] = useState<{ '1': string; '2': string; '3': string }>({ '1': '14:00', '2': '13:45', '3': '13:30' })
+  const [loadingFairEnd, setLoadingFairEnd] = useState(true)
+  const [showFairEndConfirmModal, setShowFairEndConfirmModal] = useState(false)
+  const [pendingFairEndValue, setPendingFairEndValue] = useState(false)
+  const [updatingFairEnd, setUpdatingFairEnd] = useState(false)
 
   // Audit log state
   const [auditExpanded, setAuditExpanded] = useState(false)
@@ -61,6 +68,17 @@ export default function ImpostazioniPage() {
       .then(data => setAntibotEnabled(data.enabled))
       .finally(() => setLoadingAntibot(false))
 
+    const loadFairEnd = () =>
+      fetch('/api/admin/settings/fair-end')
+        .then(res => res.json())
+        .then(data => {
+          setFairEndEnabled(!!data.enabled)
+          if (typeof data.revealTime === 'string') setFairEndRevealTime(data.revealTime)
+          if (data.ceremony) setFairEndCeremony(data.ceremony)
+        })
+        .finally(() => setLoadingFairEnd(false))
+    loadFairEnd()
+
     const supabase = createClient()
     const channel = supabase
       .channel('settings-changes')
@@ -74,6 +92,7 @@ export default function ImpostazioniPage() {
         fetch('/api/admin/settings/antibot')
           .then(res => res.json())
           .then(data => setAntibotEnabled(data.enabled))
+        loadFairEnd()
       })
     safeSubscribe(channel)
 
@@ -143,6 +162,39 @@ export default function ImpostazioniPage() {
       if (res.ok) setAntibotEnabled(pendingAntibotValue)
     } catch (e) { console.error(e) }
     finally { setUpdatingAntibot(false); setShowAntibotConfirmModal(false) }
+  }
+
+  const handleFairEndToggle = () => {
+    setPendingFairEndValue(!fairEndEnabled)
+    setShowFairEndConfirmModal(true)
+  }
+
+  const saveFairEnd = async (enabled: boolean) => {
+    setUpdatingFairEnd(true)
+    try {
+      const res = await fetch('/api/admin/settings/fair-end', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled, revealTime: fairEndRevealTime, ceremony: fairEndCeremony }),
+      })
+      if (res.ok) setFairEndEnabled(enabled)
+    } catch (e) { console.error(e) }
+    finally { setUpdatingFairEnd(false); setShowFairEndConfirmModal(false) }
+  }
+
+  const confirmFairEndToggle = () => saveFairEnd(pendingFairEndValue)
+
+  const handleSaveFairEndTimes = async () => {
+    setUpdatingFairEnd(true)
+    try {
+      const res = await fetch('/api/admin/settings/fair-end', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: fairEndEnabled, revealTime: fairEndRevealTime, ceremony: fairEndCeremony }),
+      })
+      if (!res.ok) console.error('Errore salvataggio orari Fine Fiera')
+    } catch (e) { console.error(e) }
+    finally { setUpdatingFairEnd(false) }
   }
 
   return (
@@ -246,6 +298,71 @@ export default function ImpostazioniPage() {
                 <span className={`absolute left-0.5 top-0.5 h-8 w-8 rounded-full bg-white transition-transform ${
                   antibotEnabled ? 'translate-x-5' : ''
                 }`} />
+              </button>
+            )}
+          </div>
+
+          <div className="rounded-lg border border-border p-4 mt-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-foreground">Fine Fiera</p>
+                <p className="text-sm text-muted-foreground">
+                  {fairEndEnabled
+                    ? 'Attivo — voti chiusi e card finale nella sezione voto'
+                    : 'Disattivo — votazioni normali'}
+                </p>
+              </div>
+              {loadingFairEnd ? (
+                <div className="h-6 w-11 animate-pulse rounded-full bg-muted" />
+              ) : isViewer ? (
+                <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${
+                  fairEndEnabled ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+                }`}>
+                  {fairEndEnabled ? 'Attivo' : 'Disattivo'}
+                </span>
+              ) : (
+                <button onClick={handleFairEndToggle} disabled={updatingFairEnd}
+                  className={`relative h-9 w-14 rounded-full transition-colors disabled:opacity-50 ${
+                    fairEndEnabled ? 'bg-primary' : 'bg-muted'
+                  }`}>
+                  <span className={`absolute left-0.5 top-0.5 h-8 w-8 rounded-full bg-white transition-transform ${
+                    fairEndEnabled ? 'translate-x-5' : ''
+                  }`} />
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                Orario rivelazione
+                <input type="time" value={fairEndRevealTime} disabled={isViewer}
+                  onChange={(e) => setFairEndRevealTime(e.target.value)}
+                  className="h-9 rounded-md border border-border bg-background px-2 text-sm text-foreground disabled:opacity-60" />
+              </label>
+              <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                Premiazione 1°
+                <input type="time" value={fairEndCeremony['1']} disabled={isViewer}
+                  onChange={(e) => setFairEndCeremony((c) => ({ ...c, '1': e.target.value }))}
+                  className="h-9 rounded-md border border-border bg-background px-2 text-sm text-foreground disabled:opacity-60" />
+              </label>
+              <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                Premiazione 2°
+                <input type="time" value={fairEndCeremony['2']} disabled={isViewer}
+                  onChange={(e) => setFairEndCeremony((c) => ({ ...c, '2': e.target.value }))}
+                  className="h-9 rounded-md border border-border bg-background px-2 text-sm text-foreground disabled:opacity-60" />
+              </label>
+              <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                Premiazione 3°
+                <input type="time" value={fairEndCeremony['3']} disabled={isViewer}
+                  onChange={(e) => setFairEndCeremony((c) => ({ ...c, '3': e.target.value }))}
+                  className="h-9 rounded-md border border-border bg-background px-2 text-sm text-foreground disabled:opacity-60" />
+              </label>
+            </div>
+
+            {!isViewer && (
+              <button onClick={handleSaveFairEndTimes} disabled={updatingFairEnd}
+                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-secondary disabled:opacity-50">
+                {updatingFairEnd ? 'Salvataggio...' : 'Salva orari'}
               </button>
             )}
           </div>
@@ -367,6 +484,34 @@ export default function ImpostazioniPage() {
               pendingAntibotValue ? 'bg-destructive hover:bg-destructive/90' : 'bg-primary hover:bg-primary/90'
             }`}>
             {updatingAntibot ? 'Aggiornamento...' : 'Conferma'}
+          </button>
+        </div>
+      </ModalShell>
+
+      {/* Fair end confirm modal */}
+      <ModalShell
+        open={showFairEndConfirmModal}
+        onClose={() => setShowFairEndConfirmModal(false)}
+        labelledBy="fair-end-confirm-title"
+        className="bg-card border border-border rounded-xl p-6 shadow-lg max-w-md"
+      >
+        <h3 id="fair-end-confirm-title" className="text-lg font-semibold text-foreground">
+          {pendingFairEndValue ? 'Attivare FINE FIERA?' : 'Disattivare FINE FIERA?'}
+        </h3>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {pendingFairEndValue
+            ? `Voti chiusi e card finale nella sezione voto. La classifica si svela alle ${fairEndRevealTime}.`
+            : 'Votazioni e card tornano normali.'}
+        </p>
+        <div className="mt-6 flex justify-end gap-3">
+          <button onClick={() => setShowFairEndConfirmModal(false)}
+            className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-secondary"
+            disabled={updatingFairEnd}>Annulla</button>
+          <button onClick={confirmFairEndToggle} disabled={updatingFairEnd}
+            className={`rounded-lg px-4 py-2 text-sm font-medium text-white ${
+              pendingFairEndValue ? 'bg-destructive hover:bg-destructive/90' : 'bg-primary hover:bg-primary/90'
+            }`}>
+            {updatingFairEnd ? 'Aggiornamento...' : 'Conferma'}
           </button>
         </div>
       </ModalShell>
