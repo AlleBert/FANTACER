@@ -69,7 +69,7 @@ export const it: Dictionary = {
 
   'antibot.title': 'Voto sospeso',
   'antibot.body':
-    'I nostri sistemi hanno rilevato voti provenienti da sistemi automatizzati. Il voto è sospeso temporaneamente. Fantacer è un gioco: i sistemi automatici vanno contro le sue regole e il suo spirito. Le aziende che li utilizzano saranno escluse dalla classifica.',
+    'I nostri sistemi hanno rilevato voti provenienti da sistemi automatizzati. Il voto è sospeso temporaneamente. Fantacer è un gioco: i sistemi automatici vanno contro le sue regole e il suo spirito. I voti non conformi con il regolamento saranno sottratti dal punteggio dell\'azienda a cui appartengono.',
 
   'contact.title1': 'PARLA',
   'contact.title2': 'CON NOI',
