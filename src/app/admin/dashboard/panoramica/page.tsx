@@ -171,6 +171,17 @@ export default function PanoramicaPage() {
     }
   }, [loadData])
 
+  // Fallback di aggiornamento: il realtime è "best effort" (`safeSubscribe`
+  // inghiotte gli errori di connessione) e la dashboard non deve dipendere solo
+  // da esso. Polling leggero quando la scheda è visibile; il realtime resta per
+  // l'aggiornamento immediato.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') loadData()
+    }, 30_000)
+    return () => clearInterval(interval)
+  }, [loadData])
+
   const downloadFile = (url: string) => {
     const link = document.createElement('a')
     link.href = url
