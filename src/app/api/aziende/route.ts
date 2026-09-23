@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
       .from('companies')
       .select('id, name, category, image_url, description', { count: 'exact' })
       .eq('batch', activeBatch)
+      .eq('blocked', false)
       .order('name')
       .range(offset, offset + limit - 1)
 

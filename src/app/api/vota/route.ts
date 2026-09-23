@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
       getActiveBatch(),
       supabaseAdmin
         .from('companies')
-        .select('id, batch')
+        .select('id, batch, blocked')
         .in('id', [company1Id, company2Id, company3Id]),
     ])
 
@@ -122,6 +122,11 @@ export async function POST(request: NextRequest) {
       if (company.batch !== activeBatch) {
         return respond({ error: err('voteError.companyNotInBatch') }, 400, 'invalid_request')
       }
+    }
+
+    // Aziende escluse dall'Admin: blocco server-side (oltre alla UI).
+    if (companies.some((company) => company.blocked === true)) {
+      return respond({ error: err('voteError.companyBlocked') }, 400, 'invalid_request')
     }
 
     if (!turnstile_token) {

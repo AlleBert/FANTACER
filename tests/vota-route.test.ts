@@ -172,6 +172,28 @@ describe('POST /api/vota', () => {
     expect(await res.json()).toEqual({ error: 'voteError.missingFields' })
   })
 
+  it('400 se una azienda è bloccata dall Admin (nessuna scrittura DB)', async () => {
+    mockCreateAdminClient.mockReturnValue({
+      from: jest.fn(() => ({
+        select: jest.fn(() => ({
+          in: jest.fn().mockResolvedValue({
+            data: [
+              { id: 'c1', batch: 'TEST', blocked: false },
+              { id: 'c2', batch: 'TEST', blocked: true },
+              { id: 'c3', batch: 'TEST', blocked: false },
+            ],
+            error: null,
+          }),
+        })),
+      })),
+    })
+
+    const res = await POST(makeRequest(validBody()))
+    expect(res.status).toBe(400)
+    expect(await res.json()).toEqual({ error: 'voteError.companyBlocked' })
+    expect(mockSubmitVote).not.toHaveBeenCalled()
+  })
+
   it('400 senza turnstile_token: nessuna scrittura DB', async () => {
     const res = await POST(makeRequest(validBody({ turnstile_token: undefined })))
     expect(res.status).toBe(400)

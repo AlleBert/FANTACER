@@ -143,6 +143,7 @@ export const en: Dictionary = {
   'voteError.duplicateCompanies': 'Companies must be different',
   'voteError.companiesNotFound': 'One or more companies not found',
   'voteError.companyNotInBatch': 'Company not available in the active batch',
+  'voteError.companyBlocked': 'One of the selected companies is not available',
   'voteError.missingSecurity': 'Missing security verification',
   'voteError.securityFailed': 'Security verification failed. Reload the page.',
   'voteError.alreadyVoted': 'You have already voted today',
