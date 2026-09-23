@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin, toAdminError } from '@/lib/admin-auth'
+import { fetchAllRows } from '@/lib/fetch-all'
 
 interface VoteSessionRow {
   id: string
@@ -60,16 +61,20 @@ export async function GET(request: NextRequest) {
           )
         : null
 
-    const { data: sessions, error } = await supabase
-      .from('vote_sessions')
-      .select(
-        'id, fingerprint, user_agent, country, company1_id, company2_id, company3_id, pallet1, pallet2, pallet3, created_at',
-      )
-      .order('created_at', { ascending: false })
+    const { data: sessions, error } = await fetchAllRows<VoteSessionRow>((from, to) =>
+      supabase
+        .from('vote_sessions')
+        .select(
+          'id, fingerprint, user_agent, country, company1_id, company2_id, company3_id, pallet1, pallet2, pallet3, created_at',
+        )
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
+        .range(from, to),
+    )
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return NextResponse.json({ error }, { status: 500 })
 
-    let filtered = (sessions || []) as VoteSessionRow[]
+    let filtered = sessions
     if (batchIds) filtered = filtered.filter((s) => touchesAny(s, batchIds))
     if (searchIds) filtered = filtered.filter((s) => touchesAny(s, searchIds))
 
