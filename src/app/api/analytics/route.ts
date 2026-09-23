@@ -4,15 +4,14 @@ import JSZip from 'jszip'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin, requireRoleAdmin, toAdminError } from '@/lib/admin-auth'
 import {
-  aggregateSummary,
   buildRangeReport,
   enumerateDayKeys,
   filterSessionsByBatch,
   romeDateKey,
   sanitizeCsvValue,
   type ReportSessionRow,
-  type SessionSummaryRow,
 } from '@/lib/admin-analytics'
+import { mapSummaryRpc } from '@/lib/admin-analytics-rpc'
 import { renderRangeReportPdf } from '@/lib/admin-report-pdf'
 
 type AdminClient = ReturnType<typeof createAdminClient>
@@ -118,29 +117,18 @@ export async function GET(request: NextRequest) {
     const dateTo = searchParams.get('to')
 
     if (type === 'summary') {
-      const batchIds = await getBatchCompanyIds(supabase, batch)
-
-      const { data: sessions } = await supabase
-        .from('vote_sessions')
-        .select('created_at, fingerprint, company1_id, company2_id, company3_id')
-
-      const filtered = filterSessionsByBatch(
-        (sessions || []) as SessionSummaryRow[],
-        batch,
-        batchIds ?? new Set(),
-      )
-
       const fiveMinsAgo = new Date(Date.now() - ONLINE_WINDOW_MS).toISOString()
-      const { count: onlineUsers } = await supabase
-        .from('device_sessions')
-        .select('*', { count: 'exact', head: true })
-        .gte('last_used', fiveMinsAgo)
-
-      // Le "voti" sono sessioni (non assegnazioni pallet) e l'aggregazione
-      // giornaliera è calcolata dai vote_sessions, non dalle righe per-azienda
-      // di daily_stats (che gonfierebbero il conteggio di 3x).
-      const summary = aggregateSummary(filtered, onlineUsers || 0)
-
+      const [summaryRes, onlineRes] = await Promise.all([
+        supabase.rpc('admin_analytics_summary', { p_batch: batch ?? null }),
+        supabase
+          .from('device_sessions')
+          .select('*', { count: 'exact', head: true })
+          .gte('last_used', fiveMinsAgo),
+      ])
+      if (summaryRes.error) {
+        return NextResponse.json({ error: summaryRes.error.message }, { status: 500 })
+      }
+      const summary = { ...mapSummaryRpc(summaryRes.data), onlineUsers: onlineRes.count || 0 }
       return NextResponse.json(summary, { headers: { 'Cache-Control': 'no-store' } })
     }
 
