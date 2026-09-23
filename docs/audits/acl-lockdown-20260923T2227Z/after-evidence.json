@@ -1,0 +1,196 @@
+[
+  {
+    "evidence": {
+      "counts": {
+        "audit_logs_rows": 1462,
+        "daily_stats_rows": 239,
+        "device_sessions_rows": 5126,
+        "legacy_votes_total": 0,
+        "rate_limits_rows": 88,
+        "vote_sessions_today": 0,
+        "vote_sessions_total": 545
+      },
+      "default_acl": [
+        {
+          "acl": "{postgres=rwU/postgres,service_role=rwU/postgres}",
+          "ns": "public",
+          "objtype": "S",
+          "owner": "postgres"
+        },
+        {
+          "acl": "{postgres=X/postgres,service_role=X/postgres}",
+          "ns": "public",
+          "objtype": "f",
+          "owner": "postgres"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+          "ns": "public",
+          "objtype": "r",
+          "owner": "postgres"
+        },
+        {
+          "acl": "{postgres=rwU/supabase_admin,anon=rwU/supabase_admin,authenticated=rwU/supabase_admin,service_role=rwU/supabase_admin}",
+          "ns": "public",
+          "objtype": "S",
+          "owner": "supabase_admin"
+        },
+        {
+          "acl": "{postgres=X/supabase_admin,anon=X/supabase_admin,authenticated=X/supabase_admin,service_role=X/supabase_admin}",
+          "ns": "public",
+          "objtype": "f",
+          "owner": "supabase_admin"
+        },
+        {
+          "acl": "{postgres=arwdDxtm/supabase_admin,anon=arwdDxtm/supabase_admin,authenticated=arwdDxtm/supabase_admin,service_role=arwdDxtm/supabase_admin}",
+          "ns": "public",
+          "objtype": "r",
+          "owner": "supabase_admin"
+        }
+      ],
+      "functions": [
+        {
+          "anon": false,
+          "auth": false,
+          "proname": "bump_ranking_tick",
+          "sig": "",
+          "svc": true
+        },
+        {
+          "anon": false,
+          "auth": false,
+          "proname": "check_can_vote",
+          "sig": "fingerprint_param text",
+          "svc": true
+        },
+        {
+          "anon": false,
+          "auth": false,
+          "proname": "check_rate_limit",
+          "sig": "ip_param text, window_ms integer, max_requests integer",
+          "svc": true
+        },
+        {
+          "anon": false,
+          "auth": false,
+          "proname": "get_company_ranking",
+          "sig": "limit_count integer",
+          "svc": true
+        },
+        {
+          "anon": false,
+          "auth": false,
+          "proname": "increment_vote",
+          "sig": "company_id_param uuid, date_param date",
+          "svc": true
+        },
+        {
+          "anon": false,
+          "auth": false,
+          "proname": "maintain_company_totals",
+          "sig": "",
+          "svc": true
+        },
+        {
+          "anon": false,
+          "auth": false,
+          "proname": "submit_vote",
+          "sig": "company_id_param uuid, fingerprint_param text, ip_param text, user_agent_param text, country_param text",
+          "svc": true
+        },
+        {
+          "anon": false,
+          "auth": false,
+          "proname": "submit_vote",
+          "sig": "company_id_param uuid, fingerprint_param text, ip_param text, user_agent_param text, country_param text, comment_param text, adjective_param text, slider_innovation_param integer, slider_sales_param integer, slider_wow_param integer",
+          "svc": true
+        },
+        {
+          "anon": false,
+          "auth": false,
+          "proname": "submit_vote",
+          "sig": "fingerprint_param text, ip_param text, user_agent_param text, company1_id_param uuid, company2_id_param uuid, company3_id_param uuid, country_param text",
+          "svc": true
+        },
+        {
+          "anon": false,
+          "auth": false,
+          "proname": "submit_vote",
+          "sig": "fingerprint_param text, ip_param text, user_agent_param text, company1_id_param uuid, company2_id_param uuid, company3_id_param uuid, country_param text, botd_param text",
+          "svc": true
+        }
+      ],
+      "migration_applied": [
+        {
+          "version": "20260923000000"
+        }
+      ],
+      "risky_policies": null,
+      "tables": [
+        {
+          "anon_del": false,
+          "anon_ins": false,
+          "anon_sel": false,
+          "anon_upd": false,
+          "relkind": "r",
+          "relname": "analytics_raw",
+          "svc_sel": true
+        },
+        {
+          "anon_del": false,
+          "anon_ins": false,
+          "anon_sel": false,
+          "anon_upd": false,
+          "relkind": "r",
+          "relname": "daily_stats",
+          "svc_sel": true
+        },
+        {
+          "anon_del": false,
+          "anon_ins": false,
+          "anon_sel": false,
+          "anon_upd": false,
+          "relkind": "r",
+          "relname": "device_sessions",
+          "svc_sel": true
+        },
+        {
+          "anon_del": true,
+          "anon_ins": true,
+          "anon_sel": true,
+          "anon_upd": true,
+          "relkind": "r",
+          "relname": "rate_limits",
+          "svc_sel": true
+        },
+        {
+          "anon_del": false,
+          "anon_ins": false,
+          "anon_sel": false,
+          "anon_upd": false,
+          "relkind": "r",
+          "relname": "settings",
+          "svc_sel": true
+        },
+        {
+          "anon_del": true,
+          "anon_ins": true,
+          "anon_sel": true,
+          "anon_upd": true,
+          "relkind": "r",
+          "relname": "vote_sessions",
+          "svc_sel": true
+        },
+        {
+          "anon_del": false,
+          "anon_ins": false,
+          "anon_sel": false,
+          "anon_upd": false,
+          "relkind": "r",
+          "relname": "votes",
+          "svc_sel": true
+        }
+      ]
+    }
+  }
+]

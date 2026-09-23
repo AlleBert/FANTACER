@@ -102,7 +102,11 @@ docker run -d --name fantacer-app --restart unless-stopped \
   fantacer-app:loadtest
 ```
 
-`TURNSTILE_SECRET_KEY` resta assente: il server bypassa la verifica Turnstile.
+`TURNSTILE_SECRET_KEY` resta assente. **Nota (P0-1)**: la verifica Turnstile è
+ora **fail-closed** (`src/lib/turnstile.ts`): senza secret ogni `POST /api/vota`
+viene rifiutato, quindi gli scenari k6/mini-run che votano non funzionano più
+così. Serve un meccanismo dedicato (follow-up); non reintrodurre un bypass basato
+su `NODE_ENV`, inerte in `next start`.
 
 ## 3. Mini-run browser reali
 

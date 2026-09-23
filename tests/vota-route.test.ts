@@ -8,6 +8,7 @@ jest.mock('@/lib/supabase/admin', () => ({ createAdminClient: jest.fn() }))
 jest.mock('@/lib/supabase/batch', () => ({ getActiveBatch: jest.fn() }))
 jest.mock('@/lib/supabase/vote-api', () => ({ submitVote: jest.fn() }))
 jest.mock('@/lib/site-flags', () => ({ getAntibotEnabled: jest.fn() }))
+jest.mock('@/lib/turnstile', () => ({ verifyTurnstile: jest.fn() }))
 jest.mock('@/lib/vote-dev-bypass', () => ({
   isVoteLimitBypassed: jest.fn(() => false),
   resolveVoteFingerprint: (key: string) => key,
@@ -22,11 +23,13 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getActiveBatch } from '@/lib/supabase/batch'
 import { submitVote } from '@/lib/supabase/vote-api'
 import { getAntibotEnabled } from '@/lib/site-flags'
+import { verifyTurnstile } from '@/lib/turnstile'
 
 const mockCreateAdminClient = createAdminClient as jest.Mock
 const mockGetActiveBatch = getActiveBatch as jest.Mock
 const mockSubmitVote = submitVote as jest.Mock
 const mockGetAntibotEnabled = getAntibotEnabled as jest.Mock
+const mockVerifyTurnstile = verifyTurnstile as jest.Mock
 
 const UUID = '11111111-2222-4333-8444-555555555555'
 const OTHER_UUID = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee'
@@ -89,6 +92,7 @@ describe('POST /api/vota', () => {
     mockGetActiveBatch.mockResolvedValue('TEST')
     mockGetAntibotEnabled.mockResolvedValue(false)
     mockSubmitVote.mockResolvedValue({ success: true })
+    mockVerifyTurnstile.mockResolvedValue({ ok: true })
   })
 
   it('423 quando l\'anti-bot è attivo (voto sospeso server-side)', async () => {
@@ -155,5 +159,21 @@ describe('POST /api/vota', () => {
     const res = await POST(makeRequest(validBody({ company1Id: undefined })))
     expect(res.status).toBe(400)
     expect(await res.json()).toEqual({ error: 'voteError.missingFields' })
+  })
+
+  it('400 senza turnstile_token: nessuna scrittura DB', async () => {
+    const res = await POST(makeRequest(validBody({ turnstile_token: undefined })))
+    expect(res.status).toBe(400)
+    expect(await res.json()).toEqual({ error: 'voteError.missingSecurity' })
+    expect(mockVerifyTurnstile).not.toHaveBeenCalled()
+    expect(mockSubmitVote).not.toHaveBeenCalled()
+  })
+
+  it('400 se Turnstile fallisce: risposta neutra e nessuna scrittura DB', async () => {
+    mockVerifyTurnstile.mockResolvedValue({ ok: false, reason: 'hostname_not_allowed' })
+    const res = await POST(makeRequest(validBody()))
+    expect(res.status).toBe(400)
+    expect(await res.json()).toEqual({ error: 'voteError.securityFailed' })
+    expect(mockSubmitVote).not.toHaveBeenCalled()
   })
 })

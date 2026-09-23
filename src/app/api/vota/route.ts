@@ -5,22 +5,9 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveVoteFingerprint } from '@/lib/vote-dev-bypass'
 import { resolveVoterKey, applyVoterCookie } from '@/lib/vote-identity-server'
 import { getAntibotEnabled } from '@/lib/site-flags'
+import { verifyTurnstile } from '@/lib/turnstile'
 import { LOCALE_COOKIE, resolveLocale } from '@/lib/locale'
 import { translate } from '@/i18n'
-
-async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
-  const secret = process.env.TURNSTILE_SECRET_KEY?.trim()
-  if (!secret) return true
-
-  const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: `secret=${encodeURIComponent(secret)}&response=${encodeURIComponent(token)}&remoteip=${encodeURIComponent(ip)}`
-  })
-
-  const outcome = await response.json()
-  return outcome.success
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -89,8 +76,10 @@ export async function POST(request: NextRequest) {
       return respond({ error: err('voteError.missingSecurity') }, 400)
     }
 
-    const isHuman = await verifyTurnstile(turnstile_token, ip)
-    if (!isHuman) {
+    const verification = await verifyTurnstile(turnstile_token)
+    if (!verification.ok) {
+      // Log del solo codice di motivo: mai token, secret, cookie o payload.
+      console.warn('[turnstile] verifica fallita:', verification.reason)
       return respond({ error: err('voteError.securityFailed') }, 400)
     }
 

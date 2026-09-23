@@ -11,6 +11,27 @@ npm install
 cp .env.example .env.local  # then fill in Supabase credentials
 ```
 
+### Turnstile (voto)
+
+La verifica è server-side e **fail-closed** (`src/lib/turnstile.ts`). In
+produzione sono obbligatori:
+
+- `TURNSTILE_SECRET_KEY` — chiave **reale** (le testing key sono rifiutate in produzione);
+- `TURNSTILE_ALLOWED_HOSTNAMES` — allowlist **esatta** (comma-separated, nessuna
+  wildcard), es. `www.fantacer.com,fantacer.com`.
+
+Il widget invia `action: "vote"`, verificata lato server; il timeout Siteverify è
+4,5s. Se la configurazione manca, il voto viene rifiutato (fail-closed).
+
+Le **testing key** Cloudflare sono rifiutate di default. L'unica eccezione è
+l'**harness E2E locale**: sono ammesse solo se `VERCEL` è assente **e**
+`E2E_ALLOW_TURNSTILE_TEST_KEYS === "true"` (variabile server-only, mai
+`NEXT_PUBLIC_*`, impostata esclusivamente nel processo webServer di Playwright,
+mai sugli environment Vercel). Su **qualsiasi** deployment Vercel (preview e
+production) restano **sempre** rifiutate, anche se il flag fosse impostato per
+errore. Per staging/preview usare una coppia reale dedicata all'hostname esatto
+(es. `staging.fantacer.com`).
+
 ## Development
 
 ```bash

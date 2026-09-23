@@ -128,6 +128,10 @@ export default defineConfig({
     env: {
       NEXT_PUBLIC_TURNSTILE_SITE_KEY: '1x00000000000000000000AA',
       TURNSTILE_SECRET_KEY: '1x0000000000000000000000000000000AA',
+      // Eccezione SOLO per l'harness E2E locale: testing key ammessa solo se
+      // VERCEL è assente e questo flag server-only è 'true' (mai NEXT_PUBLIC_*,
+      // mai impostato sugli environment Vercel). Su Vercel resta rifiutata.
+      E2E_ALLOW_TURNSTILE_TEST_KEYS: 'true',
       // Il limite giornaliero reale è attivo in E2E: l'identità è un UUID per
       // test (voter id), quindi non servono bypass. Così si testano voto
       // ripetuto e richieste concorrenti contro l'indice unico.
