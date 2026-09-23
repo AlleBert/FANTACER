@@ -7,6 +7,14 @@ interface Snapshot {
   byConfidence: Record<'high' | 'medium' | 'low' | 'none', number>
 }
 
+/**
+ * Misura dell'assenza di IP affidabile.
+ *
+ * Serverless: i contatori in-memory sono **per-istanza** e non aggregabili tra
+ * invocazioni/lambda diverse. La fonte di verità in produzione è il **log
+ * strutturato** emesso a ogni segnale non attendibile (aggregabile dai log
+ * Vercel). `getIpSignalSnapshot()` è utile solo per test e debug locale.
+ */
 let counters: Snapshot = {
   total: 0,
   noTrustedIp: 0,
@@ -26,8 +34,8 @@ export function getIpSignalSnapshot(): Snapshot {
 }
 
 /**
- * Misura l'assenza di IP affidabile in produzione senza registrare valori.
- * Il segnale è un log strutturato (misurabile dai log Vercel) + contatori.
+ * Misura l'assenza di IP affidabile senza registrare valori (né `ip` né
+ * `detectedIp`). Log strutturato + contatore per-istanza.
  */
 export function recordIpSignal(signal: ClientIpSignal): void {
   counters.total += 1
@@ -37,6 +45,7 @@ export function recordIpSignal(signal: ClientIpSignal): void {
     console.warn('[ip] no trusted client ip', {
       source: signal.source,
       confidence: signal.confidence,
+      hasDetectedIp: signal.detectedIp !== null,
     })
   }
 }

@@ -3,24 +3,32 @@
 Unica fonte server-side: `src/lib/request-ip.ts` → `getTrustedClientIp(request)`.
 Nessun'altra parte dell'app legge header IP (guard: `tests/lib/request-ip-usage.test.ts`).
 
+## Segnale rilevato vs IP trusted
+
+`getTrustedClientIp` ritorna due valori distinti:
+
+- `detectedIp`: il valore canonicalizzato **osservato** (osservabilità), anche se non attendibile.
+- `ip`: l'**unico** valore usabile per decisioni di sicurezza, valorizzato solo con `confidence` `medium`/`high`.
+
+Con `confidence` `low`/`none`, `ip` è `null` ma `detectedIp` può essere valorizzato.
+
 ## Modello di fiducia
 
-| Evidenza | `source` | `confidence` | `ip` |
-|---|---|---|---|
-| `cf-connecting-ip` + `cf-ray` | `cf-connecting-ip` | `medium` | canonical |
-| `cf-connecting-ip` senza `cf-ray` | `cf-connecting-ip` | `low` | `null` |
-| `x-real-ip` (Vercel, diretto/preview) | `x-real-ip` | `low` | canonical |
-| `x-forwarded-for` (solo non-produzione) | `x-forwarded-for` | `low` | canonical |
-| nessuna | `none` | `none` | `null` |
+| Evidenza | `source` | `confidence` | `ip` | `detectedIp` |
+|---|---|---|---|---|
+| `cf-connecting-ip` + `cf-ray` | `cf-connecting-ip` | `medium` | canonical | canonical |
+| `cf-connecting-ip` senza `cf-ray` | `cf-connecting-ip` | `low` | `null` | canonical |
+| `x-real-ip` (Vercel) | `x-real-ip` | `low` | `null` | canonical |
+| `x-forwarded-for` (solo non-produzione) | `x-forwarded-for` | `low` | `null` | canonical |
+| nessuna | `none` | `none` | `null` | `null` |
 
-- `cf-ray` è la prova di provenienza Cloudflare disponibile: Cloudflare
-  sovrascrive `cf-connecting-ip` e `cf-ray`, quindi il client non può forgiarli.
-  Per questo `cf-connecting-ip` è **medium**, non `high`.
+- **`cf-ray` è un'euristica, non una prova**: indica che la richiesta ha
+  attraversato Cloudflare, ma non è una prova crittografica di provenienza.
+  Per questo `cf-connecting-ip` + `cf-ray` è `medium`, mai `high`.
+- `high` è riservato a una futura prova forte (es. header segreto iniettato da
+  una Transform Rule Cloudflare e verificato server-side).
 - **`x-forwarded-for` è client-controllabile**: in produzione è ignorato.
-  Usato solo in locale/development per esercitare il rate limit per-IP.
-- Un IP **mancante restituisce `null`**, mai un valore condiviso (`0.0.0.0`).
-- `high` è riservato a una futura prova forte di provenienza (es. header segreto
-  iniettato da una Transform Rule Cloudflare e verificato server-side).
+- Un IP mancante resta `null`: **mai** un valore condiviso (`0.0.0.0`).
 
 ## Canonicalizzazione
 
@@ -28,30 +36,35 @@ Nessun'altra parte dell'app legge header IP (guard: `tests/lib/request-ip-usage.
 - IPv4 dotted-decimal; rimozione porta (`1.2.3.4:5678`).
 - IPv6 lowercase + compressione del run di zeri più lungo (`2001:0DB8::0001` → `2001:db8::1`).
 - IPv4-mapped → IPv4 (`::ffff:192.168.1.10` e `::ffff:c0a8:010a` → `192.168.1.10`).
-- rimozione bracket (`[::1]:443`) e zone id (`fe80::1%eth0`).
+- rimozione bracket (`[::1]:443`).
+- **zone id IPv6 rifiutate** (`fe80::1%eth0` → `null`).
 
 ## Pseudonimizzazione
 
 - **Nessun IP grezzo** viene aggiunto a log o persistenza.
-- `hmacIp(ip)` usa HMAC-SHA256 con `SIGNAL_HMAC_KEY` (base64) e `SIGNAL_HMAC_KEY_ID`
-  (default `k1`); formato `k1.<hex>`. Se la chiave manca ritorna `null` (fail-safe).
-- La persistenza legacy (`submit_vote` → `md5(ip)`) resta invariata in P0-2;
-  la sostituzione con HMAC è prevista in `submit_vote_v2` (P1/P0-4).
+- `hmacIp(ip)` usa HMAC-SHA256. Richiede **`SIGNAL_HMAC_KEY`** (base64, **≥32 byte
+  decodificati**) e **`SIGNAL_HMAC_KEY_ID`** obbligatorio (rotazione versionata).
+  Formato `k1.<hex>`. Se manca la chiave, il key ID o la chiave è troppo corta,
+  ritorna `null` (fail-safe: nessun segnale invece di un hash non protetto).
+- **Persistenza legacy (invariata in P0-2)**: `/api/vota` passa a
+  `submit_vote` il valore `ipSignal.ip ?? 'unknown'`. La RPC salva
+  `md5(ip_param)` in `vote_sessions.ip_hash`. Quindi:
+  - con IP trusted → `md5(<ip trusted>)` (pseudonimo, non IP grezzo);
+  - senza IP trusted → `md5('unknown')`, un **bucket condiviso**.
+  La sostituzione con HMAC/segnali versionati è prevista in `submit_vote_v2` (P1/P0-4).
 
 ## Misura dell'assenza
 
-`src/lib/ip-signal-metrics.ts` conta `total`, `noTrustedIp`, `byConfidence` ed
-emette un log strutturato **senza valori**:
-
-```
-[ip] no trusted client ip { source, confidence }
-```
-
-Misurabile dai log Vercel. Serve a capire quanto spesso, in produzione, la
-catena Cloudflare non fornisce un segnale attendibile.
+`src/lib/ip-signal-metrics.ts`:
+- emette un log strutturato **senza valori** a ogni segnale non attendibile:
+  `[ip] no trusted client ip { source, confidence, hasDetectedIp }`;
+- mantiene contatori in-memory che, in **serverless, sono per-istanza** e non
+  aggregabili: la fonte di verità in produzione è il log (aggregabile dai log
+  Vercel). `getIpSignalSnapshot()` serve solo a test/debug locale.
 
 ## Comportamento per ambiente
 
-- **Produzione (Vercel dietro Cloudflare)**: `cf-connecting-ip` + `cf-ray` → medium.
-- **Preview**: normalmente `x-real-ip` (low) → il rate limit per-IP resta attivo ma non attendibile.
-- **Locale / E2E**: nessun header Cloudflare → fallback `x-forwarded-for` (low) per non disabilitare i test.
+- **Produzione (Vercel dietro Cloudflare)**: `cf-connecting-ip` + `cf-ray` → `medium`.
+- **Preview**: tipicamente `x-real-ip` (low) → segnale, nessun IP trusted.
+- **Locale / E2E**: fallback `x-forwarded-for` (low) per non disabilitare i test;
+  nessun IP trusted.

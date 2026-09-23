@@ -17,8 +17,8 @@ afterEach(() => {
 })
 
 it('conta assenza e per-confidence', () => {
-  recordIpSignal({ ip: null, source: 'none', confidence: 'none' })
-  recordIpSignal({ ip: '1.2.3.4', source: 'cf-connecting-ip', confidence: 'medium' })
+  recordIpSignal({ ip: null, detectedIp: null, source: 'none', confidence: 'none' })
+  recordIpSignal({ ip: '1.2.3.4', detectedIp: '1.2.3.4', source: 'cf-connecting-ip', confidence: 'medium' })
   expect(getIpSignalSnapshot()).toEqual({
     total: 2,
     noTrustedIp: 1,
@@ -27,19 +27,29 @@ it('conta assenza e per-confidence', () => {
 })
 
 it('low conta come assenza di IP affidabile', () => {
-  recordIpSignal({ ip: '1.2.3.4', source: 'x-real-ip', confidence: 'low' })
+  recordIpSignal({ ip: null, detectedIp: '1.2.3.4', source: 'x-real-ip', confidence: 'low' })
   expect(getIpSignalSnapshot().noTrustedIp).toBe(1)
 })
 
 it('non emette warning per segnali attendibili', () => {
-  recordIpSignal({ ip: '1.2.3.4', source: 'cf-connecting-ip', confidence: 'medium' })
+  recordIpSignal({ ip: '1.2.3.4', detectedIp: '1.2.3.4', source: 'cf-connecting-ip', confidence: 'medium' })
   expect(console.warn).not.toHaveBeenCalled()
 })
 
-it('emette warning strutturato senza valori IP', () => {
-  recordIpSignal({ ip: null, source: 'none', confidence: 'none' })
+it('warning strutturato: mai il valore IP, solo presenza segnale', () => {
+  recordIpSignal({ ip: null, detectedIp: '1.2.3.4', source: 'x-real-ip', confidence: 'low' })
   expect(console.warn).toHaveBeenCalledWith(
     '[ip] no trusted client ip',
-    expect.objectContaining({ source: 'none', confidence: 'none' }),
+    expect.objectContaining({ source: 'x-real-ip', confidence: 'low', hasDetectedIp: true }),
+  )
+  const payload = (console.warn as jest.Mock).mock.calls[0][1]
+  expect(JSON.stringify(payload)).not.toContain('1.2.3.4')
+})
+
+it('warning senza segnale rilevato', () => {
+  recordIpSignal({ ip: null, detectedIp: null, source: 'none', confidence: 'none' })
+  expect(console.warn).toHaveBeenCalledWith(
+    '[ip] no trusted client ip',
+    expect.objectContaining({ hasDetectedIp: false }),
   )
 })

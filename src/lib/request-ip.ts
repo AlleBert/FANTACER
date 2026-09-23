@@ -5,12 +5,17 @@ import { createHmac } from 'node:crypto'
  * Estrazione IP attendibile — unica fonte server-side.
  *
  * Modello di fiducia (vedi `docs/request-ip.md`):
- * - `cf-connecting-ip` + `cf-ray` → provenienza Cloudflare (medium). Cloudflare
- *   sovrascrive entrambi gli header, quindi un client non può forgiarli.
- * - `cf-connecting-ip` senza `cf-ray` → sospetto (low): IP scartato (`null`).
- * - `x-real-ip` (Vercel, preview/diretto) → low.
+ * - `cf-connecting-ip` + `cf-ray` → **euristica** di provenienza Cloudflare
+ *   (Cloudflare sovrascrive entrambi). Non è una prova crittografica: `cf-ray`
+ *   è solo un'euristica. `confidence: 'medium'`, mai `high`.
+ * - `cf-connecting-ip` senza `cf-ray` → segnale rilevato ma non attendibile
+ *   (`detectedIp` valorizzato, `ip` null).
+ * - `x-real-ip` (Vercel) → segnale, non attendibile.
  * - `x-forwarded-for` è client-controllabile: usato SOLO fuori da produzione.
- * - Nessuna evidenza → `null`. Mai un valore condiviso.
+ * - Nessuna evidenza → `detectedIp` null, `ip` null. Mai un valore condiviso.
+ *
+ * Distinzione chiave: `detectedIp` è ciò che è stato osservato (osservabilità),
+ * `ip` è l'unico valore usabile per decisioni di sicurezza (medium/high).
  */
 
 const V4_MAPPED_DOTTED = /^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/i
@@ -78,8 +83,8 @@ export function canonicalizeIp(raw: string | null | undefined): string | null {
   const bracketed = value.match(/^\[(.+)\](?::\d+)?$/)
   if (bracketed) value = bracketed[1]
 
-  const pct = value.indexOf('%')
-  if (pct !== -1) value = value.slice(0, pct)
+  // Zone id IPv6 (`fe80::1%eth0`): ambiguo e non instradabile → rifiutato.
+  if (value.includes('%')) return null
 
   if (V4_WITH_PORT.test(value)) value = value.slice(0, value.indexOf(':'))
 
@@ -96,7 +101,10 @@ export type IpConfidence = 'high' | 'medium' | 'low' | 'none'
 export type IpSource = 'cf-connecting-ip' | 'x-real-ip' | 'x-forwarded-for' | 'none'
 
 export interface ClientIpSignal {
+  /** IP utilizzabile per decisioni di sicurezza: valorizzato solo se medium/high. */
   ip: string | null
+  /** Valore canonicalizzato osservato, anche quando non attendibile (osservabilità). */
+  detectedIp: string | null
   source: IpSource
   confidence: IpConfidence
 }
@@ -118,19 +126,29 @@ function firstForwarded(value?: string | null): string | null {
 /** Funzione pura: testabile senza Request. */
 export function resolveIpSignal(e: IpEvidence): ClientIpSignal {
   const cf = canonicalizeIp(e.cfConnectingIp)
-  if (cf && e.cfRay) return { ip: cf, source: 'cf-connecting-ip', confidence: 'medium' }
-  if (cf) return { ip: null, source: 'cf-connecting-ip', confidence: 'low' }
+  if (cf && e.cfRay) {
+    // cf-ray = euristica Cloudflare, non prova: `ip` è attendibile solo come
+    // segnale debole (medium). Mai `high` senza prova forte condivisa.
+    return { ip: cf, detectedIp: cf, source: 'cf-connecting-ip', confidence: 'medium' }
+  }
+  if (cf) {
+    return { ip: null, detectedIp: cf, source: 'cf-connecting-ip', confidence: 'low' }
+  }
 
   const real = canonicalizeIp(e.realIp)
-  if (real) return { ip: real, source: 'x-real-ip', confidence: 'low' }
+  if (real) {
+    return { ip: null, detectedIp: real, source: 'x-real-ip', confidence: 'low' }
+  }
 
   // Solo in locale/development: mai fidarsi di XFF in produzione.
   if (e.nodeEnv && e.nodeEnv !== 'production') {
     const xff = canonicalizeIp(firstForwarded(e.forwardedFor))
-    if (xff) return { ip: xff, source: 'x-forwarded-for', confidence: 'low' }
+    if (xff) {
+      return { ip: null, detectedIp: xff, source: 'x-forwarded-for', confidence: 'low' }
+    }
   }
 
-  return { ip: null, source: 'none', confidence: 'none' }
+  return { ip: null, detectedIp: null, source: 'none', confidence: 'none' }
 }
 
 /** Unico punto di lettura degli header IP in tutta l'app. */
@@ -150,13 +168,19 @@ export function isTrusted(signal: ClientIpSignal): boolean {
 
 /**
  * Pseudonimizzazione server-side (HMAC-SHA256). L'IP grezzo non deve mai
- * finire in log o persistenza. Ritorna `null` se la chiave non è configurata
- * (fail-safe: nessun segnale invece di un hash non protetto).
+ * finire in log o persistenza. Richiede `SIGNAL_HMAC_KEY` (base64, ≥32 byte
+ * decodificati) e `SIGNAL_HMAC_KEY_ID` (obbligatorio per la rotazione).
+ * Altrimenti ritorna `null` (fail-safe: nessun segnale invece di un hash
+ * non protetto o non versionato).
  */
 export function hmacIp(ip: string): string | null {
   const secret = process.env.SIGNAL_HMAC_KEY
-  if (!secret) return null
-  const keyId = process.env.SIGNAL_HMAC_KEY_ID || 'k1'
-  const digest = createHmac('sha256', Buffer.from(secret, 'base64')).update(ip).digest('hex')
+  const keyId = process.env.SIGNAL_HMAC_KEY_ID
+  if (!secret || !keyId) return null
+
+  const key = Buffer.from(secret, 'base64')
+  if (key.length < 32) return null
+
+  const digest = createHmac('sha256', key).update(ip).digest('hex')
   return `${keyId}.${digest}`
 }

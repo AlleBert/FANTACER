@@ -22,7 +22,11 @@ describe('canonicalizeIp', () => {
     expect(canonicalizeIp('::1')).toBe('::1')
     expect(canonicalizeIp('::')).toBe('::')
     expect(canonicalizeIp('[2001:db8::1]:443')).toBe('2001:db8::1')
-    expect(canonicalizeIp('fe80::1%eth0')).toBe('fe80::1')
+  })
+
+  it('zone IPv6 rifiutate', () => {
+    expect(canonicalizeIp('fe80::1%eth0')).toBeNull()
+    expect(canonicalizeIp('fe80::1%25eth0')).toBeNull()
   })
 
   it('IPv4-mapped converge all IPv4', () => {
@@ -52,17 +56,19 @@ describe('canonicalizeIp', () => {
 })
 
 describe('resolveIpSignal', () => {
-  it('cf-connecting-ip + cf-ray → medium', () => {
+  it('cf-connecting-ip + cf-ray → medium (euristica), ip e detectedIp valorizzati', () => {
     expect(resolveIpSignal({ cfConnectingIp: '203.0.113.7', cfRay: 'abc123-MXP' })).toEqual({
       ip: '203.0.113.7',
+      detectedIp: '203.0.113.7',
       source: 'cf-connecting-ip',
       confidence: 'medium',
     })
   })
 
-  it('cf-connecting-ip forgiato senza cf-ray → ip null (anti-spoof)', () => {
+  it('cf-connecting-ip senza cf-ray → segnale rilevato ma ip non trusted', () => {
     expect(resolveIpSignal({ cfConnectingIp: '203.0.113.7', nodeEnv: 'production' })).toEqual({
       ip: null,
+      detectedIp: '203.0.113.7',
       source: 'cf-connecting-ip',
       confidence: 'low',
     })
@@ -71,20 +77,27 @@ describe('resolveIpSignal', () => {
   it('x-forwarded-for ignorato in produzione (header client-controllabile)', () => {
     expect(resolveIpSignal({ forwardedFor: '1.2.3.4, 10.0.0.1', nodeEnv: 'production' })).toEqual({
       ip: null,
+      detectedIp: null,
       source: 'none',
       confidence: 'none',
     })
   })
 
-  it('catena XFF in locale: solo primo valore, confidence low', () => {
+  it('catena XFF in locale: solo primo valore, segnale non trusted', () => {
     expect(
       resolveIpSignal({ forwardedFor: '198.51.100.9, 203.0.113.7', nodeEnv: 'development' }),
-    ).toEqual({ ip: '198.51.100.9', source: 'x-forwarded-for', confidence: 'low' })
+    ).toEqual({
+      ip: null,
+      detectedIp: '198.51.100.9',
+      source: 'x-forwarded-for',
+      confidence: 'low',
+    })
   })
 
-  it('x-real-ip (Vercel) → low', () => {
+  it('x-real-ip → segnale rilevato, ip non trusted', () => {
     expect(resolveIpSignal({ realIp: '198.51.100.9', nodeEnv: 'production' })).toEqual({
-      ip: '198.51.100.9',
+      ip: null,
+      detectedIp: '198.51.100.9',
       source: 'x-real-ip',
       confidence: 'low',
     })
@@ -93,12 +106,13 @@ describe('resolveIpSignal', () => {
   it('header assenti → null, mai valore condiviso', () => {
     expect(resolveIpSignal({ nodeEnv: 'production' })).toEqual({
       ip: null,
+      detectedIp: null,
       source: 'none',
       confidence: 'none',
     })
   })
 
-  it('catena mista: cf-connecting-ip vince e cf-ray abilita medium', () => {
+  it('catena mista: cf-connecting-ip + cf-ray → trusted medium', () => {
     expect(
       resolveIpSignal({
         cfConnectingIp: '203.0.113.7',
@@ -107,7 +121,12 @@ describe('resolveIpSignal', () => {
         forwardedFor: '1.2.3.4',
         nodeEnv: 'production',
       }),
-    ).toEqual({ ip: '203.0.113.7', source: 'cf-connecting-ip', confidence: 'medium' })
+    ).toEqual({
+      ip: '203.0.113.7',
+      detectedIp: '203.0.113.7',
+      source: 'cf-connecting-ip',
+      confidence: 'medium',
+    })
   })
 })
 
@@ -118,7 +137,12 @@ describe('getTrustedClientIp', () => {
         headers: { 'cf-connecting-ip': '2001:DB8::0:1', 'cf-ray': 'r' },
       }),
     )
-    expect(v6).toEqual({ ip: '2001:db8::1', source: 'cf-connecting-ip', confidence: 'medium' })
+    expect(v6).toEqual({
+      ip: '2001:db8::1',
+      detectedIp: '2001:db8::1',
+      source: 'cf-connecting-ip',
+      confidence: 'medium',
+    })
 
     const mapped = getTrustedClientIp(
       new Request('https://x/', {
@@ -134,18 +158,31 @@ describe('getTrustedClientIp', () => {
         headers: { 'cf-connecting-ip': 'evil;drop', 'cf-ray': 'r' },
       }),
     )
-    expect(signal).toEqual({ ip: null, source: 'none', confidence: 'none' })
+    expect(signal).toEqual({ ip: null, detectedIp: null, source: 'none', confidence: 'none' })
   })
 })
 
 describe('hmacIp', () => {
-  it('nessuna chiave → null (fail-safe, mai IP grezzo)', () => {
+  it('nessuna chiave → null (fail-safe)', () => {
     delete process.env.SIGNAL_HMAC_KEY
+    delete process.env.SIGNAL_HMAC_KEY_ID
     expect(hmacIp('1.2.3.4')).toBeNull()
   })
 
-  it('deterministico e versionato', () => {
-    process.env.SIGNAL_HMAC_KEY = Buffer.from('secret').toString('base64')
+  it('key ID obbligatorio', () => {
+    process.env.SIGNAL_HMAC_KEY = Buffer.alloc(32, 1).toString('base64')
+    delete process.env.SIGNAL_HMAC_KEY_ID
+    expect(hmacIp('1.2.3.4')).toBeNull()
+  })
+
+  it('chiave < 32 byte rifiutata', () => {
+    process.env.SIGNAL_HMAC_KEY = Buffer.alloc(16, 1).toString('base64')
+    process.env.SIGNAL_HMAC_KEY_ID = 'k1'
+    expect(hmacIp('1.2.3.4')).toBeNull()
+  })
+
+  it('deterministico e versionato con chiave valida (≥32 byte)', () => {
+    process.env.SIGNAL_HMAC_KEY = Buffer.alloc(32, 7).toString('base64')
     process.env.SIGNAL_HMAC_KEY_ID = 'k1'
     const a = hmacIp('1.2.3.4')
     expect(a).toMatch(/^k1\.[0-9a-f]{64}$/)
