@@ -42,9 +42,9 @@ try {
   await client.query('commit')
   console.log('OK', version)
 } catch (e) {
-  await client.query('rollback')
+  await client.query('rollback').catch(() => {})
   console.error('FAILED', version, e.message)
   process.exitCode = 1
 } finally {
-  await client.end()
+  await client.end().catch(() => {})
 }
