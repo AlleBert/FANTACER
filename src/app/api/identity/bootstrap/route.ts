@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Identità legacy dal solo cookie first-party (nessun payload).
-    const resolved = resolveVoterKey(request, undefined)
+    const resolved = resolveVoterKey(request)
     if (!resolved) {
       return NextResponse.json({ error: err('voteError.missingVoterId') }, { status: 400 })
     }

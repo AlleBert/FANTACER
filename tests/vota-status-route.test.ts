@@ -111,17 +111,15 @@ describe('POST /api/vota/status', () => {
     expect(res.status).toBe(400)
   })
 
-  it('usa il voterId del payload quando il cookie è assente', async () => {
-    const supabase = buildSupabase(SESSION, COMPANIES)
-    mockCreateAdminClient.mockReturnValue(supabase)
+  it('ignora il voterId del payload: senza cookie → 400', async () => {
+    mockCreateAdminClient.mockReturnValue(buildSupabase(SESSION, COMPANIES))
 
     const res = await POST(postRequest({ voterId: UUID }))
 
-    expect(supabase._eqFingerprint).toHaveBeenCalledWith('fingerprint', `v1:${UUID}`)
-    expect(await res.json()).toMatchObject({ voted: true, voterId: UUID })
+    expect(res.status).toBe(400)
   })
 
-  it('il cookie ha precedenza sul voterId del payload', async () => {
+  it('il cookie identità vince sul voterId del payload', async () => {
     const supabase = buildSupabase(null, [])
     mockCreateAdminClient.mockReturnValue(supabase)
 
@@ -133,7 +131,7 @@ describe('POST /api/vota/status', () => {
 
   it('imposta il cookie identità nella risposta', async () => {
     mockCreateAdminClient.mockReturnValue(buildSupabase(null, []))
-    const res = await POST(postRequest({ voterId: UUID }))
+    const res = await POST(postRequest({}, UUID))
     const setCookie = res.headers.get('set-cookie') ?? ''
     expect(setCookie).toContain('fantacer_voter_id=')
     expect(setCookie).toContain(UUID)
@@ -144,7 +142,7 @@ describe('POST /api/vota/status', () => {
     const supabase = buildSupabase(SESSION, COMPANIES)
     mockCreateAdminClient.mockReturnValue(supabase)
 
-    const res = await POST(postRequest({ voterId: UUID }))
+    const res = await POST(postRequest({}, UUID))
 
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ voted: false, bypassed: true, voterId: UUID })
@@ -153,14 +151,14 @@ describe('POST /api/vota/status', () => {
 
   it("voted:false se non c'è una sessione oggi", async () => {
     mockCreateAdminClient.mockReturnValue(buildSupabase(null, []))
-    const res = await POST(postRequest({ voterId: UUID }))
+    const res = await POST(postRequest({}, UUID))
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ voted: false, voterId: UUID })
   })
 
   it('voted:true con aziende e pallet reali', async () => {
     mockCreateAdminClient.mockReturnValue(buildSupabase(SESSION, COMPANIES))
-    const res = await POST(postRequest({ voterId: UUID }))
+    const res = await POST(postRequest({ voterId: UUID }, UUID))
     const data = await res.json()
     expect(data.voted).toBe(true)
     expect(data.companies).toEqual([
@@ -174,7 +172,7 @@ describe('POST /api/vota/status', () => {
     mockCreateAdminClient.mockReturnValue(
       buildSupabase(null, [], { votesError: { message: 'boom' } }),
     )
-    const res = await POST(postRequest({ voterId: UUID }))
+    const res = await POST(postRequest({}, UUID))
     expect(res.status).toBe(500)
     expect(res.headers.get('Cache-Control')).toBe('no-store')
   })
@@ -183,7 +181,7 @@ describe('POST /api/vota/status', () => {
     mockCreateAdminClient.mockReturnValue(
       buildSupabase(SESSION, null, { companiesError: { message: 'boom' } }),
     )
-    const res = await POST(postRequest({ voterId: UUID }))
+    const res = await POST(postRequest({}, UUID))
     expect(res.status).toBe(500)
   })
 
@@ -194,7 +192,7 @@ describe('POST /api/vota/status', () => {
 
   it('success response ha Cache-Control no-store', async () => {
     mockCreateAdminClient.mockReturnValue(buildSupabase(SESSION, COMPANIES))
-    const res = await POST(postRequest({ voterId: UUID }))
+    const res = await POST(postRequest({}, UUID))
     expect(res.status).toBe(200)
     expect(res.headers.get('Cache-Control')).toBe('no-store')
   })
@@ -294,7 +292,7 @@ describe('POST /api/vota/status — CSRF sessione (C05)', () => {
 
   it('modo dual senza sessione: fallback legacy senza CSRF né touch', async () => {
     mockResolveVoteIdentity.mockResolvedValue(null)
-    const res = await POST(postRequest({ voterId: UUID }))
+    const res = await POST(postRequest({ voterId: OTHER_UUID }, UUID))
     expect(res.status).toBe(200)
     expect(mockResolveVoteIdentity).toHaveBeenCalled()
     expect(mockTouchSession).not.toHaveBeenCalled()
@@ -302,9 +300,144 @@ describe('POST /api/vota/status — CSRF sessione (C05)', () => {
 
   it('modo off: nessuna risoluzione sessione né CSRF (legacy)', async () => {
     mockMode.mockReturnValue('off')
-    const res = await POST(postRequest({ voterId: UUID }))
+    const res = await POST(postRequest({ voterId: UUID }, UUID))
     expect(res.status).toBe(200)
     expect(mockResolveVoteIdentity).not.toHaveBeenCalled()
     expect(mockTouchSession).not.toHaveBeenCalled()
+  })
+})
+
+describe('POST /api/vota/status — C08 semantica dei mode', () => {
+  const B64_KEY = Buffer.alloc(32, 7).toString('base64')
+  const keyring = parseKeyring(`k1:${B64_KEY}`, 'k1')!
+  const ORIGIN = 'https://fantacer.test'
+  const HOST = 'fantacer.test'
+
+  const session = (csrfHash: string | null) => ({
+    principalId: 'prim-1',
+    sessionId: 'sess-1',
+    csrfHash,
+    expiresAt: '2099-01-01T00:00:00.000Z',
+    revokedAt: null,
+  })
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    process.env.SESSION_HMAC_KEYS = `k1:${B64_KEY}`
+    process.env.SESSION_HMAC_ACTIVE = 'k1'
+    mockIsVoteLimitBypassed.mockReturnValue(false)
+    mockCreateAdminClient.mockReturnValue(buildSupabase(null, []))
+  })
+
+  afterEach(() => {
+    delete process.env.SESSION_HMAC_KEYS
+    delete process.env.SESSION_HMAC_ACTIVE
+    mockMode.mockReturnValue('off')
+    mockResolveVoteIdentity.mockReset()
+    mockTouchSession.mockReset()
+  })
+
+  it('off: legge solo il cookie first-party, voterId ignorato', async () => {
+    mockMode.mockReturnValue('off')
+    const supabase = buildSupabase(null, [])
+    mockCreateAdminClient.mockReturnValue(supabase)
+
+    const res = await POST(postRequest({ voterId: OTHER_UUID }, UUID))
+
+    expect(res.status).toBe(200)
+    expect(supabase._eqFingerprint).toHaveBeenCalledWith('fingerprint', `v1:${UUID}`)
+    expect(mockResolveVoteIdentity).not.toHaveBeenCalled()
+  })
+
+  it('shadow: lettura legacy dal cookie, nessuna risoluzione sessione', async () => {
+    mockMode.mockReturnValue('shadow')
+    const supabase = buildSupabase(null, [])
+    mockCreateAdminClient.mockReturnValue(supabase)
+
+    const res = await POST(postRequest({ voterId: OTHER_UUID }, UUID))
+
+    expect(res.status).toBe(200)
+    expect(supabase._eqFingerprint).toHaveBeenCalledWith('fingerprint', `v1:${UUID}`)
+    expect(mockResolveVoteIdentity).not.toHaveBeenCalled()
+  })
+
+  it('shadow: senza cookie → 400 anche con voterId nel body', async () => {
+    mockMode.mockReturnValue('shadow')
+    const res = await POST(postRequest({ voterId: UUID }))
+    expect(res.status).toBe(400)
+  })
+
+  it('dual: sessione valida → lookup per il principal di sessione', async () => {
+    mockMode.mockReturnValue('dual')
+    const supabase = buildSupabase(SESSION, COMPANIES)
+    mockCreateAdminClient.mockReturnValue(supabase)
+    mockResolveVoteIdentity.mockResolvedValue(session(null))
+
+    const res = await POST(postRequest({ voterId: OTHER_UUID }))
+
+    expect(res.status).toBe(200)
+    expect(mockResolveVoteIdentity).toHaveBeenCalled()
+    expect(supabase._eqFingerprint).toHaveBeenCalled()
+  })
+
+  it('dual: senza sessione ma con cookie legacy → fallback cookie', async () => {
+    mockMode.mockReturnValue('dual')
+    const supabase = buildSupabase(null, [])
+    mockCreateAdminClient.mockReturnValue(supabase)
+    mockResolveVoteIdentity.mockResolvedValue(null)
+
+    const res = await POST(postRequest({ voterId: OTHER_UUID }, UUID))
+
+    expect(res.status).toBe(200)
+    expect(supabase._eqFingerprint).toHaveBeenCalledWith('fingerprint', `v1:${UUID}`)
+    expect(mockTouchSession).not.toHaveBeenCalled()
+  })
+
+  it('dual: senza sessione e senza cookie → 400', async () => {
+    mockMode.mockReturnValue('dual')
+    mockResolveVoteIdentity.mockResolvedValue(null)
+    const res = await POST(postRequest({ voterId: UUID }))
+    expect(res.status).toBe(400)
+  })
+
+  it('dual: errore risoluzione sessione → 503 fail-closed', async () => {
+    mockMode.mockReturnValue('dual')
+    mockResolveVoteIdentity.mockRejectedValue(new Error('db down'))
+    const res = await POST(postRequest({}, UUID))
+    expect(res.status).toBe(503)
+  })
+
+  it('dual: keyring assente → 503 fail-closed', async () => {
+    mockMode.mockReturnValue('dual')
+    delete process.env.SESSION_HMAC_KEYS
+    delete process.env.SESSION_HMAC_ACTIVE
+    const res = await POST(postRequest({}, UUID))
+    expect(res.status).toBe(503)
+  })
+
+  it('session: senza sessione → 503, nessun fallback legacy', async () => {
+    mockMode.mockReturnValue('session')
+    mockResolveVoteIdentity.mockResolvedValue(null)
+    const res = await POST(postRequest({}, UUID))
+    expect(res.status).toBe(503)
+  })
+
+  it('session: sessione valida con CSRF → risponde e rinnova idle', async () => {
+    mockMode.mockReturnValue('session')
+    const csrf = generateCsrfToken()
+    const supabase = buildSupabase(SESSION, COMPANIES)
+    mockCreateAdminClient.mockReturnValue(supabase)
+    mockResolveVoteIdentity.mockResolvedValue(session(hashCsrfToken(csrf, keyring)))
+
+    const res = await POST(
+      postRequest({}, undefined, {
+        origin: ORIGIN,
+        host: HOST,
+        'x-csrf-token': csrf,
+      }),
+    )
+
+    expect(res.status).toBe(200)
+    expect(mockTouchSession).toHaveBeenCalledTimes(1)
   })
 })

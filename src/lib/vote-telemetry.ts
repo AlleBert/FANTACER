@@ -16,12 +16,20 @@ export type VoteOutcome =
   | 'fair_ended'
   | 'invalid_request'
   | 'csrf_failed'
+  | 'no_session'
+  | 'renew_required'
+  | 'quarantined'
   | 'error'
+
+/** Modalità identità al momento della richiesta (nessun dato personale). */
+export type VoteIdentityMode = 'off' | 'shadow' | 'dual' | 'session'
 
 export interface VoteRequestEndEvent {
   outcome: VoteOutcome
   status: number
   ms: number
+  identityMode?: VoteIdentityMode
+  riskDecision?: 'accept' | 'stepup' | 'quarantine'
   rateMode?: 'observe' | 'enforce'
   rateWouldBlock?: boolean
   rateIpWouldBlock?: boolean
@@ -43,6 +51,8 @@ export function serializeVoteRequestEnd(e: VoteRequestEndEvent): string {
     outcome: e.outcome,
     status: e.status,
     ms: e.ms,
+    identityMode: e.identityMode ?? null,
+    riskDecision: e.riskDecision ?? null,
     rateMode: e.rateMode ?? null,
     rateWouldBlock: e.rateWouldBlock ?? null,
     rateIpWouldBlock: e.rateIpWouldBlock ?? null,

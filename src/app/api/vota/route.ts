@@ -9,9 +9,14 @@ import { verifyTurnstile } from '@/lib/turnstile'
 import { getTrustedClientIp, hmacIp, type ClientIpSignal } from '@/lib/request-ip'
 import { recordIpSignal } from '@/lib/ip-signal-metrics'
 import { evaluateVoteRateLimit } from '@/lib/vote-rate-limit'
-import { logVoteRequestEnd, type VoteOutcome } from '@/lib/vote-telemetry'
+import {
+  logVoteRequestEnd,
+  type VoteOutcome,
+  type VoteIdentityMode,
+} from '@/lib/vote-telemetry'
 import { keyringFromEnv } from '@/lib/session-identity'
 import { verifyCsrfForRequest } from '@/lib/vote-csrf'
+import { buildVoteRiskSignals, signalsFingerprint } from '@/lib/vote-risk-signals'
 import {
   sessionIdentityMode,
   getActiveEvent,
@@ -28,6 +33,7 @@ import { translate } from '@/i18n'
 interface VoteTelemetry {
   outcome?: VoteOutcome
   status?: number
+  identityMode?: VoteIdentityMode
   rateMode?: 'observe' | 'enforce'
   rateWouldBlock?: boolean
   rateIpWouldBlock?: boolean
@@ -53,16 +59,18 @@ export async function POST(request: NextRequest) {
     const ip = ipSignal.ip
 
     const body = await request.json()
-    const { company1Id, company2Id, company3Id, turnstile_token, botd, voterId } = body
+    // C08 — `voterId` è rimosso dal contratto: non viene **mai** letto dal body.
+    // L'identità arriva solo dalla sessione o dal cookie legacy first-party.
+    const { company1Id, company2Id, company3Id, turnstile_token, botd } = body
 
-    // Identità ordinaria: cookie first-party > voterId nel payload. Niente
-    // fallback al FingerprintJS (collisioni) né chiave nuova per richiesta.
-    const resolved = resolveVoterKey(request, voterId)
-    if (!resolved) {
-      tel.outcome = 'invalid_request'
-      tel.status = 400
-      return NextResponse.json({ error: err('voteError.missingVoterId') }, { status: 400 })
-    }
+    const identityMode = sessionIdentityMode()
+    tel.identityMode = identityMode
+
+    let voterCookieId: string | null = null
+    let fingerprint: string | null = null
+    let principalId: string | null = null
+    let eventId: string | null = null
+    let session: ResolvedSession | null = null
 
     const respond = (
       payload: unknown,
@@ -76,56 +84,142 @@ export async function POST(request: NextRequest) {
       if (headers) {
         for (const [name, value] of Object.entries(headers)) response.headers.set(name, value)
       }
-      applyVoterCookie(response, resolved.voterId)
+      if (voterCookieId) applyVoterCookie(response, voterCookieId)
       return response
     }
 
     const admin = createAdminClient()
 
-    // P0-4 (gated da SESSION_IDENTITY_MODE, default `off` → nessun effetto).
-    // Dual-read: se esiste una sessione valida, il suo principal è l'autorità;
-    // si usa il fingerprint legacy del principal per mantenere il dedup.
-    const identityMode = sessionIdentityMode()
-    let fingerprint = resolveVoteFingerprint(resolved.key)
-    let principalId: string | null = null
-    let eventId: string | null = null
-    if (identityMode !== 'off') {
-      const keyring = keyringFromEnv()
-      let session: ResolvedSession | null = null
-      if (keyring) {
-        session = await resolveVoteIdentity(admin, request, keyring)
-        principalId = session?.principalId ?? null
-      }
-      // C05 — CSRF session-bound (§4-bis). Le rotte che modificano stato con
-      // sessione valida richiedono `X-CSRF-Token` + Origin/Host same-origin.
-      // Solo `dual`/`session`: in `off`/`shadow` la lettura è legacy e una
-      // sessione non è l'autorità, quindi il CSRF non è applicabile.
-      if ((identityMode === 'dual' || identityMode === 'session') && session && keyring) {
-        const csrf = verifyCsrfForRequest(request, keyring, session)
-        if (!csrf.ok) {
-          return respond({ error: 'Forbidden' }, 403, 'csrf_failed')
-        }
-        // Rinnovo idle best-effort SOLO dopo CSRF ok: nessuna write
-        // amplification su richieste non autorizzate.
-        await touchSession(admin, session.sessionId)
-      }
-      const event = await getActiveEvent(admin)
-      eventId = event?.id ?? null
-      if (!principalId && event) {
-        principalId = await resolveOrCreatePrincipal(admin, event.id, fingerprint)
-      }
-      if (principalId) {
+    /**
+     * Sceglie il fingerprint legacy del principal di sessione (per mantenere il
+     * dedup legacy) e, in assenza, un fallback stabile `principal:<id>`.
+     * Best-effort: non blocca mai per un errore di lookup.
+     */
+    const applyPrincipalFingerprint = async (): Promise<void> => {
+      if (!principalId) return
+      try {
         const { data: principal } = await admin
           .from('event_principals')
           .select('legacy_fingerprint')
           .eq('id', principalId)
           .maybeSingle()
-        if (principal?.legacy_fingerprint) fingerprint = principal.legacy_fingerprint
+        if (principal?.legacy_fingerprint) {
+          fingerprint = principal.legacy_fingerprint
+          return
+        }
+      } catch {
+        // best-effort: cade sul fallback qui sotto
       }
-      // Cutover: senza sessione valida non si vota.
-      if (identityMode === 'session' && !principalId) {
+      if (!fingerprint) fingerprint = `principal:${principalId}`
+    }
+
+    if (identityMode === 'off') {
+      // Legacy-only: identità dal solo cookie first-party. Nessun principal,
+      // nessuna chiamata a `submit_vote_v2`, nessun dual-write.
+      const legacy = resolveVoterKey(request)
+      if (!legacy) {
         return respond({ error: err('voteError.missingVoterId') }, 400, 'invalid_request')
       }
+      voterCookieId = legacy.voterId
+      fingerprint = resolveVoteFingerprint(legacy.key)
+    } else if (identityMode === 'shadow') {
+      // Lettura legacy; scrittura legacy + principal best-effort. Qualunque
+      // errore del percorso shadow viene loggato e **non** blocca il voto.
+      const legacy = resolveVoterKey(request)
+      if (!legacy) {
+        return respond({ error: err('voteError.missingVoterId') }, 400, 'invalid_request')
+      }
+      voterCookieId = legacy.voterId
+      fingerprint = resolveVoteFingerprint(legacy.key)
+      try {
+        const keyring = keyringFromEnv()
+        if (keyring) {
+          session = await resolveVoteIdentity(admin, request, keyring)
+          if (session) principalId = session.principalId
+        }
+        const event = await getActiveEvent(admin)
+        eventId = event?.id ?? null
+        if (!principalId && eventId && fingerprint) {
+          principalId = await resolveOrCreatePrincipal(admin, eventId, fingerprint)
+        }
+        await applyPrincipalFingerprint()
+      } catch (shadowError) {
+        console.warn('[identity] shadow path best-effort failed:', shadowError)
+        principalId = null
+        eventId = null
+        session = null
+      }
+    } else {
+      // dual | session: la sessione è l'autorità (fail-closed).
+      const keyring = keyringFromEnv()
+      if (!keyring) {
+        // Modalità sessione dichiarata ma chiave assente: nessun voto.
+        return respond({ error: 'identity unavailable' }, 503, 'no_session')
+      }
+      try {
+        session = await resolveVoteIdentity(admin, request, keyring)
+      } catch (sessionError) {
+        // Errore infrastrutturale (non assenza): fail-closed 503, nessun voto.
+        console.warn('[identity] session resolution failed:', sessionError)
+        return respond({ error: 'identity unavailable' }, 503, 'error')
+      }
+
+      if (session) {
+        principalId = session.principalId
+        // C05 — CSRF session-bound (§4-bis): solo `dual`/`session` con sessione
+        // valida. Il rinnovo idle avviene solo dopo il CSRF ok.
+        const csrf = verifyCsrfForRequest(request, keyring, session)
+        if (!csrf.ok) {
+          return respond({ error: 'Forbidden' }, 403, 'csrf_failed')
+        }
+        await touchSession(admin, session.sessionId)
+        const event = await getActiveEvent(admin)
+        eventId = event?.id ?? null
+        await applyPrincipalFingerprint()
+      } else if (identityMode === 'session') {
+        // Cutover: solo sessione, nessun fallback legacy.
+        return respond({ error: 'identity unavailable' }, 503, 'no_session')
+      } else {
+        // dual: fallback al cookie legacy first-party (mai body).
+        const legacy = resolveVoterKey(request)
+        if (!legacy) {
+          return respond({ error: err('voteError.missingVoterId') }, 400, 'invalid_request')
+        }
+        voterCookieId = legacy.voterId
+        fingerprint = resolveVoteFingerprint(legacy.key)
+        const event = await getActiveEvent(admin)
+        eventId = event?.id ?? null
+        if (eventId) {
+          principalId = await resolveOrCreatePrincipal(admin, eventId, fingerprint)
+          if (!principalId) {
+            return respond({ error: 'identity unavailable' }, 503, 'error')
+          }
+          await applyPrincipalFingerprint()
+        }
+      }
+    }
+
+    if (!fingerprint) {
+      return respond({ error: 'identity unavailable' }, 503, 'no_session')
+    }
+
+    // C08 — Segnali di rischio server-derived, groundwork per correlazione,
+    // step-up e quarantena (la decisione pura è in `vote-correlation.ts`; la
+    // persistenza/quarantine è C11). Best-effort: l'errore di configurazione
+    // HMAC non deve bloccare il voto (in `shadow` è esplicitamente
+    // non-bloccante) e in C08 i segnali non decidono nulla.
+    try {
+      const signals = buildVoteRiskSignals({
+        ipSignal,
+        userAgent: request.headers.get('user-agent'),
+        country: request.headers.get('cf-ipcountry'),
+        botd: typeof botd === 'string' ? botd : null,
+        legacyFpPresent: voterCookieId !== null,
+      })
+      // Fingerprint deterministico per la futura decisione di correlazione.
+      signalsFingerprint(signals)
+    } catch (signalsError) {
+      console.warn('[identity] risk signals unavailable:', signalsError)
     }
 
     // P0-3: rate limit su segnali attendibili (identità + IP pseudonimizzato).
@@ -222,7 +316,8 @@ export async function POST(request: NextRequest) {
       return respond({ error: 'Vote rejected' }, 400, 'error')
     }
 
-    // Dual-write shadow: collega la scheda al principal. Best-effort.
+    // Dual-write shadow/dual: collega la scheda al principal. Best-effort in
+    // ogni mode (in `off` non esiste alcun principal).
     if (identityMode !== 'off' && principalId && eventId) {
       try {
         await linkVoteToPrincipal(admin, fingerprint, romeDateKey(new Date()), eventId, principalId)
@@ -242,6 +337,7 @@ export async function POST(request: NextRequest) {
       outcome: tel.outcome ?? 'error',
       status: tel.status ?? 500,
       ms: Date.now() - startedAt,
+      identityMode: tel.identityMode,
       rateMode: tel.rateMode,
       rateWouldBlock: tel.rateWouldBlock,
       rateIpWouldBlock: tel.rateIpWouldBlock,
