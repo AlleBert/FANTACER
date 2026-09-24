@@ -29,15 +29,37 @@ const preview = {
 }
 
 function mockFetch() {
-  return jest.fn(async (url: string) => {
+  return jest.fn(async (url: string, init?: RequestInit) => {
     if (url.startsWith('/api/admin/companies/preview')) {
       return { ok: true, json: async () => preview }
     }
     if (url.startsWith('/api/admin/companies/apply')) {
       return { ok: true, json: async () => ({ success: true }) }
     }
-    if (url.startsWith('/api/admin/companies/backup')) {
+    if (url.startsWith('/api/admin/companies/backup/create')) {
       return { ok: true, json: async () => ({ success: true, backup: { backup_id: 3 } }) }
+    }
+    if (url.startsWith('/api/admin/companies/backup')) {
+      if (init?.method === 'POST') {
+        return { ok: true, json: async () => ({ success: true, restored: 1 }) }
+      }
+      if (url.includes('?id=2')) {
+        return { ok: true, json: async () => ({ data: { id: 2, payload: [] } }) }
+      }
+      return {
+        ok: true,
+        json: async () => ({
+          data: [
+            {
+              id: 2,
+              created_at: '2026-09-24T07:17:37Z',
+              label: 'backup 1 aziende',
+              batch: 'cersal',
+              company_ids: ['a'],
+            },
+          ],
+        }),
+      }
     }
     return { ok: true, json: async () => ({ data: companies }) }
   })
@@ -119,5 +141,37 @@ describe('CompanyActionsCard', () => {
     await screen.findByText('REFIN')
     expect(screen.queryByRole('button', { name: 'Anteprima' })).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Seleziona REFIN')).not.toBeInTheDocument()
+  })
+
+  it('la sezione Backup elenca i backup quando aperta', async () => {
+    render(<CompanyActionsCard />)
+    await screen.findByText('REFIN')
+    fireEvent.click(screen.getByRole('button', { name: /Backup/i }))
+    expect(await screen.findByText('backup 1 aziende')).toBeInTheDocument()
+  })
+
+  it('Ripristina chiama POST /api/admin/companies/backup', async () => {
+    render(<CompanyActionsCard />)
+    await screen.findByText('REFIN')
+    fireEvent.click(screen.getByRole('button', { name: /Backup/i }))
+    await screen.findByText('backup 1 aziende')
+    fireEvent.click(screen.getByRole('button', { name: 'Ripristina' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Conferma' }))
+    await waitFor(() =>
+      expect(global.fetch).toHaveBeenCalledWith(
+        '/api/admin/companies/backup',
+        expect.objectContaining({ method: 'POST' }),
+      ),
+    )
+  })
+
+  it('viewer non vede il pulsante Ripristina', async () => {
+    ;(globalThis as { __role?: string }).__role = 'viewer'
+    render(<CompanyActionsCard />)
+    await screen.findByText('REFIN')
+    fireEvent.click(screen.getByRole('button', { name: /Backup/i }))
+    await screen.findByText('backup 1 aziende')
+    expect(screen.queryByRole('button', { name: 'Ripristina' })).not.toBeInTheDocument()
+    ;(globalThis as { __role?: string }).__role = 'admin'
   })
 })

@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Ban, Building2, DatabaseBackup, Search } from 'lucide-react'
+import { Ban, Building2, ChevronDown, ChevronUp, DatabaseBackup, Search } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { ModalShell } from '@/components/ui/modal-shell'
@@ -53,6 +53,19 @@ export function buildActionPayload(
   }
 }
 
+function formatBackupDate(iso: string): string {
+  return new Intl.DateTimeFormat('it-IT', {
+    timeZone: 'Europe/Rome',
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(new Date(iso))
+}
+
+const countLabel = (b: { company_ids: string[] | null }) =>
+  b.company_ids && b.company_ids.length > 0
+    ? `${b.company_ids.length} aziende`
+    : 'tutte le aziende del batch'
+
 const ACTION_LABELS: Record<ActionKey, string> = {
   'delete-votes': 'Cancella voti',
   block: 'Escludi e blocca',
@@ -103,6 +116,16 @@ export function CompanyActionsCard() {
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
 
+  const [backups, setBackups] = useState<
+    { id: number; created_at: string; label: string | null; batch: string | null; company_ids: string[] | null }[]
+  >([])
+  const [backupsOpen, setBackupsOpen] = useState(false)
+  const [backupsLoaded, setBackupsLoaded] = useState(false)
+  const [expandedBackup, setExpandedBackup] = useState<number | null>(null)
+  const [backupDetail, setBackupDetail] = useState<Record<string, unknown> | null>(null)
+  const [restoreTarget, setRestoreTarget] = useState<number | null>(null)
+  const [restoring, setRestoring] = useState(false)
+
   const loadCompanies = useCallback(async () => {
     setLoading(true)
     try {
@@ -129,6 +152,24 @@ export function CompanyActionsCard() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch dati quando cambia il batch
     void loadCompanies()
   }, [batchesLoading, loadCompanies])
+
+  const loadBackups = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/companies/backup')
+      const data = await res.json()
+      setBackups(data.data ?? [])
+    } catch {
+      setBackups([])
+    } finally {
+      setBackupsLoaded(true)
+    }
+  }, [])
+
+  const toggleBackups = () => {
+    const next = !backupsOpen
+    setBackupsOpen(next)
+    if (next && !backupsLoaded) void loadBackups()
+  }
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -199,7 +240,7 @@ export function CompanyActionsCard() {
   const createBackup = async () => {
     setBusy(true)
     try {
-      const res = await fetch('/api/admin/companies/backup', {
+      const res = await fetch('/api/admin/companies/backup/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -209,10 +250,78 @@ export function CompanyActionsCard() {
       })
       const data = await res.json()
       setMessage(res.ok ? `Backup creato (#${data.backup?.backup_id ?? '?'}).` : data.error)
+      if (res.ok) await loadBackups()
     } finally {
       setBusy(false)
     }
   }
+
+  const openBackupDetail = async (id: number) => {
+    if (expandedBackup === id) {
+      setExpandedBackup(null)
+      setBackupDetail(null)
+      return
+    }
+    setExpandedBackup(id)
+    setBackupDetail(null)
+    try {
+      const res = await fetch(`/api/admin/companies/backup?id=${id}`)
+      const data = await res.json()
+      setBackupDetail(data.data ?? null)
+    } catch {
+      setBackupDetail(null)
+    }
+  }
+
+  const downloadBackup = async (id: number) => {
+    let detail = expandedBackup === id ? backupDetail : null
+    if (!detail) {
+      try {
+        const res = await fetch(`/api/admin/companies/backup?id=${id}`)
+        const data = await res.json()
+        detail = data.data ?? null
+      } catch {
+        detail = null
+      }
+    }
+    const blob = new Blob([JSON.stringify(detail, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `backup-${id}.json`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const confirmRestore = async () => {
+    if (restoreTarget == null) return
+    setRestoring(true)
+    try {
+      const res = await fetch('/api/admin/companies/backup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ restoreBackupId: restoreTarget }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setMessage(data.error ?? 'Errore ripristino')
+        return
+      }
+      setMessage('Backup ripristinato.')
+      setRestoreTarget(null)
+      await loadBackups()
+      await loadCompanies()
+    } finally {
+      setRestoring(false)
+    }
+  }
+
+  const restoreBackup = backups.find((b) => b.id === restoreTarget)
+  const restoreScope = !restoreBackup
+    ? 'alle aziende del backup'
+    : restoreBackup.company_ids && restoreBackup.company_ids.length > 0
+      ? `alle ${countLabel(restoreBackup)} del backup`
+      : `a ${countLabel(restoreBackup)}`
 
   return (
     <Card className="border-border">
@@ -298,15 +407,6 @@ export function CompanyActionsCard() {
             >
               Anteprima
             </button>
-            <button
-              type="button"
-              onClick={createBackup}
-              disabled={busy}
-              className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-secondary disabled:opacity-50"
-            >
-              <DatabaseBackup className="h-4 w-4" />
-              Backup situazione
-            </button>
           </div>
         )}
 
@@ -356,6 +456,96 @@ export function CompanyActionsCard() {
           )}
         </div>
 
+        <div className="rounded-lg border border-border">
+          <button
+            type="button"
+            onClick={toggleBackups}
+            aria-expanded={backupsOpen}
+            className="flex w-full items-center justify-between gap-2 px-3 py-2 text-sm font-medium hover:bg-secondary"
+          >
+            <span className="inline-flex items-center gap-2">
+              <DatabaseBackup className="h-4 w-4" />
+              Backup
+            </span>
+            {backupsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </button>
+
+          {backupsOpen && (
+            <div className="space-y-3 border-t border-border p-3">
+              {!isViewer && (
+                <button
+                  type="button"
+                  onClick={createBackup}
+                  disabled={busy}
+                  className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-secondary disabled:opacity-50"
+                >
+                  <DatabaseBackup className="h-4 w-4" />
+                  Backup situazione
+                </button>
+              )}
+
+              {!backupsLoaded ? (
+                <p className="text-sm text-muted-foreground">Caricamento…</p>
+              ) : backups.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nessun backup.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {backups.map((b) => (
+                    <li key={b.id} className="rounded-md border border-border p-2">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                        <span className="font-mono text-xs text-muted-foreground">
+                          {formatBackupDate(b.created_at)}
+                        </span>
+                        <span className="min-w-0 flex-1 truncate">{b.label ?? '—'}</span>
+                        <span className="text-xs text-muted-foreground">{b.batch ?? '—'}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {countLabel(b)}
+                        </span>
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void openBackupDetail(b.id)}
+                          className="rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary"
+                        >
+                          Dettagli
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void downloadBackup(b.id)}
+                          className="rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary"
+                        >
+                          Download JSON
+                        </button>
+                        {!isViewer && (
+                          <button
+                            type="button"
+                            onClick={() => setRestoreTarget(b.id)}
+                            className="rounded-md border border-destructive/50 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10"
+                          >
+                            Ripristina
+                          </button>
+                        )}
+                      </div>
+                      {expandedBackup === b.id && (
+                        <pre className="mt-2 max-h-40 overflow-auto rounded bg-secondary p-2 text-xs">
+                          {backupDetail
+                            ? JSON.stringify(
+                                (backupDetail as { payload?: unknown }).payload ?? backupDetail,
+                                null,
+                                2,
+                              )
+                            : 'Caricamento…'}
+                        </pre>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
+
         {message && <p className="text-sm text-muted-foreground">{message}</p>}
       </CardContent>
 
@@ -397,6 +587,40 @@ export function CompanyActionsCard() {
             className="rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-white hover:bg-destructive/90 disabled:opacity-50"
           >
             {busy ? 'Applicazione…' : 'Conferma'}
+          </button>
+        </div>
+      </ModalShell>
+
+      <ModalShell
+        open={restoreTarget != null}
+        onClose={() => setRestoreTarget(null)}
+        labelledBy="company-backup-restore-title"
+        className="bg-card border border-border rounded-xl p-6 shadow-lg max-w-md"
+      >
+        <h3 id="company-backup-restore-title" className="text-lg font-semibold text-foreground">
+          Ripristinare questo backup?
+        </h3>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Verranno riapplicati blocco e punteggi salvati {restoreScope} (i voti non vengono
+          toccati).
+        </p>
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => setRestoreTarget(null)}
+            disabled={restoring}
+            className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-secondary"
+          >
+            Annulla
+          </button>
+          <button
+            type="button"
+            aria-label="Conferma"
+            onClick={confirmRestore}
+            disabled={restoring}
+            className="rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-white hover:bg-destructive/90 disabled:opacity-50"
+          >
+            {restoring ? 'Ripristino…' : 'Conferma'}
           </button>
         </div>
       </ModalShell>
