@@ -211,3 +211,80 @@ describe('verifyTurnstile — fail-closed', () => {
     expect(fetchMock).not.toHaveBeenCalled()
   })
 })
+
+describe('verifyTurnstile — action/cData override (bootstrap)', () => {
+  const prodEnv = {
+    TURNSTILE_SECRET_KEY: PROD_SECRET,
+    NODE_ENV: 'production',
+    TURNSTILE_ALLOWED_HOSTNAMES: 'www.fantacer.com',
+  }
+
+  it('accetta una action custom quando richiesta', async () => {
+    setEnv(prodEnv)
+    fetchMock.mockResolvedValue(
+      jsonResponse({ success: true, action: 'bootstrap', hostname: 'www.fantacer.com' }),
+    )
+    expect(await verifyTurnstile('tok', { action: 'bootstrap' })).toEqual({ ok: true })
+  })
+
+  it('action custom errata → action_mismatch', async () => {
+    setEnv(prodEnv)
+    fetchMock.mockResolvedValue(
+      jsonResponse({ success: true, action: 'vote', hostname: 'www.fantacer.com' }),
+    )
+    expect(await verifyTurnstile('tok', { action: 'bootstrap' })).toEqual({
+      ok: false,
+      reason: 'action_mismatch',
+    })
+  })
+
+  it('cData combacia → ok', async () => {
+    setEnv(prodEnv)
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        success: true,
+        action: 'bootstrap',
+        hostname: 'www.fantacer.com',
+        cdata: 'bootstrap:nonce123',
+      }),
+    )
+    expect(
+      await verifyTurnstile('tok', { action: 'bootstrap', cData: 'bootstrap:nonce123' }),
+    ).toEqual({ ok: true })
+  })
+
+  it('cData richiesta ma assente/mismatch → cdata_mismatch', async () => {
+    setEnv(prodEnv)
+    fetchMock.mockResolvedValue(
+      jsonResponse({ success: true, action: 'bootstrap', hostname: 'www.fantacer.com' }),
+    )
+    expect(
+      await verifyTurnstile('tok', { action: 'bootstrap', cData: 'bootstrap:nonce123' }),
+    ).toEqual({ ok: false, reason: 'cdata_mismatch' })
+
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        success: true,
+        action: 'bootstrap',
+        hostname: 'www.fantacer.com',
+        cdata: 'bootstrap:other',
+      }),
+    )
+    expect(
+      await verifyTurnstile('tok', { action: 'bootstrap', cData: 'bootstrap:nonce123' }),
+    ).toEqual({ ok: false, reason: 'cdata_mismatch' })
+  })
+
+  it('senza cData richiesta non controlla il campo (backward compatible)', async () => {
+    setEnv(prodEnv)
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        success: true,
+        action: 'vote',
+        hostname: 'www.fantacer.com',
+        cdata: 'whatever',
+      }),
+    )
+    expect(await verifyTurnstile('tok')).toEqual({ ok: true })
+  })
+})
