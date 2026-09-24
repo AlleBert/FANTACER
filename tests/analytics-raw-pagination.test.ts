@@ -27,9 +27,11 @@ it('export CSV non tronca a 1000 righe', async () => {
       }
       return {
         select: jest.fn(() => ({
-          order: jest.fn(() => ({
+          eq: jest.fn(() => ({
             order: jest.fn(() => ({
-              range: jest.fn(async (from: number) => ({ data: mk(from === 0 ? 1000 : 400), error: null })),
+              order: jest.fn(() => ({
+                range: jest.fn(async (from: number) => ({ data: mk(from === 0 ? 1000 : 400), error: null })),
+              })),
             })),
           })),
         })),

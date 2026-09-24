@@ -59,13 +59,20 @@ function buildSupabase(
   companies: unknown,
   opts?: { votesError?: unknown; companiesError?: unknown },
 ) {
+  const eqCalls: Array<[string, unknown]> = []
   const maybeSingle = jest
     .fn()
     .mockResolvedValue({ data: opts?.votesError ? null : session, error: opts?.votesError ?? null })
   const limit = jest.fn().mockReturnValue({ maybeSingle })
   const order = jest.fn().mockReturnValue({ limit })
-  const eqVoteDay = jest.fn().mockReturnValue({ order })
-  const eqFingerprint = jest.fn().mockReturnValue({ eq: eqVoteDay })
+  const eqVoteDay = jest.fn((col: string, val: unknown) => {
+    eqCalls.push([col, val])
+    return { order }
+  })
+  const eqFingerprint = jest.fn((col: string, val: unknown) => {
+    eqCalls.push([col, val])
+    return { eq: eqVoteDay }
+  })
   const selectVotes = jest.fn().mockReturnValue({ eq: eqFingerprint })
   const inFn = jest
     .fn()
@@ -80,6 +87,7 @@ function buildSupabase(
     ),
     _eqFingerprint: eqFingerprint,
     _eqVoteDay: eqVoteDay,
+    _eqCalls: eqCalls,
   }
 }
 
@@ -177,6 +185,18 @@ describe('POST /api/vota/status', () => {
       { id: 'c2', name: 'Beta', pallet: 2 },
       { id: 'c3', name: 'Gamma', pallet: 1 },
     ])
+  })
+
+  it('voted:true anche per un voto in quarantena: nessun filtro status (C11)', async () => {
+    // La riga (mock) rappresenta un voto `quarantined`: /api/vota/status è una
+    // read di dedup e NON deve filtrare per status (un votante in quarantena ha
+    // comunque "già votato oggi"). Solo analytics/export/admin-listing filtrano.
+    const supabase = buildSupabase(SESSION, COMPANIES)
+    mockCreateAdminClient.mockReturnValue(supabase)
+    const res = await POST(postRequest({}, UUID))
+    const data = await res.json()
+    expect(data.voted).toBe(true)
+    expect(supabase._eqCalls.map(([col]) => col)).toEqual(['fingerprint', 'vote_day'])
   })
 
   it('500 se la query vote_sessions fallisce', async () => {

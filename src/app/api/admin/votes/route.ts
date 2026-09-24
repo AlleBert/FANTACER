@@ -67,6 +67,8 @@ export async function GET(request: NextRequest) {
         .select(
           'id, fingerprint, user_agent, country, company1_id, company2_id, company3_id, pallet1, pallet2, pallet3, created_at',
         )
+        // C11: la lista admin riflette i voti conteggiati (solo `accepted`).
+        .eq('status', 'accepted')
         .order('created_at', { ascending: false })
         .order('id', { ascending: false })
         .range(from, to),

@@ -73,6 +73,9 @@ export async function POST(request: NextRequest) {
         supabase
           .from('vote_sessions')
           .select('company1_id, company2_id, company3_id, pallet1, pallet2, pallet3')
+          // C11: l'impatto di `deleteVotes` riflette i soli voti conteggiati
+          // (accepted), coerente con `company_totals`/ranking.
+          .eq('status', 'accepted')
           .order('id', { ascending: false })
           .range(from, to),
       )

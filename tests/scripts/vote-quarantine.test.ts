@@ -52,6 +52,8 @@ const DB_PASSWORD = process.env.SUPABASE_DB_PASSWORD || env.SUPABASE_DB_PASSWORD
 const E2E_REF = 'ookipybsnjtvdrzqzpsl'
 const POOLER_HOST = 'aws-1-eu-west-1.pooler.supabase.com'
 const MIGRATION = 'supabase/migrations/20260928000000_vote_quarantine.sql'
+const MIGRATION_ANALYTICS =
+  'supabase/migrations/20260928000001_admin_analytics_accepted_only.sql'
 
 const FN_REVIEW = 'public.admin_review_vote(bigint,text,text,text)'
 const FN_RECONCILE = 'public.admin_reconcile_totals()'
@@ -113,6 +115,8 @@ describeDb('vote quarantine + exact-once totals + admin RPCs (E2E)', () => {
   let p3 = ''
   let p4 = ''
   let p5 = ''
+  let p6 = ''
+  let p7 = ''
   let pq = '' // principal del test idempotenza (legacy_fingerprint null)
   let pd = '' // principal del test dedup quarantena (legacy_fingerprint null)
 
@@ -232,6 +236,42 @@ describeDb('vote quarantine + exact-once totals + admin RPCs (E2E)', () => {
     return data as never
   }
 
+  async function analyticsSummary(): Promise<{ totalVotes: number; todayVotes: number }> {
+    const { data, error } = await svc.rpc('admin_analytics_summary', { p_batch: BATCH })
+    if (error) throw new Error(`admin_analytics_summary: ${error.message}`)
+    return data as never
+  }
+
+  async function companyStats(): Promise<
+    Array<{ id: string; effective_votes: number; today_votes: number }>
+  > {
+    const { data, error } = await svc.rpc('admin_company_stats', { p_batch: BATCH })
+    if (error) throw new Error(`admin_company_stats: ${error.message}`)
+    return data as never
+  }
+
+  async function eventStatusCounts(): Promise<{ accepted: number; total: number }> {
+    const r = await db.query<{ accepted: string; total: string }>(
+      `select count(*) filter (where status = 'accepted')::int as accepted,
+              count(*)::int as total
+         from public.vote_sessions
+        where event_id = $1`,
+      [eventId],
+    )
+    return { accepted: Number(r.rows[0].accepted), total: Number(r.rows[0].total) }
+  }
+
+  async function acceptedTouching(companyId: string): Promise<number> {
+    const r = await db.query<{ n: number }>(
+      `select count(*)::int as n
+         from public.vote_sessions
+        where event_id = $1 and status = 'accepted'
+          and $2::uuid in (company1_id, company2_id, company3_id)`,
+      [eventId, companyId],
+    )
+    return r.rows[0].n
+  }
+
   /** Somma manuale dei soli accepted (posizione → peso 4/2/1). */
   async function manualAccepted(companyIds: string[]): Promise<Record<string, TotalsRow>> {
     const r = await db.query<{ company_id: string; total_pallets: string; vote_count: string }>(
@@ -280,8 +320,9 @@ describeDb('vote quarantine + exact-once totals + admin RPCs (E2E)', () => {
     db = new pg.Client({ connectionString: buildDbUrl(), ssl: { rejectUnauthorized: false } })
     await db.connect()
 
-    // Idempotente/re-runnable: applica la definizione corrente del file.
+    // Idempotente/re-runnable: applica la definizione corrente dei file.
     await db.query(readFileSync(MIGRATION, 'utf8'))
+    await db.query(readFileSync(MIGRATION_ANALYTICS, 'utf8'))
 
     const ev = await db.query<{ id: string }>(
       `insert into public.events (slug, name, batch, status)
@@ -302,17 +343,29 @@ describeDb('vote quarantine + exact-once totals + admin RPCs (E2E)', () => {
 
     const ps = await db.query<{ id: string }>(
       `insert into public.event_principals (event_id, legacy_fingerprint)
-       values ($1, $2), ($1, $3), ($1, $4), ($1, $5), ($1, $6), ($1, null), ($1, null)
+       values ($1, $2), ($1, $3), ($1, $4), ($1, $5), ($1, $6),
+              ($1, $7), ($1, $8), ($1, null), ($1, null)
        returning id`,
-      [eventId, `${RUN}-fp1`, `${RUN}-fp2`, `${RUN}-fp3`, `${RUN}-fp4`, `${RUN}-fp5`],
+      [
+        eventId,
+        `${RUN}-fp1`,
+        `${RUN}-fp2`,
+        `${RUN}-fp3`,
+        `${RUN}-fp4`,
+        `${RUN}-fp5`,
+        `${RUN}-fp6`,
+        `${RUN}-fp7`,
+      ],
     )
     p1 = ps.rows[0].id
     p2 = ps.rows[1].id
     p3 = ps.rows[2].id
     p4 = ps.rows[3].id
     p5 = ps.rows[4].id
-    pq = ps.rows[5].id
-    pd = ps.rows[6].id
+    p6 = ps.rows[5].id
+    p7 = ps.rows[6].id
+    pq = ps.rows[7].id
+    pd = ps.rows[8].id
 
     svc = createClient(SUPABASE_URL, SERVICE_KEY, {
       auth: { persistSession: false, autoRefreshToken: false },
@@ -495,6 +548,61 @@ describeDb('vote quarantine + exact-once totals + admin RPCs (E2E)', () => {
     expect(counts.totals.quarantined).toBeGreaterThanOrEqual(1)
   })
 
+  it('DELETE di un voto accepted → −delta una volta', async () => {
+    const v = await insertVote({ principalId: p6, fingerprint: `${RUN}-fp6`, status: 'accepted' })
+    const before = await totals(c1)
+
+    await db.query('delete from public.vote_sessions where id = $1', [v])
+
+    expect(delta(await totals(c1), before)).toEqual({ total_pallets: -4, vote_count: -1 })
+  })
+
+  it('UPDATE di una colonna non-status su accepted → 0 delta (early return)', async () => {
+    const v = await insertVote({ principalId: p7, fingerprint: `${RUN}-fp7`, status: 'accepted' })
+    const before = await totals(c1)
+
+    await db.query(`update public.vote_sessions set country = 'FR', review_reason = 'note' where id = $1`, [v])
+
+    expect(await totals(c1)).toEqual(before)
+    expect(await statusOf(v)).toBe('accepted')
+  })
+
+  it('admin_review_vote: status invalido → invalid_status; id sconosciuto → vote_not_found', async () => {
+    // Riusa il voto di p7 (già inserito accepted e poi aggiornato su colonna
+    // non-status): un secondo INSERT violerebbe l'unicità (fingerprint, giorno).
+    const row = await db.query<{ id: string }>(
+      'select id from public.vote_sessions where event_id = $1 and principal_id = $2',
+      [eventId, p7],
+    )
+    const v = Number(row.rows[0].id)
+
+    const invalid = await review(v, 'bogus')
+    expect(invalid.success).toBe(false)
+    expect(invalid.code).toBe('invalid_status')
+
+    const missing = await review(987654321987, 'accepted')
+    expect(missing.success).toBe(false)
+    expect(missing.code).toBe('vote_not_found')
+
+    expect(await statusOf(v)).toBe('accepted')
+  })
+
+  it('analytics accepted-only: summary/company_stats escludono quarantined/rejected', async () => {
+    const counts = await eventStatusCounts()
+    // Esistono voti non-accepted nel fixture (quarantine/rejected).
+    expect(counts.total).toBeGreaterThan(counts.accepted)
+
+    const summary = await analyticsSummary()
+    expect(summary.totalVotes).toBe(counts.accepted)
+
+    const stats = await companyStats()
+    const c1Stats = stats.find((s) => s.id === c1)
+    expect(c1Stats).toBeDefined()
+    // effective_votes usa company_totals (accepted-only); oggi coincide coi soli accepted.
+    expect(c1Stats!.effective_votes).toBe((await totals(c1)).vote_count)
+    expect(c1Stats!.today_votes).toBe(await acceptedTouching(c1))
+  })
+
   it('ACL: anon/authenticated negati, service_role consentito sulle 3 RPC admin', async () => {
     for (const sig of [FN_REVIEW, FN_RECONCILE, FN_COUNTS]) {
       const r = await db.query<{ anon: boolean; auth: boolean; svc: boolean }>(
@@ -524,6 +632,14 @@ describeDb('vote quarantine + exact-once totals + admin RPCs (E2E)', () => {
   it('migration riapplicata: idempotente, nessuna scrittura sui totali', async () => {
     const before = await totals(c1)
     await expect(db.query(readFileSync(MIGRATION, 'utf8'))).resolves.toBeDefined()
+    await expect(db.query(readFileSync(MIGRATION_ANALYTICS, 'utf8'))).resolves.toBeDefined()
     expect(await totals(c1)).toEqual(before)
+
+    // Le RPC analytics restano service_role-only dopo la riapplicazione.
+    const acl = await db.query<{ anon: boolean; svc: boolean }>(
+      `select has_function_privilege('anon', 'public.admin_analytics_summary(text)', 'EXECUTE') as anon,
+              has_function_privilege('service_role', 'public.admin_analytics_summary(text)', 'EXECUTE') as svc`,
+    )
+    expect(acl.rows[0]).toEqual({ anon: false, svc: true })
   })
 })

@@ -51,10 +51,12 @@ function buildSupabase() {
       if (table === 'vote_sessions') {
         return {
           select: jest.fn(() => ({
-            order: jest.fn(() => ({
-              range: jest.fn(async (from: number, to: number) => ({
-                data: sessions.slice(from, to + 1),
-                error: null,
+            eq: jest.fn(() => ({
+              order: jest.fn(() => ({
+                range: jest.fn(async (from: number, to: number) => ({
+                  data: sessions.slice(from, to + 1),
+                  error: null,
+                })),
               })),
             })),
           })),
