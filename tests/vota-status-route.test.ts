@@ -11,18 +11,29 @@ jest.mock('@/lib/vote-dev-bypass', () => ({
 jest.mock('@/lib/session-identity-server', () => ({
   sessionIdentityMode: jest.fn(() => 'off'),
   resolveVoteIdentity: jest.fn(),
+  resolveVoteIdentityResult: jest.fn(),
   touchSession: jest.fn(),
 }))
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import * as bypass from '@/lib/vote-dev-bypass'
-import { sessionIdentityMode, resolveVoteIdentity, touchSession } from '@/lib/session-identity-server'
+import {
+  sessionIdentityMode,
+  resolveVoteIdentity,
+  resolveVoteIdentityResult,
+  touchSession,
+} from '@/lib/session-identity-server'
 import { parseKeyring, generateCsrfToken, hashCsrfToken } from '@/lib/session-identity'
 
 const mockCreateAdminClient = createAdminClient as jest.Mock
 const mockIsVoteLimitBypassed = bypass.isVoteLimitBypassed as jest.Mock
 const mockMode = sessionIdentityMode as jest.Mock
 const mockResolveVoteIdentity = resolveVoteIdentity as jest.Mock
+const mockResolveVoteIdentityResult = resolveVoteIdentityResult as jest.Mock
+
+const okResult = (session: unknown) => ({ status: 'ok', session })
+const noneResult = () => ({ status: 'none' })
+const errorResult = () => ({ status: 'error' })
 const mockTouchSession = touchSession as jest.Mock
 
 const UUID = '11111111-2222-4333-8444-555555555555'
@@ -236,11 +247,12 @@ describe('POST /api/vota/status — CSRF sessione (C05)', () => {
     delete process.env.SESSION_HMAC_ACTIVE
     mockMode.mockReturnValue('off')
     mockResolveVoteIdentity.mockReset()
+    mockResolveVoteIdentityResult.mockReset()
     mockTouchSession.mockReset()
   })
 
   it('sessione risolta senza X-CSRF-Token → 200 (read non bloccata), nessun idle-touch', async () => {
-    mockResolveVoteIdentity.mockResolvedValue(session(hashCsrfToken(generateCsrfToken(), keyring)))
+    mockResolveVoteIdentityResult.mockResolvedValue(okResult(session(hashCsrfToken(generateCsrfToken(), keyring))))
     const res = await POST(
       postRequest({ voterId: UUID }, undefined, { origin: ORIGIN, host: HOST }),
     )
@@ -249,7 +261,7 @@ describe('POST /api/vota/status — CSRF sessione (C05)', () => {
   })
 
   it('X-CSRF-Token errato → 200 (read non bloccata), nessun idle-touch', async () => {
-    mockResolveVoteIdentity.mockResolvedValue(session(hashCsrfToken(generateCsrfToken(), keyring)))
+    mockResolveVoteIdentityResult.mockResolvedValue(okResult(session(hashCsrfToken(generateCsrfToken(), keyring))))
     const res = await POST(
       postRequest({ voterId: UUID }, undefined, {
         origin: ORIGIN,
@@ -263,7 +275,7 @@ describe('POST /api/vota/status — CSRF sessione (C05)', () => {
 
   it('Origin assente → 200 (read non bloccata), nessun idle-touch', async () => {
     const csrf = generateCsrfToken()
-    mockResolveVoteIdentity.mockResolvedValue(session(hashCsrfToken(csrf, keyring)))
+    mockResolveVoteIdentityResult.mockResolvedValue(okResult(session(hashCsrfToken(csrf, keyring))))
     const res = await POST(
       postRequest({ voterId: UUID }, undefined, { host: HOST, 'x-csrf-token': csrf }),
     )
@@ -275,7 +287,7 @@ describe('POST /api/vota/status — CSRF sessione (C05)', () => {
     const csrf = generateCsrfToken()
     const supabase = buildSupabase(SESSION, COMPANIES)
     mockCreateAdminClient.mockReturnValue(supabase)
-    mockResolveVoteIdentity.mockResolvedValue(session(hashCsrfToken(csrf, keyring)))
+    mockResolveVoteIdentityResult.mockResolvedValue(okResult(session(hashCsrfToken(csrf, keyring))))
 
     const res = await POST(
       postRequest({ voterId: UUID }, undefined, {
@@ -291,10 +303,10 @@ describe('POST /api/vota/status — CSRF sessione (C05)', () => {
   })
 
   it('modo dual senza sessione: fallback legacy senza CSRF né touch', async () => {
-    mockResolveVoteIdentity.mockResolvedValue(null)
+    mockResolveVoteIdentityResult.mockResolvedValue(noneResult())
     const res = await POST(postRequest({ voterId: OTHER_UUID }, UUID))
     expect(res.status).toBe(200)
-    expect(mockResolveVoteIdentity).toHaveBeenCalled()
+    expect(mockResolveVoteIdentityResult).toHaveBeenCalled()
     expect(mockTouchSession).not.toHaveBeenCalled()
   })
 
@@ -303,6 +315,7 @@ describe('POST /api/vota/status — CSRF sessione (C05)', () => {
     const res = await POST(postRequest({ voterId: UUID }, UUID))
     expect(res.status).toBe(200)
     expect(mockResolveVoteIdentity).not.toHaveBeenCalled()
+    expect(mockResolveVoteIdentityResult).not.toHaveBeenCalled()
     expect(mockTouchSession).not.toHaveBeenCalled()
   })
 })
@@ -334,6 +347,7 @@ describe('POST /api/vota/status — C08 semantica dei mode', () => {
     delete process.env.SESSION_HMAC_ACTIVE
     mockMode.mockReturnValue('off')
     mockResolveVoteIdentity.mockReset()
+    mockResolveVoteIdentityResult.mockReset()
     mockTouchSession.mockReset()
   })
 
@@ -371,12 +385,12 @@ describe('POST /api/vota/status — C08 semantica dei mode', () => {
     mockMode.mockReturnValue('dual')
     const supabase = buildSupabase(SESSION, COMPANIES)
     mockCreateAdminClient.mockReturnValue(supabase)
-    mockResolveVoteIdentity.mockResolvedValue(session(null))
+    mockResolveVoteIdentityResult.mockResolvedValue(okResult(session(null)))
 
     const res = await POST(postRequest({ voterId: OTHER_UUID }))
 
     expect(res.status).toBe(200)
-    expect(mockResolveVoteIdentity).toHaveBeenCalled()
+    expect(mockResolveVoteIdentityResult).toHaveBeenCalled()
     expect(supabase._eqFingerprint).toHaveBeenCalled()
   })
 
@@ -384,7 +398,7 @@ describe('POST /api/vota/status — C08 semantica dei mode', () => {
     mockMode.mockReturnValue('dual')
     const supabase = buildSupabase(null, [])
     mockCreateAdminClient.mockReturnValue(supabase)
-    mockResolveVoteIdentity.mockResolvedValue(null)
+    mockResolveVoteIdentityResult.mockResolvedValue(noneResult())
 
     const res = await POST(postRequest({ voterId: OTHER_UUID }, UUID))
 
@@ -395,16 +409,28 @@ describe('POST /api/vota/status — C08 semantica dei mode', () => {
 
   it('dual: senza sessione e senza cookie → 400', async () => {
     mockMode.mockReturnValue('dual')
-    mockResolveVoteIdentity.mockResolvedValue(null)
+    mockResolveVoteIdentityResult.mockResolvedValue(noneResult())
     const res = await POST(postRequest({ voterId: UUID }))
     expect(res.status).toBe(400)
   })
 
-  it('dual: errore risoluzione sessione → 503 fail-closed', async () => {
+  it('dual: errore risoluzione sessione (throw) → 503 fail-closed', async () => {
     mockMode.mockReturnValue('dual')
-    mockResolveVoteIdentity.mockRejectedValue(new Error('db down'))
+    mockResolveVoteIdentityResult.mockRejectedValue(new Error('db down'))
     const res = await POST(postRequest({}, UUID))
     expect(res.status).toBe(503)
+  })
+
+  it('dual: errore DB nel lookup ({ error }, non throw) → 503, nessun fallback legacy', async () => {
+    mockMode.mockReturnValue('dual')
+    const supabase = buildSupabase(null, [])
+    mockCreateAdminClient.mockReturnValue(supabase)
+    mockResolveVoteIdentityResult.mockResolvedValue(errorResult())
+    const res = await POST(postRequest({}, UUID))
+    expect(res.status).toBe(503)
+    // L'errore NON deve degradare nel fallback legacy (cookie valido presente):
+    // nessuna query su vote_sessions per il fingerprint legacy.
+    expect(supabase._eqFingerprint).not.toHaveBeenCalled()
   })
 
   it('dual: keyring assente → 503 fail-closed', async () => {
@@ -417,9 +443,19 @@ describe('POST /api/vota/status — C08 semantica dei mode', () => {
 
   it('session: senza sessione → 503, nessun fallback legacy', async () => {
     mockMode.mockReturnValue('session')
-    mockResolveVoteIdentity.mockResolvedValue(null)
+    mockResolveVoteIdentityResult.mockResolvedValue(noneResult())
     const res = await POST(postRequest({}, UUID))
     expect(res.status).toBe(503)
+  })
+
+  it('session: errore DB nel lookup → 503, nessun fallback legacy', async () => {
+    mockMode.mockReturnValue('session')
+    const supabase = buildSupabase(null, [])
+    mockCreateAdminClient.mockReturnValue(supabase)
+    mockResolveVoteIdentityResult.mockResolvedValue(errorResult())
+    const res = await POST(postRequest({}, UUID))
+    expect(res.status).toBe(503)
+    expect(supabase._eqFingerprint).not.toHaveBeenCalled()
   })
 
   it('session: sessione valida con CSRF → risponde e rinnova idle', async () => {
@@ -427,7 +463,7 @@ describe('POST /api/vota/status — C08 semantica dei mode', () => {
     const csrf = generateCsrfToken()
     const supabase = buildSupabase(SESSION, COMPANIES)
     mockCreateAdminClient.mockReturnValue(supabase)
-    mockResolveVoteIdentity.mockResolvedValue(session(hashCsrfToken(csrf, keyring)))
+    mockResolveVoteIdentityResult.mockResolvedValue(okResult(session(hashCsrfToken(csrf, keyring))))
 
     const res = await POST(
       postRequest({}, undefined, {

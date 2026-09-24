@@ -8,7 +8,12 @@ import {
 } from '@/lib/vote-identity-server'
 import { keyringFromEnv } from '@/lib/session-identity'
 import { verifyCsrfForRequest } from '@/lib/vote-csrf'
-import { sessionIdentityMode, resolveVoteIdentity, touchSession } from '@/lib/session-identity-server'
+import {
+  sessionIdentityMode,
+  resolveVoteIdentityResult,
+  touchSession,
+  type SessionResolution,
+} from '@/lib/session-identity-server'
 
 interface VoteSessionRow {
   company1_id: string
@@ -85,9 +90,12 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      let session = null
+      // Esito discriminato: `none` (assenza) vs `error` (DB/rete). Un errore in
+      // `dual`/`session` è fail-closed `503`: non va trattato come "nessuna
+      // sessione" (che in `dual` ricadrebbe sul legacy e in `session` è già 503).
+      let resolution: SessionResolution
       try {
-        session = await resolveVoteIdentity(supabase, request, keyring)
+        resolution = await resolveVoteIdentityResult(supabase, request, keyring)
       } catch {
         return NextResponse.json(
           { error: 'identity unavailable' },
@@ -95,7 +103,15 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      if (session) {
+      if (resolution.status === 'error') {
+        return NextResponse.json(
+          { error: 'identity unavailable' },
+          { status: 503, headers: NO_STORE },
+        )
+      }
+
+      if (resolution.status === 'ok') {
+        const session = resolution.session
         // `/api/vota/status` è una LETTURA: il CSRF session-bound protegge solo
         // la write di rinnovo idle (`touchSession`). Fail-closed sulla write:
         // il touch avviene solo se il CSRF è valido, la lettura prosegue

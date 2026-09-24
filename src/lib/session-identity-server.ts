@@ -159,8 +159,81 @@ function isExpired(isoDate: string, now: number): boolean {
 }
 
 /**
- * Risolve una sessione dal cookie. Fail-closed: null su cookie invalido, riga
- * assente, revoca, idle scaduta o scadenza assoluta superata. Nessuna scrittura.
+ * Esito della risoluzione di sessione (C08 fail-closed).
+ *
+ * Distingue **assenza** da **errore infrastrutturale**: i mode `dual`/`session`
+ * devono fallire chiusi (`503`) su `error`, mentre `none` segue il percorso
+ * normale (fallback legacy in `dual`, `503` in `session`). Con il vecchio
+ * `ResolvedSession | null` un errore DB era indistinguibile dall'assenza.
+ */
+export type SessionResolution =
+  | { status: 'ok'; session: ResolvedSession }
+  | { status: 'none' }
+  | { status: 'error' }
+
+/**
+ * Risolve una sessione dal cookie con esito discriminato. Nessuna scrittura.
+ * - `ok`   → sessione valida.
+ * - `none` → cookie assente/malformato, riga assente, revoca, idle/assoluta scaduta.
+ * - `error`→ errore DB/rete durante il lookup (fail-closed a carico del chiamante).
+ */
+export async function resolveSessionResult(
+  admin: Admin,
+  cookieValue: string | null | undefined,
+  keyring: SessionKeyring,
+  now: number = Date.now(),
+): Promise<SessionResolution> {
+  const parsed = parseSessionCookie(cookieValue)
+  if (!parsed) return { status: 'none' }
+  const tokenHash = hashToken(parsed.keyId, parsed.token, keyring)
+  if (!tokenHash) return { status: 'none' }
+
+  let data: {
+    id: string
+    principal_id: string
+    csrf_hash: string | null
+    expires_at: string
+    last_seen_at: string
+    revoked_at: string | null
+  } | null
+  let error: unknown
+  try {
+    const result = await admin
+      .from('voter_sessions')
+      .select('id, principal_id, csrf_hash, expires_at, last_seen_at, revoked_at')
+      .eq('token_hash', tokenHash)
+      .maybeSingle()
+    data = result.data
+    error = result.error
+  } catch (lookupError) {
+    // Throw di rete/serializzazione: è un errore infra, non un'assenza.
+    void lookupError
+    return { status: 'error' }
+  }
+  if (error) return { status: 'error' }
+  if (!data) return { status: 'none' }
+  if (data.revoked_at) return { status: 'none' }
+  if (isExpired(data.expires_at, now)) return { status: 'none' }
+  if (isExpired(data.last_seen_at, now - SESSION_IDLE_MS)) return { status: 'none' }
+
+  return {
+    status: 'ok',
+    session: {
+      principalId: data.principal_id,
+      sessionId: data.id,
+      csrfHash: data.csrf_hash ?? null,
+      expiresAt: data.expires_at,
+      revokedAt: data.revoked_at ?? null,
+    },
+  }
+}
+
+/**
+ * Risolve una sessione dal cookie. Wrapper back-compat di
+ * `resolveSessionResult` per i chiamanti che trattano assenza ed errore allo
+ * stesso modo (es. `/api/identity/renew`, `/api/identity/revoke`): null in
+ * entrambi i casi. I percorsi di voto (`dual`/`session`) usano la variante
+ * discriminata per fallire chiusi sull'errore.
  */
 export async function resolveSession(
   admin: Admin,
@@ -168,28 +241,8 @@ export async function resolveSession(
   keyring: SessionKeyring,
   now: number = Date.now(),
 ): Promise<ResolvedSession | null> {
-  const parsed = parseSessionCookie(cookieValue)
-  if (!parsed) return null
-  const tokenHash = hashToken(parsed.keyId, parsed.token, keyring)
-  if (!tokenHash) return null
-
-  const { data, error } = await admin
-    .from('voter_sessions')
-    .select('id, principal_id, csrf_hash, expires_at, last_seen_at, revoked_at')
-    .eq('token_hash', tokenHash)
-    .maybeSingle()
-  if (error || !data) return null
-  if (data.revoked_at) return null
-  if (isExpired(data.expires_at, now)) return null
-  if (isExpired(data.last_seen_at, now - SESSION_IDLE_MS)) return null
-
-  return {
-    principalId: data.principal_id,
-    sessionId: data.id,
-    csrfHash: data.csrf_hash ?? null,
-    expiresAt: data.expires_at,
-    revokedAt: data.revoked_at ?? null,
-  }
+  const result = await resolveSessionResult(admin, cookieValue, keyring, now)
+  return result.status === 'ok' ? result.session : null
 }
 
 /** Sorgente cookie minima (NextRequest la soddisfa strutturalmente). */
@@ -217,6 +270,21 @@ export async function resolveVoteIdentity(
 ): Promise<ResolvedSession | null> {
   const cookie = request.cookies.get(SESSION_COOKIE)?.value ?? null
   return resolveSession(admin, cookie, keyring)
+}
+
+/**
+ * Variante discriminata di `resolveVoteIdentity` per `/api/vota` e
+ * `/api/vota/status`: distingue `none` (assenza) da `error` (DB/rete), così i
+ * mode `dual`/`session` possono fallire chiusi (`503`) sull'errore anziché
+ * ricadere sul fallback legacy o su un falso "non ha votato".
+ */
+export async function resolveVoteIdentityResult(
+  admin: Admin,
+  request: SessionCookieSource,
+  keyring: SessionKeyring,
+): Promise<SessionResolution> {
+  const cookie = request.cookies.get(SESSION_COOKIE)?.value ?? null
+  return resolveSessionResult(admin, cookie, keyring)
 }
 
 /** Rinnovo idle best-effort: aggiorna `last_seen_at`, non fallisce mai la richiesta. */

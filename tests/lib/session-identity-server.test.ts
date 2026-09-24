@@ -8,7 +8,9 @@ import {
   sessionIdentityMode,
   createSession,
   resolveSession,
+  resolveSessionResult,
   resolveVoteIdentity,
+  resolveVoteIdentityResult,
   touchSession,
   renewSession,
   revokeSession,
@@ -221,6 +223,120 @@ describe('resolveVoteIdentity', () => {
     const admin = mockAdmin({ row: validRow() })
     expect(await resolveVoteIdentity(asAdmin(admin), cookieSource(), keyring)).toBeNull()
     expect(admin.select).not.toHaveBeenCalled()
+  })
+})
+
+describe('resolveSessionResult / resolveVoteIdentityResult (C08 fail-closed)', () => {
+  const cookieFor = (token: string) => formatSessionCookie('k1', token)
+
+  it("row valida → { status: 'ok', session }", async () => {
+    const token = generateToken()
+    const row = validRow()
+    const result = await resolveSessionResult(asAdmin(mockAdmin({ row })), cookieFor(token), keyring)
+    expect(result.status).toBe('ok')
+    if (result.status !== 'ok') throw new Error('unreachable')
+    expect(result.session.principalId).toBe('prim-1')
+    expect(result.session.sessionId).toBe('sess-1')
+  })
+
+  it("errore DB ({ error }, non throw) → { status: 'error' } — NON 'none'", async () => {
+    const result = await resolveSessionResult(
+      asAdmin(mockAdmin({ lookupError: { message: 'boom' } })),
+      cookieFor(generateToken()),
+      keyring,
+    )
+    expect(result).toEqual({ status: 'error' })
+  })
+
+  it("row assente senza errore → { status: 'none' }", async () => {
+    const result = await resolveSessionResult(
+      asAdmin(mockAdmin({ row: null })),
+      cookieFor(generateToken()),
+      keyring,
+    )
+    expect(result).toEqual({ status: 'none' })
+  })
+
+  it("cookie assente/malformato → { status: 'none' } senza interrogare il DB", async () => {
+    const admin = mockAdmin({ row: validRow() })
+    expect(await resolveSessionResult(asAdmin(admin), null, keyring)).toEqual({ status: 'none' })
+    expect(await resolveSessionResult(asAdmin(admin), 'nodot', keyring)).toEqual({ status: 'none' })
+    expect(admin.select).not.toHaveBeenCalled()
+  })
+
+  it("sessione revocata/scaduta → { status: 'none' }", async () => {
+    const revoked = await resolveSessionResult(
+      asAdmin(mockAdmin({ row: validRow({ revoked_at: iso(-1000) }) })),
+      cookieFor(generateToken()),
+      keyring,
+    )
+    expect(revoked).toEqual({ status: 'none' })
+
+    const expired = await resolveSessionResult(
+      asAdmin(mockAdmin({ row: validRow({ expires_at: iso(-1000) }) })),
+      cookieFor(generateToken()),
+      keyring,
+    )
+    expect(expired).toEqual({ status: 'none' })
+  })
+
+  it('throw della query (rete) → { status: error }', async () => {
+    const throwing = {
+      from: jest.fn(() => ({
+        select: jest.fn(() => ({
+          eq: jest.fn(() => ({
+            maybeSingle: jest.fn().mockRejectedValue(new Error('network')),
+          })),
+        })),
+      })),
+    }
+    const result = await resolveSessionResult(
+      throwing as unknown as Admin,
+      cookieFor(generateToken()),
+      keyring,
+    )
+    expect(result).toEqual({ status: 'error' })
+  })
+
+  it('resolveSession (wrapper back-compat) → null su errore DB e su assenza', async () => {
+    expect(
+      await resolveSession(
+        asAdmin(mockAdmin({ lookupError: { message: 'boom' } })),
+        cookieFor(generateToken()),
+        keyring,
+      ),
+    ).toBeNull()
+    expect(
+      await resolveSession(asAdmin(mockAdmin({ row: null })), cookieFor(generateToken()), keyring),
+    ).toBeNull()
+  })
+
+  it('resolveVoteIdentityResult legge il cookie di sessione e distingue error/none/ok', async () => {
+    const cookieSource = (value?: string) => ({
+      cookies: { get: (name: string) => (name === SESSION_COOKIE && value ? { value } : undefined) },
+    })
+
+    expect(
+      await resolveVoteIdentityResult(
+        asAdmin(mockAdmin({ lookupError: { message: 'boom' } })),
+        cookieSource(cookieFor(generateToken())),
+        keyring,
+      ),
+    ).toEqual({ status: 'error' })
+    expect(
+      await resolveVoteIdentityResult(
+        asAdmin(mockAdmin({ row: null })),
+        cookieSource(cookieFor(generateToken())),
+        keyring,
+      ),
+    ).toEqual({ status: 'none' })
+    expect(
+      await resolveVoteIdentityResult(
+        asAdmin(mockAdmin({ row: validRow() })),
+        cookieSource(cookieFor(generateToken())),
+        keyring,
+      ),
+    ).toMatchObject({ status: 'ok' })
   })
 })
 

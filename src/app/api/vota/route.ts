@@ -22,9 +22,11 @@ import {
   getActiveEvent,
   resolveOrCreatePrincipal,
   resolveVoteIdentity,
+  resolveVoteIdentityResult,
   linkVoteToPrincipal,
   touchSession,
   type ResolvedSession,
+  type SessionResolution,
 } from '@/lib/session-identity-server'
 import { romeDateKey } from '@/lib/admin-analytics'
 import { LOCALE_COOKIE, resolveLocale } from '@/lib/locale'
@@ -156,15 +158,25 @@ export async function POST(request: NextRequest) {
         // Modalità sessione dichiarata ma chiave assente: nessun voto.
         return respond({ error: 'identity unavailable' }, 503, 'no_session')
       }
+
+      // Esito discriminato: `none` (assenza) vs `error` (DB/rete). Un errore
+      // NON deve mai degradare nel fallback legacy né diventare un falso
+      // "nessuna sessione": in `dual`/`session` è fail-closed `503`.
+      let resolution: SessionResolution
       try {
-        session = await resolveVoteIdentity(admin, request, keyring)
+        resolution = await resolveVoteIdentityResult(admin, request, keyring)
       } catch (sessionError) {
-        // Errore infrastrutturale (non assenza): fail-closed 503, nessun voto.
         console.warn('[identity] session resolution failed:', sessionError)
         return respond({ error: 'identity unavailable' }, 503, 'error')
       }
 
-      if (session) {
+      if (resolution.status === 'error') {
+        console.warn('[identity] session resolution db error (fail-closed)')
+        return respond({ error: 'identity unavailable' }, 503, 'error')
+      }
+
+      if (resolution.status === 'ok') {
+        session = resolution.session
         principalId = session.principalId
         // C05 — CSRF session-bound (§4-bis): solo `dual`/`session` con sessione
         // valida. Il rinnovo idle avviene solo dopo il CSRF ok.
@@ -180,21 +192,28 @@ export async function POST(request: NextRequest) {
         // Cutover: solo sessione, nessun fallback legacy.
         return respond({ error: 'identity unavailable' }, 503, 'no_session')
       } else {
-        // dual: fallback al cookie legacy first-party (mai body).
+        // dual: fallback al cookie legacy first-party (mai body). Anche qui la
+        // risoluzione dell'identità fallback è fail-closed: un throw diventa
+        // 503, non 500.
         const legacy = resolveVoterKey(request)
         if (!legacy) {
           return respond({ error: err('voteError.missingVoterId') }, 400, 'invalid_request')
         }
         voterCookieId = legacy.voterId
         fingerprint = resolveVoteFingerprint(legacy.key)
-        const event = await getActiveEvent(admin)
-        eventId = event?.id ?? null
-        if (eventId) {
-          principalId = await resolveOrCreatePrincipal(admin, eventId, fingerprint)
-          if (!principalId) {
-            return respond({ error: 'identity unavailable' }, 503, 'error')
+        try {
+          const event = await getActiveEvent(admin)
+          eventId = event?.id ?? null
+          if (eventId) {
+            principalId = await resolveOrCreatePrincipal(admin, eventId, fingerprint)
+            if (!principalId) {
+              return respond({ error: 'identity unavailable' }, 503, 'error')
+            }
+            await applyPrincipalFingerprint()
           }
-          await applyPrincipalFingerprint()
+        } catch (identityError) {
+          console.warn('[identity] fallback principal resolution failed:', identityError)
+          return respond({ error: 'identity unavailable' }, 503, 'error')
         }
       }
     }

@@ -29,6 +29,7 @@ jest.mock('@/lib/session-identity-server', () => ({
   resolveSessionPrincipal: jest.fn(),
   linkVoteToPrincipal: jest.fn(),
   resolveVoteIdentity: jest.fn(),
+  resolveVoteIdentityResult: jest.fn(),
   touchSession: jest.fn(),
 }))
 jest.mock('@/lib/locale', () => ({
@@ -48,6 +49,7 @@ import {
   getActiveEvent,
   resolveOrCreatePrincipal,
   resolveVoteIdentity,
+  resolveVoteIdentityResult,
   linkVoteToPrincipal,
   touchSession,
 } from '@/lib/session-identity-server'
@@ -64,8 +66,13 @@ const mockMode = sessionIdentityMode as jest.Mock
 const mockGetActiveEvent = getActiveEvent as jest.Mock
 const mockResolveOrCreatePrincipal = resolveOrCreatePrincipal as jest.Mock
 const mockResolveVoteIdentity = resolveVoteIdentity as jest.Mock
+const mockResolveVoteIdentityResult = resolveVoteIdentityResult as jest.Mock
 const mockLinkVoteToPrincipal = linkVoteToPrincipal as jest.Mock
 const mockTouchSession = touchSession as jest.Mock
+
+const okResult = (session: unknown) => ({ status: 'ok', session })
+const noneResult = () => ({ status: 'none' })
+const errorResult = () => ({ status: 'error' })
 
 const UUID = '11111111-2222-4333-8444-555555555555'
 const OTHER_UUID = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee'
@@ -144,6 +151,7 @@ describe('POST /api/vota', () => {
     mockVerifyTurnstile.mockResolvedValue({ ok: true })
     mockGetActiveEvent.mockResolvedValue(null)
     mockResolveOrCreatePrincipal.mockResolvedValue(null)
+    mockResolveVoteIdentityResult.mockResolvedValue(noneResult())
     mockLinkVoteToPrincipal.mockResolvedValue(undefined)
     process.env.SIGNAL_HMAC_KEY = Buffer.alloc(32, 11).toString('base64')
     process.env.SIGNAL_HMAC_KEY_ID = 's1'
@@ -367,11 +375,12 @@ describe('POST /api/vota — CSRF sessione (C05)', () => {
     delete process.env.SIGNAL_HMAC_KEY_ID
     mockMode.mockReturnValue('off')
     mockResolveVoteIdentity.mockReset()
+    mockResolveVoteIdentityResult.mockReset()
     mockTouchSession.mockReset()
   })
 
   it('sessione risolta senza X-CSRF-Token → 403, nessun voto', async () => {
-    mockResolveVoteIdentity.mockResolvedValue(session(hashCsrfToken(generateCsrfToken(), keyring)))
+    mockResolveVoteIdentityResult.mockResolvedValue(okResult(session(hashCsrfToken(generateCsrfToken(), keyring))))
     const res = await POST(
       makeRequest(validBody(), { headers: { origin: ORIGIN, host: HOST } }),
     )
@@ -381,7 +390,7 @@ describe('POST /api/vota — CSRF sessione (C05)', () => {
   })
 
   it('X-CSRF-Token errato → 403', async () => {
-    mockResolveVoteIdentity.mockResolvedValue(session(hashCsrfToken(generateCsrfToken(), keyring)))
+    mockResolveVoteIdentityResult.mockResolvedValue(okResult(session(hashCsrfToken(generateCsrfToken(), keyring))))
     const res = await POST(
       makeRequest(validBody(), {
         headers: { origin: ORIGIN, host: HOST, 'x-csrf-token': 'wrong' },
@@ -394,7 +403,7 @@ describe('POST /api/vota — CSRF sessione (C05)', () => {
 
   it('Origin assente → 403 fail-closed', async () => {
     const csrf = generateCsrfToken()
-    mockResolveVoteIdentity.mockResolvedValue(session(hashCsrfToken(csrf, keyring)))
+    mockResolveVoteIdentityResult.mockResolvedValue(okResult(session(hashCsrfToken(csrf, keyring))))
     const res = await POST(
       makeRequest(validBody(), { headers: { host: HOST, 'x-csrf-token': csrf } }),
     )
@@ -405,7 +414,7 @@ describe('POST /api/vota — CSRF sessione (C05)', () => {
 
   it('Origin cross-site → 403', async () => {
     const csrf = generateCsrfToken()
-    mockResolveVoteIdentity.mockResolvedValue(session(hashCsrfToken(csrf, keyring)))
+    mockResolveVoteIdentityResult.mockResolvedValue(okResult(session(hashCsrfToken(csrf, keyring))))
     const res = await POST(
       makeRequest(validBody(), {
         headers: { origin: 'https://attacker.test', host: HOST, 'x-csrf-token': csrf },
@@ -418,7 +427,7 @@ describe('POST /api/vota — CSRF sessione (C05)', () => {
 
   it('X-CSRF-Token valido e Origin same-origin → 200, vota e rinnova idle', async () => {
     const csrf = generateCsrfToken()
-    mockResolveVoteIdentity.mockResolvedValue(session(hashCsrfToken(csrf, keyring)))
+    mockResolveVoteIdentityResult.mockResolvedValue(okResult(session(hashCsrfToken(csrf, keyring))))
     const res = await POST(
       makeRequest(validBody(), {
         headers: { origin: ORIGIN, host: HOST, 'x-csrf-token': csrf },
@@ -435,6 +444,7 @@ describe('POST /api/vota — CSRF sessione (C05)', () => {
     const res = await POST(makeRequest(validBody(), { cookie: UUID, headers: { host: HOST } }))
     expect(res.status).toBe(200)
     expect(mockResolveVoteIdentity).not.toHaveBeenCalled()
+    expect(mockResolveVoteIdentityResult).not.toHaveBeenCalled()
     expect(mockTouchSession).not.toHaveBeenCalled()
   })
 })
@@ -476,6 +486,7 @@ describe('POST /api/vota — C08 semantica dei mode', () => {
     mockVerifyTurnstile.mockResolvedValue({ ok: true })
     mockGetActiveEvent.mockResolvedValue({ id: 'ev-1', batch: 'TEST' })
     mockResolveOrCreatePrincipal.mockResolvedValue('prim-shadow')
+    mockResolveVoteIdentityResult.mockResolvedValue(noneResult())
     mockLinkVoteToPrincipal.mockResolvedValue(undefined)
   })
 
@@ -562,7 +573,7 @@ describe('POST /api/vota — C08 semantica dei mode', () => {
   it('dual: sessione valida → usa il principal della sessione', async () => {
     mockMode.mockReturnValue('dual')
     const csrf = generateCsrfToken()
-    mockResolveVoteIdentity.mockResolvedValue(session(hashCsrfToken(csrf, keyring)))
+    mockResolveVoteIdentityResult.mockResolvedValue(okResult(session(hashCsrfToken(csrf, keyring))))
     const res = await POST(
       makeRequest(validBody(), {
         headers: { origin: ORIGIN, host: HOST, 'x-csrf-token': csrf },
@@ -578,7 +589,7 @@ describe('POST /api/vota — C08 semantica dei mode', () => {
 
   it('dual: senza sessione ma con cookie legacy → fallback cookie, nessun CSRF', async () => {
     mockMode.mockReturnValue('dual')
-    mockResolveVoteIdentity.mockResolvedValue(null)
+    mockResolveVoteIdentityResult.mockResolvedValue(noneResult())
     const res = await POST(makeRequest(validBody(), { cookie: UUID }))
 
     expect(res.status).toBe(200)
@@ -591,7 +602,7 @@ describe('POST /api/vota — C08 semantica dei mode', () => {
 
   it('dual: nessuna sessione e nessun cookie → 400, nessun voto', async () => {
     mockMode.mockReturnValue('dual')
-    mockResolveVoteIdentity.mockResolvedValue(null)
+    mockResolveVoteIdentityResult.mockResolvedValue(noneResult())
     const res = await POST(makeRequest(validBody({ voterId: UUID })))
     expect(res.status).toBe(400)
     expect(mockSubmitVote).not.toHaveBeenCalled()
@@ -599,7 +610,29 @@ describe('POST /api/vota — C08 semantica dei mode', () => {
 
   it('dual: errore di risoluzione primaria (throw) → 503 fail-closed, nessun voto', async () => {
     mockMode.mockReturnValue('dual')
-    mockResolveVoteIdentity.mockRejectedValue(new Error('db down'))
+    mockResolveVoteIdentityResult.mockRejectedValue(new Error('db down'))
+    const res = await POST(makeRequest(validBody(), { cookie: UUID }))
+
+    expect(res.status).toBe(503)
+    expect(mockSubmitVote).not.toHaveBeenCalled()
+  })
+
+  it('dual: errore DB nel lookup ({ error }, non throw) → 503, nessun fallback, nessun voto', async () => {
+    mockMode.mockReturnValue('dual')
+    mockResolveVoteIdentityResult.mockResolvedValue(errorResult())
+    const res = await POST(makeRequest(validBody(), { cookie: UUID }))
+
+    expect(res.status).toBe(503)
+    expect(mockSubmitVote).not.toHaveBeenCalled()
+    // L'errore NON deve degradare nel fallback legacy (cookie presente).
+    expect(mockResolveOrCreatePrincipal).not.toHaveBeenCalled()
+    expect(mockTouchSession).not.toHaveBeenCalled()
+  })
+
+  it('dual: fallback, throw di resolveOrCreatePrincipal → 503 (non 500), nessun voto', async () => {
+    mockMode.mockReturnValue('dual')
+    mockResolveVoteIdentityResult.mockResolvedValue(noneResult())
+    mockResolveOrCreatePrincipal.mockRejectedValue(new Error('insert failed'))
     const res = await POST(makeRequest(validBody(), { cookie: UUID }))
 
     expect(res.status).toBe(503)
@@ -618,7 +651,7 @@ describe('POST /api/vota — C08 semantica dei mode', () => {
 
   it('dual: errori shadow/segnali non bloccano il voto legacy in fallback', async () => {
     mockMode.mockReturnValue('dual')
-    mockResolveVoteIdentity.mockResolvedValue(null)
+    mockResolveVoteIdentityResult.mockResolvedValue(noneResult())
     // SIGNAL_HMAC_KEY assente: signalsFingerprint solleva, ma non deve bloccare.
     delete process.env.SIGNAL_HMAC_KEY
     delete process.env.SIGNAL_HMAC_KEY_ID
@@ -630,7 +663,7 @@ describe('POST /api/vota — C08 semantica dei mode', () => {
 
   it('session: senza sessione → 503 fail-closed, nessun voto', async () => {
     mockMode.mockReturnValue('session')
-    mockResolveVoteIdentity.mockResolvedValue(null)
+    mockResolveVoteIdentityResult.mockResolvedValue(noneResult())
     const res = await POST(makeRequest(validBody(), { cookie: UUID }))
 
     expect(res.status).toBe(503)
@@ -639,8 +672,17 @@ describe('POST /api/vota — C08 semantica dei mode', () => {
 
   it('session: nessun fallback legacy anche con cookie valido', async () => {
     mockMode.mockReturnValue('session')
-    mockResolveVoteIdentity.mockResolvedValue(null)
+    mockResolveVoteIdentityResult.mockResolvedValue(noneResult())
     await POST(makeRequest(validBody(), { cookie: UUID }))
+    expect(mockSubmitVote).not.toHaveBeenCalled()
+  })
+
+  it('session: errore DB nel lookup → 503, nessun voto', async () => {
+    mockMode.mockReturnValue('session')
+    mockResolveVoteIdentityResult.mockResolvedValue(errorResult())
+    const res = await POST(makeRequest(validBody(), { cookie: UUID }))
+
+    expect(res.status).toBe(503)
     expect(mockSubmitVote).not.toHaveBeenCalled()
   })
 
@@ -649,7 +691,7 @@ describe('POST /api/vota — C08 semantica dei mode', () => {
     process.env.SIGNAL_HMAC_KEY = SPINNER_KEY
     process.env.SIGNAL_HMAC_KEY_ID = 's1'
     const csrf = generateCsrfToken()
-    mockResolveVoteIdentity.mockResolvedValue(session(hashCsrfToken(csrf, keyring)))
+    mockResolveVoteIdentityResult.mockResolvedValue(okResult(session(hashCsrfToken(csrf, keyring))))
     const res = await POST(
       makeRequest(validBody({ voterId: OTHER_UUID }), {
         headers: { origin: ORIGIN, host: HOST, 'x-csrf-token': csrf },
