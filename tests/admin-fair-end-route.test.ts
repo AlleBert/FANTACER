@@ -46,12 +46,11 @@ it('PUT 400 con orario non valido', async () => {
 })
 
 it('PUT 200 aggiorna e calcola revealAt', async () => {
-  const eq = jest.fn().mockResolvedValue({ error: null })
-  const supabase = { from: jest.fn(() => ({ update: jest.fn(() => ({ eq })) })) }
+  const supabase = { from: jest.fn(() => ({ upsert: jest.fn(async () => ({ error: null })) })) }
   ;(createAdminClient as jest.Mock).mockReturnValue(supabase)
   const res = await PUT(req({ enabled: true, revealTime: '12:30', ceremony: { '1': '14:00', '2': '13:45', '3': '13:30' } }))
   const data = await res.json()
   expect(res.status).toBe(200)
   expect(typeof data.revealAt).toBe('string')
-  expect(supabase.from).toHaveBeenCalledTimes(2)
+  expect(supabase.from).toHaveBeenCalledTimes(1)
 })

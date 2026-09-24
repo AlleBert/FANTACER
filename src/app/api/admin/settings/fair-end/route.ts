@@ -62,14 +62,14 @@ export async function PUT(request: NextRequest) {
     const supabase = createAdminClient()
     const { error: e1 } = await supabase
       .from('site_settings')
-      .update({ value: enabled ? 'true' : 'false', updated_at: now })
-      .eq('key', 'fair_end_enabled')
+      .upsert(
+        [
+          { key: 'fair_end_enabled', value: enabled ? 'true' : 'false', updated_at: now },
+          { key: 'fair_end_config', value: JSON.stringify(config), updated_at: now },
+        ],
+        { onConflict: 'key' },
+      )
     if (e1) throw e1
-    const { error: e2 } = await supabase
-      .from('site_settings')
-      .update({ value: JSON.stringify(config), updated_at: now })
-      .eq('key', 'fair_end_config')
-    if (e2) throw e2
 
     return NextResponse.json({ success: true, revealAt })
   } catch (e) {

@@ -51,6 +51,8 @@ export function FairEndCard({ phase, revealAt, ceremony }: FairEndCardProps) {
 
   const countdown = useCountdown(phase === 'waiting' ? revealAt : null)
 
+  if (phase === 'off') return null
+
   if (phase === 'waiting') {
     return (
       <div className="flex-1 flex flex-col items-center justify-safe-center w-full max-w-2xl mx-auto gap-(--rythm-sec) py-8">
