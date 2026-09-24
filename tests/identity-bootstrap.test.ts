@@ -17,8 +17,11 @@ jest.mock('@/lib/bootstrap-rate-limit', () => ({
 jest.mock('@/lib/bootstrap-nonce', () => ({
   createBootstrapNonce: jest.fn(),
   consumeBootstrapNonce: jest.fn(),
+  countOutstandingBootstrapNonces: jest.fn(),
+  bootstrapNonceMaxOutstanding: jest.fn(() => 3),
   verifyBootstrapCData: jest.fn(),
   BOOTSTRAP_CDATA_PREFIX: 'bootstrap:',
+  BOOTSTRAP_NONCE_TTL_MS: 120000,
 }))
 jest.mock('@/lib/session-identity', () => ({
   SESSION_COOKIE: 'fantacer_session',
@@ -57,6 +60,8 @@ import { evaluateBootstrapRateLimit } from '@/lib/bootstrap-rate-limit'
 import {
   createBootstrapNonce,
   consumeBootstrapNonce,
+  countOutstandingBootstrapNonces,
+  bootstrapNonceMaxOutstanding,
   verifyBootstrapCData,
 } from '@/lib/bootstrap-nonce'
 import { keyringFromEnv } from '@/lib/session-identity'
@@ -74,6 +79,8 @@ const mockCreateAdminClient = createAdminClient as jest.Mock
 const mockEvaluate = evaluateBootstrapRateLimit as jest.Mock
 const mockCreateNonce = createBootstrapNonce as jest.Mock
 const mockConsumeNonce = consumeBootstrapNonce as jest.Mock
+const mockCountOutstanding = countOutstandingBootstrapNonces as jest.Mock
+const mockMaxOutstanding = bootstrapNonceMaxOutstanding as jest.Mock
 const mockVerifyCData = verifyBootstrapCData as jest.Mock
 const mockKeyring = keyringFromEnv as jest.Mock
 const mockMode = sessionIdentityMode as jest.Mock
@@ -124,7 +131,9 @@ beforeEach(() => {
   })
   mockVerifyTurnstile.mockResolvedValue({ ok: true })
   mockVerifyCData.mockReturnValue(NONCE)
-  mockConsumeNonce.mockResolvedValue(true)
+  mockConsumeNonce.mockResolvedValue('consumed')
+  mockCountOutstanding.mockResolvedValue(0)
+  mockMaxOutstanding.mockReturnValue(3)
   mockMode.mockReturnValue('dual')
   mockKeyring.mockReturnValue({ active: 'k1', keys: new Map() })
   mockGetActiveEvent.mockResolvedValue({ id: 'ev-1', batch: 'TEST' })
@@ -162,17 +171,26 @@ describe('POST /api/identity/bootstrap', () => {
     expect(mockCreateSession).not.toHaveBeenCalled()
   })
 
-  it('nonce sconosciuto/riuso → 403, nessuna sessione', async () => {
-    mockConsumeNonce.mockResolvedValue(false)
+  it('nonce sconosciuto o riuso → 403, nessuna sessione', async () => {
+    mockConsumeNonce.mockResolvedValue('invalid')
     const res = await POST(makeRequest(validBody()))
     expect(res.status).toBe(403)
     expect(mockCreateSession).not.toHaveBeenCalled()
   })
 
-  it('nonce scaduto (consume false) → 403', async () => {
-    mockConsumeNonce.mockResolvedValue(false)
+  it('nonce scaduto → 403, nessun cookie di sessione', async () => {
+    mockConsumeNonce.mockResolvedValue('invalid')
     const res = await POST(makeRequest(validBody()))
     expect(res.status).toBe(403)
+    expect(mockVerifyTurnstile).toHaveBeenCalled()
+    expect(res.headers.get('set-cookie')).toBeNull()
+    expect(mockCreateSession).not.toHaveBeenCalled()
+  })
+
+  it('errore DB in consumazione → 503 (distinto da invalid)', async () => {
+    mockConsumeNonce.mockResolvedValue('error')
+    const res = await POST(makeRequest(validBody()))
+    expect(res.status).toBe(503)
     expect(mockCreateSession).not.toHaveBeenCalled()
   })
 
@@ -258,6 +276,20 @@ describe('POST /api/identity/bootstrap', () => {
     expect(mockCreateSession).not.toHaveBeenCalled()
   })
 
+  it('nessun IP trusted → 503 fail-closed, nessuna verifica', async () => {
+    mockTrustedIp.mockReturnValue({
+      ip: null,
+      detectedIp: null,
+      source: 'none',
+      confidence: 'none',
+    })
+    const res = await POST(makeRequest(validBody()))
+    expect(res.status).toBe(503)
+    expect(mockEvaluate).not.toHaveBeenCalled()
+    expect(mockVerifyTurnstile).not.toHaveBeenCalled()
+    expect(mockCreateSession).not.toHaveBeenCalled()
+  })
+
   it('modo identità off → 404', async () => {
     mockMode.mockReturnValue('off')
     const res = await POST(makeRequest(validBody()))
@@ -267,11 +299,12 @@ describe('POST /api/identity/bootstrap', () => {
 })
 
 describe('GET /api/identity/bootstrap/nonce', () => {
-  it('emette nonce + cData', async () => {
+  it('emette nonce + cData con Cache-Control no-store', async () => {
     const res = await GET(makeRequest(undefined))
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ nonce: NONCE, cData: CDATA })
-    expect(mockCreateNonce).toHaveBeenCalled()
+    expect(res.headers.get('Cache-Control')).toBe('no-store')
+    expect(mockCreateNonce).toHaveBeenCalledWith(expect.anything(), 'k1.hash')
   })
 
   it('rate-limit enforce oltre soglia → 429 + Retry-After, nessun nonce', async () => {
@@ -288,10 +321,38 @@ describe('GET /api/identity/bootstrap/nonce', () => {
     expect(mockCreateNonce).not.toHaveBeenCalled()
   })
 
+  it('cap outstanding raggiunto → 429 senza inserire', async () => {
+    mockCountOutstanding.mockResolvedValue(3)
+    mockMaxOutstanding.mockReturnValue(3)
+    const res = await GET(makeRequest(undefined))
+    expect(res.status).toBe(429)
+    expect(mockCreateNonce).not.toHaveBeenCalled()
+  })
+
+  it('errore conteggio outstanding → 503', async () => {
+    mockCountOutstanding.mockResolvedValue(null)
+    const res = await GET(makeRequest(undefined))
+    expect(res.status).toBe(503)
+    expect(mockCreateNonce).not.toHaveBeenCalled()
+  })
+
   it('errore creazione nonce → 503', async () => {
     mockCreateNonce.mockResolvedValue(null)
     const res = await GET(makeRequest(undefined))
     expect(res.status).toBe(503)
+  })
+
+  it('nessun IP trusted → 503 fail-closed, nessun nonce', async () => {
+    mockTrustedIp.mockReturnValue({
+      ip: null,
+      detectedIp: null,
+      source: 'none',
+      confidence: 'none',
+    })
+    const res = await GET(makeRequest(undefined))
+    expect(res.status).toBe(503)
+    expect(mockEvaluate).not.toHaveBeenCalled()
+    expect(mockCreateNonce).not.toHaveBeenCalled()
   })
 
   it('modo identità off → 404', async () => {

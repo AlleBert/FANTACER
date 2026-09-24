@@ -42,10 +42,11 @@ export async function POST(request: NextRequest) {
 
   try {
     // P0-4c: rate limit per primo, su IP attendibile pseudonimizzato.
-    // HMAC mancante con IP presente ⇒ fail-closed (nessun rate limit affidabile).
+    // Senza IP attendibile o HMAC non disponibile ⇒ fail-closed (503), mai
+    // saltare il rate limit.
     const ipSignal = getTrustedClientIp(request)
     const ipHash = ipSignal.ip ? hmacIp(ipSignal.ip) : null
-    if (ipSignal.ip && !ipHash) {
+    if (!ipSignal.ip || !ipHash) {
       return NextResponse.json({ error: 'identity unavailable' }, { status: 503 })
     }
 
@@ -83,9 +84,12 @@ export async function POST(request: NextRequest) {
 
     const admin = createAdminClient()
 
-    // Monouso, atomico. Non valido/scaduto/già usato ⇒ nessuna sessione.
+    // Monouso, atomico. Errore DB ⇒ 503; non valido/scaduto/già usato ⇒ 403.
     const consumed = await consumeBootstrapNonce(admin, nonce)
-    if (!consumed) {
+    if (consumed === 'error') {
+      return NextResponse.json({ error: 'identity unavailable' }, { status: 503 })
+    }
+    if (consumed !== 'consumed') {
       return NextResponse.json({ error: err('voteError.securityFailed') }, { status: 403 })
     }
 

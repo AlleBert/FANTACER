@@ -13,12 +13,16 @@ import type { createAdminClient } from '@/lib/supabase/admin'
  * effimere, quindi uno store per-istanza non è affidabile. La consumazione è
  * atomica (singola UPDATE condizionata con `RETURNING`), il che rende il
  * replay concorrente impossibile.
+ *
+ * Ogni nonce è legato al bucket IP pseudonimizzato (`ip_hmac`) così da poter
+ * limitare i nonce in sospeso per IP.
  */
 
 type Admin = ReturnType<typeof createAdminClient>
 
 export const BOOTSTRAP_NONCE_TTL_MS = 120_000
 export const BOOTSTRAP_CDATA_PREFIX = 'bootstrap:'
+export const BOOTSTRAP_NONCE_MAX_OUTSTANDING = 3
 
 const NONCE_MIN_LEN = 16
 const NONCE_MAX_LEN = 128
@@ -34,11 +38,20 @@ export function newBootstrapNonce(): string {
   return randomBytes(32).toString('base64url')
 }
 
+/** Cap (env-overridable) dei nonce in sospeso per bucket IP. */
+export function bootstrapNonceMaxOutstanding(): number {
+  const raw = Number(process.env.BOOTSTRAP_NONCE_MAX_OUTSTANDING)
+  return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : BOOTSTRAP_NONCE_MAX_OUTSTANDING
+}
+
 /**
- * Crea e persiste un nonce monouso con TTL. Fail-closed: `null` su errore DB
- * (nessuna identità creabile senza nonce).
+ * Crea e persiste un nonce monouso con TTL, legato al bucket IP (`ip_hmac`).
+ * Fail-closed: `null` su errore DB (nessuna identità creabile senza nonce).
  */
-export async function createBootstrapNonce(admin: Admin): Promise<BootstrapNonce | null> {
+export async function createBootstrapNonce(
+  admin: Admin,
+  ipHash?: string | null,
+): Promise<BootstrapNonce | null> {
   const nonce = newBootstrapNonce()
   const expiresAt = new Date(Date.now() + BOOTSTRAP_NONCE_TTL_MS).toISOString()
 
@@ -46,10 +59,31 @@ export async function createBootstrapNonce(admin: Admin): Promise<BootstrapNonce
     nonce,
     purpose: 'bootstrap',
     expires_at: expiresAt,
+    ip_hmac: ipHash ?? null,
   })
   if (error) return null
 
   return { nonce, cData: `${BOOTSTRAP_CDATA_PREFIX}${nonce}` }
+}
+
+/**
+ * Conta i nonce non consumati e non scaduti per lo stesso bucket IP.
+ * `null` su errore DB (fail-closed: il chiamante risponde 503).
+ */
+export async function countOutstandingBootstrapNonces(
+  admin: Admin,
+  ipHash: string,
+): Promise<number | null> {
+  const now = new Date().toISOString()
+  const { count, error } = await admin
+    .from('bootstrap_nonces')
+    .select('nonce', { count: 'exact', head: true })
+    .eq('ip_hmac', ipHash)
+    .is('consumed_at', null)
+    .gt('expires_at', now)
+
+  if (error) return null
+  return count ?? 0
 }
 
 /**
@@ -66,13 +100,25 @@ export function verifyBootstrapCData(cData: unknown): string | null {
 }
 
 /**
- * Consuma il nonce in modo atomico e monouso. `true` solo se la riga esiste,
- * non è scaduta e non era già consumata. Fail-closed: `false` su errore DB.
+ * Esito della consumazione:
+ * - `'consumed'`: la riga esisteva, non scaduta e non consumata → consumata ora;
+ * - `'invalid'`: nonce vuoto, assente, scaduto o già consumato (replay);
+ * - `'error'`: errore infrastrutturale DB → il chiamante risponde 503.
+ */
+export type BootstrapNonceConsumeResult = 'consumed' | 'invalid' | 'error'
+
+/**
+ * Consuma il nonce in modo atomico e monouso. Distingue l'errore DB dal
+ * semplice "non consumato" (replay/scadenza), così il chiamante può mappare
+ * `'error'` → 503 e `'invalid'` → 403.
  *
  * Il cleanup per scadenza è best-effort e non blocca la decisione.
  */
-export async function consumeBootstrapNonce(admin: Admin, nonce: string): Promise<boolean> {
-  if (!nonce) return false
+export async function consumeBootstrapNonce(
+  admin: Admin,
+  nonce: string,
+): Promise<BootstrapNonceConsumeResult> {
+  if (!nonce) return 'invalid'
   const now = new Date().toISOString()
 
   try {
@@ -89,6 +135,6 @@ export async function consumeBootstrapNonce(admin: Admin, nonce: string): Promis
     .gt('expires_at', now)
     .select('nonce')
 
-  if (error) return false
-  return Array.isArray(data) && data.length === 1
+  if (error) return 'error'
+  return Array.isArray(data) && data.length === 1 ? 'consumed' : 'invalid'
 }
