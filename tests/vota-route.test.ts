@@ -29,6 +29,7 @@ jest.mock('@/lib/session-identity-server', () => ({
   resolveSessionPrincipal: jest.fn(),
   linkVoteToPrincipal: jest.fn(),
   resolveVoteIdentity: jest.fn(),
+  touchSession: jest.fn(),
 }))
 jest.mock('@/lib/locale', () => ({
   LOCALE_COOKIE: 'fantacer_locale',
@@ -42,7 +43,7 @@ import { submitVote } from '@/lib/supabase/vote-api'
 import { getAntibotEnabled, getFairEndState } from '@/lib/site-flags'
 import { verifyTurnstile } from '@/lib/turnstile'
 import { evaluateVoteRateLimit } from '@/lib/vote-rate-limit'
-import { sessionIdentityMode, getActiveEvent, resolveVoteIdentity } from '@/lib/session-identity-server'
+import { sessionIdentityMode, getActiveEvent, resolveVoteIdentity, touchSession } from '@/lib/session-identity-server'
 import { parseKeyring, generateCsrfToken, hashCsrfToken } from '@/lib/session-identity'
 
 const mockCreateAdminClient = createAdminClient as jest.Mock
@@ -55,6 +56,7 @@ const mockEvaluateVoteRateLimit = evaluateVoteRateLimit as jest.Mock
 const mockMode = sessionIdentityMode as jest.Mock
 const mockGetActiveEvent = getActiveEvent as jest.Mock
 const mockResolveVoteIdentity = resolveVoteIdentity as jest.Mock
+const mockTouchSession = touchSession as jest.Mock
 
 const UUID = '11111111-2222-4333-8444-555555555555'
 const OTHER_UUID = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee'
@@ -332,6 +334,7 @@ describe('POST /api/vota — CSRF sessione (C05)', () => {
     delete process.env.SESSION_HMAC_ACTIVE
     mockMode.mockReturnValue('off')
     mockResolveVoteIdentity.mockReset()
+    mockTouchSession.mockReset()
   })
 
   it('sessione risolta senza X-CSRF-Token → 403, nessun voto', async () => {
@@ -341,6 +344,7 @@ describe('POST /api/vota — CSRF sessione (C05)', () => {
     )
     expect(res.status).toBe(403)
     expect(mockSubmitVote).not.toHaveBeenCalled()
+    expect(mockTouchSession).not.toHaveBeenCalled()
   })
 
   it('X-CSRF-Token errato → 403', async () => {
@@ -352,6 +356,7 @@ describe('POST /api/vota — CSRF sessione (C05)', () => {
     )
     expect(res.status).toBe(403)
     expect(mockSubmitVote).not.toHaveBeenCalled()
+    expect(mockTouchSession).not.toHaveBeenCalled()
   })
 
   it('Origin assente → 403 fail-closed', async () => {
@@ -362,6 +367,7 @@ describe('POST /api/vota — CSRF sessione (C05)', () => {
     )
     expect(res.status).toBe(403)
     expect(mockSubmitVote).not.toHaveBeenCalled()
+    expect(mockTouchSession).not.toHaveBeenCalled()
   })
 
   it('Origin cross-site → 403', async () => {
@@ -374,9 +380,10 @@ describe('POST /api/vota — CSRF sessione (C05)', () => {
     )
     expect(res.status).toBe(403)
     expect(mockSubmitVote).not.toHaveBeenCalled()
+    expect(mockTouchSession).not.toHaveBeenCalled()
   })
 
-  it('X-CSRF-Token valido e Origin same-origin → 200 e vota', async () => {
+  it('X-CSRF-Token valido e Origin same-origin → 200, vota e rinnova idle', async () => {
     const csrf = generateCsrfToken()
     mockResolveVoteIdentity.mockResolvedValue(session(hashCsrfToken(csrf, keyring)))
     const res = await POST(
@@ -386,6 +393,8 @@ describe('POST /api/vota — CSRF sessione (C05)', () => {
     )
     expect(res.status).toBe(200)
     expect(mockSubmitVote).toHaveBeenCalled()
+    expect(mockTouchSession).toHaveBeenCalledTimes(1)
+    expect(mockTouchSession).toHaveBeenCalledWith(expect.anything(), 'sess-1')
   })
 
   it('modo off: nessuna sessione e nessuna verifica CSRF (legacy)', async () => {
@@ -393,5 +402,6 @@ describe('POST /api/vota — CSRF sessione (C05)', () => {
     const res = await POST(makeRequest(validBody(), { headers: { host: HOST } }))
     expect(res.status).toBe(200)
     expect(mockResolveVoteIdentity).not.toHaveBeenCalled()
+    expect(mockTouchSession).not.toHaveBeenCalled()
   })
 })

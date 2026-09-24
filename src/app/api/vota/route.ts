@@ -18,6 +18,7 @@ import {
   resolveOrCreatePrincipal,
   resolveVoteIdentity,
   linkVoteToPrincipal,
+  touchSession,
   type ResolvedSession,
 } from '@/lib/session-identity-server'
 import { romeDateKey } from '@/lib/admin-analytics'
@@ -104,6 +105,9 @@ export async function POST(request: NextRequest) {
         if (!csrf.ok) {
           return respond({ error: 'Forbidden' }, 403, 'csrf_failed')
         }
+        // Rinnovo idle best-effort SOLO dopo CSRF ok: nessuna write
+        // amplification su richieste non autorizzate.
+        await touchSession(admin, session.sessionId)
       }
       const event = await getActiveEvent(admin)
       eventId = event?.id ?? null

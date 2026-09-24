@@ -204,10 +204,10 @@ export interface SessionCookieSource {
  *
  * Wrapper su `resolveSession`: nessuna identità nuova, fail-closed su cookie
  * assente/malformato/revocato/scaduto. Espone anche `csrfHash`, necessario a
- * `verifyCsrfForRequest`. Come il precedente `resolveSessionPrincipal`,
- * rinfresca `last_seen_at` (best-effort, non blocca la richiesta): senza questo
- * il clock idle resterebbe fermo al bootstrap e una sessione attiva scadrebbe
- * dopo `SESSION_IDLE_MS`. Base per C08 (`/api/vota` + `/api/vota/status`
+ * `verifyCsrfForRequest`. **Nessuna scrittura**: il rinnovo idle
+ * (`touchSession`) è responsabilità del chiamante e va eseguito solo **dopo**
+ * che il CSRF è stato verificato, per evitare write amplification su richieste
+ * non autorizzate. Base per C08 (`/api/vota` + `/api/vota/status`
  * sessione-only) senza introdurre qui logica di voto.
  */
 export async function resolveVoteIdentity(
@@ -216,9 +216,7 @@ export async function resolveVoteIdentity(
   keyring: SessionKeyring,
 ): Promise<ResolvedSession | null> {
   const cookie = request.cookies.get(SESSION_COOKIE)?.value ?? null
-  const session = await resolveSession(admin, cookie, keyring)
-  if (session) void touchSession(admin, session.sessionId)
-  return session
+  return resolveSession(admin, cookie, keyring)
 }
 
 /** Rinnovo idle best-effort: aggiorna `last_seen_at`, non fallisce mai la richiesta. */

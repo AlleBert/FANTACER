@@ -11,17 +11,19 @@ jest.mock('@/lib/vote-dev-bypass', () => ({
 jest.mock('@/lib/session-identity-server', () => ({
   sessionIdentityMode: jest.fn(() => 'off'),
   resolveVoteIdentity: jest.fn(),
+  touchSession: jest.fn(),
 }))
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import * as bypass from '@/lib/vote-dev-bypass'
-import { sessionIdentityMode, resolveVoteIdentity } from '@/lib/session-identity-server'
+import { sessionIdentityMode, resolveVoteIdentity, touchSession } from '@/lib/session-identity-server'
 import { parseKeyring, generateCsrfToken, hashCsrfToken } from '@/lib/session-identity'
 
 const mockCreateAdminClient = createAdminClient as jest.Mock
 const mockIsVoteLimitBypassed = bypass.isVoteLimitBypassed as jest.Mock
 const mockMode = sessionIdentityMode as jest.Mock
 const mockResolveVoteIdentity = resolveVoteIdentity as jest.Mock
+const mockTouchSession = touchSession as jest.Mock
 
 const UUID = '11111111-2222-4333-8444-555555555555'
 const OTHER_UUID = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee'
@@ -236,6 +238,7 @@ describe('POST /api/vota/status — CSRF sessione (C05)', () => {
     delete process.env.SESSION_HMAC_ACTIVE
     mockMode.mockReturnValue('off')
     mockResolveVoteIdentity.mockReset()
+    mockTouchSession.mockReset()
   })
 
   it('sessione risolta senza X-CSRF-Token → 403', async () => {
@@ -244,6 +247,7 @@ describe('POST /api/vota/status — CSRF sessione (C05)', () => {
       postRequest({ voterId: UUID }, undefined, { origin: ORIGIN, host: HOST }),
     )
     expect(res.status).toBe(403)
+    expect(mockTouchSession).not.toHaveBeenCalled()
   })
 
   it('X-CSRF-Token errato → 403', async () => {
@@ -256,6 +260,7 @@ describe('POST /api/vota/status — CSRF sessione (C05)', () => {
       }),
     )
     expect(res.status).toBe(403)
+    expect(mockTouchSession).not.toHaveBeenCalled()
   })
 
   it('Origin assente → 403 fail-closed', async () => {
@@ -265,9 +270,10 @@ describe('POST /api/vota/status — CSRF sessione (C05)', () => {
       postRequest({ voterId: UUID }, undefined, { host: HOST, 'x-csrf-token': csrf }),
     )
     expect(res.status).toBe(403)
+    expect(mockTouchSession).not.toHaveBeenCalled()
   })
 
-  it('X-CSRF-Token valido e Origin same-origin → 200 e interroga il DB', async () => {
+  it('X-CSRF-Token valido e Origin same-origin → 200, interroga il DB e rinnova idle', async () => {
     const csrf = generateCsrfToken()
     const supabase = buildSupabase(SESSION, COMPANIES)
     mockCreateAdminClient.mockReturnValue(supabase)
@@ -282,13 +288,16 @@ describe('POST /api/vota/status — CSRF sessione (C05)', () => {
     )
     expect(res.status).toBe(200)
     expect(supabase._eqFingerprint).toHaveBeenCalled()
+    expect(mockTouchSession).toHaveBeenCalledTimes(1)
+    expect(mockTouchSession).toHaveBeenCalledWith(supabase, 'sess-1')
   })
 
-  it('modo dual senza sessione: fallback legacy senza CSRF', async () => {
+  it('modo dual senza sessione: fallback legacy senza CSRF né touch', async () => {
     mockResolveVoteIdentity.mockResolvedValue(null)
     const res = await POST(postRequest({ voterId: UUID }))
     expect(res.status).toBe(200)
     expect(mockResolveVoteIdentity).toHaveBeenCalled()
+    expect(mockTouchSession).not.toHaveBeenCalled()
   })
 
   it('modo off: nessuna risoluzione sessione né CSRF (legacy)', async () => {
@@ -296,5 +305,6 @@ describe('POST /api/vota/status — CSRF sessione (C05)', () => {
     const res = await POST(postRequest({ voterId: UUID }))
     expect(res.status).toBe(200)
     expect(mockResolveVoteIdentity).not.toHaveBeenCalled()
+    expect(mockTouchSession).not.toHaveBeenCalled()
   })
 })

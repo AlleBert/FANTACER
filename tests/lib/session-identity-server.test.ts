@@ -213,8 +213,8 @@ describe('resolveVoteIdentity', () => {
 
     expect(result?.principalId).toBe('prim-1')
     expect(result?.sessionId).toBe('sess-1')
-    // touch idle best-effort, come il precedente resolveSessionPrincipal
-    expect(admin.update).toHaveBeenCalled()
+    // Nessuna scrittura: il rinnovo idle è del chiamante, dopo il CSRF.
+    expect(admin.update).not.toHaveBeenCalled()
   })
 
   it('cookie assente → null (fail-closed)', async () => {

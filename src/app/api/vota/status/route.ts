@@ -4,7 +4,7 @@ import { isVoteLimitBypassed } from '@/lib/vote-dev-bypass'
 import { resolveVoterKey, applyVoterCookie } from '@/lib/vote-identity-server'
 import { keyringFromEnv } from '@/lib/session-identity'
 import { verifyCsrfForRequest } from '@/lib/vote-csrf'
-import { sessionIdentityMode, resolveVoteIdentity } from '@/lib/session-identity-server'
+import { sessionIdentityMode, resolveVoteIdentity, touchSession } from '@/lib/session-identity-server'
 
 interface VoteSessionRow {
   company1_id: string
@@ -73,6 +73,8 @@ export async function POST(request: NextRequest) {
           if (!csrf.ok) {
             return respond({ error: 'Forbidden' }, 403)
           }
+          // Rinnovo idle best-effort SOLO dopo CSRF ok.
+          await touchSession(supabase, resolvedSession.sessionId)
         }
       }
     }

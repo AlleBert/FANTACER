@@ -11,6 +11,18 @@ import { verifyCsrf, type SessionKeyring } from '@/lib/session-identity'
  * Difesa aggiuntiva same-origin: se `Origin` è presente deve combaciare con
  * l'host della richiesta (`Host`, oppure `request.nextUrl.origin`).
  *
+ * **Origin/Host è difesa-in-profondità, NON il controllo di autorizzazione.**
+ * `Origin` è un header controllato dal browser e, in contesti non-browser,
+ * falsificabile dal chiamante: da solo non prova nulla. Il controllo di
+ * autorizzazione è il **token CSRF session-bound** (double-submit contro
+ * `csrf_hash`): Origin/Host riduce la superficie (blocca i form/fetch
+ * cross-site dei browser reali) ma non sostituisce il token. Un eventuale
+ * **allowlist di origin canonico** (`APP_CANONICAL_ORIGIN`, più origini in
+ * preview/staging) irrobustirebbe questo layer; resta **fuori scope** qui.
+ * Nota: si confronta solo l'**host** (case-insensitive, con eventuale porta),
+ * **non lo scheme** — una downgrade http/https è una minaccia distinta
+ * (mixed-content/HSTS), non coperta da questo check.
+ *
  * **Decisione fail-closed sull'Origin assente**: su una rotta che modifica
  * stato l'assenza di `Origin` è rifiutata (`reason: 'origin'`). Un browser
  * reale invia sempre `Origin` su POST/fetch same-origin; l'unico caso senza
