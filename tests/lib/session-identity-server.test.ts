@@ -232,10 +232,33 @@ describe('renewSession', () => {
     expect(patch.csrf_hash).toBe(hashCsrfToken(renewed!.csrfToken, keyring))
     expect(patch.key_id).toBe('k1')
     expect(typeof patch.last_seen_at).toBe('string')
+    // il renew NON tocca la scadenza assoluta (cap non estendibile)
+    expect(patch).not.toHaveProperty('expires_at')
+    // lookup per token_hash (l'id non è noto prima della lookup) e scrittura
+    // scoped all'id della riga risolta
+    expect(admin.selectEq).toHaveBeenCalledWith('token_hash', oldHash)
     expect(admin.updateEq).toHaveBeenCalledWith('id', 'sess-1')
 
     // il nuovo csrf non valida più il vecchio token
     expect(verifyCsrf(oldCsrf, patch.csrf_hash as string, keyring)).toBe(false)
+  })
+
+  it('null se idle scaduta, senza update', async () => {
+    const row = validRow({
+      last_seen_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+    })
+    const admin = mockAdmin({ row })
+    expect(
+      await renewSession(asAdmin(admin), formatSessionCookie('k1', generateToken()), keyring),
+    ).toBeNull()
+    expect(admin.update).not.toHaveBeenCalled()
+  })
+
+  it('null se update fallisce (fail-closed)', async () => {
+    const admin = mockAdmin({ row: validRow(), updateError: { message: 'boom' } })
+    expect(
+      await renewSession(asAdmin(admin), formatSessionCookie('k1', generateToken()), keyring),
+    ).toBeNull()
   })
 
   it('null se la sessione è revocata', async () => {

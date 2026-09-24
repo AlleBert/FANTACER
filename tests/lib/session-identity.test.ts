@@ -1,6 +1,7 @@
 /**
  * @jest-environment node
  */
+import { createHmac } from 'node:crypto'
 import {
   parseKeyring,
   keyringFromEnv,
@@ -134,6 +135,22 @@ describe('CSRF', () => {
     expect(hashCsrfToken('x', { active: 'k9', keys: new Map() })).toBeNull()
   })
 
+  it('hashCsrfToken usa keyId esplicito (default = active)', () => {
+    const kr2 = parseKeyring(`k1:${b64(32)},k2:${b64(40)}`, 'k1')!
+    const csrf = generateCsrfToken()
+    expect(hashCsrfToken(csrf, kr2)).toBe(hashCsrfToken(csrf, kr2, 'k1'))
+    expect(hashCsrfToken(csrf, kr2, 'k1')).not.toBe(hashCsrfToken(csrf, kr2, 'k2'))
+    expect(hashCsrfToken(csrf, kr2, 'nope')).toBeNull()
+  })
+
+  it('hashCsrfToken applica il namespace csrf.v1', () => {
+    const key = Buffer.alloc(32, 7)
+    const kr1 = parseKeyring(`k1:${key.toString('base64')}`, 'k1')!
+    const csrf = generateCsrfToken()
+    const expected = createHmac('sha256', key).update(`csrf.v1|${csrf}`).digest('hex')
+    expect(hashCsrfToken(csrf, kr1)).toBe(expected)
+  })
+
   it('verifyCsrf true solo per il token corretto', () => {
     const csrf = generateCsrfToken()
     const h = hashCsrfToken(csrf, kr)!
@@ -153,5 +170,15 @@ describe('CSRF', () => {
 
   it('verifyCsrf false se la key attiva manca dal keyring', () => {
     expect(verifyCsrf('csrf', 'abcd', { active: 'k9', keys: new Map() })).toBe(false)
+  })
+
+  it('verifyCsrf rispetta il keyId esplicito', () => {
+    const kr2 = parseKeyring(`k1:${b64(32)},k2:${b64(40)}`, 'k1')!
+    const csrf = generateCsrfToken()
+    const h1 = hashCsrfToken(csrf, kr2, 'k1')!
+    const h2 = hashCsrfToken(csrf, kr2, 'k2')!
+    expect(verifyCsrf(csrf, h1, kr2, 'k1')).toBe(true)
+    expect(verifyCsrf(csrf, h1, kr2, 'k2')).toBe(false)
+    expect(verifyCsrf(csrf, h2, kr2, 'k2')).toBe(true)
   })
 })

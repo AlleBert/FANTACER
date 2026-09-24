@@ -82,25 +82,39 @@ export function verifyToken(
 
 /**
  * CSRF — token separato dal token di sessione, hash HMAC salvato nella riga
- * `voter_sessions.csrf_hash`. Domain separation vs. `hashToken` (`csrf|...`).
+ * `voter_sessions.csrf_hash`. Domain separation vs. `hashToken` con namespace
+ * esplicito `csrf.v1|`.
+ *
+ * `keyId` default `keyring.active`. Nota di design: la sessione salva
+ * `key_id` ma non un `csrf_key_id` dedicato, quindi la verifica usa la key
+ * attiva del momento. Ruotare `SESSION_HMAC_ACTIVE` invalida il CSRF delle
+ * sessioni emesse con la key precedente finché non si persiste un
+ * `csrf_key_id` (follow-up DB, non introdotto ora). Il param opzionale
+ * consente ai chiamanti di legare il CSRF a un key id specifico quando la
+ * colonna esisterà.
  */
 export function generateCsrfToken(): string {
   return randomBytes(32).toString('base64url')
 }
 
-export function hashCsrfToken(csrf: string, keyring: SessionKeyring): string | null {
-  const key = keyring.keys.get(keyring.active)
+export function hashCsrfToken(
+  csrf: string,
+  keyring: SessionKeyring,
+  keyId: string = keyring.active,
+): string | null {
+  const key = keyring.keys.get(keyId)
   if (!key) return null
-  return createHmac('sha256', key).update(`csrf|${csrf}`).digest('hex')
+  return createHmac('sha256', key).update(`csrf.v1|${csrf}`).digest('hex')
 }
 
 export function verifyCsrf(
   csrf: string | null | undefined,
   csrfHash: string | null | undefined,
   keyring: SessionKeyring,
+  keyId: string = keyring.active,
 ): boolean {
   if (!csrf || !csrfHash) return false
-  const expected = hashCsrfToken(csrf, keyring)
+  const expected = hashCsrfToken(csrf, keyring, keyId)
   if (!expected) return false
   const a = Buffer.from(expected, 'hex')
   const b = Buffer.from(csrfHash, 'hex')
