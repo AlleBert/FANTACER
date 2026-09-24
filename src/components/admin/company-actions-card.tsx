@@ -199,7 +199,7 @@ export function CompanyActionsCard() {
   const createBackup = async () => {
     setBusy(true)
     try {
-      const res = await fetch('/api/admin/companies/backup', {
+      const res = await fetch('/api/admin/companies/backup/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

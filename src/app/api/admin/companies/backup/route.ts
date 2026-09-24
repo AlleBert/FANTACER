@@ -37,33 +37,34 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/** Crea un backup manuale dello stato attuale (batch attivo o aziende scelte). */
+/** Ripristina lo stato (blocco + punteggi) da un backup. Solo admin (AAL2). */
 export async function POST(request: NextRequest) {
   try {
     await requireRoleAdmin(request)
     const body = await request.json().catch(() => null)
-    const label =
-      typeof body?.label === 'string' && body.label.trim() !== ''
-        ? body.label.trim()
-        : 'backup manuale'
-    const companyIds: string[] | null = Array.isArray(body?.companyIds)
-      ? body.companyIds.filter((id: unknown): id is string => typeof id === 'string')
-      : null
+    const restoreBackupId = body?.restoreBackupId
+    if (!Number.isInteger(restoreBackupId)) {
+      return NextResponse.json({ error: 'restoreBackupId obbligatorio' }, { status: 400 })
+    }
 
     const supabase = createAdminClient()
-    const { data, error } = await supabase.rpc('admin_backup_company_state', {
-      p_company_ids: companyIds && companyIds.length > 0 ? companyIds : null,
-      p_label: label,
+    const { data, error } = await supabase.rpc('admin_restore_company_state', {
+      p_backup_id: restoreBackupId,
     })
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+    const result = data as { success: boolean; error?: string; restored?: number }
+    if (!result?.success) {
+      return NextResponse.json({ error: result?.error ?? 'Ripristino fallito' }, { status: 400 })
+    }
+
     await writeAuditEvent({
-      eventType: 'admin_company_backup',
+      eventType: 'admin_company_restore',
       ipAddress: getTrustedClientIp(request).ip,
-      metadata: { label, company_ids: companyIds, result: data },
+      metadata: { backup_id: restoreBackupId, restored: result.restored },
     })
 
-    return NextResponse.json({ success: true, backup: data })
+    return NextResponse.json({ success: true, restored: result.restored })
   } catch (e) {
     const status = toAdminError(e)
     if (status !== 500) {
@@ -72,7 +73,7 @@ export async function POST(request: NextRequest) {
         { status },
       )
     }
-    console.error('company backup error:', e)
+    console.error('company restore error:', e)
     return NextResponse.json({ error: 'Errore interno' }, { status: 500 })
   }
 }
