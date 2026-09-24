@@ -8,6 +8,7 @@ import { it } from 'date-fns/locale'
 import { useAdminRole } from '@/lib/use-admin-role'
 import { useBatches } from '@/hooks/use-batches'
 import { BatchFilter } from '@/components/admin/batch-filter'
+import { VoteQuarantineCard } from '@/components/admin/vote-quarantine-card'
 
 interface PalletAssignment {
   company: string
@@ -116,6 +117,8 @@ export default function VotiPage() {
           onChange={(v) => { setSearch(''); setSelectedBatch(v) }}
         />
       )}
+
+      <VoteQuarantineCard />
 
       {!isViewer && (
         <Card className="border-destructive/40 bg-destructive/5">
