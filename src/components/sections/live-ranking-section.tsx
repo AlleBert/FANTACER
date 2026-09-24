@@ -8,6 +8,7 @@ import { useLocale } from '@/lib/LocaleContext';
 import { useVote } from '@/lib/VoteContext';
 import { useSponsorMaxItems } from '@/hooks/use-sponsor-max-items';
 import { useRankingTick, useRealtime } from '@/lib/RealtimeContext';
+import { useFairEndPhase } from '@/hooks/use-fair-end-phase';
 import {
   CLUSTERS,
   CLUSTER_ORDER,
@@ -56,6 +57,7 @@ export function LiveRankingSection({ showWhenDisabled = false }: LiveRankingSect
   const { selectedCompanies, gameUnlock } = useVote()
   const maxItems = useSponsorMaxItems()
   const { votingEnabled, antibotEnabled, realtimeActive, rankingVersion, visible } = useRealtime()
+  const fairEndPhase = useFairEndPhase()
   const [companies, setCompanies] = useState<RankingCompany[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -70,7 +72,7 @@ export function LiveRankingSection({ showWhenDisabled = false }: LiveRankingSect
 
   // Il canale ranking_tick è richiesto solo quando la sezione è visibile e il voto
   // è attivo; il provider lo condivide (refcount) e lo sospende in background.
-  useRankingTick(isVisible && votingEnabled && !antibotEnabled)
+  useRankingTick(isVisible && votingEnabled && !antibotEnabled && fairEndPhase !== 'waiting')
 
   const votedIds = useMemo(
     () => new Set(gameUnlock.success ? selectedCompanies.map((s) => s.company.id) : []),
@@ -212,6 +214,7 @@ export function LiveRankingSection({ showWhenDisabled = false }: LiveRankingSect
   // nessuna sezione, nessuno skeleton. Il flag voting_enabled (admin) la
   // ripristina dal lunedì di fiera.
   // Se showWhenDisabled è true, mostriamo comunque la classifica.
+  if (fairEndPhase === 'waiting') return null
   if (antibotEnabled || (!votingEnabled && !showWhenDisabled)) return null
 
   return (

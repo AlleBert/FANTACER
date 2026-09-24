@@ -149,7 +149,16 @@ export const it: Dictionary = {
   'voteError.alreadyVoted': 'Hai già votato oggi',
   'voteError.missingVoterId': 'Sessione di voto non valida. Ricarica la pagina.',
   'voteError.antibot': 'Voto sospeso temporaneamente: i nostri sistemi hanno rilevato attività anomale.',
+  'voteError.fairEnded': 'Le votazioni sono concluse',
   'voteError.rateLimited': 'Troppe richieste. Riprova tra qualche minuto.',
+
+  // Fair end
+  'fairEnd.title': 'LE VOTAZIONI SONO CONCLUSE',
+  'fairEnd.reveal': 'Scopri alle {time} il Vincitore FANTACER 2026',
+  'fairEnd.finalTitle': 'Classifica Finale Fantacer 2026',
+  'fairEnd.ceremony': 'Premiazione sullo stand oggi alle {time}',
+  'fairEnd.thanks': 'Grazie a tutti per la grande partecipazione! Ci vediamo il prossimo anno.',
+  'fairEnd.points': '{count} punti',
 
   // Cookie Policy
   'cookiePolicy.title': 'Cookie Policy',

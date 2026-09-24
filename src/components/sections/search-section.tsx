@@ -11,6 +11,8 @@ import { getVoteSecurity, getVisitorId } from '@/lib/vote-security';
 import { ensureVoterId } from '@/lib/vote-client-identity';
 import { TurnstileOverlay } from '@/components/voting/turnstile-overlay';
 import { MessageOverlay } from '@/components/voting/message-overlay';
+import { FairEndCard } from '@/components/voting/fair-end-card';
+import { useFairEndPhase } from '@/hooks/use-fair-end-phase';
 import { ModalShell } from '@/components/ui/modal-shell';
 import { SectionFrame } from '@/components/layout/section-frame';
 import { useLocale } from '@/lib/LocaleContext';
@@ -40,7 +42,8 @@ export function SearchSection() {
   const [showTurnstile, setShowTurnstile] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'warning'; text: string } | null>(null);
   const [loading, setLoading] = useState(false);
-  const { votingEnabled, antibotEnabled } = useRealtime();
+  const { votingEnabled, antibotEnabled, fairEndEnabled, fairEndRevealAt, fairEndCeremony } = useRealtime();
+  const fairEndPhase = useFairEndPhase();
   const [activeIndex, setActiveIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const submittingRef = useRef(false);
@@ -81,11 +84,11 @@ export function SearchSection() {
   // sommarlo al submit, quando la rete è già satura.
   const startedVoting = selectedCompanies.length > 0;
   useEffect(() => {
-    if (!votingEnabled || antibotEnabled) return;
+    if (!votingEnabled || antibotEnabled || fairEndEnabled) return;
     if (searchTerm.length < 2 && !startedVoting) return;
     getVisitorId().catch(() => {});
     ensureVoterId().catch(() => {});
-  }, [votingEnabled, antibotEnabled, searchTerm.length, startedVoting]);
+  }, [votingEnabled, antibotEnabled, fairEndEnabled, searchTerm.length, startedVoting]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const term = e.target.value;
@@ -225,7 +228,9 @@ export function SearchSection() {
             </p>
           </div>
 
-          {antibotEnabled ? (
+          {fairEndEnabled ? (
+            <FairEndCard phase={fairEndPhase} revealAt={fairEndRevealAt} ceremony={fairEndCeremony} />
+          ) : antibotEnabled ? (
             <div className="flex-1 flex flex-col items-center justify-safe-center w-full max-w-2xl mx-auto gap-(--rythm-sec) py-8">
               <div className="bg-white rounded-3xl border-[3px] md:border-[4px] border-ink shadow-[6px_6px_0_#000] p-6 md:p-10 text-center max-w-lg">
                 <div className="text-[clamp(2rem,6vw,3rem)] leading-none mb-3" aria-hidden="true">
@@ -422,7 +427,7 @@ export function SearchSection() {
           </div>
           )}
 
-          {votingEnabled && !antibotEnabled && (
+          {votingEnabled && !antibotEnabled && !fairEndEnabled && (
             <div className="flex-none flex flex-col items-center justify-center w-full pt-[clamp(0.75rem,1.5svh,1.5rem)]">
               {hasVoted ? (
                 <button
