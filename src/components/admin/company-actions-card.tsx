@@ -61,6 +61,11 @@ function formatBackupDate(iso: string): string {
   }).format(new Date(iso))
 }
 
+const countLabel = (b: { company_ids: string[] | null }) =>
+  b.company_ids && b.company_ids.length > 0
+    ? `${b.company_ids.length} aziende`
+    : 'tutte le aziende del batch'
+
 const ACTION_LABELS: Record<ActionKey, string> = {
   'delete-votes': 'Cancella voti',
   block: 'Escludi e blocca',
@@ -311,7 +316,12 @@ export function CompanyActionsCard() {
     }
   }
 
-  const restoreCount = backups.find((b) => b.id === restoreTarget)?.company_ids?.length ?? 0
+  const restoreBackup = backups.find((b) => b.id === restoreTarget)
+  const restoreScope = !restoreBackup
+    ? 'alle aziende del backup'
+    : restoreBackup.company_ids && restoreBackup.company_ids.length > 0
+      ? `alle ${countLabel(restoreBackup)} del backup`
+      : `a ${countLabel(restoreBackup)}`
 
   return (
     <Card className="border-border">
@@ -489,7 +499,7 @@ export function CompanyActionsCard() {
                         <span className="min-w-0 flex-1 truncate">{b.label ?? '—'}</span>
                         <span className="text-xs text-muted-foreground">{b.batch ?? '—'}</span>
                         <span className="text-xs text-muted-foreground">
-                          {b.company_ids?.length ?? 0} aziende
+                          {countLabel(b)}
                         </span>
                       </div>
                       <div className="mt-2 flex flex-wrap gap-2">
@@ -591,8 +601,8 @@ export function CompanyActionsCard() {
           Ripristinare questo backup?
         </h3>
         <p className="mt-2 text-sm text-muted-foreground">
-          Verranno riapplicati blocco e punteggi salvati alle {restoreCount} aziende del backup (i
-          voti non vengono toccati).
+          Verranno riapplicati blocco e punteggi salvati {restoreScope} (i voti non vengono
+          toccati).
         </p>
         <div className="mt-6 flex justify-end gap-3">
           <button
