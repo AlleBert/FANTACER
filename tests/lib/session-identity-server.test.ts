@@ -8,6 +8,7 @@ import {
   sessionIdentityMode,
   createSession,
   resolveSession,
+  resolveVoteIdentity,
   touchSession,
   renewSession,
   revokeSession,
@@ -20,6 +21,7 @@ import {
   formatSessionCookie,
   generateCsrfToken,
   hashCsrfToken,
+  SESSION_COOKIE,
   SESSION_ABSOLUTE_MS,
 } from '@/lib/session-identity'
 
@@ -191,6 +193,34 @@ describe('resolveSession', () => {
       future,
     )
     expect(result).toBeNull()
+  })
+})
+
+describe('resolveVoteIdentity', () => {
+  const cookieSource = (value?: string) => ({
+    cookies: { get: (name: string) => (name === SESSION_COOKIE && value ? { value } : undefined) },
+  })
+
+  it('risolve la sessione dal cookie di sessione', async () => {
+    const token = generateToken()
+    const admin = mockAdmin({ row: validRow() })
+
+    const result = await resolveVoteIdentity(
+      asAdmin(admin),
+      cookieSource(formatSessionCookie('k1', token)),
+      keyring,
+    )
+
+    expect(result?.principalId).toBe('prim-1')
+    expect(result?.sessionId).toBe('sess-1')
+    // touch idle best-effort, come il precedente resolveSessionPrincipal
+    expect(admin.update).toHaveBeenCalled()
+  })
+
+  it('cookie assente → null (fail-closed)', async () => {
+    const admin = mockAdmin({ row: validRow() })
+    expect(await resolveVoteIdentity(asAdmin(admin), cookieSource(), keyring)).toBeNull()
+    expect(admin.select).not.toHaveBeenCalled()
   })
 })
 

@@ -8,12 +8,20 @@ jest.mock('@/lib/supabase/admin', () => ({ createAdminClient: jest.fn() }))
 jest.mock('@/lib/vote-dev-bypass', () => ({
   isVoteLimitBypassed: jest.fn(() => false),
 }))
+jest.mock('@/lib/session-identity-server', () => ({
+  sessionIdentityMode: jest.fn(() => 'off'),
+  resolveVoteIdentity: jest.fn(),
+}))
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import * as bypass from '@/lib/vote-dev-bypass'
+import { sessionIdentityMode, resolveVoteIdentity } from '@/lib/session-identity-server'
+import { parseKeyring, generateCsrfToken, hashCsrfToken } from '@/lib/session-identity'
 
 const mockCreateAdminClient = createAdminClient as jest.Mock
 const mockIsVoteLimitBypassed = bypass.isVoteLimitBypassed as jest.Mock
+const mockMode = sessionIdentityMode as jest.Mock
+const mockResolveVoteIdentity = resolveVoteIdentity as jest.Mock
 
 const UUID = '11111111-2222-4333-8444-555555555555'
 const OTHER_UUID = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee'
@@ -62,13 +70,19 @@ function buildSupabase(
   }
 }
 
-function postRequest(body: unknown, cookie?: string): NextRequest {
+function postRequest(
+  body: unknown,
+  cookie?: string,
+  headers: Record<string, string> = {},
+): NextRequest {
+  const headerMap: Record<string, string> = { ...headers }
   return {
     json: async () => body,
     cookies: {
       get: (name: string) =>
         cookie && name === 'fantacer_voter_id' ? { name, value: cookie } : undefined,
     },
+    headers: { get: (name: string) => headerMap[name.toLowerCase()] ?? null },
   } as unknown as NextRequest
 }
 
@@ -191,5 +205,96 @@ describe('romeDayKey', () => {
 
   it('a mezzanotte UTC è già il giorno dopo a Roma (CEST)', () => {
     expect(romeDayKey(new Date('2026-09-13T23:30:00Z'))).toBe('2026-09-14')
+  })
+})
+
+describe('POST /api/vota/status — CSRF sessione (C05)', () => {
+  const B64_KEY = Buffer.alloc(32, 7).toString('base64')
+  const keyring = parseKeyring(`k1:${B64_KEY}`, 'k1')!
+  const ORIGIN = 'https://fantacer.test'
+  const HOST = 'fantacer.test'
+
+  const session = (csrfHash: string | null) => ({
+    principalId: 'prim-1',
+    sessionId: 'sess-1',
+    csrfHash,
+    expiresAt: '2099-01-01T00:00:00.000Z',
+    revokedAt: null,
+  })
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    process.env.SESSION_HMAC_KEYS = `k1:${B64_KEY}`
+    process.env.SESSION_HMAC_ACTIVE = 'k1'
+    mockIsVoteLimitBypassed.mockReturnValue(false)
+    mockMode.mockReturnValue('dual')
+    mockCreateAdminClient.mockReturnValue(buildSupabase(null, []))
+  })
+
+  afterEach(() => {
+    delete process.env.SESSION_HMAC_KEYS
+    delete process.env.SESSION_HMAC_ACTIVE
+    mockMode.mockReturnValue('off')
+    mockResolveVoteIdentity.mockReset()
+  })
+
+  it('sessione risolta senza X-CSRF-Token → 403', async () => {
+    mockResolveVoteIdentity.mockResolvedValue(session(hashCsrfToken(generateCsrfToken(), keyring)))
+    const res = await POST(
+      postRequest({ voterId: UUID }, undefined, { origin: ORIGIN, host: HOST }),
+    )
+    expect(res.status).toBe(403)
+  })
+
+  it('X-CSRF-Token errato → 403', async () => {
+    mockResolveVoteIdentity.mockResolvedValue(session(hashCsrfToken(generateCsrfToken(), keyring)))
+    const res = await POST(
+      postRequest({ voterId: UUID }, undefined, {
+        origin: ORIGIN,
+        host: HOST,
+        'x-csrf-token': 'wrong',
+      }),
+    )
+    expect(res.status).toBe(403)
+  })
+
+  it('Origin assente → 403 fail-closed', async () => {
+    const csrf = generateCsrfToken()
+    mockResolveVoteIdentity.mockResolvedValue(session(hashCsrfToken(csrf, keyring)))
+    const res = await POST(
+      postRequest({ voterId: UUID }, undefined, { host: HOST, 'x-csrf-token': csrf }),
+    )
+    expect(res.status).toBe(403)
+  })
+
+  it('X-CSRF-Token valido e Origin same-origin → 200 e interroga il DB', async () => {
+    const csrf = generateCsrfToken()
+    const supabase = buildSupabase(SESSION, COMPANIES)
+    mockCreateAdminClient.mockReturnValue(supabase)
+    mockResolveVoteIdentity.mockResolvedValue(session(hashCsrfToken(csrf, keyring)))
+
+    const res = await POST(
+      postRequest({ voterId: UUID }, undefined, {
+        origin: ORIGIN,
+        host: HOST,
+        'x-csrf-token': csrf,
+      }),
+    )
+    expect(res.status).toBe(200)
+    expect(supabase._eqFingerprint).toHaveBeenCalled()
+  })
+
+  it('modo dual senza sessione: fallback legacy senza CSRF', async () => {
+    mockResolveVoteIdentity.mockResolvedValue(null)
+    const res = await POST(postRequest({ voterId: UUID }))
+    expect(res.status).toBe(200)
+    expect(mockResolveVoteIdentity).toHaveBeenCalled()
+  })
+
+  it('modo off: nessuna risoluzione sessione né CSRF (legacy)', async () => {
+    mockMode.mockReturnValue('off')
+    const res = await POST(postRequest({ voterId: UUID }))
+    expect(res.status).toBe(200)
+    expect(mockResolveVoteIdentity).not.toHaveBeenCalled()
   })
 })

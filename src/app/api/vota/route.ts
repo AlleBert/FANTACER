@@ -10,13 +10,15 @@ import { getTrustedClientIp, hmacIp, type ClientIpSignal } from '@/lib/request-i
 import { recordIpSignal } from '@/lib/ip-signal-metrics'
 import { evaluateVoteRateLimit } from '@/lib/vote-rate-limit'
 import { logVoteRequestEnd, type VoteOutcome } from '@/lib/vote-telemetry'
-import { keyringFromEnv, SESSION_COOKIE } from '@/lib/session-identity'
+import { keyringFromEnv } from '@/lib/session-identity'
+import { verifyCsrfForRequest } from '@/lib/vote-csrf'
 import {
   sessionIdentityMode,
   getActiveEvent,
   resolveOrCreatePrincipal,
-  resolveSessionPrincipal,
+  resolveVoteIdentity,
   linkVoteToPrincipal,
+  type ResolvedSession,
 } from '@/lib/session-identity-server'
 import { romeDateKey } from '@/lib/admin-analytics'
 import { LOCALE_COOKIE, resolveLocale } from '@/lib/locale'
@@ -88,9 +90,20 @@ export async function POST(request: NextRequest) {
     let eventId: string | null = null
     if (identityMode !== 'off') {
       const keyring = keyringFromEnv()
-      const sessionCookie = request.cookies.get(SESSION_COOKIE)?.value
+      let session: ResolvedSession | null = null
       if (keyring) {
-        principalId = await resolveSessionPrincipal(admin, sessionCookie, keyring)
+        session = await resolveVoteIdentity(admin, request, keyring)
+        principalId = session?.principalId ?? null
+      }
+      // C05 — CSRF session-bound (§4-bis). Le rotte che modificano stato con
+      // sessione valida richiedono `X-CSRF-Token` + Origin/Host same-origin.
+      // Solo `dual`/`session`: in `off`/`shadow` la lettura è legacy e una
+      // sessione non è l'autorità, quindi il CSRF non è applicabile.
+      if ((identityMode === 'dual' || identityMode === 'session') && session && keyring) {
+        const csrf = verifyCsrfForRequest(request, keyring, session)
+        if (!csrf.ok) {
+          return respond({ error: 'Forbidden' }, 403, 'csrf_failed')
+        }
       }
       const event = await getActiveEvent(admin)
       eventId = event?.id ?? null

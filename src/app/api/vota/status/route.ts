@@ -2,6 +2,9 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isVoteLimitBypassed } from '@/lib/vote-dev-bypass'
 import { resolveVoterKey, applyVoterCookie } from '@/lib/vote-identity-server'
+import { keyringFromEnv } from '@/lib/session-identity'
+import { verifyCsrfForRequest } from '@/lib/vote-csrf'
+import { sessionIdentityMode, resolveVoteIdentity } from '@/lib/session-identity-server'
 
 interface VoteSessionRow {
   company1_id: string
@@ -55,6 +58,24 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = createAdminClient()
+
+    // C05 — CSRF session-bound (§4-bis). Solo per chiamate con sessione valida
+    // in `dual`/`session`. In `off`/`shadow` la lettura è legacy e non c'è
+    // un'autorità di sessione: nessun CSRF applicabile. `voterId` resta
+    // accettato (la rimozione è C08).
+    const identityMode = sessionIdentityMode()
+    if (identityMode !== 'off') {
+      const keyring = keyringFromEnv()
+      if (keyring) {
+        const resolvedSession = await resolveVoteIdentity(supabase, request, keyring)
+        if ((identityMode === 'dual' || identityMode === 'session') && resolvedSession) {
+          const csrf = verifyCsrfForRequest(request, keyring, resolvedSession)
+          if (!csrf.ok) {
+            return respond({ error: 'Forbidden' }, 403)
+          }
+        }
+      }
+    }
 
     const { data: session, error } = await supabase
       .from('vote_sessions')

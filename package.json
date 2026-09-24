@@ -10,7 +10,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "jest --maxWorkers=4",
-    "test:security": "jest --maxWorkers=4 tests/lib/request-ip.test.ts tests/lib/ip-signal-metrics.test.ts tests/lib/request-ip-usage.test.ts tests/lib/vote-rate-limit.test.ts tests/lib/vote-telemetry.test.ts tests/lib/turnstile.test.ts tests/lib/bootstrap-nonce.test.ts tests/lib/bootstrap-rate-limit.test.ts tests/identity-bootstrap.test.ts tests/vota-route.test.ts tests/vota-status-route.test.ts",
+    "test:security": "jest --maxWorkers=4 tests/lib/request-ip.test.ts tests/lib/ip-signal-metrics.test.ts tests/lib/request-ip-usage.test.ts tests/lib/vote-rate-limit.test.ts tests/lib/vote-telemetry.test.ts tests/lib/turnstile.test.ts tests/lib/bootstrap-nonce.test.ts tests/lib/bootstrap-rate-limit.test.ts tests/lib/session-identity.test.ts tests/lib/session-identity-server.test.ts tests/identity-bootstrap.test.ts tests/vote-csrf.test.ts tests/vota-route.test.ts tests/vota-status-route.test.ts",
     "monitor:votes": "node scripts/vote-monitor.mjs",
     "test:watch": "jest --watch --maxWorkers=4",
     "test:e2e": "playwright test",

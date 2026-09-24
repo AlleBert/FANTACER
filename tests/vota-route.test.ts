@@ -22,6 +22,14 @@ jest.mock('@/lib/vote-dev-bypass', () => ({
   isVoteLimitBypassed: jest.fn(() => false),
   resolveVoteFingerprint: (key: string) => key,
 }))
+jest.mock('@/lib/session-identity-server', () => ({
+  sessionIdentityMode: jest.fn(() => 'off'),
+  getActiveEvent: jest.fn(),
+  resolveOrCreatePrincipal: jest.fn(),
+  resolveSessionPrincipal: jest.fn(),
+  linkVoteToPrincipal: jest.fn(),
+  resolveVoteIdentity: jest.fn(),
+}))
 jest.mock('@/lib/locale', () => ({
   LOCALE_COOKIE: 'fantacer_locale',
   resolveLocale: () => 'it',
@@ -34,6 +42,8 @@ import { submitVote } from '@/lib/supabase/vote-api'
 import { getAntibotEnabled, getFairEndState } from '@/lib/site-flags'
 import { verifyTurnstile } from '@/lib/turnstile'
 import { evaluateVoteRateLimit } from '@/lib/vote-rate-limit'
+import { sessionIdentityMode, getActiveEvent, resolveVoteIdentity } from '@/lib/session-identity-server'
+import { parseKeyring, generateCsrfToken, hashCsrfToken } from '@/lib/session-identity'
 
 const mockCreateAdminClient = createAdminClient as jest.Mock
 const mockGetActiveBatch = getActiveBatch as jest.Mock
@@ -42,6 +52,9 @@ const mockGetAntibotEnabled = getAntibotEnabled as jest.Mock
 const mockGetFairEndState = getFairEndState as jest.Mock
 const mockVerifyTurnstile = verifyTurnstile as jest.Mock
 const mockEvaluateVoteRateLimit = evaluateVoteRateLimit as jest.Mock
+const mockMode = sessionIdentityMode as jest.Mock
+const mockGetActiveEvent = getActiveEvent as jest.Mock
+const mockResolveVoteIdentity = resolveVoteIdentity as jest.Mock
 
 const UUID = '11111111-2222-4333-8444-555555555555'
 const OTHER_UUID = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee'
@@ -51,14 +64,25 @@ const COMPANY_IDS = ['c1', 'c2', 'c3']
 
 function buildAdmin() {
   return {
-    from: jest.fn(() => ({
-      select: jest.fn(() => ({
-        in: jest.fn().mockResolvedValue({
-          data: COMPANY_IDS.map((id) => ({ id, batch: 'TEST' })),
-          error: null,
-        }),
-      })),
-    })),
+    from: jest.fn((table: string) => {
+      if (table === 'event_principals') {
+        return {
+          select: jest.fn(() => ({
+            eq: jest.fn(() => ({
+              maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+            })),
+          })),
+        }
+      }
+      return {
+        select: jest.fn(() => ({
+          in: jest.fn().mockResolvedValue({
+            data: COMPANY_IDS.map((id) => ({ id, batch: 'TEST' })),
+            error: null,
+          }),
+        })),
+      }
+    }),
   }
 }
 
@@ -273,5 +297,101 @@ describe('POST /api/vota', () => {
     expect(lines[0]).not.toContain(LEGACY_FP)
     expect(lines[0]).not.toMatch(/\d{1,3}(\.\d{1,3}){3}/)
     logSpy.mockRestore()
+  })
+})
+
+describe('POST /api/vota — CSRF sessione (C05)', () => {
+  const B64_KEY = Buffer.alloc(32, 7).toString('base64')
+  const keyring = parseKeyring(`k1:${B64_KEY}`, 'k1')!
+  const ORIGIN = 'https://fantacer.test'
+  const HOST = 'fantacer.test'
+
+  const session = (csrfHash: string | null) => ({
+    principalId: 'prim-1',
+    sessionId: 'sess-1',
+    csrfHash,
+    expiresAt: '2099-01-01T00:00:00.000Z',
+    revokedAt: null,
+  })
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    process.env.SESSION_HMAC_KEYS = `k1:${B64_KEY}`
+    process.env.SESSION_HMAC_ACTIVE = 'k1'
+    mockCreateAdminClient.mockReturnValue(buildAdmin())
+    mockGetAntibotEnabled.mockResolvedValue(false)
+    mockGetFairEndState.mockResolvedValue({ enabled: false })
+    mockSubmitVote.mockResolvedValue({ success: true })
+    mockVerifyTurnstile.mockResolvedValue({ ok: true })
+    mockMode.mockReturnValue('dual')
+    mockGetActiveEvent.mockResolvedValue({ id: 'ev-1', batch: 'TEST' })
+  })
+
+  afterEach(() => {
+    delete process.env.SESSION_HMAC_KEYS
+    delete process.env.SESSION_HMAC_ACTIVE
+    mockMode.mockReturnValue('off')
+    mockResolveVoteIdentity.mockReset()
+  })
+
+  it('sessione risolta senza X-CSRF-Token → 403, nessun voto', async () => {
+    mockResolveVoteIdentity.mockResolvedValue(session(hashCsrfToken(generateCsrfToken(), keyring)))
+    const res = await POST(
+      makeRequest(validBody(), { headers: { origin: ORIGIN, host: HOST } }),
+    )
+    expect(res.status).toBe(403)
+    expect(mockSubmitVote).not.toHaveBeenCalled()
+  })
+
+  it('X-CSRF-Token errato → 403', async () => {
+    mockResolveVoteIdentity.mockResolvedValue(session(hashCsrfToken(generateCsrfToken(), keyring)))
+    const res = await POST(
+      makeRequest(validBody(), {
+        headers: { origin: ORIGIN, host: HOST, 'x-csrf-token': 'wrong' },
+      }),
+    )
+    expect(res.status).toBe(403)
+    expect(mockSubmitVote).not.toHaveBeenCalled()
+  })
+
+  it('Origin assente → 403 fail-closed', async () => {
+    const csrf = generateCsrfToken()
+    mockResolveVoteIdentity.mockResolvedValue(session(hashCsrfToken(csrf, keyring)))
+    const res = await POST(
+      makeRequest(validBody(), { headers: { host: HOST, 'x-csrf-token': csrf } }),
+    )
+    expect(res.status).toBe(403)
+    expect(mockSubmitVote).not.toHaveBeenCalled()
+  })
+
+  it('Origin cross-site → 403', async () => {
+    const csrf = generateCsrfToken()
+    mockResolveVoteIdentity.mockResolvedValue(session(hashCsrfToken(csrf, keyring)))
+    const res = await POST(
+      makeRequest(validBody(), {
+        headers: { origin: 'https://attacker.test', host: HOST, 'x-csrf-token': csrf },
+      }),
+    )
+    expect(res.status).toBe(403)
+    expect(mockSubmitVote).not.toHaveBeenCalled()
+  })
+
+  it('X-CSRF-Token valido e Origin same-origin → 200 e vota', async () => {
+    const csrf = generateCsrfToken()
+    mockResolveVoteIdentity.mockResolvedValue(session(hashCsrfToken(csrf, keyring)))
+    const res = await POST(
+      makeRequest(validBody(), {
+        headers: { origin: ORIGIN, host: HOST, 'x-csrf-token': csrf },
+      }),
+    )
+    expect(res.status).toBe(200)
+    expect(mockSubmitVote).toHaveBeenCalled()
+  })
+
+  it('modo off: nessuna sessione e nessuna verifica CSRF (legacy)', async () => {
+    mockMode.mockReturnValue('off')
+    const res = await POST(makeRequest(validBody(), { headers: { host: HOST } }))
+    expect(res.status).toBe(200)
+    expect(mockResolveVoteIdentity).not.toHaveBeenCalled()
   })
 })

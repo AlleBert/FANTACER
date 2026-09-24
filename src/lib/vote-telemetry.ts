@@ -15,6 +15,7 @@ export type VoteOutcome =
   | 'antibot'
   | 'fair_ended'
   | 'invalid_request'
+  | 'csrf_failed'
   | 'error'
 
 export interface VoteRequestEndEvent {
