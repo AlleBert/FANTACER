@@ -3,6 +3,8 @@
  */
 import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { parse } from 'dotenv'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
@@ -52,8 +54,50 @@ interface BackfillReport {
   skippedInvalid: number
   divergences: number
   coveragePct: number
+  coverageScope: string
   legacyVotes: number
   principalVotes: number
+}
+
+interface RetryHelperSnapshot {
+  min: number
+  half: number
+  halfOfHalf: number
+  atMin: number
+  belowMin: number
+  timeout57014: boolean
+  timeoutMessage: boolean
+  timeoutOther: boolean
+  timeoutNull: boolean
+}
+
+/**
+ * I test in ts-jest non importano `.mjs`: valuto gli helper puri in un
+ * subprocess node, senza DB.
+ */
+function evalRetryHelpers(): RetryHelperSnapshot {
+  const libUrl = pathToFileURL(join(process.cwd(), 'scripts/p0-4-backfill-lib.mjs')).href
+  const code = `
+    import { MIN_BATCH_SIZE, isStatementTimeout, nextRetryBatchSize } from ${JSON.stringify(libUrl)}
+    console.log(JSON.stringify({
+      min: MIN_BATCH_SIZE,
+      half: nextRetryBatchSize(50000),
+      halfOfHalf: nextRetryBatchSize(1000),
+      atMin: nextRetryBatchSize(MIN_BATCH_SIZE),
+      belowMin: nextRetryBatchSize(400),
+      timeout57014: isStatementTimeout({ code: '57014' }),
+      timeoutMessage: isStatementTimeout({ message: 'canceling statement due to statement timeout' }),
+      timeoutOther: isStatementTimeout({ code: '23505' }),
+      timeoutNull: isStatementTimeout(null),
+    }))
+  `
+  const res = spawnSync(process.execPath, ['--input-type=module', '-e', code], {
+    encoding: 'utf8',
+    cwd: process.cwd(),
+  })
+  if (res.status !== 0) throw new Error(`lib eval exit ${res.status}\n${res.stderr}`)
+  const lines = res.stdout.trim().split('\n').filter(Boolean)
+  return JSON.parse(lines[lines.length - 1]) as RetryHelperSnapshot
 }
 
 function runBackfill(eventId: string): BackfillReport {
@@ -68,6 +112,22 @@ function runBackfill(eventId: string): BackfillReport {
   const lines = res.stdout.trim().split('\n').filter(Boolean)
   return JSON.parse(lines[lines.length - 1]) as BackfillReport
 }
+
+describe('retry helper (p0-4-backfill-lib)', () => {
+  it('dimezza il batch senza scendere sotto il minimo e riconosce lo statement timeout', () => {
+    const s = evalRetryHelpers()
+
+    expect(s.min).toBe(500)
+    expect(s.half).toBe(25000)
+    expect(s.halfOfHalf).toBe(500)
+    expect(s.atMin).toBe(500)
+    expect(s.belowMin).toBe(500)
+    expect(s.timeout57014).toBe(true)
+    expect(s.timeoutMessage).toBe(true)
+    expect(s.timeoutOther).toBe(false)
+    expect(s.timeoutNull).toBe(false)
+  })
+})
 
 describeDb('p0-4-backfill per evento/batch', () => {
   let db: SupabaseClient
@@ -152,6 +212,7 @@ describeDb('p0-4-backfill per evento/batch', () => {
     expect(report.skippedInvalid).toBe(1)
     expect(report.divergences).toBe(0)
     expect(report.coveragePct).toBe(100)
+    expect(report.coverageScope).toBe('event_batch')
 
     const { data: principals } = await db
       .from('event_principals')

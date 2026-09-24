@@ -9,7 +9,11 @@
  *
  * - keyset su `fingerprint`, batch configurabile, resumibile, idempotente
  *   (`WHERE NOT EXISTS` + `on conflict do nothing`);
- * - `statement_timeout` FINITO (30s) + `lock_timeout` (5s);
+ * - timeout **finiti a livello di sessione** (`SET statement_timeout='30s'` +
+ *   `SET lock_timeout='5s'`, mai `0`, applicati una volta per run): su statement
+ *   timeout la **stessa pagina** viene ritentata con batch dimezzato (minimo
+ *   500) senza avanzare il checkpoint;
+ * - `coveragePct` è **scoped al batch dell'evento** (solo fingerprint validi);
  * - **nessuna** DELETE/TRUNCATE, nessun trigger/contatore toccato;
  * - evento da `--event-id`, altrimenti `batch_settings.active_event_id`,
  *   altrimenti `events.batch = active_batch AND status='active'`.
@@ -31,7 +35,11 @@ import pg from 'pg'
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { E2E_HOST, PROD_HOST, loadE2eDbUrl } from './loadtest/lib.mjs'
+import { MIN_BATCH_SIZE, isStatementTimeout, nextRetryBatchSize } from './p0-4-backfill-lib.mjs'
 
+// Timeout finiti, applicati una volta per run a livello di sessione. Restano
+// validi per tutte le query (pagine, copertura, divergenze): niente `set local`
+// per-pagina, così il limite non dipende dal default del server/pooler.
 const STATEMENT_TIMEOUT = '30s'
 const LOCK_TIMEOUT = '5s'
 const DEFAULT_CHECKPOINT_DIR = '.backfill'
@@ -184,6 +192,17 @@ async function insertPrincipals(eventId, fingerprints) {
   return res.rowCount ?? 0
 }
 
+/**
+ * Una pagina = select keyset + insert. Il checkpoint avanza solo se entrambe
+ * riescono; un timeout fa ritentare la **stessa** pagina con batch ridotto.
+ */
+async function processPage(eventId, batch, last, limit) {
+  const page = await fetchPage(eventId, batch, last, limit)
+  if (page.length === 0) return { page, inserted: 0 }
+  const inserted = await insertPrincipals(eventId, page)
+  return { page, inserted }
+}
+
 /** Copertura dei fingerprint validi del batch: totale e non mappati. */
 async function coverage(eventId, batch) {
   const { rows } = await client.query(
@@ -274,16 +293,35 @@ const resumeFrom = last
 
 let inserted = 0
 let pages = 0
+let retries = 0
+let effectiveBatchSize = batchSize
 for (;;) {
-  const page = await fetchPage(eventId, batch, last, batchSize)
-  if (page.length === 0) break
+  let result
+  try {
+    result = await processPage(eventId, batch, last, effectiveBatchSize)
+  } catch (error) {
+    if (isStatementTimeout(error) && effectiveBatchSize > MIN_BATCH_SIZE) {
+      const next = nextRetryBatchSize(effectiveBatchSize)
+      retries += 1
+      log(
+        `timeout statement su pagina (fingerprint > '${last}'): riduco batch ${effectiveBatchSize} → ${next}`,
+      )
+      effectiveBatchSize = next
+      continue
+    }
+    throw error
+  }
 
-  const count = await insertPrincipals(eventId, page)
-  inserted += count
+  if (result.page.length === 0) break
+
+  inserted += result.inserted
   pages += 1
-  last = page[page.length - 1]
+  // Checkpoint solo dopo una pagina riuscita: su timeout si ritenta la stessa.
+  last = result.page[result.page.length - 1]
   writeCheckpoint(checkpointPath, eventId, last)
-  log(`backfill: pagina ${pages} +${page.length} fingerprint (principals inseriti: ${count})`)
+  log(
+    `backfill: pagina ${pages} +${result.page.length} fingerprint (principals inseriti: ${result.inserted}, batch ${effectiveBatchSize})`,
+  )
 }
 
 const cov = await coverage(eventId, batch)
@@ -304,14 +342,23 @@ const report = {
   divergences,
   legacyVotes: div.legacy,
   principalVotes: div.principal,
-  coveragePct: cov.processed === 0 ? 100 : Math.round(((cov.processed - cov.nonMapped) / cov.processed) * 10000) / 100,
+  // Copertura dei soli fingerprint validi del batch dell'evento (non globale).
+  coveragePct:
+    cov.processed === 0 ? 100 : Math.round(((cov.processed - cov.nonMapped) / cov.processed) * 10000) / 100,
+  coverageScope: 'event_batch',
   pages,
+  retries,
+  finalBatchSize: effectiveBatchSize,
   durationMs: Date.now() - startedAt,
   resumeFrom: resumeFrom || null,
 }
 
-if (asJson) console.log(JSON.stringify(report))
-else console.log('backfill completato:', report)
+if (asJson) {
+  console.log(JSON.stringify(report))
+} else {
+  log(`coveragePct (event batch scope): ${report.coveragePct}`)
+  console.log('backfill completato:', report)
+}
 
 await client.end()
 
