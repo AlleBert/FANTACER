@@ -79,6 +79,7 @@ describeDb('submit_vote_v2 (integrazione E2E)', () => {
   let cA = ''
   let cB = ''
   let cC = ''
+  let cBlocked = ''
   let cOther = ''
   let p1 = ''
   let p2 = ''
@@ -120,7 +121,7 @@ describeDb('submit_vote_v2 (integrazione E2E)', () => {
   function call(
     eventId: string,
     principalId: string,
-    key: string,
+    key: string | null,
     ballotEntries: BallotEntry[],
     sig: Record<string, unknown>,
   ): Promise<RpcOutcome> {
@@ -169,12 +170,9 @@ describeDb('submit_vote_v2 (integrazione E2E)', () => {
     db = new pg.Client({ connectionString: buildDbUrl(), ssl: { rejectUnauthorized: false } })
     await db.connect()
 
-    const reg = await db.query<{ oid: string | null }>('select to_regprocedure($1)::text as oid', [
-      FN_SIG,
-    ])
-    if (!reg.rows[0].oid) {
-      await db.query(readFileSync(MIGRATION, 'utf8'))
-    }
+    // La migration e' idempotente/re-runnable: la riapplichiamo sempre così i
+    // test girano contro la definizione corrente del file (non una versione stale).
+    await db.query(readFileSync(MIGRATION, 'utf8'))
 
     const ev = await db.query<{ id: string }>(
       `insert into public.events (slug, name, batch, status)
@@ -185,18 +183,22 @@ describeDb('submit_vote_v2 (integrazione E2E)', () => {
     event1 = ev.rows[0].id
     event2 = ev.rows[1].id
 
-    const c = await db.query<{ id: string; batch: string }>(
-      `insert into public.companies (name, batch)
-       values ($1, $2), ($3, $2), ($4, $2), ($5, $6)
-       returning id, batch`,
-      [`${RUN} A`, BATCH, `${RUN} B`, `${RUN} C`, `${RUN} OTHER`, OTHER_BATCH],
+    const c = await db.query<{ id: string; batch: string; blocked: boolean }>(
+      `insert into public.companies (name, batch, blocked)
+       values ($1, $2, false), ($3, $2, false), ($4, $2, false), ($5, $2, true), ($6, $7, false)
+       returning id, batch, blocked`,
+      [`${RUN} A`, BATCH, `${RUN} B`, `${RUN} C`, `${RUN} BLOCKED`, `${RUN} OTHER`, OTHER_BATCH],
     )
-    const inBatch = c.rows.filter((r) => r.batch === BATCH)
+    const inBatch = c.rows.filter((r) => r.batch === BATCH && !r.blocked)
+    const blocked = c.rows.find((r) => r.blocked)
     const outBatch = c.rows.find((r) => r.batch === OTHER_BATCH)
-    if (inBatch.length !== 3 || !outBatch) throw new Error('fixture aziende incompleta')
+    if (inBatch.length !== 3 || !blocked || !outBatch) {
+      throw new Error('fixture aziende incompleta')
+    }
     cA = inBatch[0].id
     cB = inBatch[1].id
     cC = inBatch[2].id
+    cBlocked = blocked.id
     cOther = outBatch.id
 
     const p = await db.query<{ id: string }>(
@@ -222,7 +224,7 @@ describeDb('submit_vote_v2 (integrazione E2E)', () => {
   afterAll(async () => {
     if (!db) return
     const events = [event1, event2].filter(Boolean)
-    const companies = [cA, cB, cC, cOther].filter(Boolean)
+    const companies = [cA, cB, cC, cBlocked, cOther].filter(Boolean)
     try {
       await db.query('delete from public.vote_sessions where event_id = any($1::uuid[])', [events])
       await db.query(
@@ -339,6 +341,20 @@ describeDb('submit_vote_v2 (integrazione E2E)', () => {
     expect(await countVotes(event1)).toBe(1)
   })
 
+  it('chiave di idempotenza mancante/vuota/troppo lunga → invalid_idempotency_key', async () => {
+    const missing = await call(event1, p2, null, ballot(B1), signals())
+    expect(missing.success).toBe(false)
+    expect(missing.code).toBe('invalid_idempotency_key')
+
+    const empty = await call(event1, p2, '   ', ballot(B1), signals())
+    expect(empty.code).toBe('invalid_idempotency_key')
+
+    const long = await call(event1, p2, 'x'.repeat(201), ballot(B1), signals())
+    expect(long.code).toBe('invalid_idempotency_key')
+
+    expect(await countVotes(event1)).toBe(1)
+  })
+
   it('scheda malformata → invalid_ballot', async () => {
     const two = await call(event1, p2, 'B', [B1[0], B1[1]], signals())
     expect(two.code).toBe('invalid_ballot')
@@ -364,6 +380,38 @@ describeDb('submit_vote_v2 (integrazione E2E)', () => {
     expect(await countVotes(event1)).toBe(1)
   })
 
+  it('scheda non-array o con elementi non-oggetto → invalid_ballot (non errore generico)', async () => {
+    const scalar = await rpc({
+      p_event_id: event1,
+      p_principal_id: p2,
+      p_ballot: 'not-an-array',
+      p_idempotency_key: 'RAW1',
+      p_signals: signals(),
+    })
+    expect(scalar.success).toBe(false)
+    expect(scalar.code).toBe('invalid_ballot')
+
+    const scalarElement = await rpc({
+      p_event_id: event1,
+      p_principal_id: p2,
+      p_ballot: [{ company_id: cA, pallet: 4 }, 'scalar', { company_id: cC, pallet: 1 }],
+      p_idempotency_key: 'RAW2',
+      p_signals: signals(),
+    })
+    expect(scalarElement.code).toBe('invalid_ballot')
+
+    const notArraySignals = await rpc({
+      p_event_id: event1,
+      p_principal_id: p2,
+      p_ballot: B1,
+      p_idempotency_key: 'RAW3',
+      p_signals: 'not-an-object',
+    })
+    expect(notArraySignals.code).toBe('invalid_signals')
+
+    expect(await countVotes(event1)).toBe(1)
+  })
+
   it('azienda fuori dal batch dell’evento → company_not_in_event', async () => {
     const mixed: BallotEntry[] = [
       { companyId: cA, pallet: 4 },
@@ -373,6 +421,18 @@ describeDb('submit_vote_v2 (integrazione E2E)', () => {
     const out = await call(event1, p2, 'CO', mixed, signals())
     expect(out.success).toBe(false)
     expect(out.code).toBe('company_not_in_event')
+    expect(await countVotes(event1)).toBe(1)
+  })
+
+  it('azienda bloccata dall’admin → company_blocked', async () => {
+    const withBlocked: BallotEntry[] = [
+      { companyId: cA, pallet: 4 },
+      { companyId: cB, pallet: 2 },
+      { companyId: cBlocked, pallet: 1 },
+    ]
+    const out = await call(event1, p2, 'CB', withBlocked, signals())
+    expect(out.success).toBe(false)
+    expect(out.code).toBe('company_blocked')
     expect(await countVotes(event1)).toBe(1)
   })
 

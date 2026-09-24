@@ -18,6 +18,13 @@
 --
 -- Additiva e sicura: aggiunge 3 colonne nullable + 1 indice lookup + 1 funzione.
 -- Nessuna modifica distruttiva, nessun BEGIN/COMMIT esplicito (runner transazionale).
+-- **Re-runnable/idempotente**: `if not exists` + `create or replace`, applicabile
+-- piu' volte senza effetti collaterali.
+--
+-- Codici di errore strutturati: `already_voted`, `idempotency_conflict`,
+-- `invalid_ballot`, `invalid_signals`, `invalid_idempotency_key`,
+-- `event_mismatch`, `company_not_in_event`, `company_blocked`,
+-- `principal_not_found`, `error`.
 --
 -- Decisioni esplicite (dettagli nel report C09):
 --   * `ip_hash` resta NULL per le righe v2: l'HMAC dell'IP vive in `signals`.
@@ -26,6 +33,9 @@
 --   * totali: `daily_stats` aggiornato manualmente come nel percorso legacy;
 --     `company_totals` è mantenuto da `trg_maintain_company_totals` (nessun
 --     doppio conteggio).
+--   * validazione aziende: devono appartenere al batch dell'evento
+--     (`company_not_in_event`) **e** non essere bloccate dall'admin
+--     (`company_blocked`, regressione vs percorso legacy).
 
 -- ---------------------------------------------------------------------------
 -- 1) Colonne additive (idempotency ledger + segnali tipizzati)
@@ -84,12 +94,19 @@ begin
      or btrim(p_idempotency_key) = ''
      or length(p_idempotency_key) > 200 then
     return jsonb_build_object(
-      'success', false, 'code', 'error',
+      'success', false, 'code', 'invalid_idempotency_key',
       'message', 'idempotency_key mancante o non valida');
   end if;
 
   -- 1) Validazione segnali tipizzati (schema fisso: esattamente le 7 chiavi note).
-  if p_signals is null or jsonb_typeof(p_signals) <> 'object' then
+  --    Il tipo e' controllato PRIMA di usare funzioni che richiedono un oggetto
+  --    (`jsonb_object_keys`), indipendentemente dall'ordine di valutazione.
+  if p_signals is null then
+    return jsonb_build_object(
+      'success', false, 'code', 'invalid_signals',
+      'message', 'Segnali non validi');
+  end if;
+  if jsonb_typeof(p_signals) <> 'object' then
     return jsonb_build_object(
       'success', false, 'code', 'invalid_signals',
       'message', 'Segnali non validi');
@@ -152,9 +169,19 @@ begin
   end if;
 
   -- 2) Validazione scheda: array di esattamente 3 coppie {company_id, pallet}.
-  if p_ballot is null
-     or jsonb_typeof(p_ballot) <> 'array'
-     or jsonb_array_length(p_ballot) <> 3 then
+  --    Ordine esplicito: tipo array PRIMA di `jsonb_array_length`; ogni elemento
+  --    e' un oggetto PRIMA di `jsonb_object_keys` (nessuna dipendenza da OR).
+  if p_ballot is null then
+    return jsonb_build_object(
+      'success', false, 'code', 'invalid_ballot',
+      'message', 'Scheda non valida');
+  end if;
+  if jsonb_typeof(p_ballot) <> 'array' then
+    return jsonb_build_object(
+      'success', false, 'code', 'invalid_ballot',
+      'message', 'Scheda non valida');
+  end if;
+  if jsonb_array_length(p_ballot) <> 3 then
     return jsonb_build_object(
       'success', false, 'code', 'invalid_ballot',
       'message', 'Scheda non valida');
@@ -162,8 +189,16 @@ begin
 
   select count(*) into v_bad
     from jsonb_array_elements(p_ballot) e
-   where jsonb_typeof(e) <> 'object'
-      or (select count(*) from jsonb_object_keys(e)) <> 2
+   where jsonb_typeof(e) <> 'object';
+  if v_bad > 0 then
+    return jsonb_build_object(
+      'success', false, 'code', 'invalid_ballot',
+      'message', 'Scheda non valida');
+  end if;
+
+  select count(*) into v_bad
+    from jsonb_array_elements(p_ballot) e
+   where (select count(*) from jsonb_object_keys(e)) <> 2
       or not (e ? 'company_id')
       or not (e ? 'pallet');
   if v_bad > 0 then
@@ -244,6 +279,18 @@ begin
     return jsonb_build_object(
       'success', false, 'code', 'company_not_in_event',
       'message', 'Aziende non appartenenti all''evento');
+  end if;
+
+  -- Regressione (come il percorso legacy): una company bloccata dall'admin non
+  -- e' votabile. Distinta da `company_not_in_event` per non confondere i due casi.
+  select count(*) into v_bad
+    from public.companies c
+   where c.id in (v_c1, v_c2, v_c3)
+     and c.blocked;
+  if v_bad > 0 then
+    return jsonb_build_object(
+      'success', false, 'code', 'company_blocked',
+      'message', 'Azienda non disponibile');
   end if;
 
   -- Fingerprint deterministico per principal: mantiene la dedup atomica legacy
