@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react'
 import { useVote, type SelectedCompany } from '@/lib/VoteContext'
 import { setStoredVoterId } from '@/lib/vote-persistence'
 import { ensureVoterId, isNewVoterIdentity } from '@/lib/vote-client-identity'
+import { csrfFetch } from '@/lib/session-client'
 
 interface StatusCompany {
   id: string
@@ -41,7 +42,9 @@ export function VoteStatusRestore() {
       // Identità appena generata: non può avere voti precedenti, evita la call.
       if (isNewVoterIdentity()) return
 
-      const res = await fetch('/api/vota/status', {
+      // `csrfFetch`: aggiunge `X-CSRF-Token` se una sessione è già stata
+      // bootstrapata; senza token la richiesta resta legacy.
+      const res = await csrfFetch('/api/vota/status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ voterId }),

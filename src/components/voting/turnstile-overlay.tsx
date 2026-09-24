@@ -11,9 +11,23 @@ interface TurnstileOverlayProps {
   onClose: () => void
   onSuccess: (token: string) => void
   onError: (error: string) => void
+  /**
+   * Action Turnstile. Default `'vote'`; `'bootstrap'` è usata per il bootstrap
+   * di sessione (P0-4c). Il server verifica l'action corrispondente.
+   */
+  action?: string
+  /** `cData` legata al nonce di bootstrap (solo per action `bootstrap`). */
+  cData?: string
 }
 
-export function TurnstileOverlay({ isVisible, onClose, onSuccess, onError }: TurnstileOverlayProps) {
+export function TurnstileOverlay({
+  isVisible,
+  onClose,
+  onSuccess,
+  onError,
+  action = 'vote',
+  cData,
+}: TurnstileOverlayProps) {
   const { t } = useLocale()
   const [status, setStatus] = useState<'idle' | 'verifying' | 'success'>('idle')
   const [isClosing, setIsClosing] = useState(false)
@@ -94,7 +108,7 @@ export function TurnstileOverlay({ isVisible, onClose, onSuccess, onError }: Tur
               {status === 'success' ? t('turnstile.ready') : t('turnstile.verify')}
             </h2>
             <p className="text-sm text-ink/70 max-w-[260px]">
-              {status === 'success' ? (
+              {status === 'success' && action === 'vote' ? (
                 t('turnstile.voteOnItsWay')
               ) : (
                 t('turnstile.confirmHuman')
@@ -119,7 +133,7 @@ export function TurnstileOverlay({ isVisible, onClose, onSuccess, onError }: Tur
                   setAttempt((n) => n + 1)
                   onError(t('turnstile.error'))
                 }}
-                options={{ theme: 'light', action: 'vote' }}
+                options={{ theme: 'light', action, ...(cData ? { cData } : {}) }}
               />
             )}
             

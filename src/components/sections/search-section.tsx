@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useId, type KeyboardEvent } from 'react';
+import { useState, useEffect, useRef, useId, useCallback, type KeyboardEvent } from 'react';
 import { useVote } from '@/lib/VoteContext';
 import { createClient } from '@/lib/supabase/client';
 import { useRealtime } from '@/lib/RealtimeContext';
@@ -17,6 +17,12 @@ import { ModalShell } from '@/components/ui/modal-shell';
 import { SectionFrame } from '@/components/layout/section-frame';
 import { useLocale } from '@/lib/LocaleContext';
 import { setStoredVoterId } from '@/lib/vote-persistence';
+import {
+  ensureSession,
+  csrfFetch,
+  getCsrfToken,
+  type BootstrapTurnstileProof,
+} from '@/lib/session-client';
 
 const supabase = createClient();
 
@@ -48,6 +54,11 @@ export function SearchSection() {
   const inputRef = useRef<HTMLInputElement>(null);
   const submittingRef = useRef(false);
   const listboxId = useId();
+  // Bootstrap sessione (P0-4c): overlay Turnstile action `bootstrap` aperto
+  // on-demand da `ensureSession` solo quando serve (identità non `off`).
+  const [bootstrapCData, setBootstrapCData] = useState<string | null>(null);
+  const bootstrapResolveRef = useRef<((value: BootstrapTurnstileProof | null) => void) | null>(null);
+  const bootstrapInFlightRef = useRef(false);
 
   useEffect(() => {
     fetch('/api/public/batch')
@@ -154,10 +165,38 @@ export function SearchSection() {
     setShowPalletPicker(true);
   };
 
-  const handleSubmit = () => {
-    if (selectedCompanies.length === 3) {
-      setShowTurnstile(true);
+  // Fornisce a `ensureSession` un token Turnstile action `bootstrap` rendendo
+  // l'overlay dedicato e risolvendo quando l'utente lo completa (o lo chiude).
+  const requestBootstrapToken = useCallback(
+    (cData: string) =>
+      new Promise<BootstrapTurnstileProof | null>((resolve) => {
+        bootstrapResolveRef.current = resolve;
+        setBootstrapCData(cData);
+      }),
+    [],
+  );
+
+  const settleBootstrap = useCallback((value: BootstrapTurnstileProof | null) => {
+    const resolve = bootstrapResolveRef.current;
+    bootstrapResolveRef.current = null;
+    setBootstrapCData(null);
+    resolve?.(value);
+  }, []);
+
+  const handleSubmit = async () => {
+    if (selectedCompanies.length !== 3 || bootstrapInFlightRef.current) return;
+    // Con identità sessione attiva il voto richiede il CSRF token: assicura la
+    // sessione prima di aprire il challenge di voto. Se il bootstrap non è
+    // disponibile (mode `off`, endpoint 404) si prosegue legacy senza header.
+    if (!getCsrfToken()) {
+      bootstrapInFlightRef.current = true;
+      try {
+        await ensureSession(requestBootstrapToken);
+      } finally {
+        bootstrapInFlightRef.current = false;
+      }
     }
+    setShowTurnstile(true);
   };
 
   const handleVoteSubmit = async (token: string) => {
@@ -167,7 +206,7 @@ export function SearchSection() {
     setLoading(true);
     try {
       const security = await getVoteSecurity(token);
-      const res = await fetch('/api/vota', {
+      const res = await csrfFetch('/api/vota', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -463,6 +502,17 @@ export function SearchSection() {
           )}
         </div>
       </div>
+
+      {bootstrapCData && (
+        <TurnstileOverlay
+          isVisible
+          action="bootstrap"
+          cData={bootstrapCData}
+          onSuccess={(token) => settleBootstrap({ token, cData: bootstrapCData })}
+          onError={() => settleBootstrap(null)}
+          onClose={() => settleBootstrap(null)}
+        />
+      )}
 
       {showTurnstile && (
         <TurnstileOverlay
