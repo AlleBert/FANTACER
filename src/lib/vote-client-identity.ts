@@ -62,13 +62,37 @@ function randomUuid(): string {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
 }
 
-/** UUID esistente (cookie > localStorage) oppure null. I valori legacy sono ignorati. */
-function resolveFromStorage(): string | null {
+/**
+ * F0 — Bridge identità legacy: localStorage → cookie first-party.
+ *
+ * Chi ha l'UUID **solo** in `localStorage` (cookie assente: deploy nuovo,
+ * cookie cancellati, Safari ITP) deve ritrovare la stessa identità lato
+ * server. Il bootstrap legge il fingerprint dal **solo cookie** first-party
+ * `fantacer_voter_id`: scrivere il cookie qui, prima di ogni bootstrap, evita
+ * che quel browser venga agganciato a un nuovo principal (→ secondo voto).
+ *
+ * Regole (precedenza cookie > localStorage):
+ * - cookie UUID valido → nessuna scrittura;
+ * - cookie assente/non valido + localStorage UUID valido → scrive il cookie;
+ * - localStorage assente o legacy → nessuna scrittura.
+ *
+ * Sincrona, SSR-safe, best-effort. Non crea nuove superfici di persistenza:
+ * scrive solo il cookie first-party già usato altrove. Ritorna l'UUID
+ * effettivo (cookie o bridged) oppure `null`.
+ */
+export function bridgeLegacyIdentityToCookie(): string | null {
   const cookie = readCookie(VOTER_COOKIE)
   if (isUuid(cookie)) return cookie.toLowerCase()
   const stored = getStoredVoterId()
-  if (isUuid(stored)) return stored.toLowerCase()
-  return null
+  if (!isUuid(stored)) return null
+  const id = stored.toLowerCase()
+  writeCookie(VOTER_COOKIE, id)
+  return id
+}
+
+/** UUID esistente (cookie > localStorage) oppure null. I valori legacy sono ignorati. */
+function resolveFromStorage(): string | null {
+  return bridgeLegacyIdentityToCookie()
 }
 
 function persist(id: string): void {

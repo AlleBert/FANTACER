@@ -1,5 +1,7 @@
 'use client'
 
+import { bridgeLegacyIdentityToCookie } from './vote-client-identity'
+
 /**
  * C06 — Bootstrap sessione + CSRF lato client.
  *
@@ -19,6 +21,11 @@
  * È **fail-soft**: qualsiasi esito non-ok ritorna `false` senza lanciare, così
  * il chiamante può proseguire sul percorso legacy (modalità identità `off`:
  * gli endpoint rispondono 404 e non cambia nulla).
+ *
+ * Prima del bootstrap esegue il **bridge** F0 localStorage → cookie legacy
+ * first-party (`bridgeLegacyIdentityToCookie`): chi ha l'UUID solo in
+ * `localStorage` (cookie assente) deve presentare il cookie prima della
+ * richiesta, altrimenti il server non può agganciarlo al suo principal.
  *
  * Il modulo non tocca `window` all'import (SSR-safe) e non crea nuove superfici
  * di persistenza.
@@ -97,6 +104,9 @@ export function csrfFetch(input: RequestInfo | URL, init?: RequestInit): Promise
  */
 export async function ensureSession(turnstileTokenProvider: BootstrapTokenProvider): Promise<boolean> {
   if (csrfToken) return true
+
+  // F0: cookie legacy first-party scritto prima di qualsiasi bootstrap.
+  bridgeLegacyIdentityToCookie()
 
   try {
     const nonceRes = await fetch(NONCE_URL, {

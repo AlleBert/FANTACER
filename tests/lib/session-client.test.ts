@@ -6,8 +6,15 @@ import {
   clearCsrfToken,
   type BootstrapTokenProvider,
 } from '@/lib/session-client'
+import { VOTER_COOKIE } from '@/lib/vote-identity'
 
 const CDATA = 'bootstrap:nonce-1234567890abcdef'
+const STORED_ID = '11111111-2222-4333-8444-555555555555'
+
+function readVoterCookie(): string | null {
+  const entry = document.cookie.split('; ').find((c) => c.startsWith(`${VOTER_COOKIE}=`))
+  return entry ? decodeURIComponent(entry.slice(VOTER_COOKIE.length + 1)) : null
+}
 
 function jsonResponse(body: unknown, ok = true, status = 200): Response {
   return { ok, status, json: async () => body } as unknown as Response
@@ -25,6 +32,8 @@ let provider: jest.Mock
 beforeEach(() => {
   clearCsrfToken()
   provider = jest.fn()
+  document.cookie = `${VOTER_COOKIE}=; Max-Age=0; Path=/`
+  localStorage.clear()
 })
 
 describe('csrf token store', () => {
@@ -123,6 +132,20 @@ describe('ensureSession', () => {
 
     expect(ok).toBe(false)
     expect(getCsrfToken()).toBeNull()
+  })
+
+  it('bridga localStorage → cookie legacy prima del bootstrap', async () => {
+    localStorage.setItem('fantacer_voter_id', STORED_ID)
+    const fetchMock = setFetch(
+      jsonResponse({ nonce: 'n-1', cData: CDATA }),
+      jsonResponse({ ok: true, csrfToken: 'csrf-123' }),
+    )
+    provider.mockResolvedValue({ token: 'ts-token', cData: CDATA })
+
+    expect(await ensureSession(provider as BootstrapTokenProvider)).toBe(true)
+    expect(readVoterCookie()).toBe(STORED_ID)
+    // Il cookie è già stato scritto prima della prima richiesta di bootstrap.
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/identity/bootstrap/nonce')
   })
 })
 
