@@ -10,8 +10,13 @@ import {
   parseSessionCookie,
   verifyToken,
   sessionCookieOptions,
+  generateCsrfToken,
+  hashCsrfToken,
+  verifyCsrf,
   SESSION_COOKIE,
   SESSION_COOKIE_MAX_AGE,
+  SESSION_IDLE_MS,
+  SESSION_ABSOLUTE_MS,
 } from '@/lib/session-identity'
 
 const ORIGINAL_ENV = { ...process.env }
@@ -96,5 +101,57 @@ describe('keyringFromEnv', () => {
     process.env.SESSION_HMAC_KEYS = `k1:${b64(32)}`
     process.env.SESSION_HMAC_ACTIVE = 'k1'
     expect(keyringFromEnv()?.active).toBe('k1')
+  })
+})
+
+describe('scadenze sessione', () => {
+  it('idle < assoluta e coerenti col max-age cookie', () => {
+    expect(SESSION_IDLE_MS).toBeGreaterThan(0)
+    expect(SESSION_ABSOLUTE_MS).toBeGreaterThan(SESSION_IDLE_MS)
+    expect(SESSION_ABSOLUTE_MS).toBe(SESSION_COOKIE_MAX_AGE * 1000)
+  })
+})
+
+describe('CSRF', () => {
+  const kr = parseKeyring(`k1:${b64(32)}`, 'k1')!
+
+  it('generateCsrfToken è casuale e non vuoto', () => {
+    const a = generateCsrfToken()
+    const b = generateCsrfToken()
+    expect(a).not.toBe(b)
+    expect(a.length).toBeGreaterThan(30)
+  })
+
+  it('hashCsrfToken deterministico, hex e diverso dal token in chiaro', () => {
+    const csrf = generateCsrfToken()
+    const h = hashCsrfToken(csrf, kr)
+    expect(h).toMatch(/^[0-9a-f]{64}$/)
+    expect(hashCsrfToken(csrf, kr)).toBe(h)
+    expect(h).not.toContain(csrf)
+  })
+
+  it('hashCsrfToken null se la key attiva manca dal keyring', () => {
+    expect(hashCsrfToken('x', { active: 'k9', keys: new Map() })).toBeNull()
+  })
+
+  it('verifyCsrf true solo per il token corretto', () => {
+    const csrf = generateCsrfToken()
+    const h = hashCsrfToken(csrf, kr)!
+    expect(verifyCsrf(csrf, h, kr)).toBe(true)
+    expect(verifyCsrf(csrf + 'x', h, kr)).toBe(false)
+    expect(verifyCsrf(generateCsrfToken(), h, kr)).toBe(false)
+    expect(verifyCsrf(csrf, 'deadbeef', kr)).toBe(false)
+  })
+
+  it('verifyCsrf false su valori mancanti (fail-closed)', () => {
+    expect(verifyCsrf(null, 'abcd', kr)).toBe(false)
+    expect(verifyCsrf(undefined, 'abcd', kr)).toBe(false)
+    expect(verifyCsrf('csrf', null, kr)).toBe(false)
+    expect(verifyCsrf('csrf', undefined, kr)).toBe(false)
+    expect(verifyCsrf('csrf', '', kr)).toBe(false)
+  })
+
+  it('verifyCsrf false se la key attiva manca dal keyring', () => {
+    expect(verifyCsrf('csrf', 'abcd', { active: 'k9', keys: new Map() })).toBe(false)
   })
 })

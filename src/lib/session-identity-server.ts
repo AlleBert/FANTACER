@@ -5,10 +5,16 @@ import {
   formatSessionCookie,
   parseSessionCookie,
   generateToken,
+  generateCsrfToken,
+  hashCsrfToken,
+  verifyCsrf,
   SESSION_HASH_VERSION,
   SESSION_COOKIE_MAX_AGE,
+  SESSION_IDLE_MS,
   type SessionKeyring,
 } from '@/lib/session-identity'
+
+export { verifyCsrf }
 
 /**
  * P0-4 — Identità server-side (lato server).
@@ -101,6 +107,7 @@ export interface IssuedSession {
   cookieValue: string
   principalId: string
   expiresAt: string
+  csrfToken: string
 }
 
 export async function createSession(
@@ -113,6 +120,9 @@ export async function createSession(
   const token = generateToken()
   const tokenHash = hashToken(keyring.active, token, keyring)
   if (!tokenHash) return null
+  const csrfToken = generateCsrfToken()
+  const csrfHash = hashCsrfToken(csrfToken, keyring)
+  if (!csrfHash) return null
   const expiresAt = new Date(Date.now() + ttlMs).toISOString()
 
   const { error } = await admin.from('voter_sessions').insert({
@@ -122,6 +132,7 @@ export async function createSession(
     key_id: keyring.active,
     hash_version: SESSION_HASH_VERSION,
     expires_at: expiresAt,
+    csrf_hash: csrfHash,
   })
   if (error) return null
 
@@ -129,7 +140,138 @@ export async function createSession(
     cookieValue: formatSessionCookie(keyring.active, token),
     principalId,
     expiresAt,
+    csrfToken,
   }
+}
+
+export interface ResolvedSession {
+  principalId: string
+  sessionId: string
+  csrfHash: string | null
+  expiresAt: string
+  revokedAt: string | null
+}
+
+function isExpired(isoDate: string, now: number): boolean {
+  const t = new Date(isoDate).getTime()
+  return !Number.isFinite(t) || t <= now
+}
+
+/**
+ * Risolve una sessione dal cookie. Fail-closed: null su cookie invalido, riga
+ * assente, revoca, idle scaduta o scadenza assoluta superata. Nessuna scrittura.
+ */
+export async function resolveSession(
+  admin: Admin,
+  cookieValue: string | null | undefined,
+  keyring: SessionKeyring,
+  now: number = Date.now(),
+): Promise<ResolvedSession | null> {
+  const parsed = parseSessionCookie(cookieValue)
+  if (!parsed) return null
+  const tokenHash = hashToken(parsed.keyId, parsed.token, keyring)
+  if (!tokenHash) return null
+
+  const { data, error } = await admin
+    .from('voter_sessions')
+    .select('id, principal_id, csrf_hash, expires_at, last_seen_at, revoked_at')
+    .eq('token_hash', tokenHash)
+    .maybeSingle()
+  if (error || !data) return null
+  if (data.revoked_at) return null
+  if (isExpired(data.expires_at, now)) return null
+  if (isExpired(data.last_seen_at, now - SESSION_IDLE_MS)) return null
+
+  return {
+    principalId: data.principal_id,
+    sessionId: data.id,
+    csrfHash: data.csrf_hash ?? null,
+    expiresAt: data.expires_at,
+    revokedAt: data.revoked_at ?? null,
+  }
+}
+
+/** Rinnovo idle best-effort: aggiorna `last_seen_at`, non fallisce mai la richiesta. */
+export async function touchSession(admin: Admin, sessionId: string): Promise<void> {
+  try {
+    await admin
+      .from('voter_sessions')
+      .update({ last_seen_at: new Date().toISOString() })
+      .eq('id', sessionId)
+  } catch {
+    // best-effort
+  }
+}
+
+export interface RenewedSession {
+  cookieValue: string
+  csrfToken: string
+  expiresAt: string
+}
+
+/**
+ * Ruota token di sessione e CSRF mantenendo la scadenza assoluta e resettando
+ * il clock idle. Fail-closed: null se la sessione non è più valida. Il vecchio
+ * `token_hash` viene sovrascritto (invalidato).
+ */
+export async function renewSession(
+  admin: Admin,
+  cookieValue: string | null | undefined,
+  keyring: SessionKeyring,
+  now: number = Date.now(),
+): Promise<RenewedSession | null> {
+  const parsed = parseSessionCookie(cookieValue)
+  if (!parsed) return null
+  const oldHash = hashToken(parsed.keyId, parsed.token, keyring)
+  if (!oldHash) return null
+
+  const { data, error } = await admin
+    .from('voter_sessions')
+    .select('id, expires_at, last_seen_at, revoked_at')
+    .eq('token_hash', oldHash)
+    .maybeSingle()
+  if (error || !data) return null
+  if (data.revoked_at) return null
+  if (isExpired(data.expires_at, now)) return null
+  if (isExpired(data.last_seen_at, now - SESSION_IDLE_MS)) return null
+
+  const token = generateToken()
+  const tokenHash = hashToken(keyring.active, token, keyring)
+  if (!tokenHash) return null
+  const csrfToken = generateCsrfToken()
+  const csrfHash = hashCsrfToken(csrfToken, keyring)
+  if (!csrfHash) return null
+
+  const { error: updateError } = await admin
+    .from('voter_sessions')
+    .update({
+      token_hash: tokenHash,
+      key_id: keyring.active,
+      hash_version: SESSION_HASH_VERSION,
+      csrf_hash: csrfHash,
+      last_seen_at: new Date(now).toISOString(),
+    })
+    .eq('id', data.id)
+  if (updateError) return null
+
+  return {
+    cookieValue: formatSessionCookie(keyring.active, token),
+    csrfToken,
+    expiresAt: data.expires_at,
+  }
+}
+
+/** Revoca una sessione. Fail-closed: false su errore DB. */
+export async function revokeSession(
+  admin: Admin,
+  sessionId: string,
+  reason: string,
+): Promise<boolean> {
+  const { error } = await admin
+    .from('voter_sessions')
+    .update({ revoked_at: new Date().toISOString(), revoke_reason: reason })
+    .eq('id', sessionId)
+  return !error
 }
 
 /** Risolve il principal da un cookie di sessione; null se assente/scaduto/revocato. */

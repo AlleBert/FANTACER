@@ -13,6 +13,11 @@ export const SESSION_COOKIE_MAX_AGE = 60 * 60 * 12
 export const SESSION_HASH_VERSION = 1
 export const MIN_KEY_BYTES = 32
 
+/** Finestra idle: oltre questo intervallo senza attività la sessione è invalida. */
+export const SESSION_IDLE_MS = 60 * 60 * 2
+/** Vita assoluta: cap invalicabile dall'ultimo rinnovo. */
+export const SESSION_ABSOLUTE_MS = SESSION_COOKIE_MAX_AGE * 1000
+
 export interface SessionKeyring {
   active: string
   keys: Map<string, Buffer>
@@ -72,6 +77,33 @@ export function verifyToken(
   if (!expected) return false
   const a = Buffer.from(expected, 'hex')
   const b = Buffer.from(tokenHash, 'hex')
+  return a.length === b.length && timingSafeEqual(a, b)
+}
+
+/**
+ * CSRF — token separato dal token di sessione, hash HMAC salvato nella riga
+ * `voter_sessions.csrf_hash`. Domain separation vs. `hashToken` (`csrf|...`).
+ */
+export function generateCsrfToken(): string {
+  return randomBytes(32).toString('base64url')
+}
+
+export function hashCsrfToken(csrf: string, keyring: SessionKeyring): string | null {
+  const key = keyring.keys.get(keyring.active)
+  if (!key) return null
+  return createHmac('sha256', key).update(`csrf|${csrf}`).digest('hex')
+}
+
+export function verifyCsrf(
+  csrf: string | null | undefined,
+  csrfHash: string | null | undefined,
+  keyring: SessionKeyring,
+): boolean {
+  if (!csrf || !csrfHash) return false
+  const expected = hashCsrfToken(csrf, keyring)
+  if (!expected) return false
+  const a = Buffer.from(expected, 'hex')
+  const b = Buffer.from(csrfHash, 'hex')
   return a.length === b.length && timingSafeEqual(a, b)
 }
 
