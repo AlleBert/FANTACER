@@ -69,12 +69,19 @@ export async function POST(request: NextRequest) {
       if (keyring) {
         const resolvedSession = await resolveVoteIdentity(supabase, request, keyring)
         if ((identityMode === 'dual' || identityMode === 'session') && resolvedSession) {
+          // `/api/vota/status` è una LETTURA: il CSRF session-bound non protegge
+          // la risposta, ma solo la scrittura di rinnovo idle (`touchSession`).
+          // Fail-closed sulla write: il touch avviene **solo** se il CSRF è
+          // valido; altrimenti la lettura prosegue invariata (200). Dopo un
+          // reload il token CSRF in-memory è perso: un 403 qui abortirebbe il
+          // restore dello stato votato per i returning user senza alcun
+          // guadagno di sicurezza — `SameSite=Lax` trattiene già il cookie di
+          // sessione sulle POST cross-site e una risposta cross-origin non è
+          // leggibile dal chiamante.
           const csrf = verifyCsrfForRequest(request, keyring, resolvedSession)
-          if (!csrf.ok) {
-            return respond({ error: 'Forbidden' }, 403)
+          if (csrf.ok) {
+            await touchSession(supabase, resolvedSession.sessionId)
           }
-          // Rinnovo idle best-effort SOLO dopo CSRF ok.
-          await touchSession(supabase, resolvedSession.sessionId)
         }
       }
     }

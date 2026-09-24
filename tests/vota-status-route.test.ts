@@ -241,16 +241,16 @@ describe('POST /api/vota/status — CSRF sessione (C05)', () => {
     mockTouchSession.mockReset()
   })
 
-  it('sessione risolta senza X-CSRF-Token → 403', async () => {
+  it('sessione risolta senza X-CSRF-Token → 200 (read non bloccata), nessun idle-touch', async () => {
     mockResolveVoteIdentity.mockResolvedValue(session(hashCsrfToken(generateCsrfToken(), keyring)))
     const res = await POST(
       postRequest({ voterId: UUID }, undefined, { origin: ORIGIN, host: HOST }),
     )
-    expect(res.status).toBe(403)
+    expect(res.status).toBe(200)
     expect(mockTouchSession).not.toHaveBeenCalled()
   })
 
-  it('X-CSRF-Token errato → 403', async () => {
+  it('X-CSRF-Token errato → 200 (read non bloccata), nessun idle-touch', async () => {
     mockResolveVoteIdentity.mockResolvedValue(session(hashCsrfToken(generateCsrfToken(), keyring)))
     const res = await POST(
       postRequest({ voterId: UUID }, undefined, {
@@ -259,17 +259,17 @@ describe('POST /api/vota/status — CSRF sessione (C05)', () => {
         'x-csrf-token': 'wrong',
       }),
     )
-    expect(res.status).toBe(403)
+    expect(res.status).toBe(200)
     expect(mockTouchSession).not.toHaveBeenCalled()
   })
 
-  it('Origin assente → 403 fail-closed', async () => {
+  it('Origin assente → 200 (read non bloccata), nessun idle-touch', async () => {
     const csrf = generateCsrfToken()
     mockResolveVoteIdentity.mockResolvedValue(session(hashCsrfToken(csrf, keyring)))
     const res = await POST(
       postRequest({ voterId: UUID }, undefined, { host: HOST, 'x-csrf-token': csrf }),
     )
-    expect(res.status).toBe(403)
+    expect(res.status).toBe(200)
     expect(mockTouchSession).not.toHaveBeenCalled()
   })
 
