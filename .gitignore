@@ -108,3 +108,6 @@ tests/e2e/responsive-structural/
 /.env.load
 /loadtest-output/
 /backups/
+
+# backfill checkpoint/resume (scripts/p0-4-backfill.mjs)
+/.backfill/
