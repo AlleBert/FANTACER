@@ -1,0 +1,110 @@
+[
+  {
+    "evidence": {
+      "counts": {
+        "audit_logs_rows": 1462,
+        "daily_stats_rows": 239,
+        "device_sessions_rows": 5130,
+        "legacy_votes_total": 0,
+        "rate_limits_rows": 88,
+        "vote_sessions_today": 0,
+        "vote_sessions_total": 545
+      },
+      "migration": [
+        {
+          "version": "20260923000000"
+        },
+        {
+          "version": "20260923000002"
+        }
+      ],
+      "policies": [
+        {
+          "cmd": "ALL",
+          "policyname": "Service role only for rate_limits",
+          "roles": "{public}",
+          "tablename": "rate_limits"
+        },
+        {
+          "cmd": "INSERT",
+          "policyname": "vote_sessions_service_insert",
+          "roles": "{service_role}",
+          "tablename": "vote_sessions"
+        },
+        {
+          "cmd": "SELECT",
+          "policyname": "vote_sessions_service_select",
+          "roles": "{service_role}",
+          "tablename": "vote_sessions"
+        }
+      ],
+      "rls": [
+        {
+          "relname": "rate_limits",
+          "relrowsecurity": true
+        },
+        {
+          "relname": "vote_sessions",
+          "relrowsecurity": true
+        }
+      ],
+      "tables": [
+        {
+          "anon_del": false,
+          "anon_ins": false,
+          "anon_sel": false,
+          "anon_upd": false,
+          "auth_del": false,
+          "auth_ins": false,
+          "auth_sel": false,
+          "auth_upd": false,
+          "relname": "rate_limits",
+          "svc_del": true,
+          "svc_ins": true,
+          "svc_ref": true,
+          "svc_sel": true,
+          "svc_trig": true,
+          "svc_trunc": true,
+          "svc_upd": true
+        },
+        {
+          "anon_del": false,
+          "anon_ins": false,
+          "anon_sel": false,
+          "anon_upd": false,
+          "auth_del": false,
+          "auth_ins": false,
+          "auth_sel": false,
+          "auth_upd": false,
+          "relname": "vote_sessions",
+          "svc_del": true,
+          "svc_ins": true,
+          "svc_ref": true,
+          "svc_sel": true,
+          "svc_trig": true,
+          "svc_trunc": true,
+          "svc_upd": true
+        },
+        {
+          "anon_del": false,
+          "anon_ins": false,
+          "anon_sel": false,
+          "anon_upd": false,
+          "auth_del": false,
+          "auth_ins": false,
+          "auth_sel": false,
+          "auth_upd": false,
+          "relname": "vote_sessions_id_seq",
+          "svc_del": false,
+          "svc_ins": false,
+          "svc_ref": false,
+          "svc_sel": true,
+          "svc_trig": false,
+          "svc_trunc": false,
+          "svc_upd": true
+        }
+      ],
+      "voting_enabled": "false"
+    }
+  }
+]

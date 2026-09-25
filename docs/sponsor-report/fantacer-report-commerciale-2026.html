@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<title>FantaCer 2026 — Report commerciale sponsor</title>
+<style>
+  @page { size: A4; margin: 0; }
+  :root{
+    --ink:#12100e; --muted:#6b665f; --line:#e5e0d8; --bg:#f6f3ee;
+    --accent:#c0392b; --accent2:#8c2f22; --gold:#b9863f; --card:#ffffff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--ink);font-family:"Helvetica Neue",Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .page{width:210mm;min-height:297mm;padding:16mm 15mm;background:var(--bg);position:relative;overflow:hidden}
+  .page + .page{page-break-before:always}
+  h1,h2,h3{letter-spacing:-.01em}
+  .cover{background:linear-gradient(160deg,#1b1714 0%,#2c1f1a 55%,#4a2018 100%);color:#fff;display:flex;flex-direction:column;justify-content:space-between}
+  .cover .brand{font-size:12px;letter-spacing:.4em;text-transform:uppercase;color:var(--gold)}
+  .cover .eyebrow{margin-top:6px;font-size:13px;color:#cfc7bd}
+  .cover h1{font-size:56px;line-height:1.02;font-weight:800;margin:40px 0 14px}
+  .cover h1 span{color:var(--gold)}
+  .cover .claim{font-size:18px;line-height:1.5;max-width:152mm;color:#e8e2da}
+  .cover .edition{font-size:14px;color:#bdb4a9;margin-top:8px}
+  .cover .foot{display:flex;justify-content:space-between;align-items:flex-end;border-top:1px solid rgba(255,255,255,.18);padding-top:16px}
+  .cover .foot .small{font-size:11px;color:#a99f93;line-height:1.6}
+  .cover .badge{border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:8px 16px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#e8e2da}
+  .kicker{font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--accent);font-weight:700}
+  h2.section{font-size:29px;font-weight:800;margin:6px 0 4px}
+  .lead{color:var(--muted);font-size:13px;line-height:1.6;max-width:167mm}
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 13px 12px}
+  .kpi .n{font-size:27px;font-weight:800;line-height:1;color:var(--accent2)}
+  .kpi .l{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-top:7px;font-weight:700}
+  .kpi .d{font-size:9.5px;color:var(--muted);margin-top:4px;line-height:1.35}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:15px}
+  .grid2{display:grid;grid-template-columns:1.35fr 1fr;gap:10px;margin-top:12px}
+  .grid2b{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+  .h3{font-size:13.5px;font-weight:800;margin-bottom:9px}
+  .bars{display:flex;align-items:flex-end;gap:9px;height:145px;margin-top:6px}
+  .bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+  .bar .v{font-size:10.5px;font-weight:800;margin-bottom:4px}
+  .bar .fill{width:100%;border-radius:6px 6px 0 0;background:linear-gradient(180deg,#d0503f,#8c2f22)}
+  .bar .x{font-size:9.5px;color:var(--muted);margin-top:5px}
+  .bars2{display:flex;align-items:flex-end;gap:22px;height:120px;margin-top:8px;justify-content:center}
+  .bars2 .grp{flex:1;display:flex;align-items:flex-end;justify-content:center;gap:8px;height:100%}
+  .bars2 .col{width:44px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+  .bars2 .col .v{font-size:10px;font-weight:800;margin-bottom:3px}
+  .bars2 .col .fill{width:100%;border-radius:5px 5px 0 0}
+  .bars2 .lab{font-size:9.5px;color:var(--muted);margin-top:5px;text-align:center}
+  table{width:100%;border-collapse:collapse;font-size:11px}
+  th,td{text-align:left;padding:5px 6px;border-bottom:1px solid var(--line)}
+  th{font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  td .num{font-weight:700;color:var(--accent2);text-align:right}
+  td.r{text-align:right}
+  .track{height:6px;background:#eee7dd;border-radius:999px;overflow:hidden}
+  .track > i{display:block;height:100%;background:var(--accent)}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .chip{border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:10.5px;color:var(--muted)}
+  .chip b{color:var(--accent2)}
+  .note{font-size:10px;color:var(--muted);line-height:1.5;margin-top:8px}
+  ul.opp{list-style:none;display:flex;flex-direction:column;gap:9px;margin-top:4px}
+  ul.opp li{font-size:11.5px;line-height:1.5;padding-left:16px;position:relative;color:#3a352f}
+  ul.opp li:before{content:"→";position:absolute;left:0;color:var(--accent);font-weight:800}
+  .cta{background:linear-gradient(160deg,#1b1714,#4a2018);color:#fff;border-radius:14px;padding:20px;margin-top:14px}
+  .cta h3{font-size:19px;font-weight:800;margin-bottom:6px}
+  .cta p{font-size:12px;color:#ddd5cc;line-height:1.55;max-width:150mm}
+  .cta .btn{display:inline-block;margin-top:12px;background:var(--gold);color:#231a10;font-weight:800;font-size:12px;border-radius:999px;padding:10px 20px}
+  .footline{margin-top:14px;padding-top:10px;border-top:1px solid var(--line);display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted)}
+  .warn{background:#fdf6e6;border:1px solid #eadfc0;border-radius:10px;padding:10px 12px;font-size:10.5px;color:#7a6320;line-height:1.5;margin-top:10px}
+  .big{display:flex;align-items:baseline;gap:10px}
+  .big .x{font-size:26px;font-weight:800;color:var(--accent2)}
+  .big .up{font-size:13px;font-weight:800;color:#2e7d32}
+  .pagelabel{position:absolute;top:9mm;right:15mm;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#b3aa9d}
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<section class="page cover">
+  <div>
+    <div class="brand">FantaCer</div>
+    <div class="eyebrow">Il gioco che accende il Cersaie</div>
+    <h1>Una fiera<br><span>guardata</span> da<br>migliaia di occhi.</h1>
+    <p class="claim">In cinque giorni il sito ha servito oltre <b>343.000 richieste</b>, attirato quasi
+    <b>4.700 visitatori</b> e raccolto <b>2.982 voti reali</b>: traffico qualificato e un pubblico in target
+    per il settore ceramico. Ecco perché la prossima edizione è un'opportunità di visibilità concreta per il vostro brand.</p>
+    <p class="edition">Edizione di riferimento · batch <b>cersaie_14092026</b> · 21–25 settembre 2026</p>
+  </div>
+  <div class="foot">
+    <div class="small">Report commerciale per sponsor e partner<br>Dati misurati da analytics web e dalla piattaforma FantaCer<br>Aggiornati al 25/09/2026 · documento riservato a fini commerciali</div>
+    <div class="badge">Sponsorship 2027</div>
+  </div>
+</section>
+
+<!-- PAGE 2 — KPI -->
+<section class="page">
+  <span class="pagelabel">01 · La fiera in numeri</span>
+  <div class="kicker">La fiera in numeri</div>
+  <h2 class="section">Cinque giorni, un pubblico vero</h2>
+  <p class="lead">Numeri misurati, non stimati: la partecipazione dalla piattaforma FantaCer (voti tracciati),
+  il traffico web dal sistema di analytics del sito. Edizione 2026, 21–25 settembre.</p>
+
+  <div class="kpi-grid">
+    <div class="kpi"><div class="n">347.728</div><div class="l">Richieste al sito</div><div class="d">Servite in 5 giorni di fiera</div></div>
+    <div class="kpi"><div class="n">4.756</div><div class="l">Visitatori web</div><div class="d">Persone distinte sul sito</div></div>
+    <div class="kpi"><div class="n">8.408</div><div class="l">Visualizzazioni pagina</div><div class="d">Pagine viste durante la fiera</div></div>
+    <div class="kpi"><div class="n">2.982</div><div class="l">Voti registrati</div><div class="d">Sessioni di voto valide</div></div>
+    <div class="kpi"><div class="n">2.324</div><div class="l">Votanti unici</div><div class="d">Persone distinte che hanno giocato</div></div>
+    <div class="kpi"><div class="n">312</div><div class="l">Aziende in gara</div><div class="d">Brand presenti nel gioco</div></div>
+    <div class="kpi"><div class="n">117.365</div><div class="l">Richieste nel picco</div><div class="d">Mercoledì 23 settembre</div></div>
+    <div class="kpi"><div class="n">19</div><div class="l">Paesi di provenienza</div><div class="d">Pubblico non solo italiano</div></div>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <div class="h3">La fiera ha acceso il sito: richieste giornaliere prima e durante</div>
+    <div class="bars2">
+      <div class="grp">
+        <div class="col"><span class="v">4.088</span><div class="fill" style="height:3.5%;background:#cbb9a3"></div></div>
+        <div class="col"><span class="v">5.901</span><div class="fill" style="height:5%;background:#cbb9a3"></div></div>
+        <div class="col"><span class="v">25.760</span><div class="fill" style="height:22%;background:#d0503f"></div></div>
+        <div class="col"><span class="v">65.593</span><div class="fill" style="height:56%;background:#c0392b"></div></div>
+        <div class="col"><span class="v">117.365</span><div class="fill" style="height:100%;background:#8c2f22"></div></div>
+      </div>
+      <div style="border-left:1px dashed #cfc7bd;height:100%"></div>
+      <div class="grp" style="justify-content:center">
+        <div style="text-align:left;padding-left:12px">
+          <div class="big"><span class="x">+2.800%</span></div>
+          <div class="note" style="margin-top:2px">richieste nel giorno di picco<br>rispetto a una giornata pre-fiera</div>
+        </div>
+      </div>
+    </div>
+    <div class="note" style="display:flex;gap:26px">
+      <span>■ <span style="color:#a89a86">Pre-fiera</span> (1 e 20 settembre campione)</span>
+      <span>■ <span style="color:#c0392b">21–23 settembre (fiera)</span></span>
+    </div>
+    <div class="note">Prima della fiera il sito riceveva poche migliaia di richieste al giorno. Dal 21 settembre il traffico esplode fino a superare le 117.000 in un solo giorno: la manifestazione ha generato praticamente tutto il traffico dell'anno.</div>
+  </div>
+</section>
+
+<!-- PAGE 3 — PUBBLICO -->
+<section class="page">
+  <span class="pagelabel">02 · Pubblico e visibilità</span>
+  <div class="kicker">Il pubblico e la visibilità generata</div>
+  <h2 class="section">Un gioco che tiene le persone dentro l'evento</h2>
+  <p class="lead">FantaCer trasforma la visita in un gioco: il pubblico vota i propri stand preferiti e ogni voto
+  è un momento di attenzione verso le aziende. Il sito ha attirato quasi 4.700 visitatori in cinque giorni,
+  con un picco di 1.430 il mercoledì.</p>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="h3">Andamento giornaliero: visitatori web</div>
+      <div class="bars">
+        <div class="bar"><span class="v">177</span><div class="fill" style="height:12%"></div><span class="x">Lun 21</span></div>
+        <div class="bar"><span class="v">1.100</span><div class="fill" style="height:77%"></div><span class="x">Mar 22</span></div>
+        <div class="bar"><span class="v">1.430</span><div class="fill" style="height:100%"></div><span class="x">Mer 23</span></div>
+        <div class="bar"><span class="v">1.394</span><div class="fill" style="height:97%"></div><span class="x">Gio 24</span></div>
+        <div class="bar"><span class="v">655</span><div class="fill" style="height:41%"></div><span class="x">Ven 25</span></div>
+      </div>
+      <div class="note">La curva sale fino a metà fiera e resta sopra il migliaio di visitatori al giorno. Ogni barra è un visitatore unico del sito (fonte: analytics web).</div>
+    </div>
+    <div class="card">
+      <div class="h3">Le aziende più votate</div>
+      <table>
+        <tr><th>#</th><th>Azienda</th><th class="r">Voti</th></tr>
+        <tr><td>1</td><td>Ceramiche Mariner</td><td class="num">1.107</td></tr>
+        <tr><td>2</td><td>Progetto Baucer</td><td class="num">1.023</td></tr>
+        <tr><td>3</td><td>Ceramica Euro</td><td class="num">1.001</td></tr>
+        <tr><td>4</td><td>Refin</td><td class="num">897</td></tr>
+        <tr><td>5</td><td>Refin DTS City</td><td class="num">737</td></tr>
+        <tr><td>6</td><td>Coem</td><td class="num">286</td></tr>
+        <tr><td>7</td><td>Fioranese</td><td class="num">189</td></tr>
+        <tr><td>8</td><td>Sichenia Gruppo Ceramiche</td><td class="num">182</td></tr>
+        <tr><td>9</td><td>Cotto d'Este</td><td class="num">172</td></tr>
+        <tr><td>10</td><td>FAP Ceramiche</td><td class="num">129</td></tr>
+      </table>
+      <div class="note">244 aziende su 312 hanno ricevuto almeno un voto (78%): attenzione diffusa, non solo per pochi nomi.</div>
+    </div>
+  </div>
+
+  <div class="grid2b">
+    <div class="card">
+      <div class="h3">Da dove arriva il pubblico (canali)</div>
+      <table>
+        <tr><th>Canale</th><th class="r">Sessioni</th><th></th></tr>
+        <tr><td>Diretto (link, QR in fiera)</td><td class="r">1.603</td><td style="width:38%"><div class="track"><i style="width:100%"></i></div></td></tr>
+        <tr><td>Social organico (Instagram, ecc.)</td><td class="r">1.264</td><td><div class="track"><i style="width:79%"></i></div></td></tr>
+        <tr><td>Ricerca organica (Google)</td><td class="r">343</td><td><div class="track"><i style="width:21%"></i></div></td></tr>
+        <tr><td>Cross-network / Paid social</td><td class="r">197</td><td><div class="track"><i style="width:12%"></i></div></td></tr>
+      </table>
+      <div class="note">Fonte: analytics web (3.571 sessioni totali in fiera; la differenza è traffico non attribuito). Il traffico diretto e i social organici dominano: pubblico che arriva da link condivisi e dal profilo Instagram della fiera, non da campagne a pagamento.</div>
+    </div>
+    <div class="card">
+      <div class="h3">Dispositivi e sistema operativo</div>
+      <div class="chips">
+        <span class="chip">Mobile <b>3.845</b> · 82%</span>
+        <span class="chip">Desktop <b>241</b> · 5%</span>
+        <span class="chip">Tablet <b>12</b></span>
+        <span class="chip">iOS <b>2.505</b></span>
+        <span class="chip">Android <b>1.352</b></span>
+      </div>
+      <div class="note">Accesso quasi interamente da smartphone, in mobilità dentro la fiera: FantaCer viene usato <b>durante la visita</b>, nel momento di massima vicinanza agli stand. La homepage raccoglie 7.323 delle 8.408 visualizzazioni: è il punto di ingresso del gioco.</div>
+    </div>
+  </div>
+
+  <div class="warn"><b>Nota di trasparenza.</b> Visitatori web e pageview provengono dal sistema di analytics del sito (dati aggregati, senza cookie di profilazione). I voti provengono dal database di FantaCer. Le grandezze <b>non sono sommabili</b>: un visitatore può aver visto più pagine o non aver votato. Non sono disponibili dati demografici (età, sesso, professione); nessun numero è stimato o proiettato.</div>
+</section>
+
+<!-- PAGE 4 — OPPORTUNITÀ -->
+<section class="page">
+  <span class="pagelabel">03 · Opportunità per le aziende</span>
+  <div class="kicker">Le opportunità per le aziende</div>
+  <h2 class="section">Perché sponsorizzare la prossima edizione</h2>
+  <p class="lead">I dati dell'edizione 2026 mostrano un pubblico che partecipa attivamente e resta dentro il gioco.
+  Queste caratteristiche si traducono in opportunità concrete per un brand, già ora e nella prossima edizione.</p>
+
+  <div class="grid2b">
+    <div class="card">
+      <div class="h3">Visibilità dentro il gioco</div>
+      <ul class="opp">
+        <li>Il vostro stand entra nella scelta del pubblico: ogni voto è un'esposizione del brand in un momento di attenzione.</li>
+        <li>244 aziende su 312 hanno raccolto voti: il gioco distribuisce attenzione in modo ampio, non solo ai grandi nomi.</li>
+        <li>2.982 voti in 5 giorni: quasi un voto ogni due minuti di fiera, per l'intera durata dell'evento.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="h3">Un pubblico in target</div>
+      <ul class="opp">
+        <li>Il pubblico è in visita al Cersaie: operatori del settore ceramico, non traffico generico.</li>
+        <li>19 paesi rappresentati, con presenza europea e internazionale coerente con un salone di respiro mondiale.</li>
+        <li>Utilizzo mobile dell'82% e picco nelle ore di apertura: il contatto avviene <b>davanti agli stand</b>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:10px">
+    <div class="h3">Dal dato all'investimento</div>
+    <table>
+      <tr><th>Cosa dicono i dati</th><th>Cosa significa per il vostro brand</th></tr>
+      <tr><td>347.728 richieste in 5 giorni, fino a 117.365 in un giorno</td><td>Un traffico che prima della fiera era di poche migliaia di richieste: la manifestazione lo moltiplica</td></tr>
+      <tr><td>4.756 visitatori web e 8.408 pagine viste</td><td>Una vetrina digitale frequentata migliaia di volte in pochi giorni</td></tr>
+      <tr><td>2.982 voti, 2.324 votanti unici</td><td>Migliaia di interazioni reali con il gioco che ospita la vostra azienda</td></tr>
+      <tr><td>78% delle aziende votate</td><td>Il pubblico esplora il catalogo: visibilità anche per chi non è al top</td></tr>
+      <tr><td>82% da smartphone in mobilità</td><td>Contatto ravvicinato nel momento della visita</td></tr>
+      <tr><td>19 paesi di provenienza</td><td>Platea internazionale dello stesso pubblico del salone</td></tr>
+    </table>
+  </div>
+
+  <div class="card" style="margin-top:10px">
+    <div class="h3">A chi si rivolge questa opportunità</div>
+    <div class="chips">
+      <span class="chip">Ceramica e superfici</span>
+      <span class="chip">Arredo bagno</span>
+      <span class="chip">Design e interior</span>
+      <span class="chip">Edilizia e materiali</span>
+      <span class="chip">Servizi B2B del settore</span>
+    </div>
+    <div class="note">Sono le categorie già presenti nel gioco e coerenti con il pubblico in visita alla manifestazione. Le opportunità future (formati sponsor, spazi, contenuti dedicati) possono essere costruite su questa base.</div>
+  </div>
+</section>
+
+<!-- PAGE 5 — NEXT + CTA -->
+<section class="page">
+  <span class="pagelabel">04 · Prossima edizione</span>
+  <div class="kicker">Uno sguardo alla prossima edizione</div>
+  <h2 class="section">Costruiamo la visibilità insieme</h2>
+  <p class="lead">L'edizione 2026 ha dimostrato che il gioco funziona: il pubblico partecipa, torna ogni giorno e resta in mobilità.
+  Per la prossima edizione apriamo la collaborazione a sponsor e partner che vogliono presidiare questi momenti.</p>
+
+  <div class="grid2b">
+    <div class="card">
+      <div class="h3">Cosa possiamo offrire</div>
+      <ul class="opp">
+        <li>Presenza del brand nel gioco e nelle classifiche in evidenza.</li>
+        <li>Visibilità verso un pubblico in visita, misurata e verificabile.</li>
+        <li>Formati di partnership da definire insieme, in base agli obiettivi.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="h3">Cosa ci aspettiamo dalla prossima edizione</div>
+      <ul class="opp">
+        <li>Una comunicazione più ricca: con i canali digitali possiamo misurare anche fonti di traffico e conversioni.</li>
+        <li>Una platea ancora più ampia, sfruttando i giorni di massima affluenza.</li>
+        <li>Più contenuti dedicati ai partner, costruiti sulle categorie già attive nel gioco.</li>
+      </ul>
+      <div class="note">Queste sono opportunità future, non previsioni: saranno misurate a consuntivo, come per il 2026.</div>
+    </div>
+  </div>
+
+  <div class="cta">
+    <h3>Diventiamo partner della prossima edizione</h3>
+    <p>Chiedete il pacchetto sponsor e un incontro di presentazione: vi mostreremo come FantaCer può portare il vostro brand
+    davanti al pubblico della fiera, con dati misurati e verificabili.</p>
+    <span class="btn">Richiedi il piano sponsor →</span>
+  </div>
+
+  <div class="footline">
+    <span>FantaCer · Report commerciale sponsor · Edizione 2026</span>
+    <span>Dati al 25/09/2026 · uso commerciale</span>
+  </div>
+</section>
+
+</body>
+</html>

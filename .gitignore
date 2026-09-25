@@ -111,3 +111,6 @@ tests/e2e/responsive-structural/
 
 # backfill checkpoint/resume (scripts/p0-4-backfill.mjs)
 /.backfill/
+
+# ticket supporto Supabase: fuori da Git (solo locale)
+docs/audits/**/supabase-support-ticket.md

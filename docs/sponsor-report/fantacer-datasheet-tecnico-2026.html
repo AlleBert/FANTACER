@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<title>FantaCer 2026 — Data Sheet sponsor</title>
+<style>
+  @page { size: A4; margin: 12mm 10mm; }
+  :root{--ink:#15130f;--muted:#6b665f;--line:#ddd8d0;--accent:#b5362a;--bg:#fff;--soft:#f7f5f1}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--ink);font-family:"Helvetica Neue",Arial,sans-serif;font-size:11px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .page{page-break-after:always;padding-bottom:8mm}
+  .page:last-child{page-break-after:auto}
+  h1{font-size:22px;font-weight:800}
+  h2{font-size:13px;font-weight:800;margin:14px 0 6px;padding-bottom:3px;border-bottom:2px solid var(--ink);text-transform:uppercase;letter-spacing:.04em}
+  .head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid var(--accent);padding-bottom:8px}
+  .head .sub{font-size:11px;color:var(--muted);margin-top:3px}
+  .head .meta{text-align:right;font-size:9.5px;color:var(--muted);line-height:1.5}
+  table{width:100%;border-collapse:collapse;margin-top:6px}
+  th,td{text-align:left;padding:4px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-size:8.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:var(--soft)}
+  td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+  td b{color:var(--accent)}
+  .hero{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:10px}
+  .hero .b{border:1px solid var(--line);border-radius:6px;padding:8px}
+  .hero .b .v{font-size:17px;font-weight:800;line-height:1;color:var(--accent)}
+  .hero .b .l{font-size:8px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-top:5px;font-weight:700}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .note{background:var(--soft);border-left:3px solid var(--accent);padding:7px 9px;font-size:9.5px;color:#4a453e;line-height:1.5;margin-top:8px}
+  .tag{display:inline-block;border:1px solid var(--line);border-radius:3px;padding:1px 5px;font-size:9px;color:var(--muted);margin:1px 2px 1px 0}
+  .small{font-size:9px;color:var(--muted);line-height:1.5}
+  .k{font-weight:700}
+  .ok{color:#2e7d32;font-weight:700}
+  ul{margin:4px 0 0 14px}
+  li{font-size:10.5px;line-height:1.55;margin-bottom:3px}
+  .footer{margin-top:12px;border-top:1px solid var(--line);padding-top:6px;font-size:8.5px;color:var(--muted);display:flex;justify-content:space-between}
+</style>
+</head>
+<body>
+
+<!-- ===== PAGE 1 ===== -->
+<section class="page">
+  <div class="head">
+    <div>
+      <h1>FantaCer 2026 — Data Sheet commerciale</h1>
+      <div class="sub">Cersaie · batch cersaie_14092026 · 21–25 settembre 2026 · dati al 25/09/2026</div>
+    </div>
+    <div class="meta">Numeri misurati, non stimati<br>Fonti: DB FantaCer · Cloudflare · Vercel · GA4</div>
+  </div>
+
+  <div class="hero">
+    <div class="b"><div class="v">347.728</div><div class="l">Richieste al sito</div></div>
+    <div class="b"><div class="v">4.756</div><div class="l">Visitatori web</div></div>
+    <div class="b"><div class="v">8.408</div><div class="l">Pagine viste</div></div>
+    <div class="b"><div class="v">2.982</div><div class="l">Voti</div></div>
+    <div class="b"><div class="v">2.324</div><div class="l">Votanti unici</div></div>
+    <div class="b"><div class="v">312</div><div class="l">Aziende in gara</div></div>
+  </div>
+
+  <h2>1. Partecipazione al gioco (fonte: piattaforma FantaCer)</h2>
+  <table>
+    <tr><th>Parametro</th><th class="n">Valore</th><th>Note</th></tr>
+    <tr><td>Voti totali registrati</td><td class="n"><b>2.982</b></td><td>sessioni di voto valide, 21–25/09</td></tr>
+    <tr><td>Votanti unici</td><td class="n"><b>2.324</b></td><td>persone distinte (fingerprint deduplicato)</td></tr>
+    <tr><td>Aziende in gara</td><td class="n">312</td><td>brand presenti nel gioco</td></tr>
+    <tr><td>Aziende votate</td><td class="n"><b>244</b> (78%)</td><td>≥1 voto in un podio</td></tr>
+    <tr><td>Media voti/giorno</td><td class="n">596</td><td>5 giorni di fiera</td></tr>
+    <tr><td>Giorno di picco</td><td class="n"><b>1.084</b> (23/09)</td><td>miglior giornata per voti</td></tr>
+    <tr><td>Paesi votanti</td><td class="n">16</td><td>IT 2.872 · DE 26 · ES 22 · BE 15 · FR 12 …</td></tr>
+  </table>
+
+  <h2>2. Traffico web (fonte: Cloudflare per le richieste, Vercel per le persone)</h2>
+  <table>
+    <tr><th>Parametro</th><th class="n">Valore</th><th>Fonte / note</th></tr>
+    <tr><td>Richieste HTTP totali</td><td class="n"><b>347.728</b></td><td>Cloudflare · include asset</td></tr>
+    <tr><td>Richiesta nel giorno di picco</td><td class="n"><b>117.365</b> (23/09)</td><td>Cloudflare</td></tr>
+    <tr><td>Visitatori unici web</td><td class="n"><b>4.756</b></td><td>Vercel (persone, cookieless)</td></tr>
+    <tr><td>Visualizzazioni pagina</td><td class="n"><b>8.408</b></td><td>Vercel</td></tr>
+    <tr><td>Picco visitatori/giorno</td><td class="n">1.430 (23/09)</td><td>Vercel</td></tr>
+    <tr><td>Richieste pre-fiera vs fiera</td><td class="n"><b>+2.771%</b></td><td>giorno tipo 4.088 → 117.365 (Cloudflare)</td></tr>
+    <tr><td>Dati trasferiti</td><td class="n">6,84 GB</td><td>Cloudflare</td></tr>
+    <tr><td>Cache hit ratio</td><td class="n">32%</td><td>Cloudflare (110.079 richieste da cache)</td></tr>
+  </table>
+
+  <h2>3. Pubblico (fonte: Vercel)</h2>
+  <div class="cols">
+    <table>
+      <tr><th>Dispositivo</th><th class="n">Visitatori</th></tr>
+      <tr><td>Mobile</td><td class="n">3.845 (82%)</td></tr>
+      <tr><td>Desktop</td><td class="n">241 (5%)</td></tr>
+      <tr><td>Tablet</td><td class="n">12</td></tr>
+    </table>
+    <table>
+      <tr><th>Paese</th><th class="n">Visitatori</th></tr>
+      <tr><td>Italia</td><td class="n">3.904</td></tr>
+      <tr><td>Regno Unito</td><td class="n">46</td></tr>
+      <tr><td>Paesi Bassi</td><td class="n">30</td></tr>
+      <tr><td>Spagna</td><td class="n">26</td></tr>
+      <tr><td>USA</td><td class="n">25</td></tr>
+      <tr><td>Francia</td><td class="n">23</td></tr>
+    </table>
+  </div>
+  <div class="note"><span class="k">19 paesi distinti</span> (Vercel). <span class="k">iOS 2.505 / Android 1.352.</span> La quasi totalità delle visualizzazioni è sulla homepage (7.323 su 8.408): punto di ingresso del gioco. Pubblico in mobilità, dentro la fiera, davanti agli stand.</div>
+
+  <div class="footer"><span>FantaCer · Data Sheet sponsor 2026</span><span>pag. 1/2</span></div>
+</section>
+
+<!-- ===== PAGE 2 ===== -->
+<section class="page">
+  <h2>4. Acquisizione e canali (fonte: GA4 — 3.571 sessioni in fiera)</h2>
+  <table>
+    <tr><th>Canale</th><th class="n">Sessioni</th><th class="n">Quota</th></tr>
+    <tr><td>Diretto (link condivisi, QR in fiera)</td><td class="n"><b>1.603</b></td><td class="n">45%</td></tr>
+    <tr><td>Social organico (Instagram, ecc.)</td><td class="n"><b>1.264</b></td><td class="n">35%</td></tr>
+    <tr><td>Ricerca organica (Google)</td><td class="n">343</td><td class="n">10%</td></tr>
+    <tr><td>Cross-network / Paid social</td><td class="n">197</td><td class="n">6%</td></tr>
+    <tr><td>Non attribuito</td><td class="n">164</td><td class="n">5%</td></tr>
+  </table>
+  <div class="note">Canali dominati da traffico <span class="k">diretto e social organico</span>: il pubblico arriva da link condivisi e dal profilo Instagram, non da campagne a pagamento. Referrer esterni principali (Vercel): Instagram 351, Google 174, Bing 10.</div>
+
+  <h2>5. Andamento giornaliero (fonte per colonna dichiarata)</h2>
+  <table>
+    <tr><th>Giorno</th><th class="n">Voti (DB)</th><th class="n">Visitatori (Vercel)</th><th class="n">Pageview (Vercel)</th><th class="n">Richieste (CF)</th></tr>
+    <tr><td>Lun 21/09</td><td class="n">140</td><td class="n">177</td><td class="n">221</td><td class="n">25.760</td></tr>
+    <tr><td>Mar 22/09</td><td class="n">405</td><td class="n">1.100</td><td class="n">1.954</td><td class="n">65.593</td></tr>
+    <tr><td>Mer 23/09</td><td class="n"><b>1.084</b></td><td class="n"><b>1.430</b></td><td class="n"><b>2.920</b></td><td class="n"><b>117.365</b></td></tr>
+    <tr><td>Gio 24/09</td><td class="n">919</td><td class="n">1.394</td><td class="n">2.248</td><td class="n">95.127</td></tr>
+    <tr><td>Ven 25/09</td><td class="n">434</td><td class="n">655</td><td class="n">1.065</td><td class="n">43.883</td></tr>
+    <tr><td><b>Totale</b></td><td class="n"><b>2.982</b></td><td class="n"><b>4.756</b></td><td class="n"><b>8.408</b></td><td class="n"><b>347.728</b></td></tr>
+  </table>
+
+  <h2>6. Top 10 aziende per voti (fonte: DB)</h2>
+  <div class="cols">
+    <table>
+      <tr><th>#</th><th>Azienda</th><th class="n">Voti</th></tr>
+      <tr><td>1</td><td>Ceramiche Mariner</td><td class="n">1.107</td></tr>
+      <tr><td>2</td><td>Progetto Baucer</td><td class="n">1.023</td></tr>
+      <tr><td>3</td><td>Ceramica Euro</td><td class="n">1.001</td></tr>
+      <tr><td>4</td><td>Refin</td><td class="n">897</td></tr>
+      <tr><td>5</td><td>Refin DTS City</td><td class="n">737</td></tr>
+    </table>
+    <table>
+      <tr><th>#</th><th>Azienda</th><th class="n">Voti</th></tr>
+      <tr><td>6</td><td>Coem</td><td class="n">286</td></tr>
+      <tr><td>7</td><td>Fioranese</td><td class="n">189</td></tr>
+      <tr><td>8</td><td>Sichenia Gruppo Ceramiche</td><td class="n">182</td></tr>
+      <tr><td>9</td><td>Cotto d'Este</td><td class="n">172</td></tr>
+      <tr><td>10</td><td>FAP Ceramiche</td><td class="n">129</td></tr>
+    </table>
+  </div>
+
+  <h2>7. Argomenti di vendita (misurati)</h2>
+  <ul>
+    <li><span class="k">Portata:</span> 347.728 richieste in 5 giorni, con un picco di 117.365 in un solo giorno.</li>
+    <li><span class="k">Effetto fiera:</span> le richieste crescono di ~2.771% rispetto a una giornata pre-fiera (4.088 → 117.365).</li>
+    <li><span class="k">Pubblico reale:</span> 4.756 visitatori unici e 8.408 pagine viste, 19 paesi.</li>
+    <li><span class="k">Coinvolgimento:</span> 2.982 voti da 2.324 persone: il pubblico gioca e resta.</li>
+    <li><span class="k">Ampiezza:</span> 244 aziende su 312 hanno ricevuto voti (78%).</li>
+    <li><span class="k">Contesto:</span> 82% mobile → il contatto avviene in fiera, davanti agli stand.</li>
+    <li><span class="k">Trazione organica:</span> 45% diretto + 35% social organico; non dipende da ads.</li>
+  </ul>
+
+  <h2>8. Trasparenza e limiti</h2>
+  <div class="note">
+    Ogni parametro proviene da una sola fonte, dichiarata. <span class="k">Richieste HTTP (Cloudflare) ≠ visite ≠ pageview ≠ voti</span>: grandezze diverse, mai sommate.
+    Cloudflare conta a livello edge (include asset, bot, prefetch) e "unici" per IP; Vercel è cookieless e considera persone; GA4 filtra per consent e misura sessioni/canali.
+    Il <span class="k">+2.771%</span> è il calcolo esatto giorno-picco/giorno-pre (nel report commerciale è arrotondato a +2.800%) — non è un dato gonfiato.
+    Non sono disponibili dati demografici (età/sesso/professione) né stime di ROI o pubblico fisico. Nessun dato personale (fingerprint, IP) è incluso.
+    Numeri al 25/09/2026: le giornate web dell'ultimo giorno possono variare leggermente a chiusura definitiva.
+  </div>
+
+  <h2>9. Contatto</h2>
+  <div class="small">Pacchetti sponsor e spazi pubblicitari per la prossima edizione: su richiesta, con incontro di presentazione e dati verificabili a supporto.</div>
+
+  <div class="footer"><span>FantaCer · Data Sheet sponsor 2026 · uso commerciale</span><span>pag. 2/2</span></div>
+</section>
+
+</body>
+</html>
