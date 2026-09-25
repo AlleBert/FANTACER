@@ -3,7 +3,7 @@ import { TurnstileOverlay } from '@/components/voting/turnstile-overlay'
 
 jest.mock('@marsidev/react-turnstile', () => ({
   Turnstile: (props: {
-    options?: { action?: string }
+    options?: { action?: string; cData?: string }
     onError?: () => void
     onExpire?: () => void
   }) => {
@@ -13,6 +13,7 @@ jest.mock('@marsidev/react-turnstile', () => ({
       <button
         data-testid="ts"
         data-action={props.options?.action}
+        data-cdata={props.options?.cData}
         onClick={() => props.onError?.()}
         onContextMenu={(e) => {
           e.preventDefault()
@@ -45,6 +46,22 @@ describe('TurnstileOverlay', () => {
       <TurnstileOverlay isVisible onClose={() => {}} onSuccess={() => {}} onError={() => {}} />,
     )
     expect(screen.getByTestId('ts').getAttribute('data-action')).toBe('vote')
+  })
+
+  it('usa action/cData custom quando forniti (bootstrap)', () => {
+    render(
+      <TurnstileOverlay
+        isVisible
+        action="bootstrap"
+        cData="bootstrap:nonce"
+        onClose={() => {}}
+        onSuccess={() => {}}
+        onError={() => {}}
+      />,
+    )
+    const widget = screen.getByTestId('ts')
+    expect(widget.getAttribute('data-action')).toBe('bootstrap')
+    expect(widget.getAttribute('data-cdata')).toBe('bootstrap:nonce')
   })
 
   it('su errore rimonta il widget (nuovo challenge/token) e propaga onError', () => {

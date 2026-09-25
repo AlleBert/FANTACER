@@ -62,11 +62,13 @@ function buildSupabase() {
       if (table === 'vote_sessions') {
         return {
           select: jest.fn(() => ({
-            order: jest.fn(() => ({
+            eq: jest.fn(() => ({
               order: jest.fn(() => ({
-                range: jest.fn(async (from: number, to: number) => ({
-                  data: sessions.slice(from, to + 1),
-                  error: null,
+                order: jest.fn(() => ({
+                  range: jest.fn(async (from: number, to: number) => ({
+                    data: sessions.slice(from, to + 1),
+                    error: null,
+                  })),
                 })),
               })),
             })),
@@ -134,9 +136,11 @@ describe('GET /api/admin/votes', () => {
         if (table === 'companies') return { select: jest.fn().mockResolvedValue({ data: companies, error: null }) }
         return {
           select: jest.fn(() => ({
-            order: jest.fn(() => ({
+            eq: jest.fn(() => ({
               order: jest.fn(() => ({
-                range: jest.fn(async (from: number, to: number) => ({ data: many.slice(from, to + 1), error: null })),
+                order: jest.fn(() => ({
+                  range: jest.fn(async (from: number, to: number) => ({ data: many.slice(from, to + 1), error: null })),
+                })),
               })),
             })),
           })),

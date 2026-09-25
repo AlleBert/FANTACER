@@ -44,24 +44,29 @@ describe('vote-identity', () => {
 })
 
 describe('resolveVoterKey', () => {
-  it('usa il cookie quando è un UUID valido', () => {
-    const resolved = resolveVoterKey(request(UUID), OTHER_UUID)
+  it('usa il cookie first-party quando è un UUID valido', () => {
+    const resolved = resolveVoterKey(request(UUID))
     expect(resolved).toEqual({ key: `v1:${UUID}`, voterId: UUID })
   })
 
-  it('usa il voterId del payload quando il cookie è assente', () => {
-    const resolved = resolveVoterKey(request(), UUID)
-    expect(resolved).toEqual({ key: `v1:${UUID}`, voterId: UUID })
+  it('senza cookie → null (nessun fallback al body)', () => {
+    expect(resolveVoterKey(request())).toBeNull()
   })
 
-  it('ignora cookie legacy e usa il payload', () => {
-    const resolved = resolveVoterKey(request(LEGACY_FP), UUID)
-    expect(resolved).toEqual({ key: `v1:${UUID}`, voterId: UUID })
+  it('ignora un cookie legacy non-UUID → null', () => {
+    expect(resolveVoterKey(request(LEGACY_FP))).toBeNull()
   })
 
-  it('null quando non esiste alcun UUID valido (nessun fallback fingerprint)', () => {
-    expect(resolveVoterKey(request(), undefined)).toBeNull()
-    expect(resolveVoterKey(request(LEGACY_FP), LEGACY_FP)).toBeNull()
+  it('ignora eventuali argomenti body (C08: identità mai dal payload)', () => {
+    // Difesa in profondità: anche se un chiamante passasse un UUID, non va
+    // mai usato. Il cast evita che TypeScript blocchi la chiamata.
+    const legacy = resolveVoterKey as unknown as (
+      r: ReturnType<typeof request>,
+      bodyVoterId?: unknown,
+    ) => unknown
+    expect(legacy(request(), UUID)).toBeNull()
+    expect(legacy(request(LEGACY_FP), UUID)).toBeNull()
+    expect(legacy(request(), OTHER_UUID)).toBeNull()
   })
 })
 

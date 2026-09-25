@@ -60,6 +60,7 @@ jest.mock('@/lib/vote-security', () => ({
 jest.mock('@/lib/vote-client-identity', () => ({
   ensureVoterId: jest.fn().mockResolvedValue('11111111-2222-4333-8444-555555555555'),
   isNewVoterIdentity: () => false,
+  bridgeLegacyIdentityToCookie: jest.fn(),
 }))
 
 const setStoredVoterIdMock = jest.fn()

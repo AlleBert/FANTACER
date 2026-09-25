@@ -5,6 +5,7 @@ import {
   serializeVoteRequestEnd,
   logVoteRequestEnd,
   VOTE_REQUEST_END_MARKER,
+  type VoteOutcome,
 } from '@/lib/vote-telemetry'
 
 const EVENT = {
@@ -67,5 +68,34 @@ describe('vote_request_end marker', () => {
     expect(spy).toHaveBeenCalledTimes(1)
     expect(String(spy.mock.calls[0][0])).toContain(VOTE_REQUEST_END_MARKER)
     spy.mockRestore()
+  })
+})
+
+describe('vote_request_end — esiti e attributi C08', () => {
+  it('accetta gli esiti no_session / renew_required / quarantined', () => {
+    const outcomes: VoteOutcome[] = ['no_session', 'renew_required', 'quarantined']
+    for (const outcome of outcomes) {
+      const parsed = JSON.parse(serializeVoteRequestEnd({ outcome, status: 503, ms: 1 }))
+      expect(parsed.outcome).toBe(outcome)
+    }
+  })
+
+  it('serializza identityMode e riskDecision senza PII', () => {
+    const parsed = JSON.parse(
+      serializeVoteRequestEnd({
+        ...EVENT,
+        outcome: 'quarantined',
+        identityMode: 'session',
+        riskDecision: 'quarantine',
+      }),
+    )
+    expect(parsed.identityMode).toBe('session')
+    expect(parsed.riskDecision).toBe('quarantine')
+  })
+
+  it('identityMode/riskDecision assenti → null', () => {
+    const parsed = JSON.parse(serializeVoteRequestEnd({ outcome: 'success', status: 200, ms: 1 }))
+    expect(parsed.identityMode).toBeNull()
+    expect(parsed.riskDecision).toBeNull()
   })
 })

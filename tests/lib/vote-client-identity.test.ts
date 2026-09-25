@@ -4,6 +4,7 @@
 import { VOTER_COOKIE, isUuid } from '../../src/lib/vote-identity'
 import {
   __resetVoterIdentityForTests,
+  bridgeLegacyIdentityToCookie,
   ensureVoterId,
   initializeVoterIdentity,
   isNewVoterIdentity,
@@ -23,6 +24,7 @@ function readCookie(): string | null {
 }
 
 function clearAll() {
+  jest.restoreAllMocks()
   document.cookie = `${VOTER_COOKIE}=; Max-Age=0; Path=/`
   localStorage.clear()
   delete (navigator as unknown as { locks?: unknown }).locks
@@ -110,6 +112,53 @@ describe('initializeVoterIdentity', () => {
       expect(second.isNew).toBe(true)
     } finally {
       delete (document as unknown as { cookie?: string }).cookie
+    }
+  })
+})
+
+describe('bridgeLegacyIdentityToCookie (F0)', () => {
+  it('scrive il cookie legacy quando localStorage ha un UUID valido e il cookie è assente', () => {
+    localStorage.setItem('fantacer_voter_id', UUID)
+    expect(bridgeLegacyIdentityToCookie()).toBe(UUID)
+    expect(readCookie()).toBe(UUID)
+  })
+
+  it('normalizza l’UUID in minuscolo', () => {
+    localStorage.setItem('fantacer_voter_id', UUID.toUpperCase())
+    expect(bridgeLegacyIdentityToCookie()).toBe(UUID)
+    expect(readCookie()).toBe(UUID)
+  })
+
+  it('non tocca il cookie se è già presente (precedenza cookie > localStorage)', () => {
+    setCookie(UUID)
+    localStorage.setItem('fantacer_voter_id', OTHER_UUID)
+    expect(bridgeLegacyIdentityToCookie()).toBe(UUID)
+    expect(readCookie()).toBe(UUID)
+  })
+
+  it('ignora il valore legacy FingerprintJS e non scrive nulla', () => {
+    localStorage.setItem('fantacer_voter_id', LEGACY_FP)
+    expect(bridgeLegacyIdentityToCookie()).toBeNull()
+    expect(readCookie()).toBeNull()
+  })
+
+  it('senza localStorage non scrive nulla', () => {
+    expect(bridgeLegacyIdentityToCookie()).toBeNull()
+    expect(readCookie()).toBeNull()
+  })
+
+  it('è SSR-safe: senza document/window non lancia e ritorna null', () => {
+    const docDesc = Object.getOwnPropertyDescriptor(globalThis, 'document')
+    const winDesc = Object.getOwnPropertyDescriptor(globalThis, 'window')
+    localStorage.setItem('fantacer_voter_id', UUID)
+    Object.defineProperty(globalThis, 'document', { configurable: true, value: undefined })
+    Object.defineProperty(globalThis, 'window', { configurable: true, value: undefined })
+    try {
+      expect(() => bridgeLegacyIdentityToCookie()).not.toThrow()
+      expect(bridgeLegacyIdentityToCookie()).toBeNull()
+    } finally {
+      if (docDesc) Object.defineProperty(globalThis, 'document', docDesc)
+      if (winDesc) Object.defineProperty(globalThis, 'window', winDesc)
     }
   })
 })

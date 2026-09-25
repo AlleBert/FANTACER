@@ -18,21 +18,17 @@ export interface VoterCookieSource {
 /**
  * Resolver unico per `/api/vota` e `/api/vota/status`.
  *
- * Precedenza: cookie first-party > `voterId` nel payload. Il payload copre il
- * caso di cookie non ancora persistito (prima richiesta / cookie disabilitati);
- * una volta impostato, il cookie è l'autorità condivisa da tutte le schede.
+ * **C08** — l'identità arriva **solo** dal cookie first-party
+ * `fantacer_voter_id`: `voterId` è rimosso dal contratto e non è mai letto dal
+ * payload (il parametro non esiste proprio, per impedirlo a livello di tipo).
  *
- * Ritorna `null` quando non esiste un UUID valido: niente fallback al
- * FingerprintJS, che non risolve le collisioni.
+ * Ritorna `null` quando il cookie non è un UUID valido: niente fallback al
+ * FingerprintJS (collisioni) né a un UUID nuovo per richiesta.
  */
-export function resolveVoterKey(
-  request: VoterCookieSource,
-  bodyVoterId: unknown,
-): ResolvedVoter | null {
+export function resolveVoterKey(request: VoterCookieSource): ResolvedVoter | null {
   const cookieValue = request.cookies.get(VOTER_COOKIE)?.value
-  const candidate = isUuid(cookieValue) ? cookieValue : isUuid(bodyVoterId) ? bodyVoterId : null
-  if (!candidate) return null
-  const voterId = candidate.toLowerCase()
+  if (!isUuid(cookieValue)) return null
+  const voterId = cookieValue.toLowerCase()
   return { key: buildVoterKey(voterId), voterId }
 }
 

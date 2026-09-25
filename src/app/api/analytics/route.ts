@@ -19,10 +19,14 @@ type AdminClient = ReturnType<typeof createAdminClient>
 
 const ONLINE_WINDOW_MS = 5 * 60 * 1000
 
-type RawSession = ReportSessionRow & { id: number; user_agent: string | null }
+type RawSession = ReportSessionRow & { id: number; user_agent: string | null; status: string | null }
 
+// C11: la classifica/totali contano solo gli `accepted`. L'export raw filtra
+// allo stesso modo; `status` è incluso come colonna esplicita (audit/schema
+// forward-compatible). I conteggi dei voti non-accepted restano disponibili
+// nella vista admin dedicata `admin_quarantine_counts`.
 const RAW_SELECT =
-  'id, created_at, fingerprint, country, user_agent, company1_id, company2_id, company3_id, pallet1, pallet2, pallet3'
+  'id, created_at, fingerprint, country, user_agent, status, company1_id, company2_id, company3_id, pallet1, pallet2, pallet3'
 
 /** Set delle company del batch, oppure null quando il filtro è "tutti". */
 async function getBatchCompanyIds(
@@ -40,6 +44,7 @@ async function loadRawSessions(supabase: AdminClient, batch: string | null): Pro
     supabase
       .from('vote_sessions')
       .select(RAW_SELECT)
+      .eq('status', 'accepted')
       .order('created_at', { ascending: false })
       .order('id', { ascending: false })
       .range(from, to),
@@ -61,7 +66,7 @@ function filterByRomeRange<T extends { created_at: string }>(sessions: T[], dayK
 
 function buildRawTable(sessions: RawSession[], companyMap: Map<string, string>) {
   const header = [
-    'fingerprint', 'timestamp', 'country', 'user_agent',
+    'fingerprint', 'timestamp', 'country', 'user_agent', 'status',
     'company1', 'pallet1', 'company2', 'pallet2', 'company3', 'pallet3',
   ]
   const body = sessions.map((v) => [
@@ -69,6 +74,7 @@ function buildRawTable(sessions: RawSession[], companyMap: Map<string, string>) 
     v.created_at,
     v.country || '',
     v.user_agent || '',
+    v.status || '',
     companyMap.get(v.company1_id) || v.company1_id,
     v.pallet1,
     companyMap.get(v.company2_id) || v.company2_id,

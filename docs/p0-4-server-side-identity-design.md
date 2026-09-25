@@ -203,10 +203,15 @@ o fallback legacy (`off`/`shadow`), **mai** nuova identità e **mai** un voto.
 ## Backfill dell'intero evento (5) — strategia a batch
 
 - Per l'evento attivo, per **ogni** `fingerprint` distinto delle `vote_sessions`
-  del batch (intero storico dell'evento, non solo oggi).
+  del batch (intero storico dell'evento, non solo oggi). Solo i voti con
+  `company1/2/3` interamente nel batch entrano nel mapping; le righe miste sono
+  validate, skippate e riportate (`skippedInvalid`), senza scrittura.
 - Keyset su `fingerprint`, batch 50k, resumibile (`where not exists`).
-- Per batch: `set local statement_timeout = '30s'` e `lock_timeout = '5s'`
-  (**finito**, mai `0`); su timeout, retry con batch ridotto.
+- **Per run** (session-level, non `set local`): `SET statement_timeout = '30s'`
+  e `SET lock_timeout = '5s'` (**finiti**, mai `0`). Su statement timeout la
+  **stessa pagina** viene ritentata con batch dimezzato (minimo 500) senza
+  avanzare il checkpoint. `coveragePct` è **scoped al batch dell'evento**
+  (`coverageScope: 'event_batch'`).
 - Connessione **diretta `pg`**, nessun trigger toccato, **nessuna DELETE**.
 - Checkpoint in tabella dedicata (`backfill_checkpoints`) o stato in file.
 

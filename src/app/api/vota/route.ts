@@ -9,13 +9,33 @@ import { verifyTurnstile } from '@/lib/turnstile'
 import { getTrustedClientIp, hmacIp, type ClientIpSignal } from '@/lib/request-ip'
 import { recordIpSignal } from '@/lib/ip-signal-metrics'
 import { evaluateVoteRateLimit } from '@/lib/vote-rate-limit'
-import { logVoteRequestEnd, type VoteOutcome } from '@/lib/vote-telemetry'
+import {
+  logVoteRequestEnd,
+  type VoteOutcome,
+  type VoteIdentityMode,
+} from '@/lib/vote-telemetry'
+import { keyringFromEnv } from '@/lib/session-identity'
+import { verifyCsrfForRequest } from '@/lib/vote-csrf'
+import { buildVoteRiskSignals, signalsFingerprint } from '@/lib/vote-risk-signals'
+import {
+  sessionIdentityMode,
+  getActiveEvent,
+  resolveOrCreatePrincipal,
+  resolveVoteIdentity,
+  resolveVoteIdentityResult,
+  linkVoteToPrincipal,
+  touchSession,
+  type ResolvedSession,
+  type SessionResolution,
+} from '@/lib/session-identity-server'
+import { romeDateKey } from '@/lib/admin-analytics'
 import { LOCALE_COOKIE, resolveLocale } from '@/lib/locale'
 import { translate } from '@/i18n'
 
 interface VoteTelemetry {
   outcome?: VoteOutcome
   status?: number
+  identityMode?: VoteIdentityMode
   rateMode?: 'observe' | 'enforce'
   rateWouldBlock?: boolean
   rateIpWouldBlock?: boolean
@@ -41,16 +61,18 @@ export async function POST(request: NextRequest) {
     const ip = ipSignal.ip
 
     const body = await request.json()
-    const { company1Id, company2Id, company3Id, turnstile_token, botd, voterId } = body
+    // C08 — `voterId` è rimosso dal contratto: non viene **mai** letto dal body.
+    // L'identità arriva solo dalla sessione o dal cookie legacy first-party.
+    const { company1Id, company2Id, company3Id, turnstile_token, botd } = body
 
-    // Identità ordinaria: cookie first-party > voterId nel payload. Niente
-    // fallback al FingerprintJS (collisioni) né chiave nuova per richiesta.
-    const resolved = resolveVoterKey(request, voterId)
-    if (!resolved) {
-      tel.outcome = 'invalid_request'
-      tel.status = 400
-      return NextResponse.json({ error: err('voteError.missingVoterId') }, { status: 400 })
-    }
+    const identityMode = sessionIdentityMode()
+    tel.identityMode = identityMode
+
+    let voterCookieId: string | null = null
+    let fingerprint: string | null = null
+    let principalId: string | null = null
+    let eventId: string | null = null
+    let session: ResolvedSession | null = null
 
     const respond = (
       payload: unknown,
@@ -64,13 +86,162 @@ export async function POST(request: NextRequest) {
       if (headers) {
         for (const [name, value] of Object.entries(headers)) response.headers.set(name, value)
       }
-      applyVoterCookie(response, resolved.voterId)
+      if (voterCookieId) applyVoterCookie(response, voterCookieId)
       return response
     }
 
+    const admin = createAdminClient()
+
+    /**
+     * Sceglie il fingerprint legacy del principal di sessione (per mantenere il
+     * dedup legacy) e, in assenza, un fallback stabile `principal:<id>`.
+     * Best-effort: non blocca mai per un errore di lookup.
+     */
+    const applyPrincipalFingerprint = async (): Promise<void> => {
+      if (!principalId) return
+      try {
+        const { data: principal } = await admin
+          .from('event_principals')
+          .select('legacy_fingerprint')
+          .eq('id', principalId)
+          .maybeSingle()
+        if (principal?.legacy_fingerprint) {
+          fingerprint = principal.legacy_fingerprint
+          return
+        }
+      } catch {
+        // best-effort: cade sul fallback qui sotto
+      }
+      if (!fingerprint) fingerprint = `principal:${principalId}`
+    }
+
+    if (identityMode === 'off') {
+      // Legacy-only: identità dal solo cookie first-party. Nessun principal,
+      // nessuna chiamata a `submit_vote_v2`, nessun dual-write.
+      const legacy = resolveVoterKey(request)
+      if (!legacy) {
+        return respond({ error: err('voteError.missingVoterId') }, 400, 'invalid_request')
+      }
+      voterCookieId = legacy.voterId
+      fingerprint = resolveVoteFingerprint(legacy.key)
+    } else if (identityMode === 'shadow') {
+      // Lettura legacy; scrittura legacy + principal best-effort. Qualunque
+      // errore del percorso shadow viene loggato e **non** blocca il voto.
+      const legacy = resolveVoterKey(request)
+      if (!legacy) {
+        return respond({ error: err('voteError.missingVoterId') }, 400, 'invalid_request')
+      }
+      voterCookieId = legacy.voterId
+      fingerprint = resolveVoteFingerprint(legacy.key)
+      try {
+        const keyring = keyringFromEnv()
+        if (keyring) {
+          session = await resolveVoteIdentity(admin, request, keyring)
+          if (session) principalId = session.principalId
+        }
+        const event = await getActiveEvent(admin)
+        eventId = event?.id ?? null
+        if (!principalId && eventId && fingerprint) {
+          principalId = await resolveOrCreatePrincipal(admin, eventId, fingerprint)
+        }
+        await applyPrincipalFingerprint()
+      } catch (shadowError) {
+        console.warn('[identity] shadow path best-effort failed:', shadowError)
+        principalId = null
+        eventId = null
+        session = null
+      }
+    } else {
+      // dual | session: la sessione è l'autorità (fail-closed).
+      const keyring = keyringFromEnv()
+      if (!keyring) {
+        // Modalità sessione dichiarata ma chiave assente: nessun voto.
+        return respond({ error: 'identity unavailable' }, 503, 'no_session')
+      }
+
+      // Esito discriminato: `none` (assenza) vs `error` (DB/rete). Un errore
+      // NON deve mai degradare nel fallback legacy né diventare un falso
+      // "nessuna sessione": in `dual`/`session` è fail-closed `503`.
+      let resolution: SessionResolution
+      try {
+        resolution = await resolveVoteIdentityResult(admin, request, keyring)
+      } catch (sessionError) {
+        console.warn('[identity] session resolution failed:', sessionError)
+        return respond({ error: 'identity unavailable' }, 503, 'error')
+      }
+
+      if (resolution.status === 'error') {
+        console.warn('[identity] session resolution db error (fail-closed)')
+        return respond({ error: 'identity unavailable' }, 503, 'error')
+      }
+
+      if (resolution.status === 'ok') {
+        session = resolution.session
+        principalId = session.principalId
+        // C05 — CSRF session-bound (§4-bis): solo `dual`/`session` con sessione
+        // valida. Il rinnovo idle avviene solo dopo il CSRF ok.
+        const csrf = verifyCsrfForRequest(request, keyring, session)
+        if (!csrf.ok) {
+          return respond({ error: 'Forbidden' }, 403, 'csrf_failed')
+        }
+        await touchSession(admin, session.sessionId)
+        const event = await getActiveEvent(admin)
+        eventId = event?.id ?? null
+        await applyPrincipalFingerprint()
+      } else if (identityMode === 'session') {
+        // Cutover: solo sessione, nessun fallback legacy.
+        return respond({ error: 'identity unavailable' }, 503, 'no_session')
+      } else {
+        // dual: fallback al cookie legacy first-party (mai body). Anche qui la
+        // risoluzione dell'identità fallback è fail-closed: un throw diventa
+        // 503, non 500.
+        const legacy = resolveVoterKey(request)
+        if (!legacy) {
+          return respond({ error: err('voteError.missingVoterId') }, 400, 'invalid_request')
+        }
+        voterCookieId = legacy.voterId
+        fingerprint = resolveVoteFingerprint(legacy.key)
+        try {
+          const event = await getActiveEvent(admin)
+          eventId = event?.id ?? null
+          if (eventId) {
+            principalId = await resolveOrCreatePrincipal(admin, eventId, fingerprint)
+            if (!principalId) {
+              return respond({ error: 'identity unavailable' }, 503, 'error')
+            }
+            await applyPrincipalFingerprint()
+          }
+        } catch (identityError) {
+          console.warn('[identity] fallback principal resolution failed:', identityError)
+          return respond({ error: 'identity unavailable' }, 503, 'error')
+        }
+      }
+    }
+
+    if (!fingerprint) {
+      return respond({ error: 'identity unavailable' }, 503, 'no_session')
+    }
+
+    // C08 — Segnali di rischio server-derived, groundwork per correlazione,
+    // step-up e quarantena (la decisione pura è in `vote-correlation.ts`; la
+    // persistenza/quarantine è C11). Best-effort: l'errore di configurazione
+    // HMAC non deve bloccare il voto (in `shadow` è esplicitamente
+    // non-bloccante) e in C08 i segnali non decidono nulla.
+    try {
+      const signals = buildVoteRiskSignals({
+        ipSignal,
+        userAgent: request.headers.get('user-agent'),
+        country: request.headers.get('cf-ipcountry'),
+        botd: typeof botd === 'string' ? botd : null,
+        legacyFpPresent: voterCookieId !== null,
+      })
+      // Fingerprint deterministico per la futura decisione di correlazione.
+      signalsFingerprint(signals)
+    } catch (signalsError) {
+      console.warn('[identity] risk signals unavailable:', signalsError)
+    }
+
     // P0-3: rate limit su segnali attendibili (identità + IP pseudonimizzato).
-    // Default `observe`: calcola e registra senza bloccare. `enforce` → 429.
-    const fingerprint = resolveVoteFingerprint(resolved.key)
     const rate = await evaluateVoteRateLimit({
       ipHash: ip ? hmacIp(ip) : null,
       fingerprint,
@@ -88,8 +259,7 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Gate anti-bot: il toggle Admin sospende il voto anche server-side, non
-    // solo in UI. `423 Locked` distingue il blocco dagli errori di validazione.
+    // Gate anti-bot: il toggle Admin sospende il voto anche server-side.
     if (await getAntibotEnabled()) {
       return respond({ error: err('voteError.antibot') }, 423, 'antibot')
     }
@@ -106,13 +276,10 @@ export async function POST(request: NextRequest) {
       return respond({ error: err('voteError.duplicateCompanies') }, 400, 'invalid_request')
     }
 
-    const supabaseAdmin = createAdminClient()
-
-    // Batch attivo e lookup aziende sono indipendenti: in parallelo risparmiano
-    // un round-trip DB seriale sul percorso critico del voto.
+    // Batch attivo e lookup aziende in parallelo.
     const [activeBatch, { data: companies }] = await Promise.all([
       getActiveBatch(),
-      supabaseAdmin
+      admin
         .from('companies')
         .select('id, batch, blocked')
         .in('id', [company1Id, company2Id, company3Id]),
@@ -139,7 +306,6 @@ export async function POST(request: NextRequest) {
 
     const verification = await verifyTurnstile(turnstile_token)
     if (!verification.ok) {
-      // Log del solo codice di motivo: mai token, secret, cookie o payload.
       tel.turnstileReason = verification.reason
       console.warn('[turnstile] verifica fallita:', verification.reason)
       return respond({ error: err('voteError.securityFailed') }, 400, 'turnstile_failed')
@@ -169,6 +335,16 @@ export async function POST(request: NextRequest) {
       return respond({ error: 'Vote rejected' }, 400, 'error')
     }
 
+    // Dual-write shadow/dual: collega la scheda al principal. Best-effort in
+    // ogni mode (in `off` non esiste alcun principal).
+    if (identityMode !== 'off' && principalId && eventId) {
+      try {
+        await linkVoteToPrincipal(admin, fingerprint, romeDateKey(new Date()), eventId, principalId)
+      } catch (linkError) {
+        console.warn('[identity] linkVoteToPrincipal failed:', linkError)
+      }
+    }
+
     return respond({ success: true }, 200, 'success')
   } catch (error) {
     console.error('Vote error:', error)
@@ -180,6 +356,7 @@ export async function POST(request: NextRequest) {
       outcome: tel.outcome ?? 'error',
       status: tel.status ?? 500,
       ms: Date.now() - startedAt,
+      identityMode: tel.identityMode,
       rateMode: tel.rateMode,
       rateWouldBlock: tel.rateWouldBlock,
       rateIpWouldBlock: tel.rateIpWouldBlock,

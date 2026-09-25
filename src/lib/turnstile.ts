@@ -12,8 +12,10 @@
  *    webServer di Playwright);
  *  - Siteverify ha un timeout esplicito (AbortController): timeout, errore di
  *    rete, HTTP non valido o JSON malformato falliscono;
- *  - si richiede `success === true`, `action === "vote"` e `hostname` in
- *    allowlist esatta (nessuna wildcard);
+ *  - si richiede `success === true`, l'action attesa (default `"vote"`,
+ *    sovrascrivibile via `options.action`) e `hostname` in allowlist esatta
+ *    (nessuna wildcard); se `options.cData` è valorizzata, il `cdata` della
+ *    risposta deve combaciare (binding pre-sessione);
  *  - non si usa l'IP per la decisione (estrazione attendibile in P0-2);
  *  - nessun log di token/secret o della risposta completa di Siteverify.
  */
@@ -33,7 +35,15 @@ export type TurnstileFailureReason =
   | 'invalid_json'
   | 'verification_failed'
   | 'action_mismatch'
-  | 'hostname_not_allowed';
+  | 'hostname_not_allowed'
+  | 'cdata_mismatch';
+
+export interface VerifyTurnstileOptions {
+  /** Action attesa nel response di Siteverify. Default `TURNSTILE_ACTION` (`vote`). */
+  action?: string;
+  /** Se valorizzata, il campo `cdata` della risposta deve combaciare esattamente. */
+  cData?: string;
+}
 
 export type TurnstileResult =
   | { ok: true }
@@ -62,9 +72,15 @@ interface SiteverifyOutcome {
   success?: boolean;
   action?: string;
   hostname?: string;
+  cdata?: string;
 }
 
-export async function verifyTurnstile(token: unknown): Promise<TurnstileResult> {
+export async function verifyTurnstile(
+  token: unknown,
+  options: VerifyTurnstileOptions = {},
+): Promise<TurnstileResult> {
+  const expectedAction = options.action ?? TURNSTILE_ACTION;
+
   if (typeof token !== 'string' || token.length === 0) {
     return { ok: false, reason: 'missing_token' };
   }
@@ -125,8 +141,15 @@ export async function verifyTurnstile(token: unknown): Promise<TurnstileResult> 
     return { ok: false, reason: 'verification_failed' };
   }
 
-  if (outcome.action !== TURNSTILE_ACTION) {
+  if (outcome.action !== expectedAction) {
     return { ok: false, reason: 'action_mismatch' };
+  }
+
+  // cData binding (P0-4c): se il chiamante lo richiede, la risposta deve
+  // combaciare esattamente. Cloudflare restituisce `cdata` solo se il widget
+  // è stato inizializzato con `data-cdata`.
+  if (options.cData !== undefined && outcome.cdata !== options.cData) {
+    return { ok: false, reason: 'cdata_mismatch' };
   }
 
   const allowedHostnames = parseAllowedHostnames(process.env.TURNSTILE_ALLOWED_HOSTNAMES);
