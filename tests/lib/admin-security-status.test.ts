@@ -70,7 +70,7 @@ describe('summarizeNonces', () => {
 })
 
 describe('classifyVoteHealth', () => {
-  it('json → ok, kind json', () => {
+  it('json 200 → ok, kind json', () => {
     expect(classifyVoteHealth({ status: 200, contentType: 'application/json' })).toEqual({
       ok: true,
       kind: 'json',
@@ -83,8 +83,27 @@ describe('classifyVoteHealth', () => {
     ).toEqual({ ok: true, kind: 'json' })
   })
 
-  it('html → ko, kind html', () => {
+  it('json 500 → kind json ma non ok', () => {
+    expect(
+      classifyVoteHealth({ status: 500, contentType: 'application/json' }),
+    ).toEqual({ ok: false, kind: 'json' })
+    expect(
+      classifyVoteHealth({ status: 503, contentType: 'application/json' }),
+    ).toEqual({ ok: false, kind: 'json' })
+  })
+
+  it('status 0/unknown → non ok anche se json', () => {
+    expect(
+      classifyVoteHealth({ status: 0, contentType: 'application/json' }),
+    ).toEqual({ ok: false, kind: 'json' })
+  })
+
+  it('html → ko, kind html (qualsiasi status)', () => {
     expect(classifyVoteHealth({ status: 429, contentType: 'text/html' })).toEqual({
+      ok: false,
+      kind: 'html',
+    })
+    expect(classifyVoteHealth({ status: 200, contentType: 'text/html' })).toEqual({
       ok: false,
       kind: 'html',
     })

@@ -57,6 +57,7 @@ function isSectionError(value: unknown): value is SectionError {
 function healthLabel(health: VoteHealth): string {
   if (health.ok) return 'OK (JSON)'
   if (health.kind === 'html') return 'Anomalia (HTML)'
+  if (health.kind === 'json') return 'Anomalia (JSON 5xx)'
   return 'Anomalia (nessuna risposta JSON)'
 }
 

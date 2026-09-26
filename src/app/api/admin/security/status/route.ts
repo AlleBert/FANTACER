@@ -36,7 +36,7 @@ function authErrorMessage(status: number): string {
 
 async function readNonces(admin: Admin): Promise<NoncesSummary> {
   const now = new Date().toISOString()
-  const [totalRes, consumedRes, expiredRes] = await Promise.all([
+  const [totalRes, consumedRes, expiredRes, outstandingRes] = await Promise.all([
     admin.from('bootstrap_nonces').select('nonce', { count: 'exact', head: true }),
     admin
       .from('bootstrap_nonces')
@@ -46,16 +46,24 @@ async function readNonces(admin: Admin): Promise<NoncesSummary> {
       .from('bootstrap_nonces')
       .select('nonce', { count: 'exact', head: true })
       .lt('expires_at', now),
+    // Outstanding esatto: non consumati E non scaduti. Non derivabile da
+    // `total - consumed - expired` perché un nonce consumato può scadere in
+    // seguito e verrebbe sottratto due volte.
+    admin
+      .from('bootstrap_nonces')
+      .select('nonce', { count: 'exact', head: true })
+      .is('consumed_at', null)
+      .gte('expires_at', now),
   ])
 
-  if (totalRes.error || consumedRes.error || expiredRes.error) {
+  if (totalRes.error || consumedRes.error || expiredRes.error || outstandingRes.error) {
     throw new Error('bootstrap_nonces_unavailable')
   }
 
   const total = totalRes.count ?? 0
   const consumed = consumedRes.count ?? 0
   const expired = expiredRes.count ?? 0
-  const outstanding = Math.max(0, total - consumed - expired)
+  const outstanding = outstandingRes.count ?? 0
 
   return summarizeNonces({ total, consumed, expired, outstanding })
 }

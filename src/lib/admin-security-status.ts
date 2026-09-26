@@ -70,13 +70,17 @@ export interface VoteHealth {
 }
 
 /**
- * Classifica la salute di `/api/vota` dal `content-type` della risposta: una
- * risposta JSON è considerata sana (l'endpoint gira), HTML/altro indica che il
- * probe ha colpito un'altra pagina (es. redirect a coming-soon/errore).
+ * Classifica la salute di `/api/vota` dal `content-type` e dallo status della
+ * risposta: una risposta JSON con status < 500 è considerata sana (l'endpoint
+ * gira). JSON con status ≥ 500, status assente/0, HTML o altro content-type
+ * indicano un endpoint non sano (errore server, redirect a coming-soon/errore).
  */
-export function classifyVoteHealth({ contentType }: VoteHealthInput): VoteHealth {
+export function classifyVoteHealth({ status, contentType }: VoteHealthInput): VoteHealth {
   const normalized = (contentType ?? '').toLowerCase()
-  if (normalized.startsWith('application/json')) return { ok: true, kind: 'json' }
+  if (normalized.startsWith('application/json')) {
+    const ok = Number.isFinite(status) && status > 0 && status < 500
+    return { ok, kind: 'json' }
+  }
   if (normalized.includes('text/html')) return { ok: false, kind: 'html' }
   return { ok: false, kind: 'other' }
 }
