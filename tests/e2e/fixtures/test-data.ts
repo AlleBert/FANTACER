@@ -95,6 +95,9 @@ async function seedSiteSettings(supabase: ReturnType<typeof createTestAdminClien
     { key: 'voting_enabled', value: 'true' },
     { key: 'coming_soon_enabled', value: 'false' },
     { key: 'antibot_enabled', value: 'false' },
+    // La "fine fiera" blocca il voto (423): va spenta a ogni run, altrimenti un
+    // test/toggle precedente lascia il dataset E2E in stato non votabile.
+    { key: 'fair_end_enabled', value: 'false' },
   ];
   for (const setting of settings) {
     const { error } = await supabase
