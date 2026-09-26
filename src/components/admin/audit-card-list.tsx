@@ -23,6 +23,16 @@ interface AuditCardListProps {
   onSearch: (search: string) => void
 }
 
+/** Etichette leggibili per gli eventi di sicurezza voto (P0-4/P1). */
+const EVENT_LABELS: Record<string, string> = {
+  admin_vote_review: 'Revisione voto',
+  admin_totals_reconcile: 'Riconciliazione totali',
+}
+
+function eventLabel(eventType: string): string {
+  return EVENT_LABELS[eventType] ?? eventType
+}
+
 export function AuditCardList({ data, pagination, onPageChange, onSearch }: AuditCardListProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
@@ -36,7 +46,7 @@ export function AuditCardList({ data, pagination, onPageChange, onSearch }: Audi
 
       <div className="space-y-3">
         {data.map((log) => {
-          const isSecurity = log.event_type.includes('block') || log.event_type.includes('fraud') || log.event_type.includes('fail')
+          const isSecurity = log.event_type.includes('block') || log.event_type.includes('fraud') || log.event_type.includes('fail') || log.event_type in EVENT_LABELS
           return (
             <div key={log.id} className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
               <div className="flex items-start gap-3 p-4 cursor-pointer active:bg-secondary/30 transition-colors"
@@ -45,7 +55,7 @@ export function AuditCardList({ data, pagination, onPageChange, onSearch }: Audi
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className={`text-sm font-medium truncate ${isSecurity ? 'text-red-500' : 'text-foreground'}`}>
-                      {log.event_type}
+                      {eventLabel(log.event_type)}
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
